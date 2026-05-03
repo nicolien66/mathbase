@@ -1,18 +1,21 @@
 const express    = require("express");
-const sqlite3    = require("sqlite3").verbose();
+const { Pool }   = require("pg");
 const bodyParser = require("body-parser");
 const path       = require("path");
 
-const app = express();
-const db  = new sqlite3.Database("./database.db");
+const app  = express();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ── CRÉATION TABLE ── */
-db.run(`
+pool.query(`
   CREATE TABLE IF NOT EXISTS exercises (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    id         SERIAL PRIMARY KEY,
     title      TEXT    NOT NULL,
     content    TEXT    NOT NULL,
     level      TEXT    NOT NULL,
@@ -21,64 +24,64 @@ db.run(`
     solution   TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
-`, (err) => {
-  if (err) console.error("Erreur création table :", err);
-  else console.log("Base de données prête.");
-});
+`).then(() => console.log("Base de données prête."))
+  .catch(err => console.error("Erreur création table :", err));
 
 /* ── AJOUTER UN EXERCICE ── */
-app.post("/exercises", (req, res) => {
+app.post("/exercises", async (req, res) => {
   const { title, content, level, subject, difficulty, solution } = req.body;
-
   if (!title || !content || !level) {
     return res.status(400).json({ error: "Champs obligatoires manquants." });
   }
-
-  db.run(
-    `INSERT INTO exercises (title, content, level, subject, difficulty, solution)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [title, content, level, subject || null, difficulty || null, solution || null],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID, message: "Exercice ajouté." });
-    }
-  );
+  try {
+    const result = await pool.query(
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [title, content, level, subject || null, difficulty || null, solution || null]
+    );
+    res.json({ id: result.rows[0].id, message: "Exercice ajouté." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-/* ── RÉCUPÉRER LES EXERCICES (avec filtres) ── */
-app.get("/exercises", (req, res) => {
+/* ── RÉCUPÉRER LES EXERCICES ── */
+app.get("/exercises", async (req, res) => {
   const { level, subject, difficulty } = req.query;
-
   let query  = "SELECT * FROM exercises WHERE 1=1";
   let params = [];
-
-  if (level)      { query += " AND level = ?";      params.push(level); }
-  if (subject)    { query += " AND subject = ?";    params.push(subject); }
-  if (difficulty) { query += " AND difficulty = ?"; params.push(difficulty); }
-
+  let i      = 1;
+  if (level)      { query += ` AND level = $${i++}`;      params.push(level); }
+  if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
+  if (difficulty) { query += ` AND difficulty = $${i++}`; params.push(difficulty); }
   query += " ORDER BY created_at DESC";
-
-  db.all(query, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+  try {
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /* ── RÉCUPÉRER UN EXERCICE PAR ID ── */
-app.get("/exercises/:id", (req, res) => {
-  db.get("SELECT * FROM exercises WHERE id = ?", [req.params.id], (err, row) => {
-    if (err)  return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: "Exercice introuvable." });
-    res.json(row);
-  });
+app.get("/exercises/:id", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM exercises WHERE id = $1", [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "Exercice introuvable." });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /* ── SUPPRIMER UN EXERCICE ── */
-app.delete("/exercises/:id", (req, res) => {
-  db.run("DELETE FROM exercises WHERE id = ?", [req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ deleted: this.changes });
-  });
+app.delete("/exercises/:id", async (req, res) => {
+  try {
+    const result = await pool.query("DELETE FROM exercises WHERE id = $1", [req.params.id]);
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /* ── LANCEMENT ── */
