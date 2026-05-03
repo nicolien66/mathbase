@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathBase — Exercices de mathématiques</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- CURSOR -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <a class="logo" href="#" onclick="showView('browse')">Math<em>Base</em></a>
+    <div class="nav-tabs">
+      <button class="tab active" onclick="showView('browse')">Exercices</button>
+      <button class="tab" onclick="showView('add')">Ajouter</button>
+    </div>
+    <button class="nav-cta" onclick="showView('add')">Nouvel exercice →</button>
+  </nav>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ═══════════════════════════════════
+       VUE : LISTE DES EXERCICES
+  ═══════════════════════════════════ -->
+  <div id="view-browse" class="view active">
+
+    <!-- Hero header -->
+    <div class="browse-hero">
+      <div class="browse-hero-inner">
+        <p class="hero-tag">Base de données ouverte</p>
+        <h1>Exercices de<br><em>mathématiques.</em></h1>
+        <p class="hero-sub">Explore, filtre et résous des exercices classés par niveau — du primaire à l'université.</p>
+      </div>
+      <div id="total-badge" class="total-badge">
+        <span id="total-num">—</span>
+        <span class="total-label">exercices</span>
+      </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filter-section">
+      <div class="filter-bar">
+        <button class="filter-btn active" data-level="" onclick="setFilter(this, '')">
+          <span class="filter-dot"></span>Tous les niveaux
+        </button>
+        <button class="filter-btn" data-level="primaire" onclick="setFilter(this, 'primaire')">
+          <span class="filter-dot primaire"></span>Primaire
+        </button>
+        <button class="filter-btn" data-level="college" onclick="setFilter(this, 'college')">
+          <span class="filter-dot college"></span>Collège
+        </button>
+        <button class="filter-btn" data-level="lycee" onclick="setFilter(this, 'lycee')">
+          <span class="filter-dot lycee"></span>Lycée
+        </button>
+        <button class="filter-btn" data-level="universite" onclick="setFilter(this, 'universite')">
+          <span class="filter-dot universite"></span>Université
+        </button>
+      </div>
+    </div>
+
+    <!-- Grille -->
+    <div class="grid-section">
+      <div id="list" class="exercise-grid"></div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="empty-glyph">∅</div>
+        <h3>Aucun exercice trouvé</h3>
+        <p>Essaie un autre filtre ou enrichis la base.</p>
+        <button class="btn-primary" onclick="showView('add')">Ajouter le premier →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       VUE : AJOUTER UN EXERCICE
+  ═══════════════════════════════════ -->
+  <div id="view-add" class="view">
+    <div class="form-page">
+
+      <div class="form-page-header">
+        <p class="hero-tag">Contribuer</p>
+        <h1>Ajouter un<br><em>exercice.</em></h1>
+        <p class="hero-sub">Remplis les champs ci-dessous pour enrichir la base de données.</p>
+      </div>
+
+      <div class="form-card">
+
+        <div class="form-group">
+          <label for="title">Titre de l'exercice</label>
+          <input type="text" id="title" placeholder="Ex : Résolution d'une équation du second degré">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="level">Niveau</label>
+            <select id="level">
+              <option value="primaire">Primaire</option>
+              <option value="college">Collège</option>
+              <option value="lycee" selected>Lycée</option>
+              <option value="universite">Université</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="subject">Matière</label>
+            <select id="subject">
+              <option value="Arithmétique">Arithmétique</option>
+              <option value="Algèbre">Algèbre</option>
+              <option value="Géométrie">Géométrie</option>
+              <option value="Analyse">Analyse</option>
+              <option value="Probabilités">Probabilités</option>
+              <option value="Statistiques">Statistiques</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="difficulty">Difficulté</label>
+            <select id="difficulty">
+              <option value="Facile">Facile</option>
+              <option value="Moyen" selected>Moyen</option>
+              <option value="Difficile">Difficile</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="content">Énoncé</label>
+          <textarea id="content" rows="6" placeholder="Décris l'exercice en détail…"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="solution">Solution <span class="label-hint">— optionnel</span></label>
+          <textarea id="solution" rows="4" placeholder="La correction de l'exercice…"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
+          <button class="btn-primary" onclick="addExercise()">Ajouter l'exercice →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       MODAL DÉTAIL
+  ═══════════════════════════════════ -->
+  <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
