@@ -10,11 +10,9 @@
 </head>
 <body>
 
-  <!-- CURSOR -->
   <div class="cursor" id="cursor"></div>
   <div class="cursor-ring" id="cursor-ring"></div>
 
-  <!-- NAVIGATION -->
   <nav>
     <a class="logo" href="#" onclick="showView('browse')">Math<em>Base</em></a>
     <div class="nav-tabs">
@@ -24,15 +22,12 @@
     <button class="nav-cta" onclick="showView('add')">Nouvel exercice →</button>
   </nav>
 
-  <!-- TOAST -->
   <div id="toast" class="toast"></div>
 
-  <!-- ═══════════════════════════════════
-       VUE : LISTE DES EXERCICES
-  ═══════════════════════════════════ -->
+  <!-- ══════════════════════════════════
+       VUE : LISTE
+  ══════════════════════════════════ -->
   <div id="view-browse" class="view active">
-
-    <!-- Hero header -->
     <div class="browse-hero">
       <div class="browse-hero-inner">
         <p class="hero-tag">Base de données ouverte</p>
@@ -45,7 +40,6 @@
       </div>
     </div>
 
-    <!-- Filtres -->
     <div class="filter-section">
       <div class="filter-bar">
         <button class="filter-btn active" data-level="" onclick="setFilter(this, '')">
@@ -66,7 +60,6 @@
       </div>
     </div>
 
-    <!-- Grille -->
     <div class="grid-section">
       <div id="list" class="exercise-grid"></div>
       <div id="empty-state" class="empty-state" style="display:none">
@@ -78,25 +71,24 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       VUE : AJOUTER UN EXERCICE
-  ═══════════════════════════════════ -->
+  <!-- ══════════════════════════════════
+       VUE : AJOUT + ANALYSE IA
+  ══════════════════════════════════ -->
   <div id="view-add" class="view">
     <div class="form-page">
 
       <div class="form-page-header">
         <p class="hero-tag">Contribuer</p>
         <h1>Ajouter un<br><em>exercice.</em></h1>
-        <p class="hero-sub">Remplis les champs ci-dessous pour enrichir la base de données.</p>
+        <p class="hero-sub">Remplis le formulaire — l'IA classe automatiquement et vérifie les doublons.</p>
       </div>
 
-      <div class="form-card">
-
+      <!-- ÉTAPE 1 : SAISIE -->
+      <div id="step-input" class="form-card">
         <div class="form-group">
           <label for="title">Titre de l'exercice</label>
           <input type="text" id="title" placeholder="Ex : Résolution d'une équation du second degré">
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label for="level">Niveau</label>
@@ -127,28 +119,90 @@
             </select>
           </div>
         </div>
-
         <div class="form-group">
           <label for="content">Énoncé</label>
           <textarea id="content" rows="6" placeholder="Décris l'exercice en détail…"></textarea>
         </div>
-
         <div class="form-group">
           <label for="solution">Solution <span class="label-hint">— optionnel</span></label>
           <textarea id="solution" rows="4" placeholder="La correction de l'exercice…"></textarea>
         </div>
-
         <div class="form-actions">
           <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
-          <button class="btn-primary" onclick="addExercise()">Ajouter l'exercice →</button>
+          <button class="btn-ai" id="btn-analyse" onclick="analyseExercise()">
+            <span class="ai-icon">✦</span> Analyser avec l'IA →
+          </button>
         </div>
+      </div>
+
+      <!-- ÉTAPE 2 : RÉSULTAT IA -->
+      <div id="step-result" class="form-card ai-result-card" style="display:none">
+
+        <!-- Chargement -->
+        <div id="ai-loading" class="ai-loading">
+          <div class="ai-spinner"></div>
+          <div>
+            <div class="ai-loading-title">Analyse en cours…</div>
+            <div class="ai-loading-sub">Mistral examine l'exercice et vérifie les doublons</div>
+          </div>
+        </div>
+
+        <!-- Doublon -->
+        <div id="ai-doublon" style="display:none">
+          <div class="ai-result-header ai-header-error">
+            <span class="ai-result-icon">⚠</span>
+            <div>
+              <div class="ai-result-title">Exercice similaire détecté</div>
+              <div class="ai-result-sub">Un exercice très proche existe déjà dans la base</div>
+            </div>
+          </div>
+          <div class="ai-doublon-detail" id="ai-doublon-detail"></div>
+          <div class="form-actions">
+            <button class="btn-ghost" onclick="backToInput()">← Modifier l'exercice</button>
+            <button class="btn-primary" onclick="forceAdd()">Ajouter quand même</button>
+          </div>
+        </div>
+
+        <!-- Suggestions IA -->
+        <div id="ai-suggestions" style="display:none">
+          <div class="ai-result-header ai-header-success">
+            <span class="ai-result-icon">✦</span>
+            <div>
+              <div class="ai-result-title">Analyse terminée</div>
+              <div class="ai-result-sub">Mistral a classifié l'exercice automatiquement</div>
+            </div>
+          </div>
+
+          <div class="ai-tags-row">
+            <div class="ai-tag-block">
+              <div class="ai-tag-label">Classe</div>
+              <div class="ai-tag-value" id="ai-classe">—</div>
+              <input type="text" id="ai-classe-input" class="ai-edit-input" placeholder="Modifier…">
+            </div>
+            <div class="ai-tag-block">
+              <div class="ai-tag-label">Chapitre</div>
+              <div class="ai-tag-value" id="ai-chapitre">—</div>
+              <input type="text" id="ai-chapitre-input" class="ai-edit-input" placeholder="Modifier…">
+            </div>
+            <div class="ai-tag-block">
+              <div class="ai-tag-label">Difficulté suggérée</div>
+              <div class="ai-tag-value" id="ai-difficulte">—</div>
+            </div>
+          </div>
+
+          <p class="ai-edit-hint">Tu peux modifier la classe et le chapitre avant de confirmer.</p>
+
+          <div class="form-actions">
+            <button class="btn-ghost" onclick="backToInput()">← Modifier</button>
+            <button class="btn-primary" onclick="confirmAdd()">Confirmer et ajouter →</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════
-       MODAL DÉTAIL
-  ═══════════════════════════════════ -->
+  <!-- MODAL -->
   <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <button class="modal-close" onclick="closeModal()">✕</button>
