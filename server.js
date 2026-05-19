@@ -2,6 +2,7 @@ const express    = require("express");
 const { Pool }   = require("pg");
 const bodyParser = require("body-parser");
 const path       = require("path");
+const MISTRAL_API_KEY = process.env.MISTRAL_KEY;
 
 const app  = express();
 const pool = new Pool({
@@ -40,8 +41,8 @@ async function initDB() {
 initDB().catch(err => console.error("Erreur init DB :", err));
 /* ── ANALYSE MISTRAL ── */
 async function analyseWithMistral(title, content, existingExercises) {
-  const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-  if (!MISTRAL_API_KEY) throw new Error("39FGS5Q1OovrLwOdR8EHl4uYXWNQH4a0");
+  const MISTRAL_API_KEY = process.env.MISTRAL_KEY;
+  if (!MISTRAL_API_KEY) throw new Error("Clé MISTRAL_API_KEY manquante.");
 
   // Résumés des exercices existants pour la détection de doublons
   const existingSummary = existingExercises.slice(0, 40).map(e =>
@@ -93,6 +94,42 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication :
   const clean = text.replace(/```json|```/g, "").trim();
   return JSON.parse(clean);
 }
+
+/* ── CORRIGER UNE RÉPONSE (séance) ── */
+app.post("/exercises/correct", async (req, res) => {
+  const { exercise, answer } = req.body;
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+
+  const solutionCtx = exercise.solution ? `\nSOLUTION OFFICIELLE : ${exercise.solution}` : "";
+  const prompt = `Tu es un tuteur en mathématiques bienveillant et pédagogue.\n\nEXERCICE : ${exercise.title}\nÉNONCÉ : ${exercise.content}${solutionCtx}\n\nRÉPONSE DE L'ÉLÈVE : ${answer}\n\nÉvalue la réponse et réponds UNIQUEMENT en JSON valide, sans markdown :\n{\n  "verdict": "correct" | "partial" | "incorrect",\n  "feedback": "explication courte et encourageante (2-3 phrases)",\n  "conseil": "une piste concrète pour progresser (1 phrase)"\n}`;
+
+  try {
+    const mistralRes = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        max_tokens: 400
+      })
+    });
+    if (!mistralRes.ok) {
+      const err = await mistralRes.text();
+      throw new Error("Erreur Mistral : " + err);
+    }
+    const data  = await mistralRes.json();
+    const clean = data.choices[0].message.content.replace(/```json|```/g, "").trim();
+    res.json(JSON.parse(clean));
+  } catch (err) {
+    console.error("Erreur correction:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /* ── ANALYSER UN EXERCICE (avant soumission) ── */
 app.post("/exercises/analyse", async (req, res) => {

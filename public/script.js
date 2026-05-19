@@ -1,7 +1,4 @@
 /* ── CURSEUR PERSONNALISÉ ── */
-// Clé Mistral chargée depuis le serveur
-let MISTRAL_KEY = "";
-fetch("/config").then(r => r.json()).then(d => { MISTRAL_KEY = d.mistralKey; }).catch(() => {});
 const cursor     = document.getElementById('cursor');
 const cursorRing = document.getElementById('cursor-ring');
 let mx = 0, my = 0, rx = 0, ry = 0;
@@ -307,46 +304,30 @@ async function submitAnswer() {
 
   const ex = seanceExercises[seanceIndex];
 
-  // Afficher zone feedback / masquer zone réponse
   document.getElementById("session-answer-zone").style.display = "none";
   document.getElementById("session-feedback").style.display    = "";
   document.getElementById("session-feedback-loading").style.display = "flex";
   document.getElementById("session-feedback-result").style.display  = "none";
 
   try {
-    const solutionCtx = ex.solution ? `\nSOLUTION OFFICIELLE : ${ex.solution}` : "";
-    const prompt = `Tu es un tuteur en mathématiques bienveillant et pédagogue.\n\nEXERCICE : ${ex.title}\nÉNONCÉ : ${ex.content}${solutionCtx}\n\nRÉPONSE DE L'ÉLÈVE : ${answer}\n\nÉvalue la réponse et réponds UNIQUEMENT en JSON valide, sans markdown :\n{\n  "verdict": "correct" | "partial" | "incorrect",\n  "feedback": "explication courte et encourageante (2-3 phrases)",\n  "conseil": "une piste concrète pour progresser (1 phrase)"\n}`;
-
-    const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    const res = await fetch("/exercises/correct", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${MISTRAL_KEY}`
-      },
-      body: JSON.stringify({
-        model: "mistral-small-latest",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.1,
-        max_tokens: 400
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ exercise: ex, answer })
     });
-
-    if (!res.ok) throw new Error("Erreur API Mistral");
-    const data  = await res.json();
-    const raw   = data.choices[0].message.content;
-    const clean = raw.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(clean);
+    if (!res.ok) throw new Error("Erreur serveur (" + res.status + ")");
+    const result = await res.json();
+    if (result.error) throw new Error(result.error);
 
     // Mettre à jour les scores
-    if (result.verdict === "correct")   seanceCorrect++;
-    else if (result.verdict === "partial") seanceCorrect++;   // compté comme correct
-    else                               seanceWrong++;
+    if (result.verdict === "correct" || result.verdict === "partial") seanceCorrect++;
+    else seanceWrong++;
 
     // Afficher le feedback
     const verdictMap = {
-      correct:   { label: "✓ Bonne réponse !",      cls: "correct"   },
-      partial:   { label: "◑ Partiellement correct", cls: "partial"   },
-      incorrect: { label: "✗ Réponse incorrecte",    cls: "incorrect" }
+      correct:   { label: "✓ Bonne réponse !",       cls: "correct"   },
+      partial:   { label: "◑ Partiellement correct",  cls: "partial"   },
+      incorrect: { label: "✗ Réponse incorrecte",     cls: "incorrect" }
     };
     const v = verdictMap[result.verdict] || verdictMap.incorrect;
     const banner = document.getElementById("feedback-verdict-banner");
@@ -363,12 +344,11 @@ async function submitAnswer() {
     document.getElementById("session-feedback-loading").style.display = "none";
     document.getElementById("session-feedback-result").style.display  = "";
 
-    // MàJ scores affichés
     document.getElementById("score-correct").textContent = `✓ ${seanceCorrect}`;
     document.getElementById("score-wrong").textContent   = `✗ ${seanceWrong}`;
 
   } catch(err) {
-    showToast("Erreur lors de la correction IA : " + (err.message || ""), "error");
+    showToast("Erreur lors de la correction : " + (err.message || ""), "error");
     document.getElementById("session-answer-zone").style.display = "";
     document.getElementById("session-feedback").style.display    = "none";
   }
