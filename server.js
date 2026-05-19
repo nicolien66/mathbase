@@ -12,27 +12,36 @@ const pool = new Pool({
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-/* ── CRÉATION TABLE ── */
-pool.query(`
-  CREATE TABLE IF NOT EXISTS exercises (
-    id         SERIAL PRIMARY KEY,
-    title      TEXT    NOT NULL,
-    content    TEXT    NOT NULL,
-    level      TEXT    NOT NULL,
-    subject    TEXT,
-    difficulty TEXT,
-    solution   TEXT,
-    classe     TEXT,
-    chapitre   TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )
-`).then(() => console.log("Base de données prête."))
-  .catch(err => console.error("Erreur création table :", err));
+/* ── CONFIG CLIENT (clé Mistral pour la séance) ── */
+app.get("/config", (req, res) => {
+  res.json({ mistralKey: process.env.MISTRAL_KEY || "" });
+});
 
+/* ── CRÉATION / MIGRATION TABLE ── */
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS exercises (
+      id         SERIAL PRIMARY KEY,
+      title      TEXT    NOT NULL,
+      content    TEXT    NOT NULL,
+      level      TEXT    NOT NULL,
+      subject    TEXT,
+      difficulty TEXT,
+      solution   TEXT,
+      classe     TEXT,
+      chapitre   TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS classe   TEXT`);
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+  console.log("Base de données prête.");
+}
+initDB().catch(err => console.error("Erreur init DB :", err));
 /* ── ANALYSE MISTRAL ── */
 async function analyseWithMistral(title, content, existingExercises) {
   const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
-  if (!MISTRAL_API_KEY) throw new Error("8IcOl6aYiZw1VP9JgpjsPcwi5jN2aInB");
+  if (!MISTRAL_API_KEY) throw new Error("39FGS5Q1OovrLwOdR8EHl4uYXWNQH4a0");
 
   // Résumés des exercices existants pour la détection de doublons
   const existingSummary = existingExercises.slice(0, 40).map(e =>
