@@ -1,370 +1,233 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathBase — Exercices de mathématiques</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathBase</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background:#0b0b09;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+  font-family:'Playfair Display', Georgia, serif;
+}
+
+.stage {
+  position:relative;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  width:100%; height:100%;
+}
+
+.glyph {
+  position:absolute;
+  font-size:min(22rem, 60vw);
+  font-weight:700;
+  color:rgba(200,185,122,0);
+  line-height:1;
+  pointer-events:none;
+  top:50%; left:50%;
+  transform:translate(-50%,-55%);
+  transition:color 2s ease;
+  z-index:0;
+  user-select:none;
+}
+
+.center {
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+  align-items:center; gap:0;
+}
+
+.line {
+  height:1px;
+  background:linear-gradient(to right, transparent, rgba(200,185,122,.6), transparent);
+  width:0;
+  transition:width 1s cubic-bezier(.77,0,.18,1);
+}
+
+.logo-wrap { overflow:hidden; padding:.9rem 0 .4rem; }
+.logo {
+  font-size:clamp(3rem, 10vw, 5.5rem);
+  font-weight:400; letter-spacing:-.03em;
+  color:#f0ece0;
+  opacity:0; transform:translateY(28px);
+  transition:opacity .9s ease, transform .9s cubic-bezier(.22,1,.36,1);
+}
+.logo em { font-style:italic; color:#c8b97a; }
+
+.tagline {
+  font-family:'DM Mono', monospace;
+  font-size:.58rem; letter-spacing:.26em; text-transform:uppercase;
+  color:rgba(200,185,122,0);
+  margin-top:1.2rem;
+  transition:color 1s ease .3s;
+}
+
+.enter-btn {
+  margin-top:3rem;
+  background:none;
+  border:1px solid rgba(200,185,122,0);
+  color:rgba(200,185,122,0);
+  font-family:'DM Mono', monospace;
+  font-size:.65rem; letter-spacing:.22em; text-transform:uppercase;
+  padding:.75rem 2.2rem;
+  border-radius:4px;
+  cursor:pointer;
+  transition:border-color 1s ease .5s, color 1s ease .5s, background .2s, transform .15s;
+}
+.enter-btn:hover {
+  background:rgba(200,185,122,.08);
+  transform:translateY(-1px);
+}
+.enter-btn:active { transform:scale(.97); }
+
+.sparks {
+  position:absolute; inset:0;
+  pointer-events:none; overflow:hidden; z-index:0;
+}
+.spark {
+  position:absolute;
+  border-radius:50%;
+  background:#c8b97a;
+  opacity:0;
+  animation:sparkAnim var(--d) ease var(--delay) infinite;
+}
+@keyframes sparkAnim {
+  0%   { opacity:0; transform:translate(0,0) scale(1); }
+  15%  { opacity:.85; }
+  100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); }
+}
+
+.halo {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:200px; height:200px;
+  border-radius:50%;
+  border:1px solid rgba(200,185,122,0);
+  pointer-events:none; z-index:0;
+  transition:border-color 1.5s ease;
+  animation:haloPulse 4s ease-in-out infinite;
+}
+.halo2 {
+  animation-delay:-2s;
+  width:320px; height:320px;
+}
+@keyframes haloPulse {
+  0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.4; }
+  50%      { transform:translate(-50%,-50%) scale(1.08); opacity:.1; }
+}
+
+body.exiting .stage {
+  animation:exitFade .8s ease forwards;
+}
+@keyframes exitFade {
+  to { opacity:0; transform:scale(1.04); }
+}
+</style>
 </head>
 <body>
+<div class="stage" id="stage">
+  <div class="sparks" id="sparks"></div>
+  <div class="halo"  id="halo1"></div>
+  <div class="halo halo2" id="halo2"></div>
+  <div class="glyph" id="glyph">∑</div>
 
-  <div class="cursor" id="cursor"></div>
-  <div class="cursor-ring" id="cursor-ring"></div>
-
-  <nav>
-    <a class="logo" href="#" onclick="showView('browse')">Math<em>Base</em></a>
-    <div class="nav-tabs">
-      <button class="tab active" onclick="showView('browse')">Exercices</button>
-      <button class="tab" onclick="showView('seance')">Séance</button>
-      <button class="tab" onclick="showView('add')">Ajouter</button>
+  <div class="center">
+    <div class="line" id="line-top"></div>
+    <div class="logo-wrap">
+      <div class="logo" id="logo">Math<em>Base</em></div>
     </div>
-    <button class="nav-cta" onclick="showView('seance')">Démarrer une séance →</button>
-  </nav>
-
-  <div id="toast" class="toast"></div>
-
-  <!-- ══════════════════════════════════
-       VUE : LISTE
-  ══════════════════════════════════ -->
-  <div id="view-browse" class="view active">
-    <div class="browse-hero">
-      <div class="browse-hero-inner">
-        <p class="hero-tag">Base de données ouverte</p>
-        <h1>Exercices de<br><em>mathématiques.</em></h1>
-        <p class="hero-sub">Explore, filtre et résous des exercices classés par niveau — du primaire à l'université.</p>
-      </div>
-      <div id="total-badge" class="total-badge">
-        <span id="total-num">—</span>
-        <span class="total-label">exercices</span>
-      </div>
-    </div>
-
-    <div class="filter-section">
-      <div class="filter-bar">
-        <button class="filter-btn active" data-level="" onclick="setFilter(this, '')">
-          <span class="filter-dot"></span>Tous les niveaux
-        </button>
-        <button class="filter-btn" data-level="primaire" onclick="setFilter(this, 'primaire')">
-          <span class="filter-dot primaire"></span>Primaire
-        </button>
-        <button class="filter-btn" data-level="college" onclick="setFilter(this, 'college')">
-          <span class="filter-dot college"></span>Collège
-        </button>
-        <button class="filter-btn" data-level="lycee" onclick="setFilter(this, 'lycee')">
-          <span class="filter-dot lycee"></span>Lycée
-        </button>
-        <button class="filter-btn" data-level="universite" onclick="setFilter(this, 'universite')">
-          <span class="filter-dot universite"></span>Université
-        </button>
-      </div>
-    </div>
-
-    <div class="grid-section">
-      <div id="list" class="exercise-grid"></div>
-      <div id="empty-state" class="empty-state" style="display:none">
-        <div class="empty-glyph">∅</div>
-        <h3>Aucun exercice trouvé</h3>
-        <p>Essaie un autre filtre ou enrichis la base.</p>
-        <button class="btn-primary" onclick="showView('add')">Ajouter le premier →</button>
-      </div>
-    </div>
+    <div class="line" id="line-bot"></div>
+    <div class="tagline" id="tagline">Exercices · Intelligence artificielle</div>
+    <button class="enter-btn" id="btn" onclick="enter()">Entrer</button>
   </div>
+</div>
 
-  <!-- ══════════════════════════════════
-       VUE : SÉANCE
-  ══════════════════════════════════ -->
-  <div id="view-seance" class="view">
+<script>
+function intro() {
+  const lineTop = document.getElementById('line-top');
+  const lineBot = document.getElementById('line-bot');
+  const logo    = document.getElementById('logo');
+  const tagline = document.getElementById('tagline');
+  const btn     = document.getElementById('btn');
+  const glyph   = document.getElementById('glyph');
+  const halo1   = document.getElementById('halo1');
+  const halo2   = document.getElementById('halo2');
 
-    <!-- ÉTAPE 1 : CHOIX NIVEAU / DIFFICULTÉ -->
-    <div id="seance-welcome" class="seance-page">
-      <div class="seance-hero">
-        <p class="hero-tag">Tutorat intelligent</p>
-        <h1>Séance de<br><em>révision.</em></h1>
-        <p class="hero-sub">Choisis ton niveau — l'IA pose les exercices de MathBase et corrige chacune de tes réponses.</p>
-      </div>
+  // reset
+  lineTop.style.width = '0';
+  lineBot.style.width = '0';
+  logo.style.opacity = '0';
+  logo.style.transform = 'translateY(28px)';
+  tagline.style.color = 'rgba(200,185,122,0)';
+  btn.style.borderColor = 'rgba(200,185,122,0)';
+  btn.style.color = 'rgba(200,185,122,0)';
+  glyph.style.color = 'rgba(200,185,122,0)';
+  halo1.style.borderColor = 'rgba(200,185,122,0)';
+  halo2.style.borderColor = 'rgba(200,185,122,0)';
 
-      <div class="seance-config">
-        <div class="seance-config-block">
-          <p class="seance-section-label">NIVEAU</p>
-          <div class="seance-level-grid">
-            <button class="seance-level-card active" data-level="" onclick="selectLevel(this, '')">
-              <span class="seance-level-dot" style="background:var(--muted)"></span>
-              <span class="seance-level-name">Tous niveaux</span>
-              <span class="seance-level-hint">mix complet</span>
-            </button>
-            <button class="seance-level-card" data-level="primaire" onclick="selectLevel(this, 'primaire')">
-              <span class="seance-level-dot" style="background:var(--primaire)"></span>
-              <span class="seance-level-name">Primaire</span>
-              <span class="seance-level-hint">CM1 – CM2</span>
-            </button>
-            <button class="seance-level-card" data-level="college" onclick="selectLevel(this, 'college')">
-              <span class="seance-level-dot" style="background:var(--college)"></span>
-              <span class="seance-level-name">Collège</span>
-              <span class="seance-level-hint">6ème – 3ème</span>
-            </button>
-            <button class="seance-level-card" data-level="lycee" onclick="selectLevel(this, 'lycee')">
-              <span class="seance-level-dot" style="background:var(--lycee)"></span>
-              <span class="seance-level-name">Lycée</span>
-              <span class="seance-level-hint">2nde – Terminale</span>
-            </button>
-            <button class="seance-level-card" data-level="universite" onclick="selectLevel(this, 'universite')">
-              <span class="seance-level-dot" style="background:var(--universite)"></span>
-              <span class="seance-level-name">Université</span>
-              <span class="seance-level-hint">Licence 1–3</span>
-            </button>
-          </div>
-        </div>
+  setTimeout(() => {
+    glyph.style.color = 'rgba(200,185,122,.03)';
+    halo1.style.borderColor = 'rgba(200,185,122,.12)';
+    halo2.style.borderColor = 'rgba(200,185,122,.07)';
+    lineTop.style.width = '300px';
+    lineBot.style.width = '300px';
+  }, 400);
 
-        <div class="seance-config-block">
-          <p class="seance-section-label">DIFFICULTÉ</p>
-          <div class="seance-diff-row">
-            <button class="seance-diff-btn active" data-diff="" onclick="selectDiff(this, '')">Toutes</button>
-            <button class="seance-diff-btn" data-diff="Facile" onclick="selectDiff(this, 'Facile')">Facile</button>
-            <button class="seance-diff-btn" data-diff="Moyen" onclick="selectDiff(this, 'Moyen')">Moyen</button>
-            <button class="seance-diff-btn" data-diff="Difficile" onclick="selectDiff(this, 'Difficile')">Difficile</button>
-          </div>
-        </div>
+  setTimeout(() => {
+    logo.style.opacity = '1';
+    logo.style.transform = 'translateY(0)';
+  }, 1100);
 
-        <button class="seance-start-btn" id="seance-start-btn" onclick="startSeance()">
-          <span id="seance-start-label">Démarrer la séance →</span>
-          <div id="seance-start-spinner" class="ai-spinner" style="display:none;width:20px;height:20px;border-width:2px"></div>
-        </button>
-        <p class="seance-start-hint">Les exercices sont mélangés aléatoirement</p>
-      </div>
-    </div>
+  setTimeout(() => {
+    tagline.style.color = 'rgba(200,185,122,.5)';
+  }, 1900);
 
-    <!-- ÉTAPE 2 : EXERCICE EN COURS -->
-    <div id="seance-session" style="display:none" class="seance-page">
-      <div class="session-header">
-        <div class="session-progress-wrap">
-          <div class="session-progress-bar"><div class="session-progress-fill" id="session-progress-fill"></div></div>
-          <div class="session-progress-label" id="session-progress-label">1 / 10</div>
-        </div>
-        <div class="session-score-row">
-          <span class="session-score-pill correct" id="score-correct">✓ 0</span>
-          <span class="session-score-pill wrong"   id="score-wrong">✗ 0</span>
-          <span class="session-score-pill skip"    id="score-skip">→ 0</span>
-        </div>
-      </div>
+  setTimeout(() => {
+    btn.style.borderColor = 'rgba(200,185,122,.35)';
+    btn.style.color = 'rgba(200,185,122,.7)';
+  }, 2400);
+}
 
-      <div class="session-body">
-        <div class="session-card" id="session-card">
-          <div class="session-card-tags" id="session-card-tags"></div>
-          <div class="session-card-num"  id="session-card-num"></div>
-          <h2 class="session-card-title" id="session-card-title"></h2>
-          <div class="session-card-content" id="session-card-content"></div>
+// Particules continues
+const sparksEl = document.getElementById('sparks');
 
-          <!-- Zone réponse -->
-          <div class="session-answer-zone" id="session-answer-zone">
-            <label class="session-answer-label">TA RÉPONSE</label>
-            <textarea id="session-answer" class="session-answer-input" rows="4" placeholder="Écris ta réponse ici…"></textarea>
-            <div class="session-actions">
-              <button class="btn-ghost" onclick="skipExercise()">Passer →</button>
-              <button class="btn-ai" onclick="submitAnswer()">
-                <span class="ai-icon">✦</span> Corriger avec l'IA
-              </button>
-            </div>
-          </div>
+function spawnSpark() {
+  const s = document.createElement('div');
+  s.className = 'spark';
+  const size = .8 + Math.random() * 1.8;
+  s.style.width  = size + 'px';
+  s.style.height = size + 'px';
+  const cx = window.innerWidth  / 2 + (Math.random() - .5) * 60;
+  const cy = window.innerHeight / 2 + (Math.random() - .5) * 40;
+  s.style.left = cx + 'px';
+  s.style.top  = cy + 'px';
+  const angle = Math.random() * Math.PI * 2;
+  const dist  = 80 + Math.random() * 200;
+  const dur   = 2 + Math.random() * 2;
+  s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+  s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+  s.style.setProperty('--d', dur + 's');
+  s.style.setProperty('--delay', '0s');
+  sparksEl.appendChild(s);
+  setTimeout(() => s.remove(), dur * 1000);
+}
 
-          <!-- Feedback IA -->
-          <div class="session-feedback" id="session-feedback" style="display:none">
-            <div id="session-feedback-loading" class="ai-loading">
-              <div class="ai-spinner"></div>
-              <div>
-                <div class="ai-loading-title">Correction en cours…</div>
-                <div class="ai-loading-sub">L'IA analyse ta réponse</div>
-              </div>
-            </div>
-            <div id="session-feedback-result" style="display:none">
-              <div class="feedback-verdict-banner" id="feedback-verdict-banner"></div>
-              <div class="feedback-body">
-                <div class="feedback-section">
-                  <div class="feedback-section-label">FEEDBACK</div>
-                  <div class="feedback-section-text" id="feedback-text"></div>
-                </div>
-                <div class="feedback-section">
-                  <div class="feedback-section-label">CONSEIL</div>
-                  <div class="feedback-section-text feedback-conseil" id="feedback-conseil"></div>
-                </div>
-              </div>
-              <div class="session-actions" style="margin-top:1.5rem">
-                <button class="btn-primary" id="session-next-btn" onclick="nextExercise()">Exercice suivant →</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+const sparkInterval = setInterval(spawnSpark, 180);
 
-    <!-- ÉTAPE 3 : RÉSULTATS -->
-    <div id="seance-results" style="display:none" class="seance-page seance-results-page">
-      <div class="results-glyph">∑</div>
-      <div class="results-score" id="results-score">—</div>
-      <div class="results-score-label">SCORE DE LA SÉANCE</div>
-      <div class="results-title" id="results-title"></div>
-      <div class="results-sub" id="results-sub"></div>
-      <div class="results-detail" id="results-detail"></div>
-      <div class="results-pills">
-        <div class="results-pill">
-          <span class="results-pill-dot" style="background:var(--facile)"></span>
-          <span class="results-pill-text"><span class="results-pill-num" id="res-correct">0</span> correcte(s)</span>
-        </div>
-        <div class="results-pill">
-          <span class="results-pill-dot" style="background:var(--danger)"></span>
-          <span class="results-pill-text"><span class="results-pill-num" id="res-wrong">0</span> incorrecte(s)</span>
-        </div>
-        <div class="results-pill">
-          <span class="results-pill-dot" style="background:var(--muted)"></span>
-          <span class="results-pill-text"><span class="results-pill-num" id="res-skip">0</span> passé(s)</span>
-        </div>
-      </div>
-      <button class="btn-primary" style="width:100%;max-width:360px;justify-content:center;padding:1rem" onclick="restartSeance()">Nouvelle séance →</button>
-      <button class="btn-ghost"   style="width:100%;max-width:360px;justify-content:center;margin-top:0.75rem" onclick="showView('seance')">← Choisir un niveau</button>
-    </div>
+function enter() {
+  clearInterval(sparkInterval);
+  document.body.classList.add('exiting');
+  setTimeout(() => {
+    window.location.href = 'app.html';
+  }, 800);
+}
 
-  </div>
-
-  <!-- ══════════════════════════════════
-       VUE : AJOUT + ANALYSE IA
-  ══════════════════════════════════ -->
-  <div id="view-add" class="view">
-    <div class="form-page">
-
-      <div class="form-page-header">
-        <p class="hero-tag">Contribuer</p>
-        <h1>Ajouter un<br><em>exercice.</em></h1>
-        <p class="hero-sub">Remplis le formulaire — l'IA classe automatiquement et vérifie les doublons.</p>
-      </div>
-
-      <!-- ÉTAPE 1 : SAISIE -->
-      <div id="step-input" class="form-card">
-        <div class="form-group">
-          <label for="title">Titre de l'exercice</label>
-          <input type="text" id="title" placeholder="Ex : Résolution d'une équation du second degré">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="level">Niveau</label>
-            <select id="level">
-              <option value="primaire">Primaire</option>
-              <option value="college">Collège</option>
-              <option value="lycee" selected>Lycée</option>
-              <option value="universite">Université</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="subject">Matière</label>
-            <select id="subject">
-              <option value="Arithmétique">Arithmétique</option>
-              <option value="Algèbre">Algèbre</option>
-              <option value="Géométrie">Géométrie</option>
-              <option value="Analyse">Analyse</option>
-              <option value="Probabilités">Probabilités</option>
-              <option value="Statistiques">Statistiques</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="difficulty">Difficulté</label>
-            <select id="difficulty">
-              <option value="Facile">Facile</option>
-              <option value="Moyen" selected>Moyen</option>
-              <option value="Difficile">Difficile</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="content">Énoncé</label>
-          <textarea id="content" rows="6" placeholder="Décris l'exercice en détail…"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="solution">Solution <span class="label-hint">— optionnel</span></label>
-          <textarea id="solution" rows="4" placeholder="La correction de l'exercice…"></textarea>
-        </div>
-        <div class="form-actions">
-          <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
-          <button class="btn-ai" id="btn-analyse" onclick="analyseExercise()">
-            <span class="ai-icon">✦</span> Analyser avec l'IA →
-          </button>
-        </div>
-      </div>
-
-      <!-- ÉTAPE 2 : RÉSULTAT IA -->
-      <div id="step-result" class="form-card ai-result-card" style="display:none">
-
-        <!-- Chargement -->
-        <div id="ai-loading" class="ai-loading">
-          <div class="ai-spinner"></div>
-          <div>
-            <div class="ai-loading-title">Analyse en cours…</div>
-            <div class="ai-loading-sub">Mistral examine l'exercice et vérifie les doublons</div>
-          </div>
-        </div>
-
-        <!-- Doublon -->
-        <div id="ai-doublon" style="display:none">
-          <div class="ai-result-header ai-header-error">
-            <span class="ai-result-icon">⚠</span>
-            <div>
-              <div class="ai-result-title">Exercice similaire détecté</div>
-              <div class="ai-result-sub">Un exercice très proche existe déjà dans la base</div>
-            </div>
-          </div>
-          <div class="ai-doublon-detail" id="ai-doublon-detail"></div>
-          <div class="form-actions">
-            <button class="btn-ghost" onclick="backToInput()">← Modifier l'exercice</button>
-            <button class="btn-primary" onclick="forceAdd()">Ajouter quand même</button>
-          </div>
-        </div>
-
-        <!-- Suggestions IA -->
-        <div id="ai-suggestions" style="display:none">
-          <div class="ai-result-header ai-header-success">
-            <span class="ai-result-icon">✦</span>
-            <div>
-              <div class="ai-result-title">Analyse terminée</div>
-              <div class="ai-result-sub">Mistral a classifié l'exercice automatiquement</div>
-            </div>
-          </div>
-
-          <div class="ai-tags-row">
-            <div class="ai-tag-block">
-              <div class="ai-tag-label">Classe</div>
-              <div class="ai-tag-value" id="ai-classe">—</div>
-              <input type="text" id="ai-classe-input" class="ai-edit-input" placeholder="Modifier…">
-            </div>
-            <div class="ai-tag-block">
-              <div class="ai-tag-label">Chapitre</div>
-              <div class="ai-tag-value" id="ai-chapitre">—</div>
-              <input type="text" id="ai-chapitre-input" class="ai-edit-input" placeholder="Modifier…">
-            </div>
-            <div class="ai-tag-block">
-              <div class="ai-tag-label">Difficulté suggérée</div>
-              <div class="ai-tag-value" id="ai-difficulte">—</div>
-            </div>
-          </div>
-
-          <p class="ai-edit-hint">Tu peux modifier la classe et le chapitre avant de confirmer.</p>
-
-          <div class="form-actions">
-            <button class="btn-ghost" onclick="backToInput()">← Modifier</button>
-            <button class="btn-primary" onclick="confirmAdd()">Confirmer et ajouter →</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL -->
-  <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
-    <div class="modal" onclick="event.stopPropagation()">
-      <button class="modal-close" onclick="closeModal()">✕</button>
-      <div id="modal-content"></div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
+intro();
+</script>
 </body>
 </html>

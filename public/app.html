@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathBase — Exercices de mathématiques</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <nav>
+    <a class="logo" href="#" onclick="showView('browse')">Math<em>Base</em></a>
+    <div class="nav-tabs">
+      <button class="tab active" onclick="showView('browse')">Exercices</button>
+      <button class="tab" onclick="showView('seance')">Séance</button>
+      <button class="tab" onclick="showView('add')">Ajouter</button>
+    </div>
+    <button class="nav-cta" onclick="showView('seance')">Démarrer une séance →</button>
+  </nav>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- ══════════════════════════════════
+       VUE : LISTE
+  ══════════════════════════════════ -->
+  <div id="view-browse" class="view active">
+    <div class="browse-hero">
+      <div class="browse-hero-inner">
+        <p class="hero-tag">Base de données ouverte</p>
+        <h1>Exercices de<br><em>mathématiques.</em></h1>
+        <p class="hero-sub">Explore, filtre et résous des exercices classés par niveau — du primaire à l'université.</p>
+      </div>
+      <div id="total-badge" class="total-badge">
+        <span id="total-num">—</span>
+        <span class="total-label">exercices</span>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-bar">
+        <button class="filter-btn active" data-level="" onclick="setFilter(this, '')">
+          <span class="filter-dot"></span>Tous les niveaux
+        </button>
+        <button class="filter-btn" data-level="primaire" onclick="setFilter(this, 'primaire')">
+          <span class="filter-dot primaire"></span>Primaire
+        </button>
+        <button class="filter-btn" data-level="college" onclick="setFilter(this, 'college')">
+          <span class="filter-dot college"></span>Collège
+        </button>
+        <button class="filter-btn" data-level="lycee" onclick="setFilter(this, 'lycee')">
+          <span class="filter-dot lycee"></span>Lycée
+        </button>
+        <button class="filter-btn" data-level="universite" onclick="setFilter(this, 'universite')">
+          <span class="filter-dot universite"></span>Université
+        </button>
+      </div>
+    </div>
+
+    <div class="grid-section">
+      <div id="list" class="exercise-grid"></div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="empty-glyph">∅</div>
+        <h3>Aucun exercice trouvé</h3>
+        <p>Essaie un autre filtre ou enrichis la base.</p>
+        <button class="btn-primary" onclick="showView('add')">Ajouter le premier →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       VUE : SÉANCE
+  ══════════════════════════════════ -->
+  <div id="view-seance" class="view">
+
+    <!-- ÉTAPE 1 : CHOIX NIVEAU / DIFFICULTÉ -->
+    <div id="seance-welcome" class="seance-page">
+      <div class="seance-hero">
+        <p class="hero-tag">Tutorat intelligent</p>
+        <h1>Séance de<br><em>révision.</em></h1>
+        <p class="hero-sub">Choisis ton niveau — l'IA pose les exercices de MathBase et corrige chacune de tes réponses.</p>
+      </div>
+
+      <div class="seance-config">
+        <div class="seance-config-block">
+          <p class="seance-section-label">NIVEAU</p>
+          <div class="seance-level-grid">
+            <button class="seance-level-card active" data-level="" onclick="selectLevel(this, '')">
+              <span class="seance-level-dot" style="background:var(--muted)"></span>
+              <span class="seance-level-name">Tous niveaux</span>
+              <span class="seance-level-hint">mix complet</span>
+            </button>
+            <button class="seance-level-card" data-level="primaire" onclick="selectLevel(this, 'primaire')">
+              <span class="seance-level-dot" style="background:var(--primaire)"></span>
+              <span class="seance-level-name">Primaire</span>
+              <span class="seance-level-hint">CM1 – CM2</span>
+            </button>
+            <button class="seance-level-card" data-level="college" onclick="selectLevel(this, 'college')">
+              <span class="seance-level-dot" style="background:var(--college)"></span>
+              <span class="seance-level-name">Collège</span>
+              <span class="seance-level-hint">6ème – 3ème</span>
+            </button>
+            <button class="seance-level-card" data-level="lycee" onclick="selectLevel(this, 'lycee')">
+              <span class="seance-level-dot" style="background:var(--lycee)"></span>
+              <span class="seance-level-name">Lycée</span>
+              <span class="seance-level-hint">2nde – Terminale</span>
+            </button>
+            <button class="seance-level-card" data-level="universite" onclick="selectLevel(this, 'universite')">
+              <span class="seance-level-dot" style="background:var(--universite)"></span>
+              <span class="seance-level-name">Université</span>
+              <span class="seance-level-hint">Licence 1–3</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="seance-config-block">
+          <p class="seance-section-label">DIFFICULTÉ</p>
+          <div class="seance-diff-row">
+            <button class="seance-diff-btn active" data-diff="" onclick="selectDiff(this, '')">Toutes</button>
+            <button class="seance-diff-btn" data-diff="Facile" onclick="selectDiff(this, 'Facile')">Facile</button>
+            <button class="seance-diff-btn" data-diff="Moyen" onclick="selectDiff(this, 'Moyen')">Moyen</button>
+            <button class="seance-diff-btn" data-diff="Difficile" onclick="selectDiff(this, 'Difficile')">Difficile</button>
+          </div>
+        </div>
+
+        <button class="seance-start-btn" id="seance-start-btn" onclick="startSeance()">
+          <span id="seance-start-label">Démarrer la séance →</span>
+          <div id="seance-start-spinner" class="ai-spinner" style="display:none;width:20px;height:20px;border-width:2px"></div>
+        </button>
+        <p class="seance-start-hint">Les exercices sont mélangés aléatoirement</p>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 2 : EXERCICE EN COURS -->
+    <div id="seance-session" style="display:none" class="seance-page">
+      <div class="session-header">
+        <div class="session-progress-wrap">
+          <div class="session-progress-bar"><div class="session-progress-fill" id="session-progress-fill"></div></div>
+          <div class="session-progress-label" id="session-progress-label">1 / 10</div>
+        </div>
+        <div class="session-score-row">
+          <span class="session-score-pill correct" id="score-correct">✓ 0</span>
+          <span class="session-score-pill wrong"   id="score-wrong">✗ 0</span>
+          <span class="session-score-pill skip"    id="score-skip">→ 0</span>
+        </div>
+      </div>
+
+      <div class="session-body">
+        <div class="session-card" id="session-card">
+          <div class="session-card-tags" id="session-card-tags"></div>
+          <div class="session-card-num"  id="session-card-num"></div>
+          <h2 class="session-card-title" id="session-card-title"></h2>
+          <div class="session-card-content" id="session-card-content"></div>
+
+          <!-- Zone réponse -->
+          <div class="session-answer-zone" id="session-answer-zone">
+            <label class="session-answer-label">TA RÉPONSE</label>
+            <textarea id="session-answer" class="session-answer-input" rows="4" placeholder="Écris ta réponse ici…"></textarea>
+            <div class="session-actions">
+              <button class="btn-ghost" onclick="skipExercise()">Passer →</button>
+              <button class="btn-ai" onclick="submitAnswer()">
+                <span class="ai-icon">✦</span> Corriger avec l'IA
+              </button>
+            </div>
+          </div>
+
+          <!-- Feedback IA -->
+          <div class="session-feedback" id="session-feedback" style="display:none">
+            <div id="session-feedback-loading" class="ai-loading">
+              <div class="ai-spinner"></div>
+              <div>
+                <div class="ai-loading-title">Correction en cours…</div>
+                <div class="ai-loading-sub">L'IA analyse ta réponse</div>
+              </div>
+            </div>
+            <div id="session-feedback-result" style="display:none">
+              <div class="feedback-verdict-banner" id="feedback-verdict-banner"></div>
+              <div class="feedback-body">
+                <div class="feedback-section">
+                  <div class="feedback-section-label">FEEDBACK</div>
+                  <div class="feedback-section-text" id="feedback-text"></div>
+                </div>
+                <div class="feedback-section">
+                  <div class="feedback-section-label">CONSEIL</div>
+                  <div class="feedback-section-text feedback-conseil" id="feedback-conseil"></div>
+                </div>
+              </div>
+              <div class="session-actions" style="margin-top:1.5rem">
+                <button class="btn-primary" id="session-next-btn" onclick="nextExercise()">Exercice suivant →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 3 : RÉSULTATS -->
+    <div id="seance-results" style="display:none" class="seance-page seance-results-page">
+      <div class="results-glyph">∑</div>
+      <div class="results-score" id="results-score">—</div>
+      <div class="results-score-label">SCORE DE LA SÉANCE</div>
+      <div class="results-title" id="results-title"></div>
+      <div class="results-sub" id="results-sub"></div>
+      <div class="results-detail" id="results-detail"></div>
+      <div class="results-pills">
+        <div class="results-pill">
+          <span class="results-pill-dot" style="background:var(--facile)"></span>
+          <span class="results-pill-text"><span class="results-pill-num" id="res-correct">0</span> correcte(s)</span>
+        </div>
+        <div class="results-pill">
+          <span class="results-pill-dot" style="background:var(--danger)"></span>
+          <span class="results-pill-text"><span class="results-pill-num" id="res-wrong">0</span> incorrecte(s)</span>
+        </div>
+        <div class="results-pill">
+          <span class="results-pill-dot" style="background:var(--muted)"></span>
+          <span class="results-pill-text"><span class="results-pill-num" id="res-skip">0</span> passé(s)</span>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;max-width:360px;justify-content:center;padding:1rem" onclick="restartSeance()">Nouvelle séance →</button>
+      <button class="btn-ghost"   style="width:100%;max-width:360px;justify-content:center;margin-top:0.75rem" onclick="showView('seance')">← Choisir un niveau</button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════
+       VUE : AJOUT + ANALYSE IA
+  ══════════════════════════════════ -->
+  <div id="view-add" class="view">
+    <div class="form-page">
+
+      <div class="form-page-header">
+        <p class="hero-tag">Contribuer</p>
+        <h1>Ajouter un<br><em>exercice.</em></h1>
+        <p class="hero-sub">Remplis le formulaire — l'IA classe automatiquement et vérifie les doublons.</p>
+      </div>
+
+      <!-- ÉTAPE 1 : SAISIE -->
+      <div id="step-input" class="form-card">
+        <div class="form-group">
+          <label for="title">Titre de l'exercice</label>
+          <input type="text" id="title" placeholder="Ex : Résolution d'une équation du second degré">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="level">Niveau</label>
+            <select id="level">
+              <option value="primaire">Primaire</option>
+              <option value="college">Collège</option>
+              <option value="lycee" selected>Lycée</option>
+              <option value="universite">Université</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="subject">Matière</label>
+            <select id="subject">
+              <option value="Arithmétique">Arithmétique</option>
+              <option value="Algèbre">Algèbre</option>
+              <option value="Géométrie">Géométrie</option>
+              <option value="Analyse">Analyse</option>
+              <option value="Probabilités">Probabilités</option>
+              <option value="Statistiques">Statistiques</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="difficulty">Difficulté</label>
+            <select id="difficulty">
+              <option value="Facile">Facile</option>
+              <option value="Moyen" selected>Moyen</option>
+              <option value="Difficile">Difficile</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="content">Énoncé</label>
+          <textarea id="content" rows="6" placeholder="Décris l'exercice en détail…"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="solution">Solution <span class="label-hint">— optionnel</span></label>
+          <textarea id="solution" rows="4" placeholder="La correction de l'exercice…"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
+          <button class="btn-ai" id="btn-analyse" onclick="analyseExercise()">
+            <span class="ai-icon">✦</span> Analyser avec l'IA →
+          </button>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 : RÉSULTAT IA -->
+      <div id="step-result" class="form-card ai-result-card" style="display:none">
+
+        <!-- Chargement -->
+        <div id="ai-loading" class="ai-loading">
+          <div class="ai-spinner"></div>
+          <div>
+            <div class="ai-loading-title">Analyse en cours…</div>
+            <div class="ai-loading-sub">Mistral examine l'exercice et vérifie les doublons</div>
+          </div>
+        </div>
+
+        <!-- Doublon -->
+        <div id="ai-doublon" style="display:none">
+          <div class="ai-result-header ai-header-error">
+            <span class="ai-result-icon">⚠</span>
+            <div>
+              <div class="ai-result-title">Exercice similaire détecté</div>
+              <div class="ai-result-sub">Un exercice très proche existe déjà dans la base</div>
+            </div>
+          </div>
+          <div class="ai-doublon-detail" id="ai-doublon-detail"></div>
+          <div class="form-actions">
+            <button class="btn-ghost" onclick="backToInput()">← Modifier l'exercice</button>
+            <button class="btn-primary" onclick="forceAdd()">Ajouter quand même</button>
+          </div>
+        </div>
+
+        <!-- Suggestions IA -->
+        <div id="ai-suggestions" style="display:none">
+          <div class="ai-result-header ai-header-success">
+            <span class="ai-result-icon">✦</span>
+            <div>
+              <div class="ai-result-title">Analyse terminée</div>
+              <div class="ai-result-sub">Mistral a classifié l'exercice automatiquement</div>
+            </div>
+          </div>
+
+          <div class="ai-tags-row">
+            <div class="ai-tag-block">
+              <div class="ai-tag-label">Classe</div>
+              <div class="ai-tag-value" id="ai-classe">—</div>
+              <input type="text" id="ai-classe-input" class="ai-edit-input" placeholder="Modifier…">
+            </div>
+            <div class="ai-tag-block">
+              <div class="ai-tag-label">Chapitre</div>
+              <div class="ai-tag-value" id="ai-chapitre">—</div>
+              <input type="text" id="ai-chapitre-input" class="ai-edit-input" placeholder="Modifier…">
+            </div>
+            <div class="ai-tag-block">
+              <div class="ai-tag-label">Difficulté suggérée</div>
+              <div class="ai-tag-value" id="ai-difficulte">—</div>
+            </div>
+          </div>
+
+          <p class="ai-edit-hint">Tu peux modifier la classe et le chapitre avant de confirmer.</p>
+
+          <div class="form-actions">
+            <button class="btn-ghost" onclick="backToInput()">← Modifier</button>
+            <button class="btn-primary" onclick="confirmAdd()">Confirmer et ajouter →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
