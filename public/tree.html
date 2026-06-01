@@ -210,37 +210,37 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 const TREE_DATA = [
   { id:'nombres', label:'NOMBRES', color:'#7ab4c8',
     subs:[
-      { label:'Entiers & décimaux', themes:['Entiers naturels','Entiers relatifs','Décimaux','Fractions','Pourcentages'] },
-      { label:'Opérations',         themes:['Addition / Soustraction','Multiplication','Division','Priorités','Puissances'] },
-      { label:'Ensembles',          themes:['ℕ, ℤ, ℚ, ℝ','Irrationnels','Nombres complexes','Valeur absolue','Intervalles'] },
+      { label:'Entiers & décimaux',
+        themes:['Écriture d\'un nombre décimal','Multiplier par 10, 100, 1000','Diviser par 10, 100, 1000'] },
+      { label:'Fractions',
+        themes:['Visualiser les fractions','Écriture fractionnaire et décimale','Addition et soustraction de fractions','Proportion d\'une quantité'] },
+      { label:'Longueur',
+        themes:['Convertir les unités de longueur','Calculer des périmètres'] },
+      { label:'Aires',
+        themes:['Visualiser les aires','Convertir les unités d\'aires','Calculer des aires'] },
+      { label:'Repérage temps & durées',
+        themes:['Lire l\'heure sur une horloge','Mettre l\'heure sur une horloge','Conversions de durées'] },
+      { label:'Proportionnalité',
+        themes:['Reconnaître une situation proportionnelle','Calculer avec un tableau de proportionnalité','Utiliser la règle de trois','Calculer un pourcentage'] },
     ]
   },
   { id:'algebre', label:'ALGÈBRE', color:'#c8a07a',
-    subs:[
-      { label:'Calcul littéral',    themes:['Développer','Factoriser','Identités remarq.','Expressions','Simplification'] },
-      { label:'Équations',          themes:['1er degré','2nd degré','Systèmes','Inéquations','Équations produits'] },
-      { label:'Suites',             themes:['Arithmétiques','Géométriques','Terme général','Somme','Convergence'] },
-    ]
+    subs:[]
   },
   { id:'geometrie', label:'GÉOMÉTRIE', color:'#a07ac8',
     subs:[
-      { label:'Géo. plane',         themes:['Angles','Triangles','Quadrilatères','Cercle','Symétries'] },
-      { label:'Mesures',            themes:['Périmètres','Aires','Volumes','Conversions','Homothétie'] },
-      { label:'Géo. analytique',    themes:['Vecteurs','Droites','Cercles','Produit scalaire','Trigonométrie'] },
+      { label:'Géométrie', themes:['Codage géométrique','Représenter des figures','Connaître les solides'] },
     ]
   },
   { id:'fonctions', label:'FONCTIONS', color:'#7ac8a0',
-    subs:[
-      { label:'Fonctions de base',  themes:['Linéaires','Affines','2nd degré','Valeur abs.','Homographiques'] },
-      { label:'Variations',         themes:['Dérivation','Tableau de signe','Extrema','Convexité','Asymptotes'] },
-      { label:'Fonctions avancées', themes:['Exponentielle','Logarithme','Trigo. circulaire','Primitives','Intégrales'] },
-    ]
+    subs:[]
   },
-  { id:'proba', label:'PROBA & STATS', color:'#c87a9a',
+  { id:'proba', label:'PROBABILITÉS', color:'#c87a9a',
+    subs:[]
+  },
+  { id:'stats', label:'STATISTIQUES', color:'#e8a87c',
     subs:[
-      { label:'Statistiques',       themes:['Effectifs','Moyenne','Médiane','Écart-type','Quartiles'] },
-      { label:'Probabilités',       themes:['Événements','Calcul de proba','Arbres','Conditionnelle','Indépendance'] },
-      { label:'Lois',               themes:['Loi binomiale','Loi normale','Espérance','Fluctuation','Intervalle conf.'] },
+      { label:'Organisation des données', themes:['Extraire des données d\'un tableau','Lire un graphique','Interpréter des données'] },
     ]
   },
 ];
