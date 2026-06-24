@@ -200,6 +200,9 @@ let seanceIndex      = 0;
 let seanceCorrect    = 0;
 let seanceWrong      = 0;
 let seanceSkipped    = 0;
+let seanceHistory    = [];   // par exercice : { answer, result, skipped } ou null
+let seanceMax        = 0;    // exercice le plus loin atteint
+let isTurning        = false;
 
 function resetSeanceWelcome() {
   document.getElementById("seance-welcome").style.display = "";
@@ -245,14 +248,16 @@ async function startSeance() {
 
     // Mélange aléatoire
     seanceExercises = [...data].sort(() => Math.random() - 0.5);
+    seanceHistory = seanceExercises.map(() => null);
     seanceIndex   = 0;
+    seanceMax     = 0;
     seanceCorrect = 0;
     seanceWrong   = 0;
     seanceSkipped = 0;
 
     document.getElementById("seance-welcome").style.display = "none";
     document.getElementById("seance-session").style.display = "";
-    renderExercise();
+    paintAll();
 
   } catch {
     showToast("Erreur de connexion au serveur.", "error");
@@ -263,21 +268,17 @@ async function startSeance() {
   }
 }
 
-function renderExercise() {
-  const ex    = seanceExercises[seanceIndex];
-  const total = seanceExercises.length;
+/* ── PEINDRE LE LIVRE ──
+   paintLeft : énoncé + brouillon de l'élève (page gauche)
+   paintRight: réaction du tuteur (page droite)
+   paintNav  : barre de progression, score, boutons feuilleter
+   Les peintures sont séparées pour pouvoir rafraîchir une page pendant
+   qu'elle est cachée par le feuillet qui se tourne (pas de clignotement). */
 
-  // Progression
-  const pct = ((seanceIndex) / total) * 100;
-  document.getElementById("session-progress-fill").style.width = pct + "%";
-  document.getElementById("session-progress-label").textContent = `${seanceIndex + 1} / ${total}`;
+function paintLeft() {
+  const ex   = seanceExercises[seanceIndex];
+  const hist = seanceHistory[seanceIndex];
 
-  // Scores
-  document.getElementById("score-correct").textContent = `✓ ${seanceCorrect}`;
-  document.getElementById("score-wrong").textContent   = `✗ ${seanceWrong}`;
-  document.getElementById("score-skip").textContent    = `→ ${seanceSkipped}`;
-
-  // Tags
   const levelLabel = LEVEL_LABELS[ex.level] || ex.level;
   const diffTag    = ex.difficulty ? `<span class="tag tag-${ex.difficulty.toLowerCase()}">${ex.difficulty}</span>` : "";
   const subjectTag = ex.subject    ? `<span class="tag tag-subject">${ex.subject}</span>` : "";
@@ -286,28 +287,165 @@ function renderExercise() {
   document.getElementById("session-card-tags").innerHTML =
     `<span class="tag tag-${ex.level}">${levelLabel}</span>${diffTag}${subjectTag}${classeTag}${chapTag}`;
 
-  document.getElementById("session-card-num").textContent     = `#${String(ex.id).padStart(3,"0")}`;
-  document.getElementById("session-card-title").textContent   = ex.title;
+  document.getElementById("left-folio").textContent          = `#${String(ex.id).padStart(3, "0")}`;
+  document.getElementById("session-card-title").textContent  = ex.title;
   document.getElementById("session-card-content").textContent = ex.content;
 
-  // Reset
-  document.getElementById("session-answer").value = "";
-  document.getElementById("session-answer-zone").style.display = "";
-  document.getElementById("session-feedback").style.display    = "none";
-  document.getElementById("session-feedback-loading").style.display = "flex";
-  document.getElementById("session-feedback-result").style.display  = "none";
+  const ta    = document.getElementById("session-answer");
+  const zone  = document.getElementById("page-answer");
+  const label = document.getElementById("page-answer-label");
+  const answered = hist && (hist.result || hist.skipped);
+
+  if (answered) {
+    ta.value    = hist.answer || "";
+    ta.readOnly = true;
+    zone.classList.add("locked");
+    label.textContent = hist.skipped ? "Exercice passé" : "Ce que tu as écrit";
+  } else {
+    ta.value    = "";
+    ta.readOnly = false;
+    zone.classList.remove("locked");
+    label.textContent = "Ton brouillon";
+  }
+}
+
+function paintRight() {
+  const hist = seanceHistory[seanceIndex];
+  showTutor(
+    hist && hist.result ? "result"
+    : hist && hist.skipped ? "skipped"
+    : "empty",
+    hist && hist.result
+  );
+}
+
+function showTutor(state, result) {
+  ["tutor-empty", "tutor-loading", "tutor-skipped", "tutor-result"].forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
+  document.getElementById("tutor-" + state).style.display = state === "result" ? "block" : "flex";
+
+  if (state === "result" && result) {
+    const verdictMap = {
+      correct:   { label: "Bonne réponse",          cls: "correct"   },
+      partial:   { label: "Presque — à peaufiner",  cls: "partial"   },
+      incorrect: { label: "Réponse à revoir",       cls: "incorrect" }
+    };
+    const v = verdictMap[result.verdict] || verdictMap.incorrect;
+    const verdict = document.getElementById("tutor-verdict");
+    verdict.textContent = v.label;
+    verdict.className   = `tutor-verdict ${v.cls}`;
+
+    document.getElementById("tutor-analyse").textContent  = result.analyse  || "—";
+    document.getElementById("tutor-demarche").textContent = result.demarche || "—";
+    document.getElementById("tutor-solution").textContent = result.solution || "—";
+  }
+}
+
+function paintNav() {
+  const total = seanceExercises.length;
+  const hist  = seanceHistory[seanceIndex];
+  const answered = hist && (hist.result || hist.skipped);
+  const isLast   = seanceIndex === total - 1;
+
+  document.getElementById("session-progress-fill").style.width =
+    (((answered ? seanceIndex + 1 : seanceIndex) / total) * 100) + "%";
+  document.getElementById("session-progress-label").textContent = `${seanceIndex + 1} / ${total}`;
+
+  updateScoreboard();
+
+  // Précédent
+  document.getElementById("book-prev").disabled = seanceIndex === 0;
+
+  // Suivant : visible seulement une fois l'exercice traité
+  const next = document.getElementById("book-next");
+  if (answered) {
+    next.style.visibility = "visible";
+    next.querySelector(".bpb-arrow").textContent = isLast ? "✦" : "→";
+    next.childNodes[0].nodeValue = isLast ? "Voir les résultats " : "Page suivante ";
+  } else {
+    next.style.visibility = "hidden";
+  }
+}
+
+function updateScoreboard() {
+  let c = 0, w = 0, s = 0;
+  seanceHistory.forEach(h => {
+    if (!h) return;
+    if (h.skipped) { s++; }
+    else if (h.result) {
+      if (h.result.verdict === "correct" || h.result.verdict === "partial") c++;
+      else w++;
+    }
+  });
+  seanceCorrect = c; seanceWrong = w; seanceSkipped = s;
+  document.getElementById("score-correct").textContent = `✓ ${c}`;
+  document.getElementById("score-wrong").textContent   = `✗ ${w}`;
+  document.getElementById("score-skip").textContent    = `→ ${s}`;
+}
+
+function paintAll() {
+  paintLeft();
+  paintRight();
+  paintNav();
+}
+
+/* ── TOURNER LA PAGE ──
+   Un feuillet de parchemin pivote sur la reliure. La page cachée au départ
+   est repeinte à t=0, la page cachée en 2ᵉ moitié est repeinte au milieu. */
+function goTo(target, direction) {
+  if (isTurning || target < 0 || target >= seanceExercises.length) return;
+
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobile = window.matchMedia("(max-width: 860px)").matches;
+
+  if (reduce) { seanceIndex = target; paintAll(); return; }
+
+  if (mobile) {
+    const spread = document.getElementById("book-spread");
+    spread.classList.add("fading");
+    setTimeout(() => {
+      seanceIndex = target; paintAll();
+      requestAnimationFrame(() => spread.classList.remove("fading"));
+    }, 180);
+    return;
+  }
+
+  isTurning = true;
+  const leaf = document.getElementById("page-leaf");
+  leaf.className = "page-leaf show";
+  void leaf.offsetWidth; // reflow
+
+  seanceIndex = target;
+  // page cachée dès le début par le feuillet
+  if (direction === "next") paintRight(); else paintLeft();
+
+  const from = direction === "next" ? 0 : -180;
+  const to   = direction === "next" ? -180 : 0;
+  const anim = leaf.animate(
+    [{ transform: `rotateY(${from}deg)` }, { transform: `rotateY(${to}deg)` }],
+    { duration: 660, easing: "cubic-bezier(.62,.04,.34,1)" }
+  );
+
+  // au milieu, le feuillet couvre l'autre page : on la repeint
+  setTimeout(() => {
+    if (direction === "next") paintLeft(); else paintRight();
+    paintNav();
+  }, 350);
+
+  anim.onfinish = () => { leaf.className = "page-leaf"; isTurning = false; };
 }
 
 async function submitAnswer() {
-  const answer = document.getElementById("session-answer").value.trim();
-  if (!answer) { showToast("Écris une réponse avant de corriger.", "error"); return; }
+  const ta     = document.getElementById("session-answer");
+  const answer = ta.value.trim();
+  if (!answer) { showToast("Écris ton brouillon avant de corriger.", "error"); return; }
+  if (isTurning) return;
 
-  const ex = seanceExercises[seanceIndex];
-
-  document.getElementById("session-answer-zone").style.display = "none";
-  document.getElementById("session-feedback").style.display    = "";
-  document.getElementById("session-feedback-loading").style.display = "flex";
-  document.getElementById("session-feedback-result").style.display  = "none";
+  const ex  = seanceExercises[seanceIndex];
+  const btn = document.getElementById("btn-correct");
+  btn.disabled = true;
+  showTutor("loading");
 
   try {
     const res = await fetch("/exercises/correct", {
@@ -319,54 +457,48 @@ async function submitAnswer() {
     const result = await res.json();
     if (result.error) throw new Error(result.error);
 
-    // Mettre à jour les scores
-    if (result.verdict === "correct" || result.verdict === "partial") seanceCorrect++;
-    else seanceWrong++;
+    // Enregistrer dans l'historique (relisible plus tard)
+    seanceHistory[seanceIndex] = { answer, result, skipped: false };
+    if (seanceIndex > seanceMax) seanceMax = seanceIndex;
 
-    // Afficher le feedback
-    const verdictMap = {
-      correct:   { label: "✓ Bonne réponse !",       cls: "correct"   },
-      partial:   { label: "◑ Partiellement correct",  cls: "partial"   },
-      incorrect: { label: "✗ Réponse incorrecte",     cls: "incorrect" }
-    };
-    const v = verdictMap[result.verdict] || verdictMap.incorrect;
-    const banner = document.getElementById("feedback-verdict-banner");
-    banner.textContent = v.label;
-    banner.className = `feedback-verdict-banner ${v.cls}`;
+    // Verrouiller le brouillon, afficher la correction
+    ta.readOnly = true;
+    document.getElementById("page-answer").classList.add("locked");
+    document.getElementById("page-answer-label").textContent = "Ce que tu as écrit";
+    showTutor("result", result);
+    paintNav();
 
-    document.getElementById("feedback-text").textContent    = result.feedback;
-    document.getElementById("feedback-conseil").textContent = result.conseil;
-
-    const isLast = seanceIndex >= seanceExercises.length - 1;
-    document.getElementById("session-next-btn").textContent =
-      isLast ? "Voir les résultats →" : "Exercice suivant →";
-
-    document.getElementById("session-feedback-loading").style.display = "none";
-    document.getElementById("session-feedback-result").style.display  = "";
-
-    document.getElementById("score-correct").textContent = `✓ ${seanceCorrect}`;
-    document.getElementById("score-wrong").textContent   = `✗ ${seanceWrong}`;
-
-  } catch(err) {
+  } catch (err) {
     showToast("Erreur lors de la correction : " + (err.message || ""), "error");
-    document.getElementById("session-answer-zone").style.display = "";
-    document.getElementById("session-feedback").style.display    = "none";
+    showTutor("empty");
+    btn.disabled = false;
   }
 }
 
 function skipExercise() {
-  seanceSkipped++;
-  document.getElementById("score-skip").textContent = `→ ${seanceSkipped}`;
-  nextExercise();
+  if (isTurning) return;
+  const ta = document.getElementById("session-answer");
+  seanceHistory[seanceIndex] = { answer: ta.value.trim(), result: null, skipped: true };
+  if (seanceIndex > seanceMax) seanceMax = seanceIndex;
+
+  if (seanceIndex >= seanceExercises.length - 1) {
+    paintAll();
+    showResults();
+  } else {
+    goTo(seanceIndex + 1, "next");
+  }
 }
 
 function nextExercise() {
-  seanceIndex++;
-  if (seanceIndex >= seanceExercises.length) {
-    showResults();
-  } else {
-    renderExercise();
-  }
+  if (isTurning) return;
+  const isLast = seanceIndex >= seanceExercises.length - 1;
+  if (isLast) { showResults(); return; }
+  goTo(seanceIndex + 1, "next");
+}
+
+function prevExercise() {
+  if (isTurning || seanceIndex === 0) return;
+  goTo(seanceIndex - 1, "prev");
 }
 
 function showResults() {

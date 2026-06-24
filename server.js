@@ -102,7 +102,29 @@ app.post("/exercises/correct", async (req, res) => {
   if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
 
   const solutionCtx = exercise.solution ? `\nSOLUTION OFFICIELLE : ${exercise.solution}` : "";
-  const prompt = `Tu es un tuteur en mathématiques bienveillant et pédagogue.\n\nEXERCICE : ${exercise.title}\nÉNONCÉ : ${exercise.content}${solutionCtx}\n\nRÉPONSE DE L'ÉLÈVE : ${answer}\n\nÉvalue la réponse et réponds UNIQUEMENT en JSON valide, sans markdown :\n{\n  "verdict": "correct" | "partial" | "incorrect",\n  "feedback": "explication courte et encourageante (2-3 phrases)",\n  "conseil": "une piste concrète pour progresser (1 phrase)"\n}`;
+  const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
+
+EXERCICE : ${exercise.title}
+ÉNONCÉ : ${exercise.content}${solutionCtx}
+
+CE QUE L'ÉLÈVE A ÉCRIT (son brouillon, mot pour mot) :
+${answer}
+
+Ta mission : réagir DIRECTEMENT à ce que l'élève a écrit, pas à une réponse idéale.
+1. Reconstitue le raisonnement de l'élève à partir de ce qu'il a écrit.
+2. Si c'est une erreur : trouve PRÉCISÉMENT à quelle étape il s'est trompé et SURTOUT pourquoi (règle mal appliquée, signe oublié, confusion entre deux notions, erreur de calcul, propriété inventée…). Explique l'origine de l'erreur AVANT de donner quoi que ce soit d'autre.
+3. Si c'est juste : confirme et dis ce qui rend le raisonnement correct.
+4. Ensuite seulement, donne la bonne démarche puis la solution finale.
+
+Utilise des maths lisibles en texte simple (ex : x^2, sqrt(2), 3/4, x = -b/2a). Pas de LaTeX, pas de markdown.
+
+Réponds UNIQUEMENT en JSON valide, sans markdown :
+{
+  "verdict": "correct" | "partial" | "incorrect",
+  "analyse": "Comment l'élève est arrivé à sa réponse. Si erreur, l'étape exacte qui cloche et la raison profonde de l'erreur. 2 à 4 phrases, adressées à l'élève.",
+  "demarche": "La bonne démarche, étape par étape, claire et sobre. Sépare les étapes par des retours à la ligne.",
+  "solution": "Le résultat final attendu, en une ou deux lignes."
+}`;
 
   try {
     const mistralRes = await fetch("https://api.mistral.ai/v1/chat/completions", {
@@ -115,7 +137,7 @@ app.post("/exercises/correct", async (req, res) => {
         model: "mistral-small-latest",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 400
+        max_tokens: 800
       })
     });
     if (!mistralRes.ok) {
