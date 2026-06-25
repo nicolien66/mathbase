@@ -172,6 +172,8 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
     <h1 class="theme-page-title" id="theme-title">Nom du thème</h1>
   </div>
 
+  <div id="theme-notions"></div>
+
   <div class="sections-grid">
     <div class="section-card" style="--card-color:#7ac8a0" onclick="showSection('cours')">
       <span class="section-card-icon">📖</span>
@@ -210,92 +212,84 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 const TREE_DATA = [
   { id:'nombres', label:'NOMBRES', color:'#7ab4c8',
     subs:[
-      { label:'Entiers & décimaux',
-        themes:['Écriture d\'un nombre décimal','Multiplier par 10, 100, 1000','Diviser par 10, 100, 1000'] },
-      { label:'Fractions',
-        themes:['Visualiser les fractions','Écriture fractionnaire et décimale','Addition et soustraction de fractions','Proportion d\'une quantité'] },
-      { label:'Longueur',
-        themes:['Convertir les unités de longueur','Calculer des périmètres'] },
-      { label:'Aires',
-        themes:['Visualiser les aires','Convertir les unités d\'aires','Calculer des aires'] },
-      { label:'Repérage temps & durées',
-        themes:['Lire l\'heure sur une horloge','Mettre l\'heure sur une horloge','Conversions de durées'] },
-      { label:'Proportionnalité',
-        themes:['Reconnaître une situation proportionnelle','Calculer avec un tableau de proportionnalité','Utiliser la règle de trois','Calculer un pourcentage'] },
-      { label:'Nombres relatifs', themes:[] },
-      { label:'Additionner des nombres relatifs', themes:[] },
-      { label:'Additionner et soustraire des nombres relatifs', themes:[] },
-      { label:'Arithmétique', themes:[] },
-      { label:'Nombres en écriture fractionnaire', themes:[] },
-      { label:'Pourcentages', themes:[] },
-      { label:'Multiplier et diviser des nombres relatifs', themes:[] },
-      { label:'Additionner et soustraire des fractions', themes:[] },
-      { label:'Multiplier des fractions', themes:[] },
-      { label:'Diviser des fractions', themes:[] },
-      { label:'Priorité de calculs avec les fractions', themes:[] },
-      { label:'Puissances', themes:[] },
-      { label:'Proportionnalité (4ème)', themes:[] },
-      { label:'Pourcentages (4ème)', themes:[] },
-      { label:'Notion de grandeur quotient et produit', themes:[] },
-      { label:'Puissances (3ème)', themes:[] },
-      { label:'Proportionnalité et ratios (3ème)', themes:[] },
-      { label:'Pourcentages (3ème)', themes:[] },
-      { label:'Vitesse, distance et temps', themes:[] },
+      { label:'Entiers & décimaux',             notions:['Écriture d\'un nombre décimal','Multiplier par 10, 100, 1000','Diviser par 10, 100, 1000'] },
+      { label:'Fractions',                       notions:['Visualiser les fractions','Écriture fractionnaire et décimale','Addition et soustraction de fractions','Proportion d\'une quantité','Priorité de calculs avec les fractions'] },
+      { label:'Nombres relatifs',                notions:[] },
+      { label:'Puissances',                      notions:[] },
+      { label:'Proportionnalité',                notions:['Reconnaître une situation proportionnelle','Calculer avec un tableau de proportionnalité','Utiliser la règle de trois','Calculer un pourcentage','Proportionnalité et ratios','Notion de grandeur quotient et produit'] },
+      { label:'Pourcentages',                    notions:[] },
+      { label:'Longueur',                        notions:['Convertir les unités de longueur','Calculer des périmètres'] },
+      { label:'Aires',                           notions:['Visualiser les aires','Convertir les unités d\'aires','Calculer des aires'] },
+      { label:'Repérage temps & durées',         notions:['Lire l\'heure sur une horloge','Mettre l\'heure sur une horloge','Conversions de durées'] },
+      { label:'Vitesse, distance et temps',      notions:[] },
+      { label:'Arithmétique',                    notions:[] },
     ]
   },
   { id:'algebre', label:'ALGÈBRE', color:'#c8a07a',
     subs:[
-      { label:'Enchaînement d\'opérations', themes:[] },
-      { label:'Calcul littéral', themes:[] },
-      { label:'Équations', themes:[] },
-      { label:'Calcul littéral (4ème)', themes:[] },
-      { label:'Développement et factorisation', themes:[] },
-      { label:'Équations et programme de calculs (3ème)', themes:[] },
-      { label:'Inéquations', themes:[] },
-      { label:'Arithmétique (3ème)', themes:[] },
+      { label:'Enchaînement d\'opérations',      notions:['Priorités opératoires','Parenthèses','Calculs avec des entiers et décimaux'] },
+      { label:'Calcul littéral',                 notions:['Écriture littérale','Réduire une expression','Substituer une valeur'] },
+      { label:'Développement et factorisation',  notions:['Développer avec la distributivité','Factoriser','Identités remarquables : (a+b)²','Identités remarquables : (a-b)²','Identités remarquables : (a+b)(a-b)'] },
+      { label:'Équations du 1er degré',          notions:['Résoudre ax + b = 0','Équations avec parenthèses','Équations avec fractions','Mise en équation d\'un problème'] },
+      { label:'Systèmes d\'équations',           notions:['Méthode par substitution','Méthode par combinaison','Résolution graphique'] },
+      { label:'Équations du 2nd degré',          notions:['Discriminant Δ','Deux solutions, une solution, zéro solution','Forme factorisée','Racines d\'un trinôme'] },
+      { label:'Inéquations',                     notions:['Résoudre ax + b < 0','Inéquations avec changement de signe','Représentation sur une droite graduée'] },
+      { label:'Polynômes',                       notions:['Degré d\'un polynôme','Addition et soustraction','Multiplication','Division euclidienne'] },
+      { label:'Suites numériques',               notions:['Suite arithmétique : raison et terme général','Suite géométrique : raison et terme général','Somme des termes','Suites récurrentes','Limite d\'une suite'] },
     ]
   },
   { id:'geometrie', label:'GÉOMÉTRIE', color:'#a07ac8',
     subs:[
-      { label:'Géométrie', themes:['Codage géométrique','Représenter des figures','Connaître les solides'] },
-      { label:'Géométrie du triangle : Inégalité triangulaire', themes:[] },
-      { label:'Géométrie du triangle : Hauteurs et médiatrices', themes:[] },
-      { label:'Géométrie du triangle : Somme des angles', themes:[] },
-      { label:'Symétrie axiale', themes:[] },
-      { label:'Symétrie centrale', themes:[] },
-      { label:'Les parallélogrammes', themes:[] },
-      { label:'Périmètres et aires', themes:[] },
-      { label:'Angles et parallélisme', themes:[] },
-      { label:'Prisme droit et cylindre', themes:[] },
-      { label:'Théorème de Pythagore et sa réciproque', themes:[] },
-      { label:'Translation et rotation', themes:[] },
-      { label:'Pyramides et cônes', themes:[] },
-      { label:'Triangles semblables', themes:[] },
-      { label:'Théorème de Thalès et sa réciproque', themes:[] },
-      { label:'Trigonométrie dans le triangle rectangle', themes:[] },
-      { label:'Homothéties', themes:[] },
-      { label:'Géométrie dans l\'espace et sections', themes:[] },
+      { label:'Géométrie',                       notions:['Codage géométrique','Représenter des figures','Connaître les solides'] },
+      { label:'Symétrie axiale',                 notions:[] },
+      { label:'Symétrie centrale',               notions:[] },
+      { label:'Angles et parallélisme',          notions:[] },
+      { label:'Les parallélogrammes',            notions:[] },
+      { label:'Géométrie du triangle',           notions:['Inégalité triangulaire','Hauteurs et médiatrices','Somme des angles'] },
+      { label:'Périmètres et aires',             notions:[] },
+      { label:'Prisme droit et cylindre',        notions:[] },
+      { label:'Théorème de Pythagore',           notions:['Théorème direct','Réciproque'] },
+      { label:'Théorème de Thalès',              notions:['Théorème direct','Réciproque'] },
+      { label:'Trigonométrie',                   notions:['sin, cos, tan dans le triangle rectangle'] },
+      { label:'Triangles semblables',            notions:[] },
+      { label:'Homothéties',                     notions:[] },
+      { label:'Translation et rotation',         notions:[] },
+      { label:'Pyramides et cônes',              notions:[] },
+      { label:'Géométrie dans l\'espace',        notions:[] },
     ]
   },
   { id:'fonctions', label:'FONCTIONS', color:'#7ac8a0',
     subs:[
-      { label:'Notions de fonctions', themes:[] },
-      { label:'Fonction linéaire', themes:[] },
-      { label:'Fonction affine', themes:[] },
+      { label:'Notions de fonctions',            notions:['Image et antécédent','Tableau de valeurs','Représentation graphique','Domaine de définition'] },
+      { label:'Fonction linéaire',               notions:['Forme f(x) = ax','Représentation graphique : droite passant par O','Coefficient directeur'] },
+      { label:'Fonction affine',                 notions:['Forme f(x) = ax + b','Pente et ordonnée à l\'origine','Équation d\'une droite','Intersection de deux droites'] },
+      { label:'Fonctions de référence',          notions:['Fonction carré : f(x) = x²','Fonction inverse : f(x) = 1/x','Fonction racine carrée : f(x) = sqrt(x)','Fonction valeur absolue'] },
+      { label:'Variations et extremums',         notions:['Tableau de variations','Fonction croissante / décroissante','Maximum et minimum','Lecture graphique des variations'] },
+      { label:'Dérivation',                      notions:['Taux de variation','Nombre dérivé en un point','Fonction dérivée','Règles de dérivation : somme, produit, quotient','Dérivée de fonctions composées','Lien dérivée et variations'] },
+      { label:'Fonctions trigonométriques',      notions:['Radian et degré','Cosinus et sinus : définition sur le cercle','Périodicité','f(x) = cos(x) et f(x) = sin(x)','Équations trigonométriques simples'] },
+      { label:'Fonction exponentielle',          notions:['Définition de exp(x)','Propriétés algébriques','Dérivée de exp(x)','Variations et représentation graphique','Modélisation de la croissance'] },
+      { label:'Fonction logarithme',             notions:['Définition de ln(x)','Propriétés algébriques','Dérivée de ln(x)','Variations et représentation graphique','Équations avec ln'] },
+      { label:'Limites et continuité',           notions:['Limite en +∞ et -∞','Limite en un point','Asymptotes','Théorème des gendarmes','Continuité sur un intervalle'] },
+      { label:'Primitives et intégration',       notions:['Notion de primitive','Primitives usuelles','Intégrale définie','Calcul d\'aire sous une courbe','Intégration par parties'] },
     ]
   },
   { id:'proba', label:'PROBABILITÉS', color:'#c87a9a',
     subs:[
-      { label:'Probabilités', themes:[] },
-      { label:'Probabilités (3ème)', themes:[] },
+      { label:'Vocabulaire des probabilités',    notions:['Expérience aléatoire','Événement, univers','Événements contraires','Événements incompatibles'] },
+      { label:'Probabilités simples',            notions:['Fréquence et probabilité','Équiprobabilité','Calcul de probabilité classique','Probabilité d\'un contraire'] },
+      { label:'Dénombrement',                    notions:['Principe multiplicatif','Arrangements','Permutations','Combinaisons : C(n,k)'] },
+      { label:'Probabilités conditionnelles',    notions:['Probabilité conditionnelle P(A|B)','Formule des probabilités totales','Indépendance de deux événements','Tableaux de contingence'] },
+      { label:'Variables aléatoires discrètes',  notions:['Loi d\'une variable aléatoire','Espérance mathématique','Variance et écart-type','Loi binomiale B(n,p)'] },
+      { label:'Loi des grands nombres',          notions:['Convergence des fréquences','Loi normale : courbe de Gauss','Intervalle de fluctuation','Estimation et marge d\'erreur'] },
     ]
   },
   { id:'stats', label:'STATISTIQUES', color:'#e8a87c',
     subs:[
-      { label:'Organisation des données', themes:['Extraire des données d\'un tableau','Lire un graphique','Interpréter des données'] },
-      { label:'Statistiques', themes:[] },
-      { label:'Statistiques (4ème)', themes:[] },
-      { label:'Statistiques (3ème)', themes:[] },
+      { label:'Organisation des données',        notions:['Extraire des données d\'un tableau','Lire un graphique','Interpréter des données','Tableaux de fréquences'] },
+      { label:'Indicateurs de position',         notions:['Moyenne','Médiane','Mode','Étendue'] },
+      { label:'Indicateurs de dispersion',       notions:['Variance','Écart-type','Quartiles Q1 et Q3','Diagramme en boîte (boxplot)'] },
+      { label:'Représentations graphiques',      notions:['Diagramme en barres','Histogramme','Diagramme circulaire','Nuage de points','Courbe des effectifs cumulés'] },
+      { label:'Statistiques à deux variables',   notions:['Nuage de points','Point moyen','Droite de régression','Coefficient de corrélation','Ajustement linéaire'] },
     ]
   },
 ];
@@ -333,39 +327,22 @@ function buildTree(){
     // connector grand → chain
     row.appendChild(seg(18, c, 0.4));
 
-    // Build chain: SUB → t t t → SUB → t t t …
+    // Build chain: SUB → SUB → SUB … (no theme circles)
     grand.subs.forEach((sub, si) => {
-      // Sub node
       const sn = document.createElement('div');
       sn.className = 'sub-node';
       sn.style.borderColor = c;
       sn.style.color = c;
+      sn.style.cursor = 'pointer';
       sn.textContent = sub.label;
+      sn.title = sub.label;
+      sn.addEventListener('click', () => openTheme(sub.label, grand.label, c, sub.notions));
       row.appendChild(sn);
 
-      // connector sub → first theme
-      row.appendChild(seg(12, c, 0.35));
-
-      // Themes
-      sub.themes.forEach((theme, ti) => {
-        const tn = document.createElement('div');
-        tn.className = 'theme-node';
-        tn.style.borderColor = c;
-        tn.style.color = c;
-        tn.textContent = theme;
-        tn.title = theme;
-        tn.addEventListener('click', () => openTheme(theme, grand.label, c));
-        row.appendChild(tn);
-
-        // connector between themes (not after last)
-        const isLastTheme = ti === sub.themes.length - 1;
-        const isLastSub   = si === grand.subs.length - 1;
-        if (!isLastTheme) {
-          row.appendChild(seg(10, c, 0.3));
-        } else if (!isLastSub) {
-          row.appendChild(seg(22, c, 0.3));
-        }
-      });
+      // connector between subs
+      if (si < grand.subs.length - 1) {
+        row.appendChild(seg(18, c, 0.35));
+      }
     });
 
     wrap.appendChild(row);
@@ -379,23 +356,37 @@ function seg(w, color, op){
 }
 
 // ─── THEME PAGE ─────────────────────────────────────────
-function openTheme(label, grandLabel, color){
-  currentTheme = { label, grandLabel, color };
+function openTheme(label, grandLabel, color, notions){
+  currentTheme = { label, grandLabel, color, notions: notions||[] };
 
   const eyebrow = document.getElementById('theme-eyebrow');
-  eyebrow.style.color = color;
-  eyebrow.style.setProperty('--before-bg', color);
-  eyebrow.querySelector?.('::before'); // noop
-  eyebrow.textContent = grandLabel;
-  // rebuild eyebrow with pseudo
-  eyebrow.innerHTML = grandLabel;
   eyebrow.style.cssText = `font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:${color};margin-bottom:.6rem;font-family:var(--mono);display:flex;align-items:center;gap:.7rem`;
+  eyebrow.innerHTML = grandLabel;
 
   const titleEl = document.getElementById('theme-title');
   titleEl.innerHTML = label;
   titleEl.style.color = color;
 
+  // Show notions list if any
+  const notionsEl = document.getElementById('theme-notions');
+  if(notions && notions.length > 0){
+    notionsEl.innerHTML = `
+      <div style="margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--surface);border:1px solid rgba(${hexToRgb(color)},.2);border-radius:10px;border-left:3px solid ${color}">
+        <div style="font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:.75rem">Notions abordées</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+          ${notions.map(n=>`<span style="background:rgba(${hexToRgb(color)},.1);border:1px solid rgba(${hexToRgb(color)},.25);color:${color};padding:.3rem .75rem;border-radius:20px;font-size:.78rem">${n}</span>`).join('')}
+        </div>
+      </div>`;
+  } else {
+    notionsEl.innerHTML = '';
+  }
+
   showPage('theme');
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
 }
 
 // ─── SECTION PAGE ───────────────────────────────────────
