@@ -19,7 +19,6 @@
       <button class="tab active" onclick="showView('browse')">Exercices</button>
       <button class="tab" onclick="showView('seance')">Séance</button>
       <button class="tab" onclick="showView('add')">Ajouter</button>
-      <button class="tab" onclick="location.href='tree.html'">Arbre</button>
     </div>
     <button class="nav-cta" onclick="showView('seance')">Démarrer une séance →</button>
   </nav>
@@ -136,13 +135,11 @@
       </div>
     </div>
 
-    <!-- ÉTAPE 2 : LE LIVRE (exercice en cours) -->
-    <div id="seance-session" style="display:none" class="seance-page seance-book-page">
-
-      <!-- Barre du haut : progression + score -->
-      <div class="book-topbar">
-        <div class="book-progress">
-          <div class="book-progress-bar"><div class="session-progress-fill" id="session-progress-fill"></div></div>
+    <!-- ÉTAPE 2 : EXERCICE EN COURS -->
+    <div id="seance-session" style="display:none" class="seance-page">
+      <div class="session-header">
+        <div class="session-progress-wrap">
+          <div class="session-progress-bar"><div class="session-progress-fill" id="session-progress-fill"></div></div>
           <div class="session-progress-label" id="session-progress-label">1 / 10</div>
         </div>
         <div class="session-score-row">
@@ -152,92 +149,52 @@
         </div>
       </div>
 
-      <!-- Le livre ouvert -->
-      <div class="book" id="book">
-        <div class="book-spread" id="book-spread">
+      <div class="session-body">
+        <div class="session-card" id="session-card">
+          <div class="session-card-tags" id="session-card-tags"></div>
+          <div class="session-card-num"  id="session-card-num"></div>
+          <h2 class="session-card-title" id="session-card-title"></h2>
+          <div class="session-card-content" id="session-card-content"></div>
 
-          <!-- ░░ PAGE GAUCHE — l'élève écrit ░░ -->
-          <section class="page page-left" id="page-left">
-            <div class="page-head">
-              <span class="page-folio" id="left-folio">#000</span>
-              <div class="page-tags" id="session-card-tags"></div>
+          <!-- Zone réponse -->
+          <div class="session-answer-zone" id="session-answer-zone">
+            <label class="session-answer-label">TA RÉPONSE</label>
+            <textarea id="session-answer" class="session-answer-input" rows="4" placeholder="Écris ta réponse ici…"></textarea>
+            <div class="session-actions">
+              <button class="btn-ghost" onclick="skipExercise()">Passer →</button>
+              <button class="btn-ai" onclick="submitAnswer()">
+                <span class="ai-icon">✦</span> Corriger avec l'IA
+              </button>
             </div>
-            <h2 class="page-title" id="session-card-title"></h2>
-            <div class="page-enonce" id="session-card-content"></div>
+          </div>
 
-            <div class="page-answer" id="page-answer">
-              <label class="page-answer-label" id="page-answer-label">Ton brouillon</label>
-              <textarea id="session-answer" class="page-answer-input"
-                        placeholder="Pose tes étapes, écris ton raisonnement…"></textarea>
-              <div class="page-answer-actions" id="page-answer-actions">
-                <button class="btn-skip"    onclick="skipExercise()">Passer</button>
-                <button class="btn-correct" id="btn-correct" onclick="submitAnswer()">
-                  <span class="ai-icon">✦</span> Corriger
-                </button>
-              </div>
-            </div>
-            <span class="page-corner">i</span>
-          </section>
-
-          <!-- reliure -->
-          <div class="book-spine" aria-hidden="true"></div>
-
-          <!-- ░░ PAGE DROITE — le tuteur répond ░░ -->
-          <section class="page page-right" id="page-right">
-            <div class="page-head"><span class="page-margin-label">Le tuteur</span></div>
-
-            <!-- vierge -->
-            <div class="tutor-state tutor-empty" id="tutor-empty">
-              <div class="tutor-empty-mark">✎</div>
-              <p>Cette page se remplit dès que tu corriges ton brouillon. Le tuteur lira ce que tu as écrit et te dira <em>où</em> et <em>pourquoi</em> avant de te montrer la solution.</p>
-            </div>
-
-            <!-- chargement -->
-            <div class="tutor-state tutor-loading" id="tutor-loading" style="display:none">
+          <!-- Feedback IA -->
+          <div class="session-feedback" id="session-feedback" style="display:none">
+            <div id="session-feedback-loading" class="ai-loading">
               <div class="ai-spinner"></div>
-              <p>Le tuteur lit ta copie…</p>
-            </div>
-
-            <!-- passé -->
-            <div class="tutor-state tutor-skipped" id="tutor-skipped" style="display:none">
-              <div class="tutor-empty-mark">→</div>
-              <p>Tu as passé cet exercice. Reviens-y plus tard si tu veux le tenter.</p>
-            </div>
-
-            <!-- correction -->
-            <div class="tutor-state tutor-result" id="tutor-result" style="display:none">
-              <div class="tutor-verdict" id="tutor-verdict"></div>
-
-              <div class="tutor-block">
-                <div class="tutor-block-label">Ce que tu as fait</div>
-                <div class="tutor-block-text margin-note" id="tutor-analyse"></div>
-              </div>
-              <div class="tutor-block">
-                <div class="tutor-block-label">La bonne démarche</div>
-                <div class="tutor-block-text" id="tutor-demarche"></div>
-              </div>
-              <div class="tutor-block tutor-solution-block">
-                <div class="tutor-block-label">Solution</div>
-                <div class="tutor-block-text" id="tutor-solution"></div>
+              <div>
+                <div class="ai-loading-title">Correction en cours…</div>
+                <div class="ai-loading-sub">L'IA analyse ta réponse</div>
               </div>
             </div>
-            <span class="page-corner right">ii</span>
-          </section>
-
+            <div id="session-feedback-result" style="display:none">
+              <div class="feedback-verdict-banner" id="feedback-verdict-banner"></div>
+              <div class="feedback-body">
+                <div class="feedback-section">
+                  <div class="feedback-section-label">FEEDBACK</div>
+                  <div class="feedback-section-text" id="feedback-text"></div>
+                </div>
+                <div class="feedback-section">
+                  <div class="feedback-section-label">CONSEIL</div>
+                  <div class="feedback-section-text feedback-conseil" id="feedback-conseil"></div>
+                </div>
+              </div>
+              <div class="session-actions" style="margin-top:1.5rem">
+                <button class="btn-primary" id="session-next-btn" onclick="nextExercise()">Exercice suivant →</button>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <!-- feuillet qui se tourne -->
-        <div class="page-leaf" id="page-leaf" aria-hidden="true"></div>
-      </div>
-
-      <!-- Navigation : feuilleter le livre -->
-      <div class="book-footer">
-        <button class="book-page-btn" id="book-prev" onclick="prevExercise()" disabled>
-          <span class="bpb-arrow">←</span> Page précédente
-        </button>
-        <button class="book-page-btn primary" id="book-next" onclick="nextExercise()" style="visibility:hidden">
-          Page suivante <span class="bpb-arrow">→</span>
-        </button>
       </div>
     </div>
 
