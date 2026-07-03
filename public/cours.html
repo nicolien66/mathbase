@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathBase — Cours animés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0b0b09;
+  --surface:  #111110;
+  --surface2: #181815;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.13);
+  --accent:   #c8b97a;
+  --text:     #f0ece0;
+  --muted:    rgba(240,236,224,0.45);
+  --serif:    'Playfair Display', Georgia, serif;
+  --sans:     'DM Sans', sans-serif;
+  --mono:     'DM Mono', monospace;
+  /* Tableau */
+  --chalk-w:  rgba(245,242,232,0.93);
+  --chalk-y:  rgba(230,210,120,0.92);
+  --chalk-b:  rgba(130,200,230,0.90);
+  --chalk-r:  rgba(230,130,110,0.90);
+  --chalk-g:  rgba(130,210,160,0.90);
+  --board:    #1a2a1e;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 3rem;height:64px;
+  background:rgba(11,11,9,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.logo{font-family:var(--serif);font-size:1.35rem;color:var(--text);text-decoration:none;}
+.logo em{font-style:italic;color:var(--accent);}
+.nav-tabs{display:flex;gap:.25rem;}
+.tab{
+  background:none;border:none;color:var(--muted);
+  font-family:var(--sans);font-size:.85rem;padding:.45rem .9rem;
+  border-radius:6px;cursor:pointer;transition:color .2s,background .2s;
+  text-decoration:none;display:inline-flex;align-items:center;
+}
+.tab:hover,.tab.active{color:var(--text);background:var(--surface2);}
+.nav-cta{
+  font-family:var(--sans);font-size:.8rem;font-weight:500;
+  background:var(--accent);color:var(--bg);
+  border:none;border-radius:8px;padding:.55rem 1.2rem;cursor:pointer;
+  text-decoration:none;
+}
+
+/* ── PAGE LAYOUT ── */
+.page-wrap{max-width:1200px;margin:0 auto;padding:3rem 2rem 5rem;}
+
+.page-header{text-align:center;margin-bottom:3.5rem;}
+.page-eyebrow{
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:1rem;
+  display:flex;align-items:center;justify-content:center;gap:.8rem;
+}
+.page-eyebrow::before,.page-eyebrow::after{
+  content:'';display:block;width:2.5rem;height:1px;background:rgba(200,185,122,.4);
+}
+.page-title{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.4rem);font-weight:700;margin-bottom:.8rem;}
+.page-title em{font-style:italic;color:var(--accent);}
+.page-sub{color:var(--muted);font-size:.95rem;line-height:1.7;max-width:560px;margin:0 auto;}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:center;margin-bottom:2.6rem;}
+.filter-btn{
+  --bc:#c8b97a;
+  display:inline-flex;align-items:center;gap:.5rem;
+  background:var(--surface);border:1px solid var(--border2);color:var(--muted);
+  border-radius:100px;padding:.5rem 1rem;font-family:var(--sans);font-size:.82rem;
+  cursor:pointer;transition:border-color .2s,color .2s,background .2s;
+}
+.filter-btn:hover{color:var(--text);border-color:rgba(255,255,255,.25);}
+.filter-btn.active{color:var(--text);border-color:var(--bc);background:rgba(255,255,255,.03);}
+.filter-dot{width:8px;height:8px;border-radius:50%;background:var(--bc);flex-shrink:0;}
+.filter-count{font-family:var(--mono);font-size:.65rem;color:var(--muted);}
+.filter-btn.active .filter-count{color:var(--bc);}
+
+/* ── SECTIONS ── */
+.lesson-section{margin-bottom:2.6rem;}
+.section-head{
+  --bc:#c8b97a;
+  display:flex;align-items:center;gap:.65rem;
+  font-family:var(--serif);font-size:1.5rem;font-weight:700;color:var(--text);
+  margin-bottom:1.2rem;padding-bottom:.7rem;border-bottom:1px solid var(--border);
+}
+.section-dot{width:11px;height:11px;border-radius:50%;background:var(--bc);box-shadow:0 0 14px var(--bc);}
+.section-count{margin-left:auto;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;color:var(--muted);font-weight:400;}
+
+/* ── LESSON GRID ── */
+.lesson-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.3rem;}
+.lesson-card{--bc:#c8b97a;
+  background:var(--surface);border:1px solid var(--border2);border-radius:14px;
+  padding:1.8rem 1.8rem 1.8rem 2rem;cursor:pointer;transition:border-color .25s,transform .2s,box-shadow .25s;
+  position:relative;overflow:hidden;
+}
+.lesson-card::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--bc);opacity:.55;transition:opacity .25s,width .25s;
+}
+.lesson-card:hover::after{opacity:1;width:4px;}
+.lesson-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 70% 0%, color-mix(in srgb, var(--bc) 16%, transparent),transparent 65%);
+  opacity:0;transition:opacity .3s;
+}
+.lesson-card:hover{border-color:color-mix(in srgb, var(--bc) 45%, transparent);transform:translateY(-3px);box-shadow:0 18px 48px -16px rgba(0,0,0,.6);}
+.lesson-card:hover::before{opacity:1;}
+.lesson-tag{
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--bc);margin-bottom:.9rem;
+}
+.lesson-title{font-family:var(--serif);font-size:1.35rem;font-weight:700;margin-bottom:.5rem;}
+.lesson-desc{font-size:.85rem;color:var(--muted);line-height:1.65;margin-bottom:1.4rem;}
+.lesson-meta{display:flex;align-items:center;gap:.8rem;font-size:.75rem;color:var(--muted);}
+.lesson-meta-item{display:flex;align-items:center;gap:.3rem;}
+.lesson-steps-count{
+  margin-left:auto;
+  font-family:var(--mono);font-size:.65rem;color:var(--accent);
+  border:1px solid rgba(200,185,122,.3);border-radius:100px;padding:.15rem .55rem;
+}
+.lesson-play-icon{
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(200,185,122,.1);border:1px solid rgba(200,185,122,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;color:var(--accent);flex-shrink:0;
+  transition:background .2s;
+}
+.lesson-card:hover .lesson-play-icon{background:rgba(200,185,122,.2);}
+
+/* ── PLAYER OVERLAY ── */
+#player{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .35s ease;
+}
+#player.open{opacity:1;pointer-events:all;}
+
+.player-inner{
+  width:min(1100px,96vw);
+  display:flex;flex-direction:column;gap:1.2rem;
+}
+
+/* ── BLACKBOARD ── */
+.blackboard-wrap{
+  position:relative;border-radius:12px;overflow:hidden;
+  box-shadow:0 0 0 3px #2d3d2a,0 0 0 6px #1a2318,0 30px 80px -20px rgba(0,0,0,.9);
+}
+.blackboard-frame{
+  position:absolute;inset:0;pointer-events:none;z-index:2;
+  border-radius:12px;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.5),inset 0 0 8px rgba(0,0,0,.6);
+}
+/* chalk dust texture via pseudo */
+.blackboard-frame::after{
+  content:'';position:absolute;inset:0;border-radius:12px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:.6;mix-blend-mode:overlay;
+}
+#board{display:block;width:100%;background:var(--board);}
+
+/* ── STEP LABEL ── */
+.step-label{
+  position:absolute;top:1.1rem;left:1.4rem;z-index:3;
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(200,185,122,.55);
+  background:rgba(20,36,22,.7);padding:.25rem .7rem;border-radius:100px;
+  backdrop-filter:blur(4px);
+}
+
+/* ── CONTROLS ── */
+.player-controls{
+  display:flex;align-items:center;gap:.75rem;
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:12px;padding:.9rem 1.2rem;
+}
+.ctrl-btn{
+  background:none;border:1px solid var(--border2);color:var(--muted);
+  border-radius:8px;padding:.5rem .85rem;font-family:var(--mono);font-size:.72rem;
+  letter-spacing:.06em;cursor:pointer;transition:border-color .18s,color .18s,background .18s;
+  display:flex;align-items:center;gap:.4rem;white-space:nowrap;
+}
+.ctrl-btn:hover{border-color:rgba(200,185,122,.4);color:var(--text);}
+.ctrl-btn:disabled{opacity:.28;cursor:not-allowed;}
+.ctrl-btn.primary{
+  background:rgba(200,185,122,.1);border-color:rgba(200,185,122,.45);color:var(--accent);
+}
+.ctrl-btn.primary:hover{background:rgba(200,185,122,.18);}
+.ctrl-btn.close-btn{margin-left:auto;color:rgba(240,236,224,.4);}
+
+.progress-track{
+  flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:4px;
+  position:relative;cursor:pointer;
+}
+.progress-fill{
+  height:100%;background:var(--accent);border-radius:4px;
+  transition:width .25s ease;pointer-events:none;
+}
+.progress-dots{
+  position:absolute;inset:0;display:flex;align-items:center;
+}
+.progress-dot{
+  position:absolute;width:8px;height:8px;border-radius:50%;
+  background:var(--surface2);border:1.5px solid rgba(200,185,122,.4);
+  transform:translate(-50%,-50%);top:50%;
+  transition:background .25s,border-color .25s;cursor:pointer;
+}
+.progress-dot.done{background:var(--accent);border-color:var(--accent);}
+.progress-dot.current{background:var(--accent);border-color:#fff;box-shadow:0 0 0 3px rgba(200,185,122,.25);}
+
+.ctrl-step-label{font-family:var(--mono);font-size:.65rem;color:var(--muted);white-space:nowrap;}
+
+/* ── CAPTION ── */
+.player-caption{
+  background:var(--surface);border:1px solid var(--border2);border-radius:10px;
+  padding:.85rem 1.2rem;
+  font-size:.88rem;line-height:1.7;color:rgba(240,236,224,.82);
+  min-height:3.2rem;
+  transition:opacity .3s;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  nav{padding:0 1.2rem;}
+  .page-wrap{padding:2rem 1.2rem 4rem;}
+  .lesson-grid{grid-template-columns:1fr;}
+  .player-controls{flex-wrap:wrap;gap:.5rem;}
+  .ctrl-btn.close-btn{margin-left:0;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="app.html">Math<em>Base</em></a>
+  <div class="nav-tabs">
+    <a class="tab" href="app.html">Exercices</a>
+    <a class="tab" href="app.html#seance">Séance</a>
+    <a class="tab active" href="cours.html">Cours animés</a>
+    <a class="tab" href="tutoriels.html">Tutoriels</a>
+    <a class="tab" href="tree.html">Arbre des connaissances</a>
+  </div>
+  <a class="nav-cta" href="app.html">Démarrer une séance →</a>
+</nav>
+
+<div class="page-wrap">
+  <header class="page-header">
+    <div class="page-eyebrow">Cours animés</div>
+    <h1 class="page-title">Comprendre, <em>pas seulement calculer.</em></h1>
+    <p class="page-sub">Des animations tracées à la craie, étape par étape. Chaque notion s'explique visuellement avant de devenir une formule.</p>
+  </header>
+
+  <div class="filter-bar" id="filter-bar"></div>
+  <div id="lesson-host"></div>
+</div>
+
+<!-- PLAYER -->
+<div id="player">
+  <div class="player-inner">
+    <div class="blackboard-wrap">
+      <div class="blackboard-frame"></div>
+      <div class="step-label" id="step-label">Étape 1</div>
+      <canvas id="board" height="540"></canvas>
+    </div>
+    <div class="player-controls">
+      <button class="ctrl-btn" id="btn-prev" onclick="prevStep()">← Précédent</button>
+      <button class="ctrl-btn primary" id="btn-play" onclick="togglePlay()">⏸ Pause</button>
+      <button class="ctrl-btn" id="btn-next" onclick="nextStep()">Suivant →</button>
+      <div class="progress-track" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+        <div class="progress-dots" id="progress-dots"></div>
+      </div>
+      <span class="ctrl-step-label" id="ctrl-step-label">1 / 1</span>
+      <button class="ctrl-btn close-btn" onclick="closePlayer()">✕ Fermer</button>
+    </div>
+    <div class="player-caption" id="player-caption"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   MOTEUR D'ANIMATION TABLEAU NOIR
+   Chaque leçon = tableau de STEPS.
+   Un step = { caption, draw(ctx, W, H, progress, done) }
+   draw() est appelée en boucle avec progress 0→1
+   ═══════════════════════════════════════════════════════════ */
+
+// ─── Utilitaires dessin ───────────────────────────────────
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+function easeInOut(t) { return t < .5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+/* Trace un segment avec effet craie : légère irrégularité */
+function chalkLine(ctx, x1, y1, x2, y2, p, color='rgba(245,242,232,0.93)', width=2.2) {
+  const t = easeOut(Math.min(p, 1));
+  const cx = lerp(x1, x2, t), cy = lerp(y1, y2, t);
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = width;
+  ctx.lineCap     = 'round';
+  ctx.globalAlpha = 0.9;
+  // Légère texture craie : plusieurs passes légèrement décalées
+  for (let i = 0; i < 2; i++) {
+    const ox = (Math.random()-.5)*.6, oy = (Math.random()-.5)*.6;
+    ctx.beginPath();
+    ctx.moveTo(x1+ox, y1+oy);
+    ctx.lineTo(cx+ox, cy+oy);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* Trace une courbe (array de points {x,y}) jusqu'à p (0→1) */
+function chalkCurve(ctx, pts, p, color='rgba(245,242,232,0.93)', width=2.2) {
+  if (!pts.length) return;
+  const n    = Math.max(1, Math.floor(pts.length * easeOut(Math.min(p,1))));
+  const sub  = pts.slice(0, n);
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = width;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath();
+  ctx.moveTo(sub[0].x, sub[0].y);
+  for (let i = 1; i < sub.length; i++) ctx.lineTo(sub[i].x, sub[i].y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* Écrit du texte lettre par lettre */
+function chalkText(ctx, text, x, y, p, color='rgba(245,242,232,0.93)', size=22, font='serif', align='left') {
+  const visible = Math.floor(text.length * easeOut(Math.min(p, 1)));
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font      = `${size}px ${font}`;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.92;
+  ctx.fillText(text.slice(0, visible), x, y);
+  ctx.restore();
+}
+
+/* Remplit un polygone progressivement (fade alpha) */
+function chalkFill(ctx, pts, p, color='rgba(130,210,160,0.2)') {
+  const a = easeInOut(Math.min(p, 1));
+  ctx.save();
+  ctx.fillStyle = color.replace(/[\d.]+\)$/, m => (parseFloat(m)*a).toFixed(2) + ')');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* Dessine un cercle (arc) progressivement */
+function chalkArc(ctx, cx, cy, r, startAngle, p, color='rgba(245,242,232,0.93)', width=2.2) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = width;
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, startAngle + Math.PI*2*easeOut(Math.min(p,1)));
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* Axe de coordonnées */
+function drawAxes(ctx, ox, oy, W, H, xr, yr, p, labels=true) {
+  // axe X
+  chalkLine(ctx, ox - xr, oy, ox + xr, oy, p, 'rgba(245,242,232,0.5)', 1.5);
+  // axe Y
+  chalkLine(ctx, ox, oy + yr, ox, oy - yr, p, 'rgba(245,242,232,0.5)', 1.5);
+  if (!labels || p < .6) return;
+  const lp = (p - .6) / .4;
+  chalkText(ctx, 'x', ox+xr+12, oy, lp, 'rgba(245,242,232,0.5)', 16, 'italic serif');
+  chalkText(ctx, 'y', ox, oy-yr-14, lp, 'rgba(245,242,232,0.5)', 16, 'italic serif');
+}
+
+/* Grille légère */
+function drawGrid(ctx, ox, oy, step, xr, yr, p) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth   = 1;
+  for (let x = ox % step; x < ox+xr; x += step) {
+    ctx.globalAlpha = p*0.6;
+    ctx.beginPath(); ctx.moveTo(x, oy-yr); ctx.lineTo(x, oy+yr); ctx.stroke();
+  }
+  for (let y = oy % step; y < oy+yr; y += step) {
+    ctx.globalAlpha = p*0.6;
+    ctx.beginPath(); ctx.moveTo(ox-xr, y); ctx.lineTo(ox+xr, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* Point avec halo */
+function chalkDot(ctx, x, y, p, color='rgba(230,210,120,0.92)', r=5) {
+  const a = easeOut(Math.min(p,1));
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle   = color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = a*.3;
+  ctx.beginPath(); ctx.arc(x, y, r*2.5, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+/* Flèche */
+function chalkArrow(ctx, x1,y1,x2,y2,p,color='rgba(230,210,120,0.92)',w=2) {
+  chalkLine(ctx,x1,y1,x2,y2,p,color,w);
+  if (p>.85) {
+    const a2 = (p-.85)/.15;
+    const angle = Math.atan2(y2-y1,x2-x1);
+    ctx.save();
+    ctx.strokeStyle=color; ctx.lineWidth=w; ctx.globalAlpha=a2*.9;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-12*Math.cos(angle-.4),y2-12*Math.sin(angle-.4));
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-12*Math.cos(angle+.4),y2-12*Math.sin(angle+.4));
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+// ─── FOND TABLEAU ─────────────────────────────────────────
+function drawBoard(ctx, W, H) {
+  ctx.clearRect(0,0,W,H);
+  // fond vert-noir tableau
+  const grd = ctx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.5,Math.max(W,H)*.7);
+  grd.addColorStop(0, '#243028');
+  grd.addColorStop(1, '#141e16');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,W,H);
+  // légère trame
+  ctx.save();
+  ctx.globalAlpha = .025;
+  for (let y=0; y<H; y+=3) {
+    ctx.fillStyle = y%6===0 ? '#fff' : '#000';
+    ctx.fillRect(0,y,W,1);
+  }
+  ctx.restore();
+}
+
+// ─── LEÇONS ───────────────────────────────────────────────
+
+
+/* ─── HELPERS POUR LE COURS "ENTIERS & DÉCIMAUX" ─── */
+function drawSlide(ctx, W, H, p, cfg){
+  drawBoard(ctx, W, H);
+  if (cfg.eyebrow)
+    chalkText(ctx, cfg.eyebrow, W*0.5, H*0.10, clamp(p/0.14), 'rgba(200,185,122,0.7)', 14, 'DM Mono, monospace', 'center');
+  if (cfg.title)
+    chalkText(ctx, cfg.title, W*0.5, H*0.235, clamp((p-0.08)/0.3), cfg.titleColor || 'rgba(245,242,232,0.95)', cfg.titleSize || 27, cfg.titleFont || 'Playfair Display, Georgia, serif', 'center');
+  const body = cfg.body || [];
+  const startY = cfg.title ? 0.42 : 0.34;
+  const gap = body.length > 4 ? 0.092 : 0.108;
+  body.forEach((bl, i) => {
+    const st = 0.22 + i*0.11; const lp = (p - st) / 0.32;
+    if (lp > 0) chalkText(ctx, bl.t, W*0.5, H*(startY + i*gap), clamp(lp), bl.c || 'rgba(240,236,224,0.82)', bl.s || 18, bl.f || 'DM Sans, sans-serif', 'center');
+  });
+}
+
+/* petite flèche courbée "×10" entre deux colonnes */
+function drawTimesTen(ctx, xFrom, xTo, y, p){
+  if (p <= 0) return;
+  const a = easeOut(Math.min(p, 1));
+  ctx.save();
+  ctx.strokeStyle = 'rgba(130,210,160,0.85)'; ctx.lineWidth = 1.8; ctx.globalAlpha = 0.9*a;
+  const midx = (xFrom + xTo) / 2, ctrlY = y - 24;
+  ctx.beginPath(); ctx.moveTo(xFrom, y); ctx.quadraticCurveTo(midx, ctrlY, xTo, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(xTo, y); ctx.lineTo(xTo+9, y-7); ctx.moveTo(xTo, y); ctx.lineTo(xTo+9, y+3); ctx.stroke();
+  ctx.restore();
+  chalkText(ctx, '×10', midx, ctrlY - 7, a, 'rgba(130,210,160,0.9)', 13, 'DM Mono, monospace', 'center');
+}
+
+/* tableau des positions (valeur de chaque chiffre) */
+function drawPositions(ctx, W, H, p){
+  drawBoard(ctx, W, H);
+  chalkText(ctx, 'LES POSITIONS', W/2, H*0.08, clamp(p/0.12), 'rgba(200,185,122,0.7)', 14, 'DM Mono, monospace', 'center');
+  const cols = [
+    {n:'milliers', d:'3', v:'3000'}, {n:'centaines', d:'4', v:'400'}, {n:'dizaines', d:'2', v:'20'}, {n:'unités', d:'5', v:'5'},
+    {n:'dixièmes', d:'6', v:'0,6', dec:true}, {n:'centièmes', d:'7', v:'0,07', dec:true}, {n:'millièmes', d:'0', v:'0', dec:true}
+  ];
+  const N = cols.length;
+  const cw = Math.min(108, (W*0.88)/N);
+  const totalW = cw*N, x0 = W/2 - totalW/2, top = H*0.235, rowH = H*0.165;
+  const GOLD = 'rgba(230,210,120,0.85)', BLUE = 'rgba(130,200,230,0.85)';
+
+  // grille
+  const gp = clamp(p/0.26);
+  for (let i=0;i<=N;i++){ const x = x0 + i*cw; chalkLine(ctx, x, top, x, top+rowH, gp, 'rgba(245,242,232,0.38)', 1.5); }
+  chalkLine(ctx, x0, top, x0+totalW, top, gp, 'rgba(245,242,232,0.38)', 1.5);
+  chalkLine(ctx, x0, top+rowH, x0+totalW, top+rowH, gp, 'rgba(245,242,232,0.38)', 1.5);
+  // entêtes
+  cols.forEach((c,i)=>{ const x = x0+i*cw+cw/2; const hp = clamp((p-0.10-i*0.02)/0.3);
+    chalkText(ctx, c.n, x, top-12, hp, c.dec?BLUE:GOLD, 11, 'DM Sans, sans-serif', 'center'); });
+  // chiffres
+  cols.forEach((c,i)=>{ const x = x0+i*cw+cw/2; const dpi = clamp((p-0.28-i*0.035)/0.24);
+    if (dpi>0) chalkText(ctx, c.d, x, top+rowH/2, dpi, 'rgba(245,242,232,0.95)', 28, 'Playfair Display, Georgia, serif', 'center'); });
+  // virgule entre unités(3) et dixièmes(4)
+  if (p>0.40) chalkText(ctx, ',', x0+4*cw, top+rowH/2+11, clamp((p-0.40)/0.14), 'rgba(230,130,110,0.97)', 32, 'Playfair Display, Georgia, serif', 'center');
+
+  // valeur de chaque chiffre, sous sa colonne
+  cols.forEach((c,i)=>{
+    const x = x0+i*cw+cw/2; const vp = clamp((p-0.44-i*0.035)/0.20);
+    if (vp>0){
+      chalkLine(ctx, x, top+rowH+4, x, top+rowH+16, vp, 'rgba(245,242,232,0.25)', 1.2);
+      chalkText(ctx, c.v, x, top+rowH+30, vp, c.dec?BLUE:GOLD, 15, 'DM Mono, monospace', 'center');
+    }
+  });
+
+  // addition de toutes les valeurs
+  if (p>0.70){
+    const lp = clamp((p-0.70)/0.10);
+    chalkText(ctx, 'on additionne toutes ces valeurs :', W/2, top+rowH+70, lp, 'rgba(245,242,232,0.55)', 15, 'DM Sans, sans-serif', 'center');
+  }
+  if (p>0.76){
+    const sp = clamp((p-0.76)/0.22);
+    chalkText(ctx, '3000 + 400 + 20 + 5 + 0,6 + 0,07', W/2, top+rowH+104, sp, 'rgba(245,242,232,0.85)', 19, 'DM Mono, monospace', 'center');
+  }
+  if (p>0.90){
+    const rp = clamp((p-0.90)/0.10);
+    chalkText(ctx, '=  3425,67', W/2, top+rowH+140, rp, 'rgba(230,210,120,0.97)', 26, 'Playfair Display, Georgia, serif', 'center');
+  }
+}
+
+/* la virgule qui glisse (×10ⁿ vers la droite, ÷10ⁿ vers la gauche) */
+function shiftResult(D, k){
+  if (k >= 0 && k <= D.length - 1){
+    const left = D.slice(0, k+1).join('');
+    const right = D.slice(k+1).join('');
+    return right ? left + ',' + right : left;
+  }
+  if (k >= D.length) return D.join('') + '0'.repeat(k - (D.length - 1)); // zéros à droite
+  return '0,' + '0'.repeat((-k) - 1) + D.join('');                       // 0, et zéros à gauche
+}
+function drawMultiplier(ctx, cxCenter, y, op, nzeros, popP, baseColor, zeroColor){
+  const chars = (op + ' 1' + '0'.repeat(nzeros)).split('');
+  const adv = 22;
+  const startX = cxCenter - (chars.length - 1) * adv / 2;
+  ctx.save();
+  ctx.font = '30px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  chars.forEach((ch, i) => {
+    const isLastZero = (i === chars.length - 1) && nzeros > 0;
+    let alpha = 1, scale = 1, col = baseColor;
+    if (ch === '0') col = zeroColor;
+    if (isLastZero){ alpha = clamp(popP * 1.3); scale = 1 + (1 - clamp(popP)) * 0.6; }
+    ctx.save();
+    ctx.globalAlpha = 0.93 * alpha;
+    ctx.fillStyle = col;
+    ctx.translate(startX + i * adv, y);
+    ctx.scale(scale, scale);
+    ctx.fillText(ch, 0, 0);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+function drawShift(ctx, W, H, p, mode){
+  drawBoard(ctx, W, H);
+  const isMul = mode === 'mul';
+  chalkText(ctx, isMul ? 'MULTIPLIER PAR 10, 100, 1000…' : 'DIVISER PAR 10, 100, 1000…', W/2, H*0.09, clamp(p/0.10), 'rgba(200,185,122,0.7)', 14, 'DM Mono, monospace', 'center');
+
+  const D = ['4','2','3','7'];
+  const startK = isMul ? 0 : 3, dir = isMul ? 1 : -1, STAGES = 5;
+  const cw = 46;
+  const baseX = W/2 - (D.length*cw)/2 + (isMul ? -cw : cw); // place pour les zéros qui apparaissent
+  const yDig = H*0.55;
+  const digCenter = i => baseX + i*cw + cw/2;
+  const gapX = k => baseX + (k+1)*cw;
+
+  // chiffres significatifs (fixes)
+  const dpf = clamp(p/0.13);
+  D.forEach((d,i)=> chalkText(ctx, d, digCenter(i), yDig, dpf, 'rgba(245,242,232,0.95)', 42, 'Playfair Display, Georgia, serif', 'center'));
+
+  // ── 5 paliers avec pause ──
+  const t = clamp((p - 0.16) / 0.82);
+  const sf = t * STAGES;
+  let stage = (t <= 0) ? 0 : Math.min(STAGES, Math.floor(sf) + (t >= 1 ? 0 : 1));
+  const localT = (t >= 1) ? 1 : (stage <= 0 ? 0 : (sf - (stage - 1)));
+  const moveP = clamp(localT / 0.42);
+  const popP  = clamp((localT - 0.05) / 0.42);
+
+  const prevShift = Math.max(0, stage - 1);
+  const contShift = prevShift + (stage > 0 ? easeOut(moveP) : 0);
+  const kCont  = startK + dir * contShift;
+  const kStage = startK + dir * stage;
+
+  // chiffre rouge = virgule ; zéros bleus = zéros ajoutés
+  const RED = 'rgba(230,130,110,0.97)', BLUE = 'rgba(130,200,230,0.95)', WHITE = 'rgba(245,242,232,0.9)';
+  function comma(x){ chalkText(ctx, ',', x, yDig+12, 1, RED, 48, 'Playfair Display, Georgia, serif', 'center'); }
+
+  if (isMul){
+    // zéros ajoutés à droite (slots >= 4)
+    for (let i = 4; i <= kStage; i++){
+      const last = (i === kStage);
+      chalkText(ctx, '0', digCenter(i), yDig, last ? popP : 1, last ? BLUE : WHITE, 42, 'Playfair Display, Georgia, serif', 'center');
+    }
+    if (kStage < 3) comma(gapX(kCont));   // virgule visible tant qu'il reste des décimales
+  } else {
+    if (kStage >= 1) comma(gapX(kCont));
+    else if (kStage === 0) comma(gapX(0));
+    else {
+      // kStage < 0 : "0," + zéros à gauche + chiffres
+      const Lz = (-kStage) - 1;
+      for (let j = 1; j <= Lz; j++){
+        const last = (j === Lz);
+        chalkText(ctx, '0', digCenter(0) - j*cw, yDig, last ? popP : 1, last ? BLUE : WHITE, 42, 'Playfair Display, Georgia, serif', 'center');
+      }
+      const leftCenter = (Lz > 0) ? digCenter(0) - Lz*cw : digCenter(0);
+      const commaX = leftCenter - cw/2;
+      chalkText(ctx, ',', commaX, yDig+12, popP, RED, 48, 'Playfair Display, Georgia, serif', 'center');
+      chalkText(ctx, '0', commaX - cw/2, yDig, popP, BLUE, 42, 'Playfair Display, Georgia, serif', 'center');
+    }
+  }
+
+  // direction
+  if (p > 0.14){
+    const ay = yDig-78, ap = clamp((p-0.14)/0.18), xa = W/2-78, xb = W/2+78;
+    if (isMul) chalkArrow(ctx, xa, ay, xb, ay, ap, 'rgba(245,242,232,0.4)', 1.6);
+    else       chalkArrow(ctx, xb, ay, xa, ay, ap, 'rgba(245,242,232,0.4)', 1.6);
+  }
+
+  // nombre d'origine + opérateur (en haut)
+  const origStr = shiftResult(D, startK);
+  const showOrig = clamp((p - 0.12) / 0.2);
+  chalkText(ctx, 'on part de', W/2 - 150, H*0.155, showOrig, 'rgba(245,242,232,0.4)', 12, 'DM Sans, sans-serif', 'center');
+  chalkText(ctx, origStr, W/2 - 150, H*0.225, showOrig, 'rgba(245,242,232,0.88)', 24, 'Playfair Display, Georgia, serif', 'center');
+  if (stage >= 1){
+    drawMultiplier(ctx, W/2 + 70, H*0.225, isMul ? '×' : '÷', stage, popP, 'rgba(245,242,232,0.92)', BLUE);
+    // note adaptative
+    const more = isMul ? (kStage > 3) : (kStage < 0);
+    let note;
+    if (!more){
+      note = stage + (stage>1?' rangs':' rang') + (isMul ? ' vers la droite' : ' vers la gauche');
+      note = 'la virgule ' + (isMul ? 'avance' : 'recule') + ' de ' + note;
+    } else {
+      note = isMul ? 'plus de décimale : on ajoute un zéro à droite'
+                   : 'plus de chiffre à gauche : on écrit « 0, » et un zéro';
+    }
+    chalkText(ctx, note, W/2, H*0.33, clamp((localT-0.30)/0.3), 'rgba(130,210,160,0.85)', 15, 'DM Sans, sans-serif', 'center');
+  } else if (p > 0.18){
+    chalkText(ctx, '( ' + STAGES + ' étapes : ×10, ×100, ×1000, ×10000, ×100000 )'.replace(/×/g, isMul?'×':'÷'), W/2, H*0.225, clamp((p-0.18)/0.2), 'rgba(245,242,232,0.45)', 14, 'DM Sans, sans-serif', 'center');
+  }
+
+  // résultat (à la pause)
+  if (stage >= 1){
+    chalkText(ctx, '=  ' + shiftResult(D, kStage), W/2, H*0.82, clamp((localT-0.30)/0.25), 'rgba(230,210,120,0.95)', 32, 'Playfair Display, Georgia, serif', 'center');
+  }
+}
+
+
+/* ─── HELPERS POUR LE COURS "FRACTIONS" ─── */
+function drawFraction(ctx, x, y, num, den, p, color, size){
+  size = size || 34;
+  const a = clamp(p);
+  chalkText(ctx, String(num), x, y - size*0.62, a, color, size, 'Playfair Display, Georgia, serif', 'center');
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.globalAlpha = 0.92*a;
+  const w = size*0.95;
+  ctx.beginPath(); ctx.moveTo(x - w/2, y); ctx.lineTo(x - w/2 + w*a, y); ctx.stroke();
+  ctx.restore();
+  chalkText(ctx, String(den), x, y + size*0.62, a, color, size, 'Playfair Display, Georgia, serif', 'center');
+}
+
+/* disque partagé en n parts, k coloriées
+   o = { outlineP, lineReveal, lineAlpha(i), fillP, fillColor } */
+function drawPie(ctx, cx, cy, r, n, k, o){
+  o = o || {};
+  const start = -Math.PI/2, step = 2*Math.PI/n;
+  const lineAlpha = o.lineAlpha || function(){ return 1; };
+  // remplissage (secteur des k premières parts)
+  const fillP = (o.fillP == null) ? 1 : o.fillP;
+  if (k > 0 && fillP > 0){
+    const fp = easeInOut(clamp(fillP));
+    ctx.save();
+    ctx.globalAlpha = 0.88;
+    ctx.fillStyle = o.fillColor || 'rgba(130,200,230,0.32)';
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + step*k*fp); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  // contour
+  const op = (o.outlineP == null) ? 1 : o.outlineP;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(245,242,232,0.82)'; ctx.lineWidth = 2.6; ctx.globalAlpha = 0.9;
+  ctx.beginPath(); ctx.arc(cx, cy, r, start, start + 2*Math.PI*easeOut(clamp(op))); ctx.stroke();
+  ctx.restore();
+  // traits de séparation
+  const reveal = (o.lineReveal == null) ? 1 : o.lineReveal;
+  for (let i = 0; i < n; i++){
+    const la = lineAlpha(i);
+    if (la <= 0.001) continue;
+    const seg = clamp(reveal*n - i);
+    if (seg <= 0) continue;
+    const a = start + i*step;
+    const ex = cx + r*Math.cos(a)*seg, ey = cy + r*Math.sin(a)*seg;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(245,242,232,' + (0.7*la).toFixed(3) + ')';
+    ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+
+/* ─── HELPERS "NOMBRES RELATIFS" ─── */
+function relX(W, v){ return W/2 + v * (W*0.72/16); }   // droite de −8 à +8
+function drawRelLine(ctx, W, H, p, y){
+  chalkLine(ctx, relX(W,-8)-16, y, relX(W,8)+16, y, p, 'rgba(245,242,232,0.7)', 2);
+  if (p < 0.35) return;
+  for (let v=-8; v<=8; v++){
+    const a = clamp((p-0.35-(v+8)*0.015)/0.2);
+    if (a<=0) continue;
+    const x = relX(W,v);
+    ctx.save(); ctx.globalAlpha = a*0.9;
+    ctx.strokeStyle = 'rgba(245,242,232,0.6)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x,y-7); ctx.lineTo(x,y+7); ctx.stroke();
+    ctx.restore();
+    if (v%2===0){
+      const col = v===0 ? 'rgba(230,210,120,0.9)' : v<0 ? 'rgba(230,130,110,0.75)' : 'rgba(130,210,160,0.75)';
+      chalkText(ctx, String(v).replace('-','−'), x, y+26, a, col, 15, 'DM Mono, monospace', 'center');
+    }
+  }
+}
+
+/* ─── HELPERS "THALÈS" ─── */
+function thalesPts(W,H,cx){
+  cx = cx || 0.5;
+  const A={x:W*cx, y:H*0.2};
+  const B={x:W*cx-W*0.19, y:H*0.78}, C={x:W*cx+W*0.19, y:H*0.78};
+  const t=0.42;
+  const M={x:A.x+(B.x-A.x)*t, y:A.y+(B.y-A.y)*t};
+  const N={x:A.x+(C.x-A.x)*t, y:A.y+(C.y-A.y)*t};
+  return {A,B,C,M,N, mid:{x:W*cx,y:H*0.78}};
+}
+function thalesLabels(ctx,T,a){
+  chalkText(ctx,'A',T.A.x,T.A.y-22,a,'rgba(245,242,232,0.9)',20,'Playfair Display, Georgia, serif','center');
+  chalkText(ctx,'B',T.B.x-20,T.B.y+12,a,'rgba(245,242,232,0.9)',20,'Playfair Display, Georgia, serif','center');
+  chalkText(ctx,'C',T.C.x+20,T.C.y+12,a,'rgba(245,242,232,0.9)',20,'Playfair Display, Georgia, serif','center');
+}
+function drawThalesFig(ctx,T,p){
+  chalkLine(ctx,T.A.x,T.A.y,T.B.x,T.B.y,p,'rgba(245,242,232,0.8)',2.2);
+  chalkLine(ctx,T.A.x,T.A.y,T.C.x,T.C.y,p,'rgba(245,242,232,0.8)',2.2);
+  chalkLine(ctx,T.B.x,T.B.y,T.C.x,T.C.y,p,'rgba(245,242,232,0.8)',2.2);
+  ctx.save(); ctx.setLineDash([7,7]);
+  chalkLine(ctx,T.M.x,T.M.y,T.N.x,T.N.y,p,'rgba(130,210,160,0.9)',2.2);
+  ctx.setLineDash([]); ctx.restore();
+  thalesLabels(ctx,T,p);
+  chalkText(ctx,'M',T.M.x-22,T.M.y,p,'rgba(122,200,230,0.95)',18,'Playfair Display, Georgia, serif','center');
+  chalkText(ctx,'N',T.N.x+22,T.N.y,p,'rgba(122,200,230,0.95)',18,'Playfair Display, Georgia, serif','center');
+}
+
+const LESSONS = [
+
+  /* ══════════════════════════════════════
+     LEÇON 2 : PYTHAGORE
+  ══════════════════════════════════════ */
+  {
+    id: 'pythagore',
+    tag: 'Géométrie · 4ème',
+    title: 'Théorème de Pythagore',
+    desc: 'Une démonstration visuelle par les aires : comprendre pourquoi a²+b²=c², pas seulement l\'apprendre par cœur.',
+    duration: '~3 min',
+    level: 'Collège',
+    steps: [
+
+      { caption: 'Voici un triangle rectangle. L\'angle droit est en C, l\'hypoténuse est AB (le côté en face de l\'angle droit).',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'Théorème de Pythagore',W/2,45,Math.min(1,p/.2),'rgba(200,185,122,0.9)',30,'Playfair Display, Georgia, serif','center');
+          // triangle rectangle centré
+          const cx=W*.5, cy=H*.62;
+          const A={x:cx-130, y:cy+130};
+          const B={x:cx+130, y:cy+130};
+          const C={x:cx-130, y:cy-100};
+          const tri=[A,B,C];
+          if(p>.15){
+            const tp=(p-.15)/.55;
+            chalkLine(ctx,A.x,A.y,B.x,B.y,tp,'rgba(245,242,232,0.85)',2.5);
+            chalkLine(ctx,A.x,A.y,C.x,C.y,tp,'rgba(245,242,232,0.85)',2.5);
+            chalkLine(ctx,B.x,B.y,C.x,C.y,tp,'rgba(130,200,230,0.9)',2.8);
+          }
+          // angle droit
+          if(p>.55){
+            const sp=(p-.55)/.3;
+            const s=14;
+            ctx.save();ctx.strokeStyle='rgba(245,242,232,0.7)';ctx.lineWidth=1.5;ctx.globalAlpha=sp*.9;
+            ctx.beginPath();ctx.moveTo(A.x+s,A.y);ctx.lineTo(A.x+s,A.y-s);ctx.lineTo(A.x,A.y-s);ctx.stroke();
+            ctx.restore();
+          }
+          // labels
+          if(p>.72){
+            const lp=(p-.72)/.28;
+            chalkText(ctx,'A',A.x-20,A.y+16,lp,'rgba(245,242,232,0.8)',18,'italic serif');
+            chalkText(ctx,'B',B.x+8,B.y+16,lp,'rgba(245,242,232,0.8)',18,'italic serif');
+            chalkText(ctx,'C',C.x-20,C.y-8,lp,'rgba(245,242,232,0.8)',18,'italic serif');
+            chalkText(ctx,'c (hypoténuse)',(B.x+C.x)/2+14,(B.y+C.y)/2,lp,'rgba(130,200,230,0.85)',15,'italic serif');
+          }
+        }
+      },
+
+      { caption: 'Construisons un carré sur chaque côté du triangle. L\'aire du carré sur un côté vaut le carré de sa longueur.',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const A={x:W*.33, y:H*.72};
+          const B={x:W*.67, y:H*.72};
+          const C={x:W*.33, y:H*.36};
+          // triangle
+          chalkLine(ctx,A.x,A.y,B.x,B.y,1,'rgba(245,242,232,0.85)',2.5);
+          chalkLine(ctx,A.x,A.y,C.x,C.y,1,'rgba(245,242,232,0.85)',2.5);
+          chalkLine(ctx,B.x,B.y,C.x,C.y,1,'rgba(130,200,230,0.9)',2.8);
+
+          const ab=B.x-A.x; // côté a (base)
+          const ac=A.y-C.y; // côté b (hauteur)
+
+          // carré sur AB (bas)
+          if(p>.1){
+            const sp=Math.min(1,(p-.1)/.3);
+            const sq=[A,B,{x:B.x,y:B.y+ab},{x:A.x,y:A.y+ab}];
+            chalkFill(ctx,sq,sp,'rgba(230,130,110,0.18)');
+            chalkLine(ctx,A.x,A.y,B.x,B.y,1,'rgba(230,130,110,0.7)',2);
+            chalkLine(ctx,B.x,B.y,B.x,B.y+ab,sp,'rgba(230,130,110,0.7)',2);
+            chalkLine(ctx,B.x,B.y+ab,A.x,A.y+ab,sp,'rgba(230,130,110,0.7)',2);
+            chalkLine(ctx,A.x,A.y+ab,A.x,A.y,sp,'rgba(230,130,110,0.7)',2);
+            if(sp>.7) chalkText(ctx,'a²',A.x+ab/2,A.y+ab/2,sp,'rgba(230,130,110,0.9)',22,'italic serif','center');
+          }
+          // carré sur AC (gauche)
+          if(p>.38){
+            const sp=Math.min(1,(p-.38)/.32);
+            const sq=[A,C,{x:C.x-ac,y:C.y},{x:A.x-ac,y:A.y}];
+            chalkFill(ctx,sq,sp,'rgba(130,210,160,0.18)');
+            chalkLine(ctx,A.x,A.y,C.x,C.y,1,'rgba(130,210,160,0.7)',2);
+            chalkLine(ctx,C.x,C.y,C.x-ac,C.y,sp,'rgba(130,210,160,0.7)',2);
+            chalkLine(ctx,C.x-ac,C.y,A.x-ac,A.y,sp,'rgba(130,210,160,0.7)',2);
+            chalkLine(ctx,A.x-ac,A.y,A.x,A.y,sp,'rgba(130,210,160,0.7)',2);
+            if(sp>.7) chalkText(ctx,'b²',A.x-ac/2,A.y-ac/2,sp,'rgba(130,210,160,0.9)',22,'italic serif','center');
+          }
+          // carré sur BC (hypoténuse) — incliné
+          if(p>.72){
+            const sp=Math.min(1,(p-.72)/.28);
+            const dx=B.x-C.x, dy=B.y-C.y;
+            const px=-dy, py=dx; // perpendiculaire
+            const sq=[B,C,{x:C.x+px,y:C.y+py},{x:B.x+px,y:B.y+py}];
+            chalkFill(ctx,sq,sp,'rgba(130,200,230,0.15)');
+            [B,C].forEach((_,i)=>{
+              const pts2=[sq[i],sq[(i+1)%4],sq[(i+2)%4],sq[(i+3)%4]];
+              chalkLine(ctx,sq[0].x,sq[0].y,sq[1].x,sq[1].y,sp,'rgba(130,200,230,0.7)',2);
+              chalkLine(ctx,sq[1].x,sq[1].y,sq[2].x,sq[2].y,sp,'rgba(130,200,230,0.7)',2);
+              chalkLine(ctx,sq[2].x,sq[2].y,sq[3].x,sq[3].y,sp,'rgba(130,200,230,0.7)',2);
+              chalkLine(ctx,sq[3].x,sq[3].y,sq[0].x,sq[0].y,sp,'rgba(130,200,230,0.7)',2);
+            });
+            if(sp>.7){
+              const mx=(sq[0].x+sq[2].x)/2, my=(sq[0].y+sq[2].y)/2;
+              chalkText(ctx,'c²',mx,my,sp,'rgba(130,200,230,0.9)',22,'italic serif','center');
+            }
+          }
+        }
+      },
+
+      { caption: 'L\'observation clé : l\'aire du carré rouge (a²) plus l\'aire du carré vert (b²) est ÉGALE à l\'aire du carré bleu (c²).',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const A={x:W*.33, y:H*.72};
+          const B={x:W*.67, y:H*.72};
+          const C={x:W*.33, y:H*.36};
+          const ab=B.x-A.x, ac=A.y-C.y;
+          // triangle
+          chalkLine(ctx,A.x,A.y,B.x,B.y,1,'rgba(245,242,232,0.85)',2.5);
+          chalkLine(ctx,A.x,A.y,C.x,C.y,1,'rgba(245,242,232,0.85)',2.5);
+          chalkLine(ctx,B.x,B.y,C.x,C.y,1,'rgba(130,200,230,0.9)',2.8);
+          // carrés complets (flashes)
+          const fa=Math.min(1,p/.25), fb=Math.min(1,(p>0?.6:0)), fc=Math.min(1,(p>0?.6:0));
+          // carré a²
+          chalkFill(ctx,[A,B,{x:B.x,y:B.y+ab},{x:A.x,y:A.y+ab}],fa,'rgba(230,130,110,0.28)');
+          chalkText(ctx,'a²',A.x+ab/2,A.y+ab/2,fa,'rgba(230,130,110,0.9)',22,'italic serif','center');
+          // carré b²
+          chalkFill(ctx,[A,C,{x:C.x-ac,y:C.y},{x:A.x-ac,y:A.y}],fa,'rgba(130,210,160,0.28)');
+          chalkText(ctx,'b²',A.x-ac/2,A.y-ac/2,fa,'rgba(130,210,160,0.9)',22,'italic serif','center');
+          // carré c²
+          const dx=B.x-C.x,dy=B.y-C.y,px=-dy,py=dx;
+          const sq=[B,C,{x:C.x+px,y:C.y+py},{x:B.x+px,y:B.y+py}];
+          chalkFill(ctx,sq,fa,'rgba(130,200,230,0.22)');
+          chalkText(ctx,'c²',(sq[0].x+sq[2].x)/2,(sq[0].y+sq[2].y)/2,fa,'rgba(130,200,230,0.9)',22,'italic serif','center');
+          // formule
+          if(p>.45){
+            const fp=(p-.45)/.35;
+            chalkText(ctx,'a²  +  b²  =  c²',W*.5,H*.08,fp,'rgba(245,242,232,0.95)',32,'Playfair Display, Georgia, serif','center');
+          }
+          // flèche égalité
+          if(p>.82){
+            const fp=(p-.82)/.18;
+            chalkText(ctx,'Les deux petits carrés remplissent exactement le grand.',W*.5,H*.17,fp,'rgba(245,242,232,0.6)',15,'sans-serif','center');
+          }
+        }
+      },
+
+      { caption: 'Le théorème : dans un triangle rectangle de côtés a, b et hypoténuse c, on a toujours a² + b² = c².',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const lines=[
+            {t:'Théorème de Pythagore', c:'rgba(200,185,122,0.8)', s:26, y:.1,  f:'Playfair Display, Georgia, serif'},
+            {t:'Dans un triangle rectangle,', c:'rgba(245,242,232,0.7)', s:18, y:.25, f:'sans-serif'},
+            {t:'si a et b sont les deux côtés de l\'angle droit', c:'rgba(245,242,232,0.7)', s:18, y:.33, f:'sans-serif'},
+            {t:'et c est l\'hypoténuse, alors :', c:'rgba(245,242,232,0.7)', s:18, y:.41, f:'sans-serif'},
+            {t:'a² + b² = c²', c:'rgba(245,242,232,0.97)', s:42, y:.58,  f:'Playfair Display, Georgia, serif'},
+            {t:'─────────────────────────────────', c:'rgba(200,185,122,0.2)', s:16, y:.70, f:'monospace'},
+            {t:'Exemple : a=3, b=4  →  9+16=25  →  c=5', c:'rgba(130,210,160,0.85)', s:17, y:.80, f:'DM Mono, monospace'},
+          ];
+          lines.forEach((l,i)=>{
+            const start=i*.1;
+            if(p>start) chalkText(ctx,l.t,W*.5,H*l.y,(p-start)/.25,l.c,l.s,l.f,'center');
+          });
+        }
+      },
+
+      { caption: 'Exemple concret : triangle 3-4-5. Vérifions que 3²+4²=5² et trouvons c graphiquement.',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const sc=52;
+          const ox=W*.42, oy=H*.72;
+          const A={x:ox,      y:oy};
+          const B={x:ox+4*sc, y:oy};
+          const C={x:ox,      y:oy-3*sc};
+          // axes guides
+          drawGrid(ctx,ox,oy,sc,W*.55,H*.65,Math.min(1,p/.15));
+          // triangle
+          chalkLine(ctx,A.x,A.y,B.x,B.y,Math.min(1,p/.2),'rgba(230,130,110,0.8)',2.8);
+          chalkLine(ctx,A.x,A.y,C.x,C.y,Math.min(1,(p-.1)/.2),'rgba(130,210,160,0.8)',2.8);
+          chalkLine(ctx,B.x,B.y,C.x,C.y,Math.min(1,(p-.2)/.2),'rgba(130,200,230,0.9)',2.8);
+          // cotes
+          if(p>.32){
+            const lp=Math.min(1,(p-.32)/.25);
+            chalkText(ctx,'a = 3',ox-46,(A.y+C.y)/2,lp,'rgba(130,210,160,0.9)',18,'DM Mono, monospace');
+            chalkText(ctx,'b = 4',(A.x+B.x)/2,oy+26,lp,'rgba(230,130,110,0.9)',18,'DM Mono, monospace','center');
+            chalkText(ctx,'c = ?',(B.x+C.x)/2+18,(B.y+C.y)/2,lp,'rgba(130,200,230,0.9)',18,'DM Mono, monospace');
+          }
+          // calcul
+          if(p>.62){
+            const fp=Math.min(1,(p-.62)/.22);
+            chalkText(ctx,'3² + 4² = 9 + 16 = 25',W*.5,H*.1,fp,'rgba(245,242,232,0.85)',20,'DM Mono, monospace','center');
+          }
+          if(p>.82){
+            const fp=(p-.82)/.18;
+            chalkText(ctx,'c = √25 = 5 ✓',W*.5,H*.19,fp,'rgba(230,210,120,0.95)',24,'Playfair Display, Georgia, serif','center');
+          }
+        }
+      },
+    ]
+  },
+
+  /* ══════════════════════════════════════
+     LEÇON 3 : ÉQUATIONS DU 1ER DEGRÉ
+  ══════════════════════════════════════ */
+  {
+    id: 'equation1',
+    tag: 'Algèbre · 4ème',
+    title: 'Équations du 1er degré',
+    desc: 'Visualiser une équation comme une balance : ce qu\'on fait d\'un côté, on le fait de l\'autre pour préserver l\'équilibre.',
+    duration: '~3 min',
+    level: 'Collège',
+    steps: [
+
+      { caption: 'Une équation, c\'est une balance en équilibre. Les deux plateaux sont égaux. Notre but : isoler x d\'un côté.',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'Équation = Balance',W/2,50,Math.min(1,p/.2),'rgba(200,185,122,0.9)',30,'Playfair Display, Georgia, serif','center');
+          // barre de balance
+          const bx=W/2, by=H*.45, bw=220, bh=8;
+          if(p>.2){
+            const bp=Math.min(1,(p-.2)/.3);
+            // pivot
+            chalkLine(ctx,bx,by+bh,bx,by+bh+70,bp,'rgba(245,242,232,0.6)',3);
+            chalkLine(ctx,bx-40,by+bh+70,bx+40,by+bh+70,bp,'rgba(245,242,232,0.6)',3);
+            // barre horizontale
+            chalkLine(ctx,bx-bw,by,bx+bw,by,bp,'rgba(245,242,232,0.8)',bh);
+          }
+          if(p>.5){
+            const bp=Math.min(1,(p-.5)/.3);
+            // plateau gauche
+            chalkLine(ctx,bx-bw,by,bx-bw,by+50,bp,'rgba(245,242,232,0.5)',2);
+            chalkLine(ctx,bx-bw-50,by+50,bx-bw+50,by+50,bp,'rgba(245,242,232,0.5)',2);
+            // plateau droit
+            chalkLine(ctx,bx+bw,by,bx+bw,by+50,bp,'rgba(245,242,232,0.5)',2);
+            chalkLine(ctx,bx+bw-50,by+50,bx+bw+50,by+50,bp,'rgba(245,242,232,0.5)',2);
+          }
+          if(p>.75){
+            const bp=(p-.75)/.25;
+            chalkText(ctx,'2x + 3',bx-bw,by+30,bp,'rgba(130,200,230,0.9)',22,'italic serif','center');
+            chalkText(ctx,'7',bx+bw,by+30,bp,'rgba(230,210,120,0.9)',22,'italic serif','center');
+            chalkText(ctx,'=',bx,by-12,bp,'rgba(245,242,232,0.8)',26,'serif','center');
+          }
+        }
+      },
+
+      { caption: 'On résout : 2x + 3 = 7. Étape 1 — soustraire 3 des deux côtés pour "déplacer" le +3 vers la droite.',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const cx=W/2;
+          chalkText(ctx,'2x + 3 = 7',cx,H*.18,Math.min(1,p/.2),'rgba(245,242,232,0.9)',30,'serif','center');
+          if(p>.25){
+            const ap=Math.min(1,(p-.25)/.3);
+            chalkText(ctx,'− 3      − 3',cx,H*.32,ap,'rgba(230,130,110,0.85)',22,'DM Mono, monospace','center');
+            // lignes soulignées
+            chalkLine(ctx,cx-120,H*.38,cx+120,H*.38,ap,'rgba(230,130,110,0.4)',1.2);
+          }
+          if(p>.6){
+            const ap=Math.min(1,(p-.6)/.3);
+            chalkText(ctx,'2x = 4',cx,H*.5,ap,'rgba(245,242,232,0.9)',30,'serif','center');
+          }
+          if(p>.82){
+            const ap=(p-.82)/.18;
+            chalkText(ctx,'Le +3 a disparu du côté gauche !',cx,H*.66,ap,'rgba(245,242,232,0.5)',16,'sans-serif','center');
+          }
+        }
+      },
+
+      { caption: 'Étape 2 — diviser les deux côtés par 2. Le coefficient de x disparaît et x reste seul.',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const cx=W/2;
+          chalkText(ctx,'2x = 4',cx,H*.18,Math.min(1,p/.15),'rgba(245,242,232,0.85)',30,'serif','center');
+          if(p>.2){
+            const ap=Math.min(1,(p-.2)/.3);
+            chalkText(ctx,'÷ 2      ÷ 2',cx,H*.32,ap,'rgba(130,210,160,0.85)',22,'DM Mono, monospace','center');
+            chalkLine(ctx,cx-120,H*.38,cx+120,H*.38,ap,'rgba(130,210,160,0.4)',1.2);
+          }
+          if(p>.55){
+            const ap=Math.min(1,(p-.55)/.3);
+            chalkText(ctx,'x = 2',cx,H*.52,ap,'rgba(230,210,120,0.97)',36,'Playfair Display, Georgia, serif','center');
+          }
+          if(p>.82){
+            const ap=(p-.82)/.18;
+            chalkText(ctx,'Vérification : 2×2 + 3 = 7 ✓',cx,H*.70,ap,'rgba(130,210,160,0.85)',18,'DM Mono, monospace','center');
+          }
+        }
+      },
+
+      { caption: 'Résumé de la méthode : on "fait passer" les termes d\'un côté à l\'autre en changeant leur signe ou opération.',
+        draw(ctx, W, H, p) {
+          drawBoard(ctx,W,H);
+          const lines=[
+            {t:'Méthode générale', c:'rgba(200,185,122,0.8)', s:24, y:.08, f:'Playfair Display, Georgia, serif'},
+            {t:'ax + b = c', c:'rgba(245,242,232,0.9)', s:30, y:.22, f:'serif'},
+            {t:'1.  Isoler le terme en x :', c:'rgba(245,242,232,0.65)', s:17, y:.36, f:'sans-serif'},
+            {t:'    ax = c − b', c:'rgba(130,200,230,0.9)', s:22, y:.45, f:'DM Mono, monospace'},
+            {t:'2.  Diviser par le coefficient :', c:'rgba(245,242,232,0.65)', s:17, y:.57, f:'sans-serif'},
+            {t:'    x = (c − b) / a', c:'rgba(230,210,120,0.95)', s:22, y:.66, f:'DM Mono, monospace'},
+            {t:'Règle d\'or : toute opération doit être faite', c:'rgba(245,242,232,0.45)', s:14, y:.80, f:'sans-serif'},
+            {t:'des DEUX côtés de l\'égalité.', c:'rgba(245,242,232,0.45)', s:14, y:.87, f:'sans-serif'},
+          ];
+          lines.forEach((l,i)=>{
+            const start=i*.09;
+            if(p>start) chalkText(ctx,l.t,W*.5,H*l.y,(p-start)/.22,l.c,l.s,l.f,'center');
+          });
+        }
+      },
+    ]
+  },
+
+  /* ══════════════════════════════════════
+     COURS ANIMÉ : ENTIERS & DÉCIMAUX
+  ══════════════════════════════════════ */
+  {
+    id:'decimaux', branch:'nombres', tag:'Nombres · 6ème', title:'Entiers & décimaux',
+    desc:"Comprendre la valeur de chaque chiffre selon sa position, et l'effet de ×10, ×100… et ÷10, ÷100… sur la virgule.",
+    duration:'~4 min', level:'6ème',
+    steps:[
+      { label:'Définition', dur:6500, caption:"Les entiers servent à compter ; les décimaux ont une partie après la virgule pour mesurer plus précisément.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'DÉFINITION',title:'Entiers & décimaux',titleColor:'rgba(200,185,122,0.92)',titleSize:28,
+          body:[{t:"Les entiers servent à compter : 0, 1, 2, 3…",s:18},
+                {t:"Les décimaux ont une partie après la virgule",s:18},
+                {t:"pour mesurer plus finement : 3,45 ; 0,7 ; 12,08.",s:18}]}); } },
+      { label:'Idée clé', dur:7500, caption:"Position des chiffres, et déplacement de la virgule selon le nombre de zéros.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:"L'IDÉE CLÉ",
+          body:[{t:'•  Chaque chiffre a une valeur selon sa position.',c:'rgba(130,200,230,0.85)',s:18},
+                {t:'•  Chaque position vaut 10 fois celle de droite.',c:'rgba(130,200,230,0.85)',s:18},
+                {t:'•  ×10, ×100… déplacent la virgule vers la droite.',c:'rgba(130,200,230,0.85)',s:18},
+                {t:'•  ÷10, ÷100… la déplacent vers la gauche.',c:'rgba(130,200,230,0.85)',s:18}]}); } },
+      { label:'Les positions', dur:16000, caption:"Chaque colonne porte un nom. Vers la gauche, chaque position vaut 10 fois la précédente ; vers la droite, 10 fois moins.",
+        draw(ctx,W,H,p){ drawPositions(ctx,W,H,p); } },
+      { label:'Multiplier par 10, 100…', dur:21000, caption:"Multiplier par 10, 100, 1000… : la virgule glisse vers la droite. Quand il n'y a plus de décimale, on ajoute des zéros (4,237 → … → 423700).",
+        draw(ctx,W,H,p){ drawShift(ctx,W,H,p,'mul'); } },
+      { label:'Diviser par 10, 100…', dur:21000, caption:"Diviser par 10, 100, 1000… : la virgule glisse vers la gauche. Quand il n'y a plus de chiffre, on écrit « 0, » puis on ajoute des zéros (4237 → … → 0,04237).",
+        draw(ctx,W,H,p){ drawShift(ctx,W,H,p,'div'); } },
+      { label:'À retenir', dur:9000, caption:"Trois choses à retenir : la position d'un chiffre donne sa valeur ; multiplier par 10, 100, 1000 déplace la virgule vers la droite ; diviser la déplace vers la gauche.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'À RETENIR',title:'Les 3 idées du chapitre',titleColor:'rgba(200,185,122,0.92)',titleSize:22,
+          body:[
+            {t:"①  La position d'un chiffre donne sa valeur",c:'rgba(245,242,232,0.88)',s:18},
+            {t:'(milliers … unités , dixièmes … millièmes)',c:'rgba(245,242,232,0.5)',s:14},
+            {t:'②  × 10, × 100, × 1000  →  virgule vers la droite',c:'rgba(130,200,230,0.9)',s:18},
+            {t:'③  ÷ 10, ÷ 100, ÷ 1000  →  virgule vers la gauche',c:'rgba(130,210,160,0.9)',s:18},
+            {t:'Ex :  3,45 × 10 = 34,5      3,45 ÷ 10 = 0,345',c:'rgba(230,210,120,0.9)',s:16,f:'DM Mono, monospace'},
+          ]}); } },
+    ]
+  },
+
+  /* ══════════════════════════════════════
+     COURS ANIMÉ : FRACTIONS
+  ══════════════════════════════════════ */
+  {
+    id:'fractions', branch:'nombres', tag:'Nombres · 5ème', title:'Fractions',
+    desc:"Comprendre une fraction avec un disque : dénominateur = nombre de parts (plus il est grand, plus les parts sont petites), numérateur = parts coloriées. Et simplifier en effaçant des traits.",
+    duration:'~5 min', level:'5ème',
+    steps:[
+      { label:'Définition', dur:6500, caption:"Une fraction, c'est un partage : on coupe un tout en parts égales et on en prend quelques-unes.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'DÉFINITION',title:'Une fraction',titleColor:'rgba(200,185,122,0.92)',titleSize:28,
+          body:[{t:"On partage un tout en parts égales,",s:18},
+                {t:"puis on en prend un certain nombre.",s:18},
+                {t:"Exemple : 3/4, c'est 3 parts sur 4.",c:'rgba(130,200,230,0.85)',s:18}]}); } },
+
+      { label:'Le dénominateur', dur:11000, caption:"Le dénominateur (le nombre du bas) indique en combien de parts égales on partage le disque. Ici : 4 parts.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LE DÉNOMINATEUR',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const cx=W*0.40, cy=H*0.55, r=Math.min(H*0.26,W*0.20);
+          drawPie(ctx,cx,cy,r,4,0,{ outlineP:clamp(p/0.30), lineReveal:clamp((p-0.30)/0.45) });
+          if(p>0.55){ const a=clamp((p-0.55)/0.3);
+            chalkText(ctx,'4',W*0.72,H*0.42,a,'rgba(230,210,120,0.95)',56,'Playfair Display, Georgia, serif','center');
+            chalkText(ctx,'parts égales',W*0.72,H*0.55,a,'rgba(245,242,232,0.7)',18,'DM Sans, sans-serif','center');
+            chalkText(ctx,'= le dénominateur',W*0.72,H*0.63,a,'rgba(230,210,120,0.7)',15,'DM Mono, monospace','center'); }
+        } },
+
+      { label:'Taille des parts', dur:14000, caption:"Plus le dénominateur est grand, plus il y a de parts… et plus chaque part est petite. Regarde la part bleue rétrécir de 1/2 à 1/8.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'PLUS DE PARTS = PARTS PLUS PETITES',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const dens=[2,3,4,6,8];
+          const r=Math.min(H*0.155,W*0.076), cy=H*0.50;
+          if(p>0.14) chalkText(ctx,'le dénominateur augmente   →',W/2,H*0.22,clamp((p-0.14)/0.2),'rgba(230,210,120,0.7)',15,'DM Mono, monospace','center');
+          dens.forEach((n,i)=>{
+            const cx=W*(0.13+i*0.185);
+            const lp=clamp((p-0.24-i*0.12)/0.22);
+            if(lp<=0) return;
+            drawPie(ctx,cx,cy,r,n,1,{ outlineP:clamp(lp*2), lineReveal:clamp(lp*1.6), fillP:clamp((lp-0.3)/0.5), fillColor:'rgba(130,200,230,0.42)' });
+            drawFraction(ctx,cx,cy+r+34,1,n,lp,'rgba(245,242,232,0.85)',23);
+          });
+          if(p>0.84) chalkText(ctx,'→ chaque part devient plus petite',W/2,H*0.88,clamp((p-0.84)/0.16),'rgba(130,200,230,0.88)',17,'DM Sans, sans-serif','center');
+        } },
+
+      { label:'Le numérateur', dur:11000, caption:"Le numérateur (le nombre du haut) indique combien de parts on colorie. Ici on en colorie 3 : la fraction est 3/4.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LE NUMÉRATEUR',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const cx=W*0.40, cy=H*0.55, r=Math.min(H*0.26,W*0.20);
+          drawPie(ctx,cx,cy,r,4,3,{ fillP:clamp((p-0.25)/0.45), fillColor:'rgba(130,200,230,0.33)' });
+          if(p>0.30){ const a=clamp((p-0.30)/0.3);
+            chalkText(ctx,'3 parts coloriées',W*0.72,H*0.40,a,'rgba(130,200,230,0.85)',17,'DM Sans, sans-serif','center');
+            chalkText(ctx,'sur 4 parts en tout',W*0.72,H*0.47,a,'rgba(245,242,232,0.55)',15,'DM Sans, sans-serif','center'); }
+          if(p>0.55) drawFraction(ctx,W*0.72,H*0.63,3,4,clamp((p-0.55)/0.3),'rgba(230,210,120,0.95)',40);
+        } },
+
+      { label:'Simplifier', dur:14000, caption:"Simplifier 6/8 : on regroupe les parts deux par deux. Les traits du milieu s'effacent, et 6/8 devient 3/4 (même portion de disque).",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'SIMPLIFIER UNE FRACTION',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const cx=W*0.38, cy=H*0.55, r=Math.min(H*0.26,W*0.20);
+          const fade=clamp((p-0.34)/0.34);
+          drawPie(ctx,cx,cy,r,8,6,{ fillColor:'rgba(130,200,230,0.33)',
+            lineAlpha:function(i){ return (i%2===1) ? (1-fade) : 1; } });
+          if(p>0.12) drawFraction(ctx,W*0.66,H*0.50,6,8,clamp((p-0.12)/0.2),'rgba(245,242,232,0.85)',38);
+          if(p>0.40){ const a=clamp((p-0.40)/0.25);
+            chalkArrow(ctx,W*0.71,H*0.50,W*0.80,H*0.50,a,'rgba(130,210,160,0.85)',1.8);
+            chalkText(ctx,'÷2',W*0.755,H*0.43,a,'rgba(130,210,160,0.9)',18,'DM Mono, monospace','center');
+            chalkText(ctx,'÷2',W*0.755,H*0.57,a,'rgba(130,210,160,0.9)',18,'DM Mono, monospace','center'); }
+          if(p>0.66) drawFraction(ctx,W*0.88,H*0.50,3,4,clamp((p-0.66)/0.25),'rgba(230,210,120,0.97)',40);
+          if(p>0.88) chalkText(ctx,'6/8 = 3/4',W*0.5,H*0.90,clamp((p-0.88)/0.12),'rgba(245,242,232,0.7)',18,'DM Mono, monospace','center');
+        } },
+
+      { label:'À retenir', dur:9000, caption:"Le dénominateur partage (plus il grandit, plus les parts sont petites), le numérateur colorie, et pour simplifier on divise haut et bas par le même nombre.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'À RETENIR',title:'Les fractions',titleColor:'rgba(200,185,122,0.92)',titleSize:24,
+          body:[
+            {t:'①  Dénominateur (bas) = nombre de parts',c:'rgba(245,242,232,0.85)',s:17},
+            {t:'     plus il est grand, plus les parts sont petites',c:'rgba(130,200,230,0.85)',s:15},
+            {t:'②  Numérateur (haut) = parts coloriées',c:'rgba(130,200,230,0.9)',s:17},
+            {t:'③  Simplifier = diviser haut et bas par le même nombre',c:'rgba(130,210,160,0.9)',s:16},
+            {t:'Ex :  6/8 = 3/4   (on divise par 2)',c:'rgba(230,210,120,0.9)',s:17,f:'DM Mono, monospace'},
+          ]}); } },
+    ]
+  },
+
+
+  /* ══════════════════════════════════════
+     COURS ANIMÉ : NOMBRES RELATIFS
+  ══════════════════════════════════════ */
+  {
+    id:'relatifs', branch:'nombres', tag:'Nombres · 5ème', title:'Nombres relatifs',
+    desc:"Visualiser les positifs et les négatifs sur la droite graduée, additionner en « sautant », et découvrir pourquoi moins par moins donne plus.",
+    duration:'~4 min', level:'5ème',
+    steps:[
+      { label:'Définition', dur:6500, caption:"Les nombres relatifs vivent des deux côtés du zéro : au-dessus de zéro (positifs) et au-dessous (négatifs), comme les températures ou les altitudes.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'DÉFINITION',title:'Nombres relatifs',titleColor:'rgba(200,185,122,0.92)',titleSize:28,
+          body:[{t:"Des nombres avec un signe : +5, −3, +0,7, −12…",s:18},
+                {t:"−3 °C : trois degrés au-dessous de zéro.",c:'rgba(130,200,230,0.85)',s:18},
+                {t:"+120 m : cent vingt mètres au-dessus du niveau de la mer.",c:'rgba(130,210,160,0.85)',s:18}]}); } },
+
+      { label:'La droite graduée', dur:13000, caption:"Sur la droite graduée, les négatifs sont à gauche de zéro, les positifs à droite. Le point A d'abscisse −3 est à 3 unités à gauche de l'origine.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LA DROITE GRADUÉE',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          drawRelLine(ctx,W,H,p,H*0.48);
+          if(p>0.55){ const a=clamp((p-0.55)/0.25);
+            const x=relX(W,-3);
+            chalkDot(ctx,x,H*0.48,a,'rgba(122,200,230,0.95)',6);
+            chalkText(ctx,'A(−3)',x,H*0.48-40,a,'rgba(122,200,230,0.95)',20,'Playfair Display, Georgia, serif','center');
+          }
+          if(p>0.8){ const a=clamp((p-0.8)/0.2);
+            chalkText(ctx,'négatifs ← 0 → positifs',W/2,H*0.72,a,'rgba(245,242,232,0.55)',16,'DM Mono, monospace','center'); }
+        } },
+
+      { label:'Additionner : même signe', dur:14000, caption:"(−3) + (−2) : on part de −3 et on recule encore de 2. Même signe : on additionne les distances et on garde le signe. Résultat : −5.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'MÊME SIGNE',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          chalkText(ctx,'(−3) + (−2) = ?',W/2,H*0.22,clamp((p-0.06)/0.2),'rgba(245,242,232,0.9)',26,'Playfair Display, Georgia, serif','center');
+          const y=H*0.5;
+          drawRelLine(ctx,W,H,Math.min(1,p*2),y);
+          if(p>0.3){ chalkDot(ctx,relX(W,-3),y,clamp((p-0.3)/0.15),'rgba(122,200,230,0.95)',6); }
+          if(p>0.45){ const a=clamp((p-0.45)/0.3);
+            chalkArrow(ctx,relX(W,-3),y-34,relX(W,-5),y-34,a,'rgba(230,130,110,0.9)',2);
+            chalkText(ctx,'− 2',(relX(W,-3)+relX(W,-5))/2,y-58,a,'rgba(230,130,110,0.9)',16,'DM Mono, monospace','center');
+          }
+          if(p>0.72){ chalkDot(ctx,relX(W,-5),y,clamp((p-0.72)/0.15),'rgba(230,210,120,0.95)',7); }
+          if(p>0.84){ chalkText(ctx,'(−3) + (−2) = −5',W/2,H*0.78,clamp((p-0.84)/0.16),'rgba(230,210,120,0.95)',26,'Playfair Display, Georgia, serif','center'); }
+        } },
+
+      { label:'Additionner : signes contraires', dur:14000, caption:"(−7) + (+3) : on part de −7 et on avance de 3. Signes contraires : on soustrait les distances, et le signe du plus « fort » l'emporte. Résultat : −4.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'SIGNES CONTRAIRES',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          chalkText(ctx,'(−7) + (+3) = ?',W/2,H*0.22,clamp((p-0.06)/0.2),'rgba(245,242,232,0.9)',26,'Playfair Display, Georgia, serif','center');
+          const y=H*0.5;
+          drawRelLine(ctx,W,H,Math.min(1,p*2),y);
+          if(p>0.3){ chalkDot(ctx,relX(W,-7),y,clamp((p-0.3)/0.15),'rgba(122,200,230,0.95)',6); }
+          if(p>0.45){ const a=clamp((p-0.45)/0.3);
+            chalkArrow(ctx,relX(W,-7),y-34,relX(W,-4),y-34,a,'rgba(130,210,160,0.9)',2);
+            chalkText(ctx,'+ 3',(relX(W,-7)+relX(W,-4))/2,y-58,a,'rgba(130,210,160,0.9)',16,'DM Mono, monospace','center');
+          }
+          if(p>0.72){ chalkDot(ctx,relX(W,-4),y,clamp((p-0.72)/0.15),'rgba(230,210,120,0.95)',7); }
+          if(p>0.84){ chalkText(ctx,'(−7) + (+3) = −4',W/2,H*0.78,clamp((p-0.84)/0.16),'rgba(230,210,120,0.95)',26,'Playfair Display, Georgia, serif','center'); }
+        } },
+
+      { label:'La règle des signes', dur:14000, caption:"Pour multiplier ou diviser : deux signes identiques donnent plus, deux signes différents donnent moins. Exemple : (−3) × (−6) = +18.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LA RÈGLE DES SIGNES',W/2,H*0.10,clamp(p/0.12),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const rows=[
+            ['(+) × (+)','= +','rgba(130,210,160,0.9)'],
+            ['(+) × (−)','= −','rgba(230,130,110,0.9)'],
+            ['(−) × (+)','= −','rgba(230,130,110,0.9)'],
+            ['(−) × (−)','= +','rgba(130,210,160,0.9)'],
+          ];
+          rows.forEach((r,i)=>{
+            const st=0.12+i*0.13, a=clamp((p-st)/0.2);
+            if(a<=0) return;
+            chalkText(ctx,r[0],W*0.40,H*(0.26+i*0.12),a,'rgba(245,242,232,0.85)',22,'DM Mono, monospace','right');
+            chalkText(ctx,r[1],W*0.46,H*(0.26+i*0.12),a,r[2],22,'DM Mono, monospace','left');
+          });
+          if(p>0.72){ const a=clamp((p-0.72)/0.2);
+            chalkText(ctx,'(−3) × (−6) = +18',W*0.72,H*0.44,a,'rgba(230,210,120,0.95)',26,'Playfair Display, Georgia, serif','center');
+            chalkText(ctx,'moins par moins : plus !',W*0.72,H*0.56,a,'rgba(245,242,232,0.5)',15,'DM Sans, sans-serif','center');
+          }
+        } },
+
+      { label:'À retenir', dur:9000, caption:"Trois réflexes : placer sur la droite graduée, additionner en sautant (même signe on ajoute, signes contraires on soustrait), et la règle des signes pour × et ÷.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'À RETENIR',title:'Les relatifs',titleColor:'rgba(200,185,122,0.92)',titleSize:24,
+          body:[
+            {t:'①  Négatifs à gauche de 0, positifs à droite',c:'rgba(245,242,232,0.85)',s:17},
+            {t:'②  Même signe : on additionne, on garde le signe',c:'rgba(130,200,230,0.9)',s:17},
+            {t:'③  Signes contraires : on soustrait, signe du plus fort',c:'rgba(130,200,230,0.9)',s:17},
+            {t:'④  (−) × (−) = (+)   ·   (+) × (−) = (−)',c:'rgba(130,210,160,0.9)',s:17,f:'DM Mono, monospace'},
+            {t:'Ex :  (−7) + (+3) = −4      (−3) × (−6) = +18',c:'rgba(230,210,120,0.9)',s:16,f:'DM Mono, monospace'},
+          ]}); } },
+    ]
+  },
+
+  /* ══════════════════════════════════════
+     COURS ANIMÉ : THÉORÈME DE THALÈS
+  ══════════════════════════════════════ */
+  {
+    id:'thales', branch:'geometrie', tag:'Géométrie · 3ème', title:'Théorème de Thalès',
+    desc:"Voir la configuration se construire, comprendre d'où viennent les trois rapports égaux, et s'en servir pour calculer une longueur.",
+    duration:'~5 min', level:'3ème',
+    steps:[
+      { label:'Définition', dur:7000, caption:"Quand une droite parallèle à un côté coupe les deux autres côtés d'un triangle, elle fabrique un petit triangle « réduit » : toutes les longueurs sont dans le même rapport.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'DÉFINITION',title:'Le théorème de Thalès',titleColor:'rgba(200,185,122,0.92)',titleSize:28,
+          body:[{t:"Une parallèle à un côté d'un triangle",s:18},
+                {t:"découpe un petit triangle semblable au grand :",s:18},
+                {t:"les longueurs sont proportionnelles.",c:'rgba(130,200,230,0.85)',s:18}]}); } },
+
+      { label:'La configuration', dur:15000, caption:"On trace le triangle ABC, puis M sur [AB] et N sur [AC], avec (MN) parallèle à (BC). C'est la configuration de Thalès.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LA CONFIGURATION',W/2,H*0.09,clamp(p/0.10),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const T=thalesPts(W,H);
+          // grand triangle
+          chalkLine(ctx,T.A.x,T.A.y,T.B.x,T.B.y,clamp(p/0.22),'rgba(245,242,232,0.85)',2.4);
+          chalkLine(ctx,T.A.x,T.A.y,T.C.x,T.C.y,clamp((p-0.08)/0.22),'rgba(245,242,232,0.85)',2.4);
+          chalkLine(ctx,T.B.x,T.B.y,T.C.x,T.C.y,clamp((p-0.16)/0.22),'rgba(245,242,232,0.85)',2.4);
+          thalesLabels(ctx,T,clamp((p-0.3)/0.2));
+          // M, N puis (MN)
+          if(p>0.45){ const a=clamp((p-0.45)/0.15);
+            chalkDot(ctx,T.M.x,T.M.y,a,'rgba(122,200,230,0.95)',5);
+            chalkDot(ctx,T.N.x,T.N.y,a,'rgba(122,200,230,0.95)',5);
+            chalkText(ctx,'M',T.M.x-24,T.M.y,a,'rgba(122,200,230,0.95)',19,'Playfair Display, Georgia, serif','center');
+            chalkText(ctx,'N',T.N.x+24,T.N.y,a,'rgba(122,200,230,0.95)',19,'Playfair Display, Georgia, serif','center');
+          }
+          if(p>0.6){
+            ctx.save(); ctx.setLineDash([7,7]);
+            chalkLine(ctx,T.M.x,T.M.y,T.N.x,T.N.y,clamp((p-0.6)/0.25),'rgba(130,210,160,0.95)',2.4);
+            ctx.setLineDash([]); ctx.restore();
+          }
+          if(p>0.85){ chalkText(ctx,'(MN) // (BC)',W/2,H*0.9,clamp((p-0.85)/0.15),'rgba(130,210,160,0.9)',18,'DM Mono, monospace','center'); }
+        } },
+
+      { label:'Les trois rapports', dur:16000, caption:"Le petit triangle AMN est une réduction du grand triangle ABC : AM/AB = AN/AC = MN/BC. Les trois rapports sont égaux.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'TROIS RAPPORTS ÉGAUX',W/2,H*0.09,clamp(p/0.10),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const T=thalesPts(W,H,0.36);
+          drawThalesFig(ctx,T,1);
+          const fx=W*0.72;
+          if(p>0.18){ const a=clamp((p-0.18)/0.2);
+            chalkLine(ctx,T.A.x,T.A.y,T.M.x,T.M.y,a,'rgba(230,210,120,0.95)',4);
+            chalkText(ctx,'AM / AB',fx,H*0.3,a,'rgba(230,210,120,0.95)',24,'Playfair Display, Georgia, serif','center'); }
+          if(p>0.42){ const a=clamp((p-0.42)/0.2);
+            chalkLine(ctx,T.A.x,T.A.y,T.N.x,T.N.y,a,'rgba(122,200,230,0.95)',4);
+            chalkText(ctx,'=  AN / AC',fx,H*0.45,a,'rgba(122,200,230,0.95)',24,'Playfair Display, Georgia, serif','center'); }
+          if(p>0.66){ const a=clamp((p-0.66)/0.2);
+            chalkLine(ctx,T.M.x,T.M.y,T.N.x,T.N.y,a,'rgba(130,210,160,0.98)',4);
+            chalkText(ctx,'=  MN / BC',fx,H*0.6,a,'rgba(130,210,160,0.95)',24,'Playfair Display, Georgia, serif','center'); }
+        } },
+
+      { label:'Calculer une longueur', dur:18000, caption:"AM = 3, AB = 9 et BC = 12. Le rapport vaut 3/9 = 1/3, donc MN = BC × 1/3 = 4. Thalès transforme une figure en calcul de proportion.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'EXEMPLE',W/2,H*0.09,clamp(p/0.10),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const T=thalesPts(W,H,0.36);
+          drawThalesFig(ctx,T,Math.min(1,p*3));
+          chalkText(ctx,'AM = 3',W*0.15,H*0.36,clamp((p-0.1)/0.15),'rgba(230,210,120,0.9)',16,'DM Mono, monospace','center');
+          chalkText(ctx,'AB = 9',W*0.13,H*0.6,clamp((p-0.18)/0.15),'rgba(245,242,232,0.7)',16,'DM Mono, monospace','center');
+          chalkText(ctx,'BC = 12',T.mid.x,T.B.y+30,clamp((p-0.26)/0.15),'rgba(245,242,232,0.7)',16,'DM Mono, monospace','center');
+          const fx=W*0.72;
+          if(p>0.4)  chalkText(ctx,'MN/BC = AM/AB',fx,H*0.28,clamp((p-0.4)/0.18),'rgba(245,242,232,0.9)',22,'Playfair Display, Georgia, serif','center');
+          if(p>0.55) chalkText(ctx,'MN/12 = 3/9 = 1/3',fx,H*0.42,clamp((p-0.55)/0.18),'rgba(122,200,230,0.92)',22,'DM Mono, monospace','center');
+          if(p>0.72) chalkText(ctx,'MN = 12 × 1/3',fx,H*0.56,clamp((p-0.72)/0.15),'rgba(245,242,232,0.85)',22,'DM Mono, monospace','center');
+          if(p>0.86) chalkText(ctx,'MN = 4',fx,H*0.72,clamp((p-0.86)/0.14),'rgba(230,210,120,0.97)',34,'Playfair Display, Georgia, serif','center');
+        } },
+
+      { label:'La réciproque', dur:9000, caption:"Dans l'autre sens : si AM/AB = AN/AC (points alignés dans le même ordre), alors (MN) est parallèle à (BC). La réciproque sert à PROUVER un parallélisme.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'LA RÉCIPROQUE',
+          body:[
+            {t:'Si  AM/AB = AN/AC',c:'rgba(122,200,230,0.9)',s:21,f:'DM Mono, monospace'},
+            {t:'(et si les points sont alignés dans le même ordre)',c:'rgba(245,242,232,0.5)',s:14},
+            {t:'alors  (MN) // (BC)',c:'rgba(130,210,160,0.92)',s:21,f:'DM Mono, monospace'},
+            {t:'Le théorème CALCULE, la réciproque PROUVE.',c:'rgba(230,210,120,0.9)',s:16},
+          ]}); } },
+
+      { label:'À retenir', dur:8000, caption:"La formule à connaître par cœur : AM/AB = AN/AC = MN/BC, valable dès que (MN) est parallèle à (BC).",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'À RETENIR',
+          title:'AM/AB = AN/AC = MN/BC',titleColor:'rgba(230,210,120,0.95)',titleSize:26,titleFont:'DM Mono, monospace',
+          body:[
+            {t:'①  Repérer la configuration (parallèle + triangle)',c:'rgba(245,242,232,0.85)',s:17},
+            {t:'②  Écrire les trois rapports égaux',c:'rgba(130,200,230,0.9)',s:17},
+            {t:'③  Produit en croix pour la longueur manquante',c:'rgba(130,210,160,0.9)',s:17},
+          ]}); } },
+    ]
+  },
+
+];
+
+/* ═══════════════════════════════════════════════════════════
+   CONTENU : tous les chapitres de l'arbre des connaissances.
+   Chaque entrée génère un cours animé (définition → idée → exemple).
+   branch : nombres | algebre | geometrie | fonctions | proba | stats
+   ═══════════════════════════════════════════════════════════ */
+const CHAPTERS = [
+  { branch:'nombres', level:'4ème', title:'Puissances',
+    def:"Une puissance a^n, c'est a multiplié par lui-même n fois.",
+    idea:["a^m × a^n = a^(m+n).","a^0 = 1.","10^n compte simplement les zéros."],
+    ex:["2^3 = 2×2×2 = 8","10^4 = 10 000"] },
+  { branch:'nombres', level:'4ème', title:'Proportionnalité',
+    def:"Deux grandeurs sont proportionnelles si l'une s'obtient en multipliant l'autre par un coefficient constant.",
+    idea:["On peut utiliser un tableau de proportionnalité.","Le produit en croix relie les valeurs.","La règle de trois ramène à l'unité."],
+    ex:["3 stylos = 6 €  →  5 stylos = 6 ÷ 3 × 5 = 10 €"] },
+  { branch:'nombres', level:'4ème', title:'Pourcentages',
+    def:"Un pourcentage t % exprime une proportion ramenée sur 100.",
+    idea:["t % de N = N × t / 100.","Augmenter de t % : multiplier par (1 + t/100).","Diminuer de t % : multiplier par (1 − t/100)."],
+    ex:["20 % de 150 = 150 × 0,20 = 30"] },
+  { branch:'nombres', level:'Primaire', title:'Longueur',
+    def:"La longueur mesure une distance ; l'unité de référence est le mètre.",
+    idea:["km > hm > dam > m > dm > cm > mm, chaque rang vaut 10 fois le suivant.","Le périmètre est la somme des longueurs des côtés."],
+    ex:["2,5 m = 250 cm","Périmètre d'un carré de 4 cm = 16 cm"] },
+  { branch:'nombres', level:'6ème', title:'Aires',
+    def:"L'aire mesure la surface d'une figure, exprimée en unités carrées.",
+    idea:["Rectangle : longueur × largeur.","Triangle : (base × hauteur) / 2.","Disque : π × rayon²."],
+    ex:["Rectangle 5 × 3 = 15 cm²","Disque r = 2 → π × 4 ≈ 12,57 cm²"] },
+  { branch:'nombres', level:'Primaire', title:'Repérage temps & durées',
+    def:"Lire l'heure et calculer la durée entre deux instants.",
+    idea:["1 h = 60 min, 1 min = 60 s.","Durée = heure d'arrivée − heure de départ.","Attention aux passages d'une heure à l'autre."],
+    ex:["De 9 h 40 à 11 h 15  →  1 h 35 min"] },
+  { branch:'nombres', level:'4ème', title:'Vitesse, distance et temps',
+    def:"La vitesse relie la distance parcourue au temps mis pour la parcourir.",
+    idea:["v = d / t.","d = v × t  et  t = d / v.","On vérifie toujours la cohérence des unités (km/h, m/s)."],
+    ex:["120 km en 2 h  →  v = 120 / 2 = 60 km/h"] },
+  { branch:'nombres', level:'3ème', title:'Arithmétique',
+    def:"L'étude des nombres entiers : diviseurs, multiples et nombres premiers.",
+    idea:["Un diviseur divise sans reste.","Le PGCD sert à simplifier une fraction.","Tout entier se décompose en facteurs premiers."],
+    ex:["PGCD(12, 18) = 6","12 = 2² × 3"] },
+  { branch:'algebre', level:'5ème', title:"Enchaînement d'opérations",
+    def:"L'ordre dans lequel on doit effectuer les calculs d'une expression.",
+    idea:["Les parenthèses d'abord.","Puis les × et ÷.","Enfin les + et −, de gauche à droite."],
+    ex:["3 + 4 × 2 = 3 + 8 = 11"] },
+  { branch:'algebre', level:'4ème', title:'Calcul littéral',
+    def:"Calculer avec des lettres qui représentent des nombres inconnus.",
+    idea:["On réduit en regroupant les termes semblables.","3x + 2x = 5x.","On peut remplacer la lettre par une valeur (substituer)."],
+    ex:["2x + 5 + 3x − 1 = 5x + 4"] },
+  { branch:'algebre', level:'3ème', title:'Développement et factorisation',
+    def:"Développer enlève les parenthèses ; factoriser met en facteur commun.",
+    idea:["k(a + b) = ka + kb (distributivité).","Identité : (a + b)² = a² + 2ab + b².","Identité : a² − b² = (a − b)(a + b)."],
+    ex:["3(x + 2) = 3x + 6","x² − 9 = (x − 3)(x + 3)"] },
+  { branch:'algebre', level:'3ème', title:"Systèmes d'équations",
+    def:"Deux équations à deux inconnues qui doivent être vraies en même temps.",
+    idea:["Méthode par substitution : on exprime une inconnue.","Méthode par combinaison : on élimine une inconnue.","La solution est un couple (x ; y)."],
+    ex:["x + y = 5  et  x − y = 1  →  x = 3, y = 2"] },
+  { branch:'algebre', level:'4ème', title:'Inéquations',
+    def:"Comme une équation, mais avec <, >, ≤ ou ≥ au lieu de =.",
+    idea:["On manipule comme une équation.","ATTENTION : multiplier ou diviser par un nombre négatif inverse le sens.","La solution est un intervalle, pas un seul nombre."],
+    ex:["−2x > 4  →  x < −2"] },
+  { branch:'geometrie', level:'6ème', title:'Géométrie',
+    def:"L'étude des figures : points, droites, polygones et solides.",
+    idea:["On code les longueurs et angles égaux sur la figure.","On reconnaît les solides : cube, pavé, sphère, cylindre.","On utilise règle, équerre et compas pour construire."],
+    ex:["Un carré : 4 côtés égaux et 4 angles droits"] },
+  { branch:'geometrie', level:'6ème', title:'Symétrie axiale',
+    def:"Le pliage le long d'un axe : la figure et son image se superposent.",
+    idea:["Chaque point a une image à égale distance de l'axe.","Le segment [point–image] est perpendiculaire à l'axe.","La symétrie conserve les longueurs et les angles."],
+    ex:["A et A′ symétriques par rapport à la droite (d)"] },
+  { branch:'geometrie', level:'5ème', title:'Symétrie centrale',
+    def:"Un demi-tour autour d'un point O (le centre de symétrie).",
+    idea:["O est le milieu du segment [A A′].","La figure est retournée à 180°.","Longueurs et angles sont conservés."],
+    ex:["Image d'un point A par la symétrie de centre O"] },
+  { branch:'geometrie', level:'5ème', title:'Angles et parallélisme',
+    def:"Deux droites parallèles coupées par une sécante forment des angles égaux.",
+    idea:["Les angles alternes-internes sont égaux.","Les angles correspondants sont égaux.","Réciproquement, ces égalités prouvent le parallélisme."],
+    ex:["Si les alternes-internes sont égaux → droites parallèles"] },
+  { branch:'geometrie', level:'5ème', title:'Les parallélogrammes',
+    def:"Un quadrilatère dont les côtés opposés sont parallèles.",
+    idea:["Les côtés opposés sont égaux.","Les diagonales se coupent en leur milieu.","Rectangle, losange et carré en sont des cas particuliers."],
+    ex:["Dans un parallélogramme, AB = DC et AD = BC"] },
+  { branch:'geometrie', level:'4ème', title:'Géométrie du triangle',
+    def:"Les propriétés fondamentales des triangles et de leurs droites.",
+    idea:["La somme des trois angles vaut 180°.","Inégalité triangulaire : un côté < somme des deux autres.","Médiatrices, hauteurs, médianes sont les droites remarquables."],
+    ex:["90° + 60° + ? = 180°  →  l'angle manquant vaut 30°"] },
+  { branch:'geometrie', level:'6ème', title:'Périmètres et aires',
+    def:"Le périmètre mesure le contour, l'aire mesure la surface.",
+    idea:["Périmètre = somme des longueurs des côtés.","Aire selon la figure (rectangle, triangle, disque).","Bien distinguer les deux : longueur vs surface."],
+    ex:["Rectangle 5 × 3  →  P = 16 cm,  A = 15 cm²"] },
+  { branch:'geometrie', level:'4ème', title:'Prisme droit et cylindre',
+    def:"Des solides possédant deux bases identiques et parallèles.",
+    idea:["Le volume = aire de la base × hauteur.","Le patron permet de visualiser les faces.","Le cylindre a deux disques pour bases."],
+    ex:["Cylindre r = 2, h = 5  →  V = π × 4 × 5 ≈ 62,8"] },
+  { branch:'geometrie', level:'3ème', title:'Trigonométrie',
+    def:"Les relations entre les angles et les côtés d'un triangle rectangle.",
+    idea:["cos = adjacent / hypoténuse.","sin = opposé / hypoténuse.","tan = opposé / adjacent.  (SOH-CAH-TOA)"],
+    ex:["cos(60°) = 0,5"], formula:"cos = adj/hyp   sin = opp/hyp   tan = opp/adj" },
+  { branch:'geometrie', level:'3ème', title:'Triangles semblables',
+    def:"Deux triangles ayant les mêmes angles ; leurs côtés sont proportionnels.",
+    idea:["Le rapport de similitude k relie les côtés.","Les angles sont identiques deux à deux.","Les aires sont multipliées par k²."],
+    ex:["Rapport k = 2  →  tous les côtés sont doublés"] },
+  { branch:'geometrie', level:'3ème', title:'Homothéties',
+    def:"Un agrandissement ou une réduction de centre O et de rapport k.",
+    idea:["OM′ = k × OM.","k > 1 agrandit, 0 < k < 1 réduit.","k < 0 retourne la figure."],
+    ex:["k = 2  →  figure deux fois plus grande"] },
+  { branch:'geometrie', level:'5ème', title:'Translation et rotation',
+    def:"Des déplacements de figures qui conservent les distances.",
+    idea:["La translation fait glisser selon un vecteur.","La rotation tourne autour d'un centre d'un certain angle.","La figure garde sa forme et sa taille."],
+    ex:["Translation de vecteur u : toute la figure glisse de la même façon"] },
+  { branch:'geometrie', level:'4ème', title:'Pyramides et cônes',
+    def:"Des solides pointus, avec une base et un sommet unique.",
+    idea:["Volume = (1/3) × aire de base × hauteur.","Le cône a un disque pour base.","La hauteur est la distance sommet–base."],
+    ex:["Pyramide base 6, h = 4  →  V = (1/3) × 6 × 4 = 8"] },
+  { branch:'fonctions', level:'3ème', title:'Notions de fonctions',
+    def:"Une fonction associe à chaque nombre x un unique nombre image f(x).",
+    idea:["Image : on part de x et on calcule f(x).","Antécédent : on part de y et on remonte vers x.","La courbe représente tous les couples (x ; f(x))."],
+    ex:["f(x) = 2x  →  l'image de 3 est f(3) = 6"] },
+  { branch:'fonctions', level:'3ème', title:'Fonction linéaire',
+    def:"Une fonction f(x) = ax, qui modélise une situation proportionnelle.",
+    idea:["Sa courbe est une droite passant par l'origine.","a est le coefficient directeur (la pente).","f(1) = a donne directement le coefficient."],
+    ex:["f(x) = 3x  →  f(2) = 6"] },
+  { branch:'fonctions', level:'3ème', title:'Fonction affine',
+    def:"Une fonction f(x) = ax + b.",
+    idea:["Sa courbe est une droite.","a est la pente, b l'ordonnée à l'origine.","La droite coupe l'axe des y au point (0 ; b)."],
+    ex:["f(x) = 2x + 1  →  coupe l'axe y en 1"] },
+  { branch:'proba', level:'3ème', title:'Vocabulaire des probabilités',
+    def:"Une expérience aléatoire possède plusieurs issues imprévisibles.",
+    idea:["L'univers regroupe toutes les issues possibles.","Un événement est un ensemble d'issues.","L'événement contraire regroupe les autres issues."],
+    ex:["Lancer un dé : univers = {1, 2, 3, 4, 5, 6}"] },
+  { branch:'proba', level:'3ème', title:'Probabilités simples',
+    def:"La probabilité mesure la chance qu'un événement se réalise, entre 0 et 1.",
+    idea:["En situation équiprobable : P = favorables / total.","P = 0 : impossible ; P = 1 : certain.","La somme des probabilités vaut 1."],
+    ex:["P(nombre pair au dé) = 3/6 = 1/2"] },
+  { branch:'stats', level:'6ème', title:'Organisation des données',
+    def:"Ranger et lire des données dans des tableaux et des graphiques.",
+    idea:["On note les effectifs et les fréquences.","On lit une valeur sur un graphique.","On interprète ce que les données racontent."],
+    ex:["Tableau des effectifs des notes d'une classe"] },
+  { branch:'stats', level:'3ème', title:'Indicateurs de position',
+    def:"Des valeurs uniques qui résument toute une série de données.",
+    idea:["Moyenne = somme des valeurs / nombre de valeurs.","Médiane = valeur qui partage la série en deux.","Mode = valeur la plus fréquente."],
+    ex:["Moyenne de 4, 6, 8  =  18 / 3 = 6"] },
+  { branch:'stats', level:'4ème', title:'Représentations graphiques',
+    def:"Visualiser des données pour mieux les comparer.",
+    idea:["Diagramme en barres : comparer des catégories.","Diagramme circulaire : des parts d'un tout (360°).","Histogramme : des données par classes."],
+    ex:["Diagramme circulaire : 25 % → un secteur de 90°"] },
+
+];
+
+
+/* ═══════════════════════════════════════════════════════════
+   GÉNÉRATEUR DE COURS ANIMÉS (un par chapitre de l'arbre)
+   ═══════════════════════════════════════════════════════════ */
+const BRANCHES = [
+  { id:'nombres',   label:'Nombres',       color:'#7ab4c8' },
+  { id:'algebre',   label:'Algèbre',       color:'#c8a07a' },
+  { id:'geometrie', label:'Géométrie',     color:'#a07ac8' },
+  { id:'fonctions', label:'Fonctions',     color:'#7ac8a0' },
+  { id:'proba',     label:'Probabilités',  color:'#c87a9a' },
+  { id:'stats',     label:'Statistiques',  color:'#e8a87c' },
+];
+const branchMeta = id => BRANCHES.find(b => b.id === id) || { label:'', color:'#c8b97a' };
+
+function clamp(v){ return Math.min(1, Math.max(0, v)); }
+function wrapText(text, max){
+  max = max || 54;
+  const words = text.split(' ');
+  const lines = []; let cur = '';
+  for (const w of words){
+    if ((cur + ' ' + w).trim().length > max){ lines.push(cur.trim()); cur = w; }
+    else cur += ' ' + w;
+  }
+  if (cur.trim()) lines.push(cur.trim());
+  return lines;
+}
+
+/* Une diapositive de tableau : pastille + titre + lignes de corps */
+function slide(cfg){
+  return {
+    caption: cfg.caption,
+    label:   cfg.label,
+    draw(ctx, W, H, p){
+      drawBoard(ctx, W, H);
+      // pastille (eyebrow)
+      if (cfg.eyebrow)
+        chalkText(ctx, cfg.eyebrow, W*0.5, H*0.10, clamp(p/0.14), 'rgba(200,185,122,0.7)', 14, 'DM Mono, monospace', 'center');
+      // titre / grande formule
+      if (cfg.title)
+        chalkText(ctx, cfg.title, W*0.5, H*0.235, clamp((p-0.08)/0.3), cfg.titleColor || 'rgba(245,242,232,0.95)', cfg.titleSize || 27, cfg.titleFont || 'Playfair Display, Georgia, serif', 'center');
+      // corps
+      const body = cfg.body || [];
+      const startY = cfg.title ? 0.42 : 0.34;
+      const gap = body.length > 4 ? 0.092 : 0.108;
+      body.forEach((bl, i) => {
+        const st = 0.22 + i*0.11;
+        const lp = (p - st) / 0.32;
+        if (lp > 0)
+          chalkText(ctx, bl.t, W*0.5, H*(startY + i*gap), clamp(lp), bl.c || 'rgba(240,236,224,0.82)', bl.s || 18, bl.f || 'DM Sans, sans-serif', 'center');
+      });
+    }
+  };
+}
+
+function makeExplainer(c, idx){
+  const meta = branchMeta(c.branch);
+  const steps = [
+    slide({
+      eyebrow:'DÉFINITION', label:'Définition',
+      title:c.title, titleColor:'rgba(200,185,122,0.92)', titleSize:28,
+      body: wrapText(c.def).map(t => ({ t, c:'rgba(240,236,224,0.78)', s:18 })),
+      caption: c.def
+    }),
+    slide({
+      eyebrow:"L'IDÉE CLÉ", label:'Idée clé',
+      body: c.idea.map(t => ({ t:'•  ' + t, c:'rgba(130,200,230,0.85)', s:18 })),
+      caption: c.idea.join('  ')
+    }),
+    slide({
+      eyebrow:'EXEMPLE', label:'Exemple',
+      body: c.ex.map(t => ({ t, c:'rgba(130,210,160,0.9)', s:21, f:'DM Mono, monospace' })),
+      caption: 'Exemple : ' + c.ex.join('   ')
+    }),
+  ];
+  if (c.formula){
+    steps.push(slide({
+      eyebrow:'À RETENIR', label:'À retenir',
+      title:c.formula, titleColor:'rgba(230,210,120,0.95)', titleSize:26, titleFont:'DM Mono, monospace',
+      caption:'À retenir : ' + c.formula
+    }));
+  }
+  return {
+    id: 'ch_' + c.branch + '_' + idx,
+    branch: c.branch,
+    tag: meta.label + ' · ' + c.level,
+    title: c.title,
+    desc: c.def,
+    duration: '~' + (1 + steps.length) + ' min',
+    level: c.level,
+    steps
+  };
+}
+
+// Marquer les leçons bespoke avec leur branche
+LESSONS.forEach(l => {
+  if (l.id === 'pythagore') l.branch = 'geometrie';
+  if (l.id === 'equation1') l.branch = 'algebre';
+});
+
+// Générer un cours pour chaque chapitre et l'ajouter
+CHAPTERS.forEach((c, i) => LESSONS.push(makeExplainer(c, i)));
+
+// ─── PLAYER STATE ─────────────────────────────────────────
+let currentLesson = null;
+let currentStep   = 0;
+let animProgress  = 0; // 0→1
+let animTimer     = null;
+let isPlaying     = true;
+const STEP_DURATION = 4200; // ms par étape
+
+const canvas  = document.getElementById('board');
+const ctx     = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth;
+  canvas.height = Math.round(wrap.clientWidth * 9/16);
+  if (currentLesson) renderFrame();
+}
+
+function renderFrame() {
+  const step = currentLesson.steps[currentStep];
+  step.draw(ctx, canvas.width, canvas.height, animProgress);
+}
+
+function animTick(startTime, stepDuration) {
+  if (!isPlaying) return;
+  const now = performance.now();
+  animProgress = Math.min(1, (now - startTime) / stepDuration);
+  renderFrame();
+  updateProgress();
+  if (animProgress < 1) {
+    animTimer = requestAnimationFrame(() => animTick(startTime, stepDuration));
+  } else {
+    // auto-advance after 1.2s pause at end of step
+    animTimer = setTimeout(() => {
+      if (isPlaying && currentStep < currentLesson.steps.length - 1) nextStep();
+    }, 1200);
+  }
+}
+
+function startStep() {
+  clearTimeout(animTimer);
+  cancelAnimationFrame(animTimer);
+  const step = currentLesson.steps[currentStep];
+  document.getElementById('player-caption').textContent = step.caption;
+  document.getElementById('step-label').textContent =
+    (step.label ? step.label + '  ·  ' : '') + `Étape ${currentStep+1} / ${currentLesson.steps.length}`;
+  document.getElementById('ctrl-step-label').textContent = `${currentStep+1} / ${currentLesson.steps.length}`;
+  document.getElementById('btn-prev').disabled = currentStep === 0;
+  document.getElementById('btn-next').disabled = currentStep === currentLesson.steps.length-1;
+  document.getElementById('btn-play').textContent = isPlaying ? '⏸ Pause' : '▶ Lecture';
+  buildProgressDots();
+
+  if (isPlaying) {
+    animProgress = 0;
+    const start = performance.now();
+    animTick(start, step.dur || STEP_DURATION);
+  } else {
+    // En pause : affiche la frame à progress=1 du step actuel
+    animProgress = 1;
+    renderFrame();
+    updateProgress();
+  }
+}
+
+function buildProgressDots() {
+  const dotsEl = document.getElementById('progress-dots');
+  const n = currentLesson.steps.length;
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'progress-dot' + (i < currentStep ? ' done' : i===currentStep ? ' current' : '');
+    d.style.left = (i / (n-1) * 100) + '%';
+    d.onclick = () => jumpTo(i);
+    dotsEl.appendChild(d);
+  }
+}
+
+function updateProgress() {
+  const n = currentLesson.steps.length;
+  const pct = ((currentStep + animProgress) / n) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  document.getElementById('btn-play').textContent = isPlaying ? '⏸ Pause' : '▶ Lecture';
+  if (isPlaying) {
+    const D = (currentLesson.steps[currentStep].dur) || STEP_DURATION;
+    const start = performance.now() - animProgress * D;
+    animTick(start, D);
+  } else {
+    clearTimeout(animTimer);
+    cancelAnimationFrame(animTimer);
+  }
+}
+
+function nextStep() {
+  if (currentStep < currentLesson.steps.length - 1) {
+    currentStep++;
+    animProgress = 0;
+    startStep();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    animProgress = 0;
+    startStep();
+  }
+}
+
+function jumpTo(i) {
+  currentStep = i;
+  animProgress = 0;
+  startStep();
+}
+
+function openLesson(id) {
+  currentLesson = LESSONS.find(l => l.id === id);
+  if (!currentLesson) return;
+  currentStep  = 0;
+  animProgress = 0;
+  isPlaying    = true;
+  const player = document.getElementById('player');
+  player.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { resizeCanvas(); startStep(); }, 60);
+}
+
+function closePlayer() {
+  clearTimeout(animTimer);
+  cancelAnimationFrame(animTimer);
+  isPlaying = false;
+  document.getElementById('player').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// keyboard
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('player').classList.contains('open')) return;
+  if (e.key==='ArrowRight') nextStep();
+  if (e.key==='ArrowLeft')  prevStep();
+  if (e.key===' ') { e.preventDefault(); togglePlay(); }
+  if (e.key==='Escape') closePlayer();
+});
+
+window.addEventListener('resize', resizeCanvas);
+
+// ─── FILTRE PAR BRANCHE ──────────────────────────────────
+let activeBranch = 'all';
+
+function buildFilter() {
+  const bar = document.getElementById('filter-bar');
+  const all = [{ id:'all', label:'Tout', color:'#c8b97a' }, ...BRANCHES];
+  bar.innerHTML = '';
+  all.forEach(b => {
+    const count = b.id === 'all' ? LESSONS.length : LESSONS.filter(l => l.branch === b.id).length;
+    if (b.id !== 'all' && count === 0) return;
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (b.id === activeBranch ? ' active' : '');
+    btn.style.setProperty('--bc', b.color);
+    btn.innerHTML = `<span class="filter-dot"></span>${b.label} <span class="filter-count">${count}</span>`;
+    btn.onclick = () => { activeBranch = b.id; buildFilter(); buildGrid(); };
+    bar.appendChild(btn);
+  });
+}
+
+// ─── BUILD CARD GRID ─────────────────────────────────────
+function lessonCard(l) {
+  const meta = branchMeta(l.branch);
+  const card = document.createElement('div');
+  card.className = 'lesson-card';
+  card.style.setProperty('--bc', meta.color);
+  card.innerHTML = `
+    <div class="lesson-tag">${l.tag}</div>
+    <div class="lesson-title">${l.title}</div>
+    <div class="lesson-desc">${l.desc}</div>
+    <div class="lesson-meta">
+      <span class="lesson-meta-item">⏱ ${l.duration}</span>
+      <span class="lesson-steps-count">${l.steps.length} étapes</span>
+      <div class="lesson-play-icon">▶</div>
+    </div>`;
+  card.onclick = () => openLesson(l.id);
+  return card;
+}
+
+function buildGrid() {
+  const host = document.getElementById('lesson-host');
+  host.innerHTML = '';
+  const branches = activeBranch === 'all' ? BRANCHES.map(b => b.id) : [activeBranch];
+  branches.forEach(bid => {
+    const items = LESSONS.filter(l => l.branch === bid);
+    if (!items.length) return;
+    const meta = branchMeta(bid);
+    const section = document.createElement('div');
+    section.className = 'lesson-section';
+    section.innerHTML = `<div class="section-head" style="--bc:${meta.color}">
+        <span class="section-dot"></span>${meta.label}
+        <span class="section-count">${items.length} cours</span>
+      </div>`;
+    const grid = document.createElement('div');
+    grid.className = 'lesson-grid';
+    items.forEach(l => grid.appendChild(lessonCard(l)));
+    section.appendChild(grid);
+    host.appendChild(section);
+  });
+}
+
+buildFilter();
+buildGrid();
+resizeCanvas();
+
+/* ── Lien profond : cours.html?open=Titre ouvre directement le cours ── */
+(function(){
+  const wanted = new URLSearchParams(location.search).get('open');
+  if (!wanted) return;
+  const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const l = LESSONS.find(x => norm(x.title) === norm(wanted));
+  if (l) openLesson(l.id);
+})();
+</script>
+</body>
+</html>

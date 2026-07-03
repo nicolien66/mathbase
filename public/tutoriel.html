@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathBase — Tutoriel interactif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+:root{
+  --bg:#0b0b09; --surface:#111110; --surface2:#181815;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --accent:#c8b97a; --text:#f0ece0; --muted:rgba(240,236,224,0.45);
+  --serif:'Playfair Display',Georgia,serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+  padding:0 3rem;height:64px;background:rgba(11,11,9,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+.logo{font-family:var(--serif);font-size:1.35rem;color:var(--text);text-decoration:none;}
+.logo em{font-style:italic;color:var(--accent);}
+.nav-back{font-family:var(--sans);font-size:.85rem;color:var(--muted);text-decoration:none;border:1px solid var(--border2);
+  padding:.5rem 1rem;border-radius:8px;transition:.2s;}
+.nav-back:hover{color:var(--text);border-color:var(--accent);}
+.wrap{max-width:980px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+.tut-head{text-align:center;margin-bottom:1.4rem;}
+.tut-eyebrow{font-family:var(--mono);font-size:.58rem;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;}
+.tut-title{font-family:var(--serif);font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;}
+.tut-title em{font-style:italic;color:var(--accent);}
+.progress-row{display:flex;align-items:center;gap:1rem;margin:1.2rem 0;}
+.progress-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:4px;position:relative;}
+.progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s ease;}
+.progress-label{font-family:var(--mono);font-size:.7rem;color:var(--muted);white-space:nowrap;}
+#canvas-host{border-radius:14px;overflow:hidden;box-shadow:0 30px 70px -25px rgba(0,0,0,.8),0 0 0 1px var(--border2);}
+#canvas-host canvas{display:block;width:100%;height:auto;}
+.controls{display:flex;gap:.7rem;margin-top:1.2rem;justify-content:center;}
+.ctrl{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:9px;padding:.6rem 1.2rem;
+  font-family:var(--sans);font-size:.85rem;cursor:pointer;transition:.2s;}
+.ctrl:hover{color:var(--text);border-color:var(--accent);}
+.ctrl.primary{border-color:var(--accent);color:var(--accent);}
+.ctrl.primary:hover{background:rgba(200,185,122,.1);}
+@media(max-width:700px){nav{padding:0 1.2rem;}.wrap{padding:1.4rem 1rem 3rem;}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="app.html">Math<em>Base</em></a>
+  <a class="nav-back" href="tutoriels.html">← Tous les tutoriels</a>
+</nav>
+
+<div class="wrap">
+  <div class="tut-head">
+    <div class="tut-eyebrow">Tutoriel interactif</div>
+    <h1 class="tut-title" id="tut-title">Chapitre</h1>
+  </div>
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="progress-label" id="progress-label">Étape 1 / 1</span>
+  </div>
+  <div id="canvas-host"></div>
+  <div class="controls">
+    <button class="ctrl" id="btn-restart" onclick="window.__restart()">↺ Recommencer</button>
+    <button class="ctrl primary" id="btn-skip" onclick="window.__skip()">Passer cette étape →</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   MOTEUR DE TUTORIEL INTERACTIF (P5.js)
+   Chaque étape = une "slide". Quand la tâche est réussie,
+   petite célébration animée puis passage à la slide suivante.
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── helpers de dessin partagés (niveau global) ─── */
+function disk(p, cx, cy, r, n, opt){
+  opt = opt||{};
+  const start=-p.HALF_PI, step=p.TWO_PI/n;
+  // remplissage par part
+  if (opt.colored){
+    p.noStroke();
+    for (let i=0;i<n;i++){
+      if (!opt.colored[i]) continue;
+      p.fill(122,200,230,90);
+      p.beginShape(); p.vertex(cx,cy);
+      for (let a=start+i*step; a<=start+(i+1)*step+0.001; a+=0.05) p.vertex(cx+r*p.cos(a), cy+r*p.sin(a));
+      p.endShape(p.CLOSE);
+    }
+  }
+  // contour
+  p.noFill(); p.stroke(245,242,232,210); p.strokeWeight(2.6); p.circle(cx,cy,r*2);
+  // traits
+  for (let i=0;i<n;i++){
+    const removed = opt.removed && opt.removed[i];
+    const dashed = opt.dashedOdd && (i%2===1) && !removed;
+    if (removed) continue;
+    const a = start+i*step;
+    const ex=cx+r*p.cos(a), ey=cy+r*p.sin(a);
+    p.push();
+    if (dashed){ p.stroke(130,210,160,200); p.strokeWeight(2.2); p.drawingContext.setLineDash([6,6]); }
+    else { p.stroke(245,242,232,150); p.strokeWeight(1.8); p.drawingContext.setLineDash([]); }
+    p.line(cx,cy,ex,ey);
+    p.pop();
+  }
+  p.drawingContext.setLineDash([]);
+}
+function fraction(p, x, y, num, den, col){
+  p.push(); p.textAlign(p.CENTER, p.CENTER); p.fill(col); p.textFont('Playfair Display');
+  const s = p.height*0.075;
+  p.textSize(s); p.text(num, x, y-s*0.62);
+  p.stroke(col); p.strokeWeight(2.4); p.line(x-s*0.5, y, x+s*0.5, y); p.noStroke();
+  p.text(den, x, y+s*0.62);
+  p.pop();
+}
+function bigCount(p, x, y, txt){
+  p.push(); p.textAlign(p.CENTER,p.CENTER); p.fill(230,210,120); p.textFont('DM Mono');
+  p.textSize(p.height*0.045); p.text(txt, x, y); p.pop();
+}
+function partAt(p, cx, cy, r, n, mx, my){
+  const dx=mx-cx, dy=my-cy, d=Math.hypot(dx,dy); if (d>r) return -1;
+  let a=Math.atan2(dy,dx); const start=-Math.PI/2;
+  let rel=a-start; rel=((rel%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  return Math.floor(rel/(2*Math.PI/n));
+}
+function boundaryAt(p, cx, cy, r, n, mx, my){
+  const dx=mx-cx, dy=my-cy, d=Math.hypot(dx,dy); if (d<r*0.12 || d>r*1.08) return -1;
+  let a=Math.atan2(dy,dx); const start=-Math.PI/2, step=2*Math.PI/n;
+  let best=-1, bd=999;
+  for (let i=0;i<n;i++){ const ba=start+i*step; let diff=Math.abs(angleDiff(a,ba)); if(diff<bd){bd=diff;best=i;} }
+  return (bd < step*0.4) ? best : -1;
+}
+function angleDiff(a,b){ let d=a-b; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; return d; }
+
+// digits (décimaux)
+function digitLayout(p, S){
+  const s=p.height*0.16, n=S.digits.length, totalW=n*s*0.62;
+  const x0=p.width/2-totalW/2;
+  return S.digits.map((d,i)=>({d, x:x0+i*s*0.62+s*0.31, y:p.height*0.45, w:s*0.55, h:s*0.9, s}));
+}
+function drawDigits(p, S, highlights){
+  const L=digitLayout(p,S);
+  for (const it of L){
+    const hl = it.d.k && highlights && highlights[it.d.k];
+    const picked = S.picked && it.d.k===S.picked;
+    p.push(); p.textAlign(p.CENTER,p.CENTER); p.textFont('Playfair Display'); p.textSize(it.s);
+    if (it.d.k){
+      p.rectMode(p.CENTER); p.noFill();
+      const hover = p.mouseX>it.x-it.w/2 && p.mouseX<it.x+it.w/2 && p.mouseY>it.y-it.h/2 && p.mouseY<it.y+it.h/2;
+      p.stroke(picked?'#82d6a0':(hover?'rgba(200,185,122,0.7)':'rgba(255,255,255,0.12)')); p.strokeWeight(2);
+      p.rect(it.x, it.y, it.w, it.h, 8); p.noStroke();
+    }
+    p.fill(picked?'#82d6a0':'#f0ece0'); p.text(it.d.c, it.x, it.y);
+    p.pop();
+  }
+  // labels positions
+  p.push(); p.textAlign(p.CENTER,p.TOP); p.textFont('DM Sans'); p.textSize(p.height*0.026);
+  for (const it of L){ if(it.d.k){ const names={u:'unités',dix:'dixièmes',cent:'centièmes'};
+    p.fill(highlights&&highlights[it.d.k]?'#7ac8e6':'rgba(240,236,224,0.4)');
+    p.text(names[it.d.k], it.x, it.y+it.h*0.6); } }
+  p.pop();
+}
+function digitAt(p, S, mx, my){
+  const L=digitLayout(p,S);
+  for (let i=0;i<L.length;i++){ const it=L[i];
+    if (mx>it.x-it.w/2 && mx<it.x+it.w/2 && my>it.y-it.h/2 && my<it.y+it.h/2) return i; }
+  return -1;
+}
+
+const TUT = {};
+
+/* ─────────── TUTORIEL : FRACTIONS ─────────── */
+TUT.fractions = {
+  title: 'Fractions',
+  steps: [
+    {
+      title: 'Partage le disque',
+      hint: "Avec les boutons + et −, fais 4 parts égales.",
+      onEnter(p, S, ui){
+        S.parts = 2;
+        ui.push({key:'minus', label:'−'});
+        ui.push({key:'plus',  label:'+'});
+      },
+      layoutButtons(p, ui){
+        const y = p.height*0.86, w=66, h=66;
+        ui.find(b=>b.key==='minus').rect = {x:p.width*0.5-110, y:y-h/2, w, h};
+        ui.find(b=>b.key==='plus').rect  = {x:p.width*0.5+44,  y:y-h/2, w, h};
+      },
+      onButton(p, S, key){
+        if(key==='minus') S.parts = Math.max(1, S.parts-1);
+        if(key==='plus')  S.parts = Math.min(8, S.parts+1);
+      },
+      draw(p, S){
+        const cx=p.width*0.5, cy=p.height*0.46, r=p.height*0.27;
+        disk(p, cx, cy, r, S.parts, {});
+        bigCount(p, cx, cy+r+34, S.parts + (S.parts>1?' parts':' part'));
+      },
+      isDone(S){ return S.parts===4; }
+    },
+    {
+      title: 'Colorie 3 parts',
+      hint: "Clique sur les parts du disque pour en colorier 3.",
+      onEnter(p, S){ S.parts=4; S.colored={}; },
+      onCanvas(p, S){
+        const cx=p.width*0.5, cy=p.height*0.46, r=p.height*0.27;
+        const i = partAt(p, cx, cy, r, 4, p.mouseX, p.mouseY);
+        if(i>=0){ S.colored[i] = !S.colored[i]; }
+      },
+      draw(p, S){
+        const cx=p.width*0.5, cy=p.height*0.46, r=p.height*0.27;
+        disk(p, cx, cy, r, 4, {colored:S.colored});
+        const n = Object.values(S.colored).filter(Boolean).length;
+        fraction(p, cx, cy+r+44, n, 4, n===3? '#e6d278':'#f0ece0');
+      },
+      isDone(S){ return Object.values(S.colored).filter(Boolean).length===3; }
+    },
+    {
+      title: 'Simplifie la fraction',
+      hint: "Voici 6/8. Clique sur les traits en pointillés pour regrouper les parts 2 par 2.",
+      onEnter(p, S){ S.removed={}; },
+      onCanvas(p, S){
+        const cx=p.width*0.5, cy=p.height*0.46, r=p.height*0.27;
+        const b = boundaryAt(p, cx, cy, r, 8, p.mouseX, p.mouseY);
+        if(b>=0 && b%2===1) S.removed[b]=true;
+      },
+      draw(p, S){
+        const cx=p.width*0.5, cy=p.height*0.46, r=p.height*0.27;
+        const colored={}; for(let i=0;i<6;i++) colored[i]=true;
+        disk(p, cx, cy, r, 8, {colored, removed:S.removed, dashedOdd:true});
+        const done = [1,3,5,7].every(i=>S.removed[i]);
+        fraction(p, cx, cy+r+44, done?3:6, done?4:8, done?'#e6d278':'#f0ece0');
+      },
+      isDone(S){ return [1,3,5,7].every(i=>S.removed[i]); }
+    },
+    {
+      title: 'Bravo !',
+      hint: "Tu as compris : 6/8 = 3/4. Plus le dénominateur est grand, plus les parts sont petites.",
+      onEnter(p,S,ui){ ui.push({key:'finish', label:'Terminer ✓'}); },
+      layoutButtons(p,ui){ ui.find(b=>b.key==='finish').rect={x:p.width*0.5-90,y:p.height*0.84,w:180,h:54}; },
+      onButton(p,S,key){ if(key==='finish') window.location.href='tutoriels.html'; },
+      draw(p,S){
+        const cx=p.width*0.5, cy=p.height*0.42, r=p.height*0.2;
+        const colored={0:true,1:true,2:true};
+        disk(p, cx, cy, r, 4, {colored});
+        fraction(p, cx, cy+r+40, 3, 4, '#e6d278');
+      },
+      isDone(){ return false; }
+    }
+  ]
+};
+
+/* ─────────── TUTORIEL : ENTIERS & DÉCIMAUX ─────────── */
+TUT.decimaux = {
+  title: 'Entiers & décimaux',
+  steps: [
+    {
+      title: 'Trouve les dixièmes',
+      hint: "Dans le nombre 3,42 , clique sur le chiffre des dixièmes.",
+      onEnter(p,S){ S.picked=null; S.digits=[{c:'3',k:'u'},{c:',',k:null},{c:'4',k:'dix'},{c:'2',k:'cent'}]; },
+      onCanvas(p,S){
+        const idx = digitAt(p, S, p.mouseX, p.mouseY);
+        if(idx>=0 && S.digits[idx].k) S.picked = S.digits[idx].k;
+      },
+      draw(p,S){ drawDigits(p,S, {dix:'#7ac8e6'}); },
+      isDone(S){ return S.picked==='dix'; }
+    },
+    {
+      title: 'Multiplier par 10',
+      hint: "Combien fait 2,5 × 10 ? Clique sur la bonne réponse.",
+      type:'choice',
+      question:'2,5 × 10 = ?',
+      options:[{label:'2,5',ok:false},{label:'25',ok:true},{label:'250',ok:false}]
+    },
+    {
+      title: 'Diviser par 10',
+      hint: "Combien fait 4 ÷ 10 ? Clique sur la bonne réponse.",
+      type:'choice',
+      question:'4 ÷ 10 = ?',
+      options:[{label:'40',ok:false},{label:'0,4',ok:true},{label:'0,04',ok:false}]
+    },
+    {
+      title: 'Encore une !',
+      hint: "Combien fait 3,07 × 100 ? Clique sur la bonne réponse.",
+      type:'choice',
+      question:'3,07 × 100 = ?',
+      options:[{label:'30,7',ok:false},{label:'307',ok:true},{label:'3070',ok:false}]
+    },
+    {
+      title: 'Bravo !',
+      hint: "Tu maîtrises le déplacement de la virgule : ×10 vers la droite, ÷10 vers la gauche.",
+      onEnter(p,S,ui){ ui.push({key:'finish',label:'Terminer ✓'}); },
+      layoutButtons(p,ui){ ui.find(b=>b.key==='finish').rect={x:p.width*0.5-90,y:p.height*0.7,w:180,h:54}; },
+      onButton(p,S,key){ if(key==='finish') window.location.href='tutoriels.html'; },
+      draw(p,S){ p.push(); p.textAlign(p.CENTER,p.CENTER); p.fill('#e6d278'); p.textFont('Playfair Display');
+        p.textSize(p.height*0.13); p.text('★', p.width*0.5, p.height*0.4); p.pop(); },
+      isDone(){ return false; }
+    }
+  ]
+};
+
+/* ════════════════════════════════════════════════════════════
+   BIBLIOTHÈQUE D'ÉTAPES GÉNÉRIQUES
+   Des fabriques réutilisables pour construire vite des tutoriels
+   riches : QCM, multi-sélection, droite graduée, curseurs,
+   grilles cliquables, figures cliquables, horloge, barres…
+   ════════════════════════════════════════════════════════════ */
+
+function FX(){ return (window.__fx || { shake:function(){} }); }
+
+/* — QCM simple — */
+function qcm(title, hint, question, options){
+  return { title:title, hint:hint, type:'choice', question:question, options:options };
+}
+
+/* — Étape finale — */
+function finish(msg, sym){
+  return {
+    title:'Bravo !', hint:msg,
+    onEnter(p,S,ui){ ui.push({key:'finish',label:'Terminer ✓'}); },
+    layoutButtons(p,ui){ ui.find(b=>b.key==='finish').rect={x:p.width*0.5-90,y:p.height*0.78,w:180,h:54}; },
+    onButton(p,S,key){ if(key==='finish') window.location.href='tutoriels.html'; },
+    draw(p,S){
+      p.push(); p.textAlign(p.CENTER,p.CENTER); p.fill('#e6d278'); p.textFont('Playfair Display');
+      p.textSize(p.height*0.14); p.text(sym||'★', p.width*0.5, p.height*0.42); p.pop();
+    },
+    isDone(){ return false; }
+  };
+}
+
+/* — Multi-sélection : cliquer TOUTES les bonnes pastilles —
+   items:[{label, ok}] · un mauvais clic secoue l'écran */
+function multi(title, hint, items, opt){
+  opt = opt || {};
+  return {
+    title:title, hint:hint,
+    onEnter(p,S){ S.sel={}; S.wrongFlash={}; },
+    _geom(p){
+      const n=items.length, perRow=Math.min(n, opt.perRow || 4);
+      const rows=Math.ceil(n/perRow);
+      const bw=Math.min(opt.w||170, p.width*0.9/perRow - 14), bh=58, gx=16, gy=18;
+      const out=[];
+      for(let i=0;i<n;i++){
+        const r=Math.floor(i/perRow), inRow=Math.min(perRow, n-r*perRow);
+        const rowW=inRow*bw+(inRow-1)*gx;
+        const x0=p.width/2-rowW/2, y0=p.height*(opt.y||0.42)-((rows-1)*(bh+gy))/2;
+        const c=i-r*perRow;
+        out.push({x:x0+c*(bw+gx), y:y0+r*(bh+gy), w:bw, h:bh, item:items[i], idx:i});
+      }
+      return out;
+    },
+    onCanvas(p,S){
+      for(const g of this._geom(p)){
+        if(p.mouseX>g.x&&p.mouseX<g.x+g.w&&p.mouseY>g.y&&p.mouseY<g.y+g.h){
+          if(g.item.ok){ S.sel[g.idx]=true; }
+          else { S.wrongFlash[g.idx]=p.frameCount; FX().shake(8); }
+          return;
+        }
+      }
+    },
+    draw(p,S){
+      if(opt.prompt) p.push(),p.textAlign(p.CENTER,p.CENTER),p.fill('rgba(240,236,224,0.85)'),
+        p.textFont('Playfair Display'),p.textSize(Math.max(20,p.height*0.055)),
+        p.text(opt.prompt,p.width/2,p.height*0.24),p.pop();
+      for(const g of this._geom(p)){
+        const sel=S.sel[g.idx];
+        const wrong=S.wrongFlash[g.idx] && p.frameCount-S.wrongFlash[g.idx]<26;
+        const hover=p.mouseX>g.x&&p.mouseX<g.x+g.w&&p.mouseY>g.y&&p.mouseY<g.y+g.h;
+        p.push(); p.rectMode(p.CORNER);
+        p.fill(wrong?'rgba(200,80,70,0.20)':sel?'rgba(130,214,160,0.16)':hover?'rgba(200,185,122,0.14)':'rgba(255,255,255,0.05)');
+        p.stroke(wrong?'rgba(200,80,70,0.8)':sel?'#82d6a0':'rgba(200,185,122,0.45)'); p.strokeWeight(sel?2:1.4);
+        p.rect(g.x,g.y,g.w,g.h,12);
+        p.noStroke(); p.fill(sel?'#82d6a0':wrong?'rgba(220,140,130,1)':'#f0ece0');
+        p.textAlign(p.CENTER,p.CENTER); p.textFont('DM Sans'); p.textStyle(p.BOLD);
+        let ts=Math.max(15,g.h*0.32); p.textSize(ts);
+        while(p.textWidth(g.item.label)>g.w-16 && ts>11){ ts--; p.textSize(ts); }
+        p.text(g.item.label,g.x+g.w/2,g.y+g.h/2);
+        if(sel){ p.textSize(13); p.fill('#82d6a0'); p.text('✓',g.x+g.w-13,g.y+13); }
+        p.pop();
+      }
+      // compteur
+      const okTot=items.filter(i=>i.ok).length, got=Object.keys(S.sel).length;
+      bigCount(p,p.width/2,p.height*0.86, got+' / '+okTot+' trouvé'+(okTot>1?'s':''));
+    },
+    isDone(S){ return items.filter(i=>i.ok).length===Object.keys(S.sel).length; }
+  };
+}
+
+/* — Droite graduée : cliquer la bonne graduation —
+   accept(v) sinon v===target */
+function numberline(title, hint, min, max, target, opt){
+  opt = opt || {};
+  const accept = opt.accept || (v => v===target);
+  return {
+    title:title, hint:hint,
+    onEnter(p,S){ S.nlPick=null; S.nlWrong=null; },
+    _geom(p){
+      const y=p.height*0.5, x0=p.width*0.12, x1=p.width*0.88;
+      const n=max-min, dx=(x1-x0)/n;
+      return {y,x0,x1,min,max,dx};
+    },
+    onCanvas(p,S){
+      const g=this._geom(p);
+      if(Math.abs(p.mouseY-g.y)>60) return;
+      const v=Math.round((p.mouseX-g.x0)/g.dx)+min;
+      if(v<min||v>max) return;
+      if(accept(v)){ S.nlPick=v; }
+      else { S.nlWrong={v,f:p.frameCount}; FX().shake(8); }
+    },
+    draw(p,S){
+      const g=this._geom(p);
+      p.push();
+      p.stroke('rgba(245,242,232,0.8)'); p.strokeWeight(2.4); p.line(g.x0-24,g.y,g.x1+24,g.y);
+      // flèche
+      p.line(g.x1+24,g.y,g.x1+12,g.y-6); p.line(g.x1+24,g.y,g.x1+12,g.y+6);
+      p.textFont('DM Mono'); p.textAlign(p.CENTER,p.TOP); p.textSize(Math.max(13,p.height*0.032));
+      for(let v=min; v<=max; v++){
+        const x=g.x0+(v-min)*g.dx;
+        const hov=Math.abs(p.mouseX-x)<g.dx/2 && Math.abs(p.mouseY-g.y)<60;
+        const picked=S.nlPick===v;
+        const wrong=S.nlWrong && S.nlWrong.v===v && p.frameCount-S.nlWrong.f<26;
+        p.stroke(picked?'#82d6a0':wrong?'rgba(200,80,70,0.9)':hov?'rgba(200,185,122,0.9)':'rgba(245,242,232,0.65)');
+        p.strokeWeight(picked||hov?3:1.8);
+        p.line(x,g.y-(picked?16:10),x,g.y+(picked?16:10));
+        p.noStroke();
+        p.fill(picked?'#82d6a0':wrong?'rgba(220,140,130,1)':v===0?'rgba(230,210,120,0.9)':'rgba(240,236,224,0.7)');
+        p.text(String(v).replace('-','−'), x, g.y+22);
+        if(picked){ p.fill('#82d6a0'); p.circle(x,g.y,10); }
+      }
+      p.pop();
+      if(opt.legend) bigCount(p,p.width/2,p.height*0.78,opt.legend);
+    },
+    isDone(S){ return S.nlPick!=null; }
+  };
+}
+
+/* — Curseur − / + : atteindre une valeur cible avec un rendu visuel — */
+function stepper(title, hint, cfg){
+  // cfg : {min,max,start,target,render(p,S,val),fmt(val)}
+  return {
+    title:title, hint:hint,
+    onEnter(p,S,ui){ S.val=cfg.start; ui.push({key:'minus',label:'−'}); ui.push({key:'plus',label:'+'}); },
+    layoutButtons(p,ui){
+      const y=p.height*0.86,w=66,h=66;
+      ui.find(b=>b.key==='minus').rect={x:p.width*0.5-110,y:y-h/2,w,h};
+      ui.find(b=>b.key==='plus').rect ={x:p.width*0.5+44, y:y-h/2,w,h};
+    },
+    onButton(p,S,key){
+      const st=cfg.step||1;
+      if(key==='minus') S.val=Math.max(cfg.min,S.val-st);
+      if(key==='plus')  S.val=Math.min(cfg.max,S.val+st);
+    },
+    draw(p,S){ cfg.render(p,S,S.val); },
+    isDone(S){ return S.val===cfg.target; }
+  };
+}
+
+/* — Grille : cliquer la bonne case (symétries, translation, points) — */
+function gridPick(title, hint, cfg){
+  // cfg : {cols, rows, target:[i,j], drawExtra(p,S,G), axes:bool}
+  return {
+    title:title, hint:hint,
+    onEnter(p,S){ S.gPick=null; S.gWrong=null; },
+    _G(p){
+      const cols=cfg.cols, rows=cfg.rows;
+      const cs=Math.min(p.width*0.8/cols, p.height*0.62/rows);
+      const x0=p.width/2-cols*cs/2, y0=p.height*0.52-rows*cs/2;
+      return {cols,rows,cs,x0,y0,
+        cx:(i)=>x0+i*cs, cy:(j)=>y0+j*cs,
+        cellAt:(mx,my)=>{
+          const i=Math.floor((mx-x0)/cs), j=Math.floor((my-y0)/cs);
+          return (i>=0&&i<cols&&j>=0&&j<rows)?[i,j]:null;
+        }};
+    },
+    onCanvas(p,S){
+      const G=this._G(p), c=G.cellAt(p.mouseX,p.mouseY);
+      if(!c) return;
+      if(c[0]===cfg.target[0]&&c[1]===cfg.target[1]){ S.gPick=c; }
+      else { S.gWrong={c,f:p.frameCount}; FX().shake(8); }
+    },
+    draw(p,S){
+      const G=this._G(p);
+      p.push();
+      p.stroke('rgba(245,242,232,0.14)'); p.strokeWeight(1);
+      for(let i=0;i<=G.cols;i++) p.line(G.cx(i),G.y0,G.cx(i),G.y0+G.rows*G.cs);
+      for(let j=0;j<=G.rows;j++) p.line(G.x0,G.cy(j),G.x0+G.cols*G.cs,G.cy(j));
+      // survol
+      const c=G.cellAt(p.mouseX,p.mouseY);
+      if(c){ p.noStroke(); p.fill('rgba(200,185,122,0.10)');
+        p.rect(G.cx(c[0]),G.cy(c[1]),G.cs,G.cs); }
+      if(S.gWrong && p.frameCount-S.gWrong.f<26){ p.noStroke(); p.fill('rgba(200,80,70,0.25)');
+        p.rect(G.cx(S.gWrong.c[0]),G.cy(S.gWrong.c[1]),G.cs,G.cs); }
+      if(S.gPick){ p.noStroke(); p.fill('rgba(130,214,160,0.28)');
+        p.rect(G.cx(S.gPick[0]),G.cy(S.gPick[1]),G.cs,G.cs);
+        p.fill('#82d6a0'); p.circle(G.cx(S.gPick[0])+G.cs/2,G.cy(S.gPick[1])+G.cs/2,12); }
+      p.pop();
+      if(cfg.drawExtra) cfg.drawExtra(p,S,G);
+    },
+    isDone(S){ return !!S.gPick; }
+  };
+}
+
+/* — Figure à côtés cliquables (triangles, etc.) —
+   cfg : {pts:(p)=>[{x,y,name}], sides:[[a,b,ok,label]], marks(p,S,P)} */
+function sidePick(title, hint, cfg){
+  return {
+    title:title, hint:hint,
+    onEnter(p,S){ S.sPick=null; S.sWrong=null; },
+    onCanvas(p,S){
+      const P=cfg.pts(p);
+      for(let k=0;k<cfg.sides.length;k++){
+        const [a,b,ok]=cfg.sides[k];
+        if(distSeg(p.mouseX,p.mouseY,P[a].x,P[a].y,P[b].x,P[b].y)<14){
+          if(ok){ S.sPick=k; } else { S.sWrong={k,f:p.frameCount}; FX().shake(8); }
+          return;
+        }
+      }
+    },
+    draw(p,S){
+      const P=cfg.pts(p);
+      p.push();
+      for(let k=0;k<cfg.sides.length;k++){
+        const [a,b,,label]=cfg.sides[k];
+        const hov=distSeg(p.mouseX,p.mouseY,P[a].x,P[a].y,P[b].x,P[b].y)<14;
+        const picked=S.sPick===k;
+        const wrong=S.sWrong&&S.sWrong.k===k&&p.frameCount-S.sWrong.f<26;
+        p.stroke(picked?'#82d6a0':wrong?'rgba(200,80,70,0.9)':hov?'rgba(200,185,122,0.95)':'rgba(245,242,232,0.8)');
+        p.strokeWeight(picked?4.5:hov?3.6:2.6);
+        p.line(P[a].x,P[a].y,P[b].x,P[b].y);
+        if(label){
+          const mx=(P[a].x+P[b].x)/2, my=(P[a].y+P[b].y)/2;
+          const nx=-(P[b].y-P[a].y), ny=P[b].x-P[a].x, nl=Math.hypot(nx,ny);
+          p.push(); p.noStroke(); p.fill('rgba(240,236,224,0.65)');
+          p.textFont('DM Mono'); p.textSize(Math.max(13,p.height*0.032)); p.textAlign(p.CENTER,p.CENTER);
+          p.text(label, mx+nx/nl*22, my+ny/nl*22); p.pop();
+        }
+      }
+      // sommets
+      p.noStroke(); p.fill('rgba(240,236,224,0.9)');
+      p.textFont('Playfair Display'); p.textSize(Math.max(15,p.height*0.04)); p.textAlign(p.CENTER,p.CENTER);
+      for(const pt of P){ if(pt.name) p.text(pt.name, pt.x+(pt.lx||0), pt.y+(pt.ly||0)); }
+      p.pop();
+      if(cfg.marks) cfg.marks(p,S,P);
+    },
+    isDone(S){ return S.sPick!=null; }
+  };
+}
+function distSeg(px,py,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy;
+  let t=L2? ((px-ax)*dx+(py-ay)*dy)/L2 : 0; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+}
+
+/* — Colorier k cases d'une barre (pourcentages, fractions) — */
+function barColor(title, hint, n, k, opt){
+  opt=opt||{};
+  return {
+    title:title, hint:hint,
+    onEnter(p,S){ S.bar={}; },
+    _G(p){ const w=p.width*0.7, x0=p.width*0.15, y=p.height*0.46, h=64;
+      return {x0,y,h,seg:w/n,n}; },
+    onCanvas(p,S){
+      const G=this._G(p);
+      if(p.mouseY<G.y||p.mouseY>G.y+G.h) return;
+      const i=Math.floor((p.mouseX-G.x0)/G.seg);
+      if(i>=0&&i<n){ S.bar[i]=!S.bar[i]; }
+    },
+    draw(p,S){
+      const G=this._G(p);
+      p.push();
+      for(let i=0;i<n;i++){
+        const x=G.x0+i*G.seg;
+        const on=S.bar[i];
+        const hov=p.mouseX>x&&p.mouseX<x+G.seg&&p.mouseY>G.y&&p.mouseY<G.y+G.h;
+        p.fill(on?'rgba(122,200,230,0.45)':hov?'rgba(200,185,122,0.12)':'rgba(255,255,255,0.04)');
+        p.stroke('rgba(245,242,232,0.7)'); p.strokeWeight(1.6);
+        p.rect(x,G.y,G.seg,G.h);
+      }
+      p.pop();
+      const c=Object.values(S.bar).filter(Boolean).length;
+      const pct=Math.round(c/n*100);
+      bigCount(p,p.width/2,G.y+G.h+46, opt.fmt? opt.fmt(c,n,pct) : (c+' / '+n+'   =   '+pct+' %'));
+    },
+    isDone(S){ return Object.values(S.bar).filter(Boolean).length===k; }
+  };
+}
+
+/* — Horloge réglable (durées) — */
+function clockStep(title, hint, cfg){
+  // cfg : {startH,startM,targetH,targetM,stepMin}
+  return {
+    title:title, hint:hint,
+    onEnter(p,S,ui){
+      S.min=cfg.startH*60+cfg.startM;
+      ui.push({key:'m15',label:'+15 min'}); ui.push({key:'h1',label:'+1 h'});
+    },
+    layoutButtons(p,ui){
+      const y=p.height*0.87,h=52;
+      ui.find(b=>b.key==='m15').rect={x:p.width*0.5-150,y:y-h/2,w:130,h};
+      ui.find(b=>b.key==='h1').rect ={x:p.width*0.5+20, y:y-h/2,w:130,h};
+    },
+    onButton(p,S,key){
+      if(key==='m15') S.min+=15;
+      if(key==='h1')  S.min+=60;
+      if(S.min>cfg.targetH*60+cfg.targetM){ S.min=cfg.startH*60+cfg.startM; FX().shake(8); }
+    },
+    draw(p,S){
+      const cx=p.width*0.38, cy=p.height*0.5, r=Math.min(p.height*0.24,p.width*0.16);
+      const h=Math.floor(S.min/60)%12, m=S.min%60;
+      p.push();
+      p.noFill(); p.stroke('rgba(245,242,232,0.85)'); p.strokeWeight(2.6); p.circle(cx,cy,r*2);
+      p.textFont('DM Mono'); p.textSize(Math.max(12,r*0.16)); p.fill('rgba(240,236,224,0.7)'); p.noStroke(); p.textAlign(p.CENTER,p.CENTER);
+      for(let k=1;k<=12;k++){ const a=-Math.PI/2+k*Math.PI/6;
+        p.text(k, cx+Math.cos(a)*r*0.82, cy+Math.sin(a)*r*0.82); }
+      const ah=-Math.PI/2+(h+m/60)*Math.PI/6, am=-Math.PI/2+m*Math.PI/30;
+      p.stroke('rgba(230,210,120,0.95)'); p.strokeWeight(4.5); p.line(cx,cy,cx+Math.cos(ah)*r*0.5,cy+Math.sin(ah)*r*0.5);
+      p.stroke('rgba(122,200,230,0.95)'); p.strokeWeight(2.6); p.line(cx,cy,cx+Math.cos(am)*r*0.72,cy+Math.sin(am)*r*0.72);
+      p.noStroke(); p.fill('rgba(245,242,232,0.9)'); p.circle(cx,cy,7);
+      p.pop();
+      const H=Math.floor(S.min/60), M=S.min%60;
+      const elapsed=S.min-(cfg.startH*60+cfg.startM);
+      p.push(); p.textAlign(p.CENTER,p.CENTER);
+      p.fill('#f0ece0'); p.textFont('Playfair Display'); p.textSize(p.height*0.085);
+      p.text((H<10?'0':'')+H+' h '+(M<10?'0':'')+M, p.width*0.72, p.height*0.40);
+      p.fill('rgba(130,210,160,0.9)'); p.textFont('DM Mono'); p.textSize(p.height*0.038);
+      p.text('temps écoulé : '+Math.floor(elapsed/60)+' h '+(elapsed%60<10?'0':'')+(elapsed%60)+' min', p.width*0.72, p.height*0.55);
+      p.pop();
+    },
+    isDone(S){ return S.min===cfg.targetH*60+cfg.targetM; }
+  };
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   LES TUTORIELS — un par chapitre du collège
+   ════════════════════════════════════════════════════════════ */
+
+/* ───────── NOMBRES ───────── */
+
+TUT.relatifs = { title:'Nombres relatifs', steps:[
+  numberline('Place −3 sur la droite', "Les nombres relatifs se placent de part et d'autre du zéro. Clique sur la graduation −3.", -6, 6, -3,
+    { legend:'à gauche de 0 : les négatifs · à droite : les positifs' }),
+  numberline("Trouve l'opposé de +4", "L'opposé d'un nombre est à la même distance de zéro, mais de l'autre côté. Clique sur l'opposé de +4.", -6, 6, -4),
+  qcm('Additionner deux négatifs', "Même signe : on additionne les distances et on garde le signe. Combien fait (−7) + (−2) ?",
+    '(−7) + (−2) = ?', [{label:'−9',ok:true},{label:'−5',ok:false},{label:'+9',ok:false}]),
+  qcm('Signes différents', "Signes différents : on soustrait, et on prend le signe du plus « fort ». Combien fait (−7) + (+3) ?",
+    '(−7) + (+3) = ?', [{label:'−10',ok:false},{label:'−4',ok:true},{label:'+4',ok:false}]),
+  qcm('La règle des signes', "Pour la multiplication : moins par moins donne plus ! Combien fait (−3) × (−6) ?",
+    '(−3) × (−6) = ?', [{label:'−18',ok:false},{label:'+18',ok:true},{label:'−9',ok:false}]),
+  finish("Tu sais placer, additionner et multiplier les relatifs. Retiens : (−)×(−) = (+).")
+]};
+
+TUT.puissances = { title:'Puissances', steps:[
+  stepper('Construis 2⁴', "Avec + et −, ajoute des facteurs 2 jusqu'à obtenir 2⁴. Observe comment le résultat grandit !",
+    { min:1, max:6, start:1, target:4,
+      render(p,S,v){
+        const cx=p.width/2;
+        p.push(); p.textAlign(p.CENTER,p.CENTER);
+        p.fill('#f0ece0'); p.textFont('Playfair Display'); p.textSize(p.height*0.11);
+        p.text('2'+'⁰¹²³⁴⁵⁶'[v], cx, p.height*0.34);
+        p.fill('rgba(122,200,230,0.9)'); p.textFont('DM Mono'); p.textSize(p.height*0.05);
+        p.text(Array(v).fill('2').join(' × '), cx, p.height*0.50);
+        p.fill('rgba(230,210,120,0.95)'); p.textSize(p.height*0.06);
+        p.text('= '+Math.pow(2,v), cx, p.height*0.64);
+        p.pop();
+      }}),
+  qcm('Puissances de 10', "Avec 10, c'est facile : l'exposant compte les zéros. Combien vaut 10⁵ ?",
+    '10⁵ = ?', [{label:'100 000',ok:true},{label:'10 000',ok:false},{label:'1 000 000',ok:false}]),
+  qcm('Multiplier des puissances', "Même base : on ADDITIONNE les exposants. 2³ × 2² = ?",
+    '2³ × 2² = ?', [{label:'2⁶',ok:false},{label:'2⁵',ok:true},{label:'4⁵',ok:false}]),
+  qcm('Exposant zéro', "Cas particulier à connaître par cœur : tout nombre (non nul) puissance 0 vaut…",
+    'a⁰ = ?', [{label:'0',ok:false},{label:'1',ok:true},{label:'a',ok:false}]),
+  finish("aⁿ = a multiplié n fois · aᵐ × aⁿ = aᵐ⁺ⁿ · a⁰ = 1. Tu maîtrises les puissances !")
+]};
+
+TUT.proportionnalite = { title:'Proportionnalité', steps:[
+  qcm('Passer à l\'unité', "3 kg de pommes coûtent 7,50 €. Première étape de la règle de trois : le prix de 1 kg.",
+    '7,50 € ÷ 3 = ?', [{label:'2,50 €',ok:true},{label:'3,50 €',ok:false},{label:'4,50 €',ok:false}]),
+  qcm('Puis multiplier', "1 kg coûte 2,50 €. Combien coûtent 5 kg ?",
+    '2,50 € × 5 = ?', [{label:'10 €',ok:false},{label:'12,50 €',ok:true},{label:'15 €',ok:false}]),
+  multi('Reconnaître la proportionnalité', "Toutes les situations ne sont pas proportionnelles ! Clique sur les DEUX situations proportionnelles.",
+    [{label:'prix ↔ masse de pommes',ok:true},{label:'taille ↔ âge d\'un enfant',ok:false},
+     {label:'distance ↔ durée (vitesse constante)',ok:true},{label:'note ↔ temps de révision',ok:false}],
+    { perRow:2, w:280 }),
+  qcm('Le produit en croix', "Dans un tableau de proportionnalité, si 4 → 10 et 6 → x, alors 4x = 6 × 10. Donc x = ?",
+    '4 → 10 ; 6 → x. x = ?', [{label:'12',ok:false},{label:'15',ok:true},{label:'16',ok:false}]),
+  finish("Règle de trois : ÷ pour revenir à 1, puis ×. Ou produit en croix. La proportionnalité n'a plus de secret.")
+]};
+
+TUT.pourcentages = { title:'Pourcentages', steps:[
+  barColor('Colorie 30 %', "Cette barre représente un tout (100 %) découpé en 10 morceaux de 10 %. Colorie 30 % de la barre.", 10, 3),
+  qcm('Prendre un pourcentage', "t % de N, c'est N × t ÷ 100. Combien font 50 % de 80 ?",
+    '50 % de 80 = ?', [{label:'30',ok:false},{label:'40',ok:true},{label:'45',ok:false}]),
+  qcm('Encore un !', "Applique la formule : 20 % de 150 = 150 × 20 ÷ 100.",
+    '20 % de 150 = ?', [{label:'30',ok:true},{label:'20',ok:false},{label:'35',ok:false}]),
+  qcm('La réduction', "Un jean à 60 € est soldé à −30 %. Réduction : 60 × 30/100 = 18 €. Nouveau prix ?",
+    '60 € − 30 % = ?', [{label:'42 €',ok:true},{label:'30 €',ok:false},{label:'48 €',ok:false}]),
+  finish("t % de N = N × t/100. Augmenter de t % : ×(1 + t/100). Diminuer : ×(1 − t/100).")
+]};
+
+TUT.longueur = { title:'Longueur', steps:[
+  qcm('Convertir m → cm', "1 m = 100 cm : chaque rang de la table (km, hm, dam, m, dm, cm, mm) vaut 10 fois le suivant.",
+    '2,5 m = ? cm', [{label:'25 cm',ok:false},{label:'250 cm',ok:true},{label:'2 500 cm',ok:false}]),
+  qcm('Convertir km → m', "Pour passer des km aux m, on descend de 3 rangs : × 1000.",
+    '3 km = ? m', [{label:'300 m',ok:false},{label:'3 000 m',ok:true},{label:'30 000 m',ok:false}]),
+  sidePick('Le périmètre', "Le périmètre est la longueur du tour complet. Clique sur le côté qu'il reste à compter : on a déjà 4 + 4 + 4…",
+    { pts(p){ const cx=p.width/2, cy=p.height*0.5, s=Math.min(p.width,p.height)*0.3;
+        return [{x:cx-s/2,y:cy-s/2},{x:cx+s/2,y:cy-s/2},{x:cx+s/2,y:cy+s/2},{x:cx-s/2,y:cy+s/2}]; },
+      sides:[[0,1,false,'4 cm ✓'],[1,2,false,'4 cm ✓'],[2,3,false,'4 cm ✓'],[3,0,true,'4 cm ?']],
+      marks(p,S){ bigCount(p,p.width/2,p.height*0.88,'P = 4 + 4 + 4 + …'); } }),
+  qcm('Résultat', "Un carré de côté 4 cm : son périmètre est 4 + 4 + 4 + 4, soit…",
+    'P = 4 × 4 = ?', [{label:'8 cm',ok:false},{label:'12 cm',ok:false},{label:'16 cm',ok:true}]),
+  finish("km · hm · dam · m · dm · cm · mm : un rang = ×10. Le périmètre = la somme des côtés.")
+]};
+
+TUT.aires = { title:'Aires', steps:[
+  {
+    title:'Remplis le rectangle', hint:"L'aire, c'est le nombre de carrés unités qui recouvrent la figure. Colorie TOUTES les cases du rectangle 4 × 3.",
+    onEnter(p,S){ S.cells={}; },
+    _G(p){ const cols=4,rows=3; const cs=Math.min(p.width*0.5/cols,p.height*0.5/rows);
+      return {cols,rows,cs,x0:p.width/2-cols*cs/2,y0:p.height*0.48-rows*cs/2}; },
+    onCanvas(p,S){
+      const G=this._G(p);
+      const i=Math.floor((p.mouseX-G.x0)/G.cs), j=Math.floor((p.mouseY-G.y0)/G.cs);
+      if(i>=0&&i<G.cols&&j>=0&&j<G.rows) S.cells[i+'-'+j]=!S.cells[i+'-'+j];
+    },
+    draw(p,S){
+      const G=this._G(p);
+      p.push();
+      for(let i=0;i<G.cols;i++) for(let j=0;j<G.rows;j++){
+        const x=G.x0+i*G.cs, y=G.y0+j*G.cs;
+        const on=S.cells[i+'-'+j];
+        const hov=p.mouseX>x&&p.mouseX<x+G.cs&&p.mouseY>y&&p.mouseY<y+G.cs;
+        p.fill(on?'rgba(122,200,230,0.42)':hov?'rgba(200,185,122,0.12)':'rgba(255,255,255,0.03)');
+        p.stroke('rgba(245,242,232,0.55)'); p.strokeWeight(1.4);
+        p.rect(x,y,G.cs,G.cs);
+      }
+      p.pop();
+      const n=Object.values(S.cells).filter(Boolean).length;
+      bigCount(p,p.width/2,G.y0+G.rows*G.cs+44, n+' carreau'+(n>1?'x':'')+' colorié'+(n>1?'s':'')+(n===12?'  =  4 × 3  =  12 !':''));
+    },
+    isDone(S){ return Object.values(S.cells).filter(Boolean).length===12; }
+  },
+  qcm('La formule du rectangle', "Plus besoin de compter un par un : l'aire du rectangle = longueur × largeur. Aire d'un rectangle 7 × 4 ?",
+    'A = 7 × 4 = ?', [{label:'22 cm²',ok:false},{label:'28 cm²',ok:true},{label:'11 cm²',ok:false}]),
+  qcm('Le triangle', "Un triangle, c'est la moitié d'un rectangle : A = (base × hauteur) ÷ 2. Base 6, hauteur 4 ?",
+    'A = (6 × 4) ÷ 2 = ?', [{label:'24 cm²',ok:false},{label:'12 cm²',ok:true},{label:'10 cm²',ok:false}]),
+  qcm('Les unités', "Le périmètre se mesure en cm… et l'aire ?",
+    "L'aire se mesure en…", [{label:'cm',ok:false},{label:'cm²',ok:true},{label:'cm³',ok:false}]),
+  finish("Rectangle : L × l · Triangle : (b × h) ÷ 2 · Disque : π × r². Et toujours des unités au carré !")
+]};
+
+TUT.durees = { title:'Repérage temps & durées', steps:[
+  clockStep('Avance jusqu\'à 10 h 30', "Il est 9 h 00. Avec les boutons, avance l'horloge jusqu'à 10 h 30 et observe le temps écoulé. (Si tu dépasses, on repart de 9 h !)",
+    { startH:9, startM:0, targetH:10, targetM:30 }),
+  qcm('Calculer une durée', "De 9 h 40 à 11 h 15 : de 9 h 40 à 10 h il y a 20 min, puis 1 h 15. Total ?",
+    'De 9 h 40 à 11 h 15 = ?', [{label:'1 h 35',ok:true},{label:'1 h 25',ok:false},{label:'2 h 15',ok:false}]),
+  qcm('Convertir', "1 h = 60 min. Donc 2 h = ?",
+    '2 h = ? min', [{label:'120 min',ok:true},{label:'200 min',ok:false},{label:'100 min',ok:false}]),
+  qcm('Attention au piège !', "1 h 30, ce n'est PAS 1,30 h. C'est 1 h + 30/60 h, soit…",
+    '1 h 30 min = ? h', [{label:'1,3 h',ok:false},{label:'1,5 h',ok:true},{label:'1,75 h',ok:false}]),
+  finish("1 h = 60 min · 1 min = 60 s. Pour une durée, on découpe le trajet en morceaux simples.")
+]};
+
+TUT.vitesse = { title:'Vitesse, distance et temps', steps:[
+  qcm('La formule', "La vitesse dit combien de distance on parcourt par unité de temps.",
+    'v = ?', [{label:'d ÷ t',ok:true},{label:'d × t',ok:false},{label:'t ÷ d',ok:false}]),
+  qcm('Calculer une vitesse', "Un cycliste parcourt 45 km en 1 h 30 (= 1,5 h). Sa vitesse moyenne ?",
+    'v = 45 ÷ 1,5 = ?', [{label:'30 km/h',ok:true},{label:'22,5 km/h',ok:false},{label:'45 km/h',ok:false}]),
+  qcm('Retrouver la distance', "On retourne la formule : d = v × t. À 60 km/h pendant 3 h ?",
+    'd = 60 × 3 = ?', [{label:'20 km',ok:false},{label:'180 km',ok:true},{label:'63 km',ok:false}]),
+  qcm('Retrouver le temps', "t = d ÷ v. Pour faire 100 km à 50 km/h ?",
+    't = 100 ÷ 50 = ?', [{label:'2 h',ok:true},{label:'5 h',ok:false},{label:'0,5 h',ok:false}]),
+  finish("Le triangle magique : v = d/t, d = v×t, t = d/v. Et on vérifie TOUJOURS les unités.")
+]};
+
+TUT.arithmetique = { title:'Arithmétique', steps:[
+  multi('Les diviseurs de 12', "Un diviseur divise sans reste. Clique sur TOUS les diviseurs de 12.",
+    [{label:'1',ok:true},{label:'2',ok:true},{label:'3',ok:true},{label:'4',ok:true},
+     {label:'5',ok:false},{label:'6',ok:true},{label:'8',ok:false},{label:'12',ok:true}],
+    { perRow:4, w:110, prompt:'12 = ?' }),
+  multi('Les nombres premiers', "Un nombre premier a exactement deux diviseurs : 1 et lui-même. Clique sur les TROIS nombres premiers.",
+    [{label:'2',ok:true},{label:'9',ok:false},{label:'11',ok:true},{label:'15',ok:false},{label:'17',ok:true}],
+    { perRow:5, w:100 }),
+  qcm('Décomposer', "Tout entier se décompose en produit de facteurs premiers. Laquelle est la décomposition de 12 ?",
+    '12 = ?', [{label:'2² × 3',ok:true},{label:'2 × 6',ok:false},{label:'3 × 4',ok:false}]),
+  qcm('Le PGCD', "Le Plus Grand Commun Diviseur de 12 et 18 sert par exemple à simplifier 12/18.",
+    'PGCD(12, 18) = ?', [{label:'2',ok:false},{label:'6',ok:true},{label:'9',ok:false}]),
+  finish("Diviseurs, nombres premiers, décomposition, PGCD : les briques de l'arithmétique sont posées.")
+]};
+
+/* ───────── ALGÈBRE ───────── */
+
+TUT.operations = { title:"Enchaînement d'opérations", steps:[
+  qcm('Par quoi commencer ?', "Dans 7 + 3 × (8 − 5), quel calcul fait-on EN PREMIER ?",
+    '7 + 3 × (8 − 5)', [{label:'7 + 3',ok:false},{label:'3 × 8',ok:false},{label:'8 − 5',ok:true}]),
+  qcm('Puis ?', "Les parenthèses ont donné 3. Il reste 7 + 3 × 3. Que fait-on maintenant ?",
+    '7 + 3 × 3', [{label:'7 + 3 d\'abord',ok:false},{label:'3 × 3 d\'abord',ok:true}]),
+  qcm('Le résultat', "7 + 3 × 3 = 7 + 9. Résultat final ?",
+    '7 + 9 = ?', [{label:'16',ok:true},{label:'30',ok:false},{label:'21',ok:false}]),
+  qcm('Piège classique', "Sans parenthèses, la multiplication passe avant : 20 − 2 × 5 = ?",
+    '20 − 2 × 5 = ?', [{label:'90',ok:false},{label:'10',ok:true},{label:'18',ok:false}]),
+  finish("Parenthèses → × et ÷ → + et −, de gauche à droite. C'est LA règle des priorités.")
+]};
+
+TUT.litteral = { title:'Calcul littéral', steps:[
+  multi('Les termes semblables', "On ne peut regrouper que les termes « de la même famille ». Clique sur les DEUX termes semblables à 3x.",
+    [{label:'5x',ok:true},{label:'7',ok:false},{label:'−2x',ok:true},{label:'x²',ok:false}],
+    { perRow:4, w:110, prompt:'3x + … ?' }),
+  qcm('Réduire', "5x + 3 − 2x + 7 : on regroupe les x ensemble, les nombres ensemble.",
+    '5x + 3 − 2x + 7 = ?', [{label:'3x + 10',ok:true},{label:'7x + 10',ok:false},{label:'13x',ok:false}]),
+  qcm('Substituer', "Remplacer la lettre par un nombre : valeur de 2x + 1 pour x = 4 ?",
+    '2×4 + 1 = ?', [{label:'9',ok:true},{label:'12',ok:false},{label:'6',ok:false}]),
+  qcm('Attention !', "x + x et x × x, ce n'est pas pareil !",
+    'x + x = ?', [{label:'2x',ok:true},{label:'x²',ok:false},{label:'2x²',ok:false}]),
+  finish("On regroupe les termes semblables, et on n'oublie jamais : x + x = 2x mais x × x = x².")
+]};
+
+TUT.developpement = { title:'Développement et factorisation', steps:[
+  qcm('Distribuer', "Développer = enlever les parenthèses avec k(a+b) = ka + kb.",
+    '3(x + 2) = ?', [{label:'3x + 2',ok:false},{label:'3x + 6',ok:true},{label:'x + 6',ok:false}]),
+  qcm('Factoriser', "Factoriser = le chemin inverse : trouver le facteur commun.",
+    '5x + 10 = ?', [{label:'5(x + 2)',ok:true},{label:'5(x + 10)',ok:false},{label:'15x',ok:false}]),
+  qcm('Identité remarquable', "(a + b)² se développe TOUJOURS de la même façon. Laquelle ?",
+    '(a + b)² = ?', [{label:'a² + b²',ok:false},{label:'a² + 2ab + b²',ok:true},{label:'a² + ab + b²',ok:false}]),
+  qcm('La différence de carrés', "a² − b² = (a − b)(a + b). Applique-la :",
+    'x² − 9 = ?', [{label:'(x − 3)(x + 3)',ok:true},{label:'(x − 9)(x + 9)',ok:false},{label:'(x − 3)²',ok:false}]),
+  finish("Développer étale, factoriser regroupe. Les identités remarquables font gagner un temps fou.")
+]};
+
+TUT.equation1 = { title:'Équations du 1er degré', steps:[
+  {
+    title:'La balance', hint:"2x + 3 = 7. Une équation est une balance en équilibre : toute opération doit se faire des DEUX côtés. Choisis la bonne opération, deux fois de suite.",
+    onEnter(p,S,ui){
+      S.stage=0;
+      ui.push({key:'op1',label:'− 3 des deux côtés'});
+      ui.push({key:'op2',label:'− 3 à gauche seulement'});
+      ui.push({key:'op3',label:'÷ 2 des deux côtés'});
+    },
+    layoutButtons(p,ui){
+      const w=Math.min(250,p.width*0.29), h=54, y=p.height*0.78, gap=p.width*0.02;
+      const x0=p.width/2-(3*w+2*gap)/2;
+      ui.forEach((b,i)=>{ b.rect={x:x0+i*(w+gap),y,w,h}; });
+    },
+    onButton(p,S,key){
+      if(S.stage===0){
+        if(key==='op1') S.stage=1;
+        else FX().shake(8);
+      } else if(S.stage===1){
+        if(key==='op3') S.stage=2;
+        else FX().shake(8);
+      }
+    },
+    draw(p,S){
+      const cx=p.width/2;
+      p.push(); p.textAlign(p.CENTER,p.CENTER); p.textFont('Playfair Display');
+      p.fill('#f0ece0'); p.textSize(p.height*0.085);
+      const eq = S.stage===0?'2x + 3  =  7' : S.stage===1?'2x  =  4' : 'x  =  2';
+      p.text(eq, cx, p.height*0.33);
+      p.textFont('DM Mono'); p.textSize(p.height*0.036); p.fill('rgba(130,210,160,0.9)');
+      if(S.stage===1) p.text('− 3 des deux côtés : 2x + 3 − 3 = 7 − 3 ✓', cx, p.height*0.48);
+      if(S.stage===2) p.text('÷ 2 des deux côtés : 2x ÷ 2 = 4 ÷ 2 ✓   Vérif : 2×2 + 3 = 7 ✓', cx, p.height*0.48);
+      // balance
+      const by=p.height*0.62, bw=p.width*0.22;
+      p.stroke('rgba(200,185,122,0.6)'); p.strokeWeight(2.4);
+      p.line(cx-bw,by,cx+bw,by); p.line(cx,by,cx,by+26);
+      p.line(cx-bw,by,cx-bw,by-12); p.line(cx+bw,by,cx+bw,by-12);
+      p.pop();
+    },
+    isDone(S){ return S.stage===2; }
+  },
+  qcm('À toi !', "Résous 3x + 5 = 20 : d'abord −5 des deux côtés, puis ÷3.",
+    '3x + 5 = 20  →  x = ?', [{label:'x = 5',ok:true},{label:'x = 15',ok:false},{label:'x = 25/3',ok:false}]),
+  qcm('x des deux côtés', "7x − 4 = 3x + 12 : regroupe les x à gauche (−3x) et les nombres à droite (+4).",
+    '7x − 4 = 3x + 12  →  x = ?', [{label:'x = 2',ok:false},{label:'x = 4',ok:true},{label:'x = 8',ok:false}]),
+  finish("Une équation = une balance. On isole x en agissant des deux côtés, et on VÉRIFIE à la fin.")
+]};
+
+TUT.systemes = { title:"Systèmes d'équations", steps:[
+  qcm('Tester un couple', "Le couple (3 ; 2) est-il solution de x + y = 5 ET x − y = 1 ?",
+    '3 + 2 = 5 ✓  et  3 − 2 = 1 ✓ ?', [{label:'Oui, solution',ok:true},{label:'Non',ok:false}]),
+  qcm('Substitution', "De x + y = 5 on tire y = 5 − x. On remplace dans x − y = 1 : x − (5 − x) = 1, soit 2x − 5 = 1. Donc…",
+    '2x − 5 = 1  →  x = ?', [{label:'x = 3',ok:true},{label:'x = 2',ok:false},{label:'x = −2',ok:false}]),
+  qcm('Terminer', "x = 3, et y = 5 − x. Donc y = ?",
+    'y = 5 − 3 = ?', [{label:'y = 2',ok:true},{label:'y = 8',ok:false},{label:'y = 3',ok:false}]),
+  finish("Un système = deux équations vraies EN MÊME TEMPS. Substitution ou combinaison, la solution est un couple (x ; y).")
+]};
+
+TUT.inequations = { title:'Inéquations', steps:[
+  numberline('x < 3 : choisis une solution', "Une inéquation a une infinité de solutions ! Clique sur N'IMPORTE QUEL nombre strictement inférieur à 3.",
+    -5, 6, null, { accept:v=>v<3, legend:'toutes les graduations < 3 conviennent' }),
+  qcm('Comme une équation…', "x + 4 ≤ 9 se résout comme une équation : −4 des deux côtés.",
+    'x + 4 ≤ 9  →  ?', [{label:'x ≤ 5',ok:true},{label:'x ≤ 13',ok:false},{label:'x ≥ 5',ok:false}]),
+  qcm('… sauf UN piège', "Multiplier ou diviser par un nombre NÉGATIF inverse le sens ! Résous −2x > 4.",
+    '−2x > 4  →  ?', [{label:'x > −2',ok:false},{label:'x < −2',ok:true},{label:'x > 2',ok:false}]),
+  finish("On résout comme une équation, mais ÷ ou × par un négatif retourne le signe < en > (et vice-versa).")
+]};
+
+/* ───────── GÉOMÉTRIE ───────── */
+
+TUT.geometrie = { title:'Géométrie', steps:[
+  multi('Le portrait du carré', "Clique sur les DEUX propriétés qui définissent un carré.",
+    [{label:'4 côtés égaux',ok:true},{label:'4 angles droits',ok:true},{label:'côtés tous différents',ok:false},{label:'3 sommets',ok:false}],
+    { perRow:2, w:250 }),
+  qcm('Les solides', "Un cube possède combien de faces ?",
+    'Faces d\'un cube = ?', [{label:'4',ok:false},{label:'6',ok:true},{label:'8',ok:false}]),
+  qcm('Le codage', "Sur une figure, des petits traits identiques sur deux segments signifient…",
+    'Petits traits identiques = ?', [{label:'segments égaux',ok:true},{label:'segments parallèles',ok:false},{label:'rien de spécial',ok:false}]),
+  finish("Coder une figure, reconnaître les solides, construire à la règle et au compas : la boîte à outils du géomètre.")
+]};
+
+TUT['symetrie-axiale'] = { title:'Symétrie axiale', steps:[
+  gridPick('Place le symétrique de A', "L'axe rouge est un miroir. Le point A est à 2 cases à GAUCHE de l'axe : clique là où se trouve son image A′ (2 cases à DROITE, même hauteur).",
+    { cols:9, rows:5, target:[6,2],
+      drawExtra(p,S,G){
+        p.push();
+        // axe vertical au milieu (colonne 4.5)
+        const ax=G.cx(4)+G.cs/2;
+        p.stroke('rgba(230,130,110,0.9)'); p.strokeWeight(2.6);
+        p.line(ax,G.y0-14,ax,G.y0+G.rows*G.cs+14);
+        // point A au centre de la case (2,2)
+        const Axx=G.cx(2)+G.cs/2, Ay=G.cy(2)+G.cs/2;
+        p.noStroke(); p.fill('#7ac8e6'); p.circle(Axx,Ay,12);
+        p.fill('rgba(240,236,224,0.9)'); p.textFont('Playfair Display'); p.textSize(Math.max(15,G.cs*0.4));
+        p.textAlign(p.CENTER,p.CENTER); p.text('A',Axx,Ay-G.cs*0.45);
+        p.fill('rgba(230,130,110,0.8)'); p.textFont('DM Mono'); p.textSize(Math.max(11,G.cs*0.22));
+        p.text('axe',ax,G.y0-26);
+        p.pop();
+      }}),
+  qcm('Les propriétés', "En pliant le long de l'axe, A et A′ se superposent. La symétrie axiale conserve…",
+    'Elle conserve…', [{label:'longueurs et angles',ok:true},{label:'seulement les angles',ok:false},{label:'rien',ok:false}]),
+  qcm('Perpendiculaire', "Le segment [AA′] est toujours … à l'axe.",
+    '[AA′] est … à l\'axe', [{label:'parallèle',ok:false},{label:'perpendiculaire',ok:true}]),
+  finish("Un pliage-miroir : chaque point et son image sont à égale distance de l'axe, sur une perpendiculaire à l'axe.")
+]};
+
+TUT['symetrie-centrale'] = { title:'Symétrie centrale', steps:[
+  gridPick('Le demi-tour autour de O', "La symétrie centrale est un demi-tour autour du point O. A est 2 cases à gauche et 1 case au-dessus de O : clique sur son image A′ (2 cases à droite, 1 case en dessous).",
+    { cols:9, rows:5, target:[6,3],
+      drawExtra(p,S,G){
+        p.push();
+        const Ox=G.cx(4)+G.cs/2, Oy=G.cy(2)+G.cs/2;
+        const Axx=G.cx(2)+G.cs/2, Ay=G.cy(1)+G.cs/2;
+        p.noStroke(); p.fill('#e6d278'); p.circle(Ox,Oy,11);
+        p.fill('#7ac8e6'); p.circle(Axx,Ay,12);
+        p.fill('rgba(240,236,224,0.9)'); p.textFont('Playfair Display'); p.textSize(Math.max(15,G.cs*0.4)); p.textAlign(p.CENTER,p.CENTER);
+        p.text('A',Axx,Ay-G.cs*0.45); p.text('O',Ox,Oy-G.cs*0.45);
+        p.stroke('rgba(245,242,232,0.3)'); p.strokeWeight(1.4);
+        p.drawingContext.setLineDash([5,5]); p.line(Axx,Ay,Ox,Oy); p.drawingContext.setLineDash([]);
+        p.pop();
+      }}),
+  qcm('Le milieu', "Après le demi-tour, O est exactement…",
+    'O est … de [AA′]', [{label:'le milieu',ok:true},{label:'une extrémité',ok:false},{label:'en dehors',ok:false}]),
+  qcm('Quel angle ?', "Une symétrie centrale, c'est une rotation de…",
+    'Rotation de … autour de O', [{label:'90°',ok:false},{label:'180°',ok:true},{label:'360°',ok:false}]),
+  finish("Un demi-tour (180°) autour de O : la figure est retournée, O est le milieu de chaque segment [point–image].")
+]};
+
+TUT.angles = { title:'Angles et parallélisme', steps:[
+  {
+    title:'Trouve l\'alterne-interne', hint:"Deux droites parallèles coupées par une sécante. L'angle jaune est marqué. Clique sur l'angle ALTERNE-INTERNE (entre les parallèles, de l'autre côté de la sécante).",
+    onEnter(p,S){ S.aPick=null; S.aWrong=null; },
+    _zones(p){
+      const y1=p.height*0.36, y2=p.height*0.66;
+      const secX = y => p.width*0.30 + (y-y1)/(y2-y1)*p.width*0.32;
+      return [
+        {x:secX(y1)+34, y:y1+22, ok:false, id:0},   // correspondant (au-dessus impossible: en dessous de d1 côté droit) → correspond côté même
+        {x:secX(y2)+34, y:y2-22, ok:true,  id:1},   // alterne-interne
+        {x:secX(y2)-34, y:y2+22, ok:false, id:2},   // externe
+      ];
+    },
+    onCanvas(p,S){
+      for(const z of this._zones(p)){
+        if(Math.hypot(p.mouseX-z.x,p.mouseY-z.y)<26){
+          if(z.ok) S.aPick=z.id; else { S.aWrong={id:z.id,f:p.frameCount}; FX().shake(8); }
+          return;
+        }
+      }
+    },
+    draw(p,S){
+      const y1=p.height*0.36, y2=p.height*0.66;
+      const secX = y => p.width*0.30 + (y-y1)/(y2-y1)*p.width*0.32;
+      p.push();
+      p.stroke('rgba(245,242,232,0.8)'); p.strokeWeight(2.4);
+      p.line(p.width*0.1,y1,p.width*0.9,y1);
+      p.line(p.width*0.1,y2,p.width*0.9,y2);
+      p.stroke('rgba(200,185,122,0.85)');
+      const ext=0.28;
+      p.line(secX(y1-(y2-y1)*ext), y1-(y2-y1)*ext, secX(y2+(y2-y1)*ext), y2+(y2-y1)*ext);
+      // angle marqué : sous d1, côté gauche de la sécante
+      p.noFill(); p.stroke('#e6d278'); p.strokeWeight(3);
+      p.arc(secX(y1),y1, 46,46, Math.PI*0.25, Math.PI);
+      p.noStroke(); p.fill('#e6d278'); p.textFont('DM Mono'); p.textSize(Math.max(12,p.height*0.03));
+      p.textAlign(p.CENTER,p.CENTER); p.text('α', secX(y1)-34, y1+26);
+      // zones cliquables
+      for(const z of this._zones(p)){
+        const hov=Math.hypot(p.mouseX-z.x,p.mouseY-z.y)<26;
+        const picked=S.aPick===z.id;
+        const wrong=S.aWrong&&S.aWrong.id===z.id&&p.frameCount-S.aWrong.f<26;
+        p.noFill(); p.stroke(picked?'#82d6a0':wrong?'rgba(200,80,70,0.9)':hov?'rgba(200,185,122,0.9)':'rgba(245,242,232,0.4)');
+        p.strokeWeight(picked?3:2); p.circle(z.x,z.y,44);
+        p.noStroke(); p.fill(picked?'#82d6a0':'rgba(240,236,224,0.7)');
+        p.text('?', z.x, z.y);
+      }
+      p.pop();
+    },
+    isDone(S){ return S.aPick!=null; }
+  },
+  qcm('La propriété', "Quand les droites sont parallèles, les angles alternes-internes sont…",
+    'Alternes-internes = ?', [{label:'égaux',ok:true},{label:'complémentaires',ok:false},{label:'opposés',ok:false}]),
+  qcm('La réciproque', "Si deux angles alternes-internes sont égaux, alors les deux droites sont…",
+    'Alors les droites sont…', [{label:'parallèles',ok:true},{label:'perpendiculaires',ok:false},{label:'sécantes',ok:false}]),
+  finish("Parallèles + sécante : alternes-internes égaux, correspondants égaux. Et la réciproque prouve le parallélisme.")
+]};
+
+TUT.parallelogrammes = { title:'Les parallélogrammes', steps:[
+  qcm('Les diagonales', "LA propriété du parallélogramme : ses diagonales se coupent…",
+    'Les diagonales se coupent…', [{label:'en leur milieu',ok:true},{label:'à angle droit',ok:false},{label:'au tiers',ok:false}]),
+  qcm('Les côtés', "Dans un parallélogramme ABCD, les côtés opposés sont…",
+    'Côtés opposés = ?', [{label:'égaux et parallèles',ok:true},{label:'perpendiculaires',ok:false},{label:'de longueurs différentes',ok:false}]),
+  multi('La famille', "Clique sur les DEUX quadrilatères qui sont des parallélogrammes particuliers.",
+    [{label:'rectangle',ok:true},{label:'losange',ok:true},{label:'trapèze quelconque',ok:false}],
+    { perRow:3, w:190 }),
+  finish("Côtés opposés parallèles et égaux, diagonales qui se coupent en leur milieu. Rectangle, losange, carré : même famille !")
+]};
+
+TUT.triangle = { title:'Géométrie du triangle', steps:[
+  stepper('Complète à 180°', "Dans un triangle, les trois angles font TOUJOURS 180°. A = 48° et B = 63° : règle l'angle C pour que la somme fasse 180°.",
+    { min:9, max:129, start:39, step:10, target:69,
+      render(p,S,v){
+        const cx=p.width/2;
+        p.push(); p.textAlign(p.CENTER,p.CENTER);
+        p.fill('rgba(122,200,230,0.9)'); p.textFont('DM Mono'); p.textSize(p.height*0.05);
+        p.text('48° + 63° + C = ?', cx, p.height*0.30);
+        p.fill('#f0ece0'); p.textFont('Playfair Display'); p.textSize(p.height*0.10);
+        p.text('C = '+v+'°', cx, p.height*0.46);
+        const sum=48+63+v;
+        p.textFont('DM Mono'); p.textSize(p.height*0.05);
+        p.fill(sum===180?'#82d6a0':'rgba(230,130,110,0.9)');
+        p.text('somme = '+sum+'°'+(sum===180?'  ✓':''), cx, p.height*0.63);
+        p.pop();
+      }}),
+  qcm('Inégalité triangulaire', "Peut-on construire un triangle de côtés 3 cm, 4 cm et 8 cm ? (Un côté doit être plus court que la somme des deux autres.)",
+    '3 + 4 = 7 < 8…', [{label:'Oui',ok:false},{label:'Non, impossible',ok:true}]),
+  qcm('Les droites remarquables', "La droite qui passe par un sommet et coupe le côté opposé perpendiculairement s'appelle…",
+    'C\'est la…', [{label:'hauteur',ok:true},{label:'médiane',ok:false},{label:'médiatrice',ok:false}]),
+  finish("Somme des angles = 180° · inégalité triangulaire · hauteurs, médianes, médiatrices : le triangle est apprivoisé.")
+]};
+
+TUT.perimetres = { title:'Périmètres et aires', steps:[
+  sidePick('Fais le tour', "Le périmètre = le tour complet. Trois côtés sont déjà comptés (5 + 3 + 5). Clique sur le dernier côté !",
+    { pts(p){ const cx=p.width/2, cy=p.height*0.5, w=Math.min(p.width,p.height)*0.42, h=w*0.6;
+        return [{x:cx-w/2,y:cy-h/2},{x:cx+w/2,y:cy-h/2},{x:cx+w/2,y:cy+h/2},{x:cx-w/2,y:cy+h/2}]; },
+      sides:[[0,1,false,'5 cm ✓'],[1,2,false,'3 cm ✓'],[2,3,false,'5 cm ✓'],[3,0,true,'3 cm ?']],
+      marks(p,S){ bigCount(p,p.width/2,p.height*0.9,'P = 5 + 3 + 5 + …  =  16 cm ?'); } }),
+  qcm('Et son aire ?', "Même rectangle 5 × 3, mais cette fois on mesure la SURFACE.",
+    'A = 5 × 3 = ?', [{label:'15 cm²',ok:true},{label:'16 cm²',ok:false},{label:'8 cm²',ok:false}]),
+  qcm('Ne pas confondre !', "Périmètre 16 cm, aire 15 cm² : deux grandeurs différentes. Le périmètre mesure…",
+    'Le périmètre mesure…', [{label:'une longueur (le contour)',ok:true},{label:'une surface',ok:false},{label:'un volume',ok:false}]),
+  finish("P = le contour (en cm) · A = la surface (en cm²). Deux questions différentes, deux formules différentes.")
+]};
+
+TUT.prisme = { title:'Prisme droit et cylindre', steps:[
+  qcm('La formule commune', "Prisme droit et cylindre ont deux bases identiques et parallèles. Leur volume ?",
+    'V = ?', [{label:'aire de la base × hauteur',ok:true},{label:'base + hauteur',ok:false},{label:'périmètre × hauteur',ok:false}]),
+  qcm('Un cylindre', "Cylindre de rayon 2 et de hauteur 5 : base = π × 2² = 4π. Volume ?",
+    'V = 4π × 5 = ?', [{label:'≈ 62,8',ok:true},{label:'≈ 31,4',ok:false},{label:'≈ 125,6',ok:false}]),
+  qcm('Le patron', "Le patron d'un cylindre est composé de deux disques et…",
+    'Deux disques et…', [{label:'un rectangle',ok:true},{label:'un triangle',ok:false},{label:'un autre disque',ok:false}]),
+  finish("V = aire de base × hauteur. Le cylindre : deux disques + un rectangle enroulé.")
+]};
+
+TUT.pythagore = { title:'Théorème de Pythagore', steps:[
+  sidePick("Trouve l'hypoténuse", "Dans un triangle rectangle, l'hypoténuse est le côté EN FACE de l'angle droit — c'est aussi le plus long. Clique dessus !",
+    { pts(p){ const cx=p.width/2, cy=p.height*0.52, s=Math.min(p.width,p.height)*0.42;
+        return [{x:cx-s/2,y:cy+s*0.3,name:'A',lx:-22,ly:14},{x:cx-s/2,y:cy-s*0.32,name:'B',lx:-22,ly:-10},{x:cx+s/2,y:cy+s*0.3,name:'C',lx:22,ly:14}]; },
+      sides:[[0,1,false,'AB'],[0,2,false,'AC'],[1,2,true,'BC ?']],
+      marks(p,S,P){
+        // angle droit en A
+        p.push(); p.noFill(); p.stroke('rgba(230,130,110,0.9)'); p.strokeWeight(2);
+        p.rect(P[0].x,P[0].y-20,20,20); p.pop();
+      }}),
+  qcm('Le théorème', "Triangle rectangle en A : le carré de l'hypoténuse égale…",
+    'BC² = ?', [{label:'AB² + AC²',ok:true},{label:'AB + AC',ok:false},{label:'AB² − AC²',ok:false}]),
+  qcm('Calculer', "AB = 6 et AC = 8 : BC² = 36 + 64 = 100. Donc BC = ?",
+    'BC = √100 = ?', [{label:'10',ok:true},{label:'50',ok:false},{label:'14',ok:false}]),
+  qcm('La réciproque', "Un triangle de côtés 5, 12, 13 : on a 13² = 169 et 5² + 12² = 169. Ce triangle est-il rectangle ?",
+    '13² = 5² + 12² ?', [{label:'Oui, rectangle',ok:true},{label:'Non',ok:false}]),
+  finish("BC² = AB² + AC² pour CALCULER une longueur · la réciproque pour PROUVER un angle droit.")
+]};
+
+TUT.thales = { title:'Théorème de Thalès', steps:[
+  sidePick('Repère la parallèle', "Configuration de Thalès : M sur [AB], N sur [AC]. Clique sur le segment PARALLÈLE à (BC).",
+    { pts(p){ const cx=p.width/2, top=p.height*0.2, bot=p.height*0.74, w=Math.min(p.width,p.height)*0.5;
+        const A={x:cx,y:top,name:'A',ly:-18};
+        const B={x:cx-w/2,y:bot,name:'B',lx:-18,ly:12}, C={x:cx+w/2,y:bot,name:'C',lx:18,ly:12};
+        const t=0.42;
+        const M={x:A.x+(B.x-A.x)*t,y:A.y+(B.y-A.y)*t,name:'M',lx:-18};
+        const N={x:A.x+(C.x-A.x)*t,y:A.y+(C.y-A.y)*t,name:'N',lx:18};
+        return [A,B,C,M,N]; },
+      sides:[[0,1,false,'AB'],[0,2,false,'AC'],[1,2,false,'BC'],[3,4,true,'MN ?']] }),
+  qcm('Les rapports', "AM = 3 et AB = 9. Le rapport de Thalès AM/AB vaut…",
+    'AM/AB = 3/9 = ?', [{label:'1/3',ok:true},{label:'1/2',ok:false},{label:'3',ok:false}]),
+  qcm('Conclure', "Thalès dit : MN/BC = AM/AB = 1/3. Si BC = 12, alors MN = ?",
+    'MN = 12 × 1/3 = ?', [{label:'4',ok:true},{label:'36',ok:false},{label:'6',ok:false}]),
+  qcm('La réciproque', "Si AM/AB = AN/AC (points alignés dans le même ordre), alors (MN) et (BC) sont…",
+    'Alors (MN) et (BC) sont…', [{label:'parallèles',ok:true},{label:'perpendiculaires',ok:false},{label:'confondues',ok:false}]),
+  finish("AM/AB = AN/AC = MN/BC : trois rapports égaux pour calculer une longueur ou prouver un parallélisme.")
+]};
+
+TUT.trigonometrie = { title:'Trigonométrie', steps:[
+  sidePick("Le côté opposé", "Dans ce triangle rectangle, l'angle x est marqué en C. Clique sur le côté OPPOSÉ à l'angle x (celui qui ne le touche pas).",
+    { pts(p){ const cx=p.width/2, cy=p.height*0.52, s=Math.min(p.width,p.height)*0.42;
+        return [{x:cx-s/2,y:cy+s*0.3,name:'A',lx:-22,ly:14},{x:cx-s/2,y:cy-s*0.32,name:'B',lx:-22,ly:-10},{x:cx+s/2,y:cy+s*0.3,name:'C',lx:22,ly:14}]; },
+      sides:[[0,1,true,'AB ?'],[0,2,false,'AC'],[1,2,false,'BC (hyp.)']],
+      marks(p,S,P){
+        p.push(); p.noFill(); p.stroke('rgba(230,130,110,0.9)'); p.strokeWeight(2);
+        p.rect(P[0].x,P[0].y-20,20,20);
+        p.stroke('#e6d278'); p.strokeWeight(3);
+        const a1=Math.atan2(P[1].y-P[2].y,P[1].x-P[2].x), a2=Math.atan2(P[0].y-P[2].y,P[0].x-P[2].x);
+        p.arc(P[2].x,P[2].y,60,60,Math.min(a1,a2),Math.max(a1,a2));
+        p.noStroke(); p.fill('#e6d278'); p.textFont('DM Mono'); p.textSize(Math.max(12,p.height*0.032));
+        p.textAlign(p.CENTER,p.CENTER); p.text('x',P[2].x-52,P[2].y-16);
+        p.pop();
+      }}),
+  qcm('SOH-CAH-TOA', "Le cosinus d'un angle aigu, c'est…",
+    'cos(x) = ?', [{label:'adjacent / hypoténuse',ok:true},{label:'opposé / hypoténuse',ok:false},{label:'opposé / adjacent',ok:false}]),
+  qcm('Calculer un angle', "Adjacent = 5, hypoténuse = 10 : cos(x) = 0,5. Quelle est la mesure de x ?",
+    'cos(x) = 0,5  →  x = ?', [{label:'30°',ok:false},{label:'45°',ok:false},{label:'60°',ok:true}]),
+  qcm('Et le sinus ?', "sin(x) = opposé / hypoténuse. Dans le même triangle, si l'opposé vaut 8,66 et l'hypoténuse 10 :",
+    'sin(x) ≈ ?', [{label:'0,87',ok:true},{label:'0,5',ok:false},{label:'1,15',ok:false}]),
+  finish("SOH-CAH-TOA : sin = opp/hyp, cos = adj/hyp, tan = opp/adj. Toujours dans un triangle RECTANGLE.")
+]};
+
+TUT['triangles-semblables'] = { title:'Triangles semblables', steps:[
+  qcm('La définition', "Deux triangles sont semblables quand ils ont les mêmes…",
+    'Les mêmes… ?', [{label:'angles',ok:true},{label:'côtés',ok:false},{label:'aires',ok:false}]),
+  qcm('Le rapport k', "Si le rapport de similitude est k = 2, alors les côtés du grand triangle sont…",
+    'k = 2  →  côtés ?', [{label:'2 fois plus longs',ok:true},{label:'4 fois plus longs',ok:false},{label:'identiques',ok:false}]),
+  qcm('Attention aux aires !', "Avec k = 2, les longueurs doublent… mais l'aire est multipliée par ?",
+    'k = 2  →  aire × ?', [{label:'2',ok:false},{label:'4',ok:true},{label:'8',ok:false}]),
+  finish("Mêmes angles → côtés proportionnels (×k) → aires multipliées par k². Ne confonds jamais k et k² !")
+]};
+
+TUT.homotheties = { title:'Homothéties', steps:[
+  stepper('Agrandis la figure', "Une homothétie de centre O et de rapport k multiplie toutes les distances à O par k. Règle k pour DOUBLER le carré bleu (k = 2).",
+    { min:1, max:6, start:1, step:1, target:4,
+      render(p,S,v){
+        const k=[0.5,1,1.5,2,2.5,3][v-1];
+        const Ox=p.width*0.24, Oy=p.height*0.56;
+        const base=Math.min(p.width,p.height)*0.11;
+        p.push();
+        p.noStroke(); p.fill('#e6d278'); p.circle(Ox,Oy,9);
+        p.fill('rgba(240,236,224,0.85)'); p.textFont('Playfair Display'); p.textSize(p.height*0.04);
+        p.textAlign(p.CENTER,p.CENTER); p.text('O',Ox,Oy+26);
+        // carré d'origine (fantôme, k=1)
+        p.noFill(); p.stroke('rgba(122,200,230,0.4)'); p.strokeWeight(1.6);
+        p.rect(Ox+base*1.4,Oy-base,base,base);
+        // carré transformé
+        p.stroke('rgba(122,200,230,0.95)'); p.strokeWeight(2.6);
+        p.rect(Ox+base*1.4*k,Oy-base*k,base*k,base*k);
+        // rayons
+        p.stroke('rgba(200,185,122,0.35)'); p.strokeWeight(1.2);
+        p.line(Ox,Oy,Ox+base*1.4*k+base*k,Oy-base*k);
+        p.line(Ox,Oy,Ox+base*1.4*k,Oy);
+        p.pop();
+        bigCount(p,p.width*0.72,p.height*0.24,'k = '+String(k).replace('.',','));
+      }}),
+  qcm('Effet sur les longueurs', "Homothétie de rapport k = 3 : toutes les longueurs sont…",
+    'k = 3  →  longueurs ?', [{label:'× 3',ok:true},{label:'× 9',ok:false},{label:'+ 3',ok:false}]),
+  qcm('Rapport négatif', "Et si k < 0 (par exemple k = −1) ? La figure est…",
+    'k = −1  →  ?', [{label:'retournée (demi-tour)',ok:true},{label:'juste agrandie',ok:false},{label:'inchangée',ok:false}]),
+  finish("OM′ = k × OM : k > 1 agrandit, 0 < k < 1 réduit, k < 0 retourne. La forme est toujours conservée.")
+]};
+
+TUT.translation = { title:'Translation et rotation', steps:[
+  gridPick('Fais glisser le point', "La flèche (le vecteur) dit : 3 cases à droite, 1 case vers le bas. Clique sur l'image du point A par cette translation.",
+    { cols:9, rows:5, target:[5,3],
+      drawExtra(p,S,G){
+        p.push();
+        const Axx=G.cx(2)+G.cs/2, Ay=G.cy(2)+G.cs/2;
+        p.noStroke(); p.fill('#7ac8e6'); p.circle(Axx,Ay,12);
+        p.fill('rgba(240,236,224,0.9)'); p.textFont('Playfair Display'); p.textSize(Math.max(15,G.cs*0.4));
+        p.textAlign(p.CENTER,p.CENTER); p.text('A',Axx,Ay-G.cs*0.45);
+        // vecteur en haut à gauche
+        const vx=G.cx(0)+G.cs*0.3, vy=G.y0-30;
+        p.stroke('#e6d278'); p.strokeWeight(2.6);
+        p.line(vx,vy,vx+G.cs*3,vy+G.cs);
+        const ang=Math.atan2(G.cs,G.cs*3);
+        p.line(vx+G.cs*3,vy+G.cs,vx+G.cs*3-12*Math.cos(ang-0.4),vy+G.cs-12*Math.sin(ang-0.4));
+        p.line(vx+G.cs*3,vy+G.cs,vx+G.cs*3-12*Math.cos(ang+0.4),vy+G.cs-12*Math.sin(ang+0.4));
+        p.pop();
+      }}),
+  qcm('Ce qui est conservé', "Translation ou rotation : la figure garde…",
+    'La figure garde…', [{label:'sa forme et sa taille',ok:true},{label:'seulement sa forme',ok:false},{label:'rien',ok:false}]),
+  qcm('La rotation', "Pour définir une rotation, il faut un centre et…",
+    'Un centre et…', [{label:'un angle',ok:true},{label:'un vecteur',ok:false},{label:'un axe',ok:false}]),
+  finish("Translation = glissement selon un vecteur · rotation = pivotement autour d'un centre. Les deux conservent tout.")
+]};
+
+TUT.pyramides = { title:'Pyramides et cônes', steps:[
+  qcm('Le tiers magique', "Pyramide et cône sont des solides POINTUS : leur volume vaut…",
+    'V = ?', [{label:'(1/3) × base × hauteur',ok:true},{label:'base × hauteur',ok:false},{label:'(1/2) × base × hauteur',ok:false}]),
+  qcm('Calculer', "Pyramide de base 6 cm² et de hauteur 4 cm :",
+    'V = (1/3) × 6 × 4 = ?', [{label:'8 cm³',ok:true},{label:'24 cm³',ok:false},{label:'12 cm³',ok:false}]),
+  qcm('Le cône', "La base d'un cône est…",
+    'La base d\'un cône = ?', [{label:'un disque',ok:true},{label:'un carré',ok:false},{label:'un triangle',ok:false}]),
+  finish("Solides pointus = 1/3 du prisme correspondant. V = (1/3) × aire de base × hauteur.")
+]};
+
+/* ───────── FONCTIONS ───────── */
+
+TUT['fonctions-notion'] = { title:'Notions de fonctions', steps:[
+  qcm('La machine', "Une fonction est une machine : x entre, f(x) sort. Avec f(x) = 2x + 1, quelle ENTRÉE donne 7 en sortie ?",
+    'f(?) = 7  avec  f(x) = 2x + 1', [{label:'2',ok:false},{label:'3',ok:true},{label:'4',ok:false}]),
+  qcm("L'image", "L'image, c'est la SORTIE. Avec f(x) = 3x − 2, l'image de 4 est…",
+    'f(4) = 3×4 − 2 = ?', [{label:'10',ok:true},{label:'12',ok:false},{label:'14',ok:false}]),
+  qcm("L'antécédent", "L'antécédent, c'est l'ENTRÉE. Quel est l'antécédent de 10 par f(x) = 3x − 2 ?",
+    '3x − 2 = 10  →  x = ?', [{label:'4',ok:true},{label:'10',ok:false},{label:'8/3',ok:false}]),
+  qcm('Sur la courbe', "Le point (4 ; 10) est sur la courbe de f. On lit l'image sur l'axe…",
+    "L'image se lit sur l'axe…", [{label:'vertical (y)',ok:true},{label:'horizontal (x)',ok:false}]),
+  finish("x → f(x) : image = sortie (axe y), antécédent = entrée (axe x). La courbe raconte tous les couples.")
+]};
+
+TUT['fonction-lineaire'] = { title:'Fonction linéaire', steps:[
+  gridPick('Un point de la droite', "f(x) = 2x : sa droite passe par l'origine O. Clique sur le point de la droite où x = 2 (donc y = 4). Les axes sont gradués d'une case en une case.",
+    { cols:7, rows:6, target:[4,1],
+      drawExtra(p,S,G){
+        p.push();
+        // origine en (2, 5)
+        const Ox=G.cx(2)+G.cs/2, Oy=G.cy(5)+G.cs/2;
+        p.stroke('rgba(245,242,232,0.7)'); p.strokeWeight(2);
+        p.line(G.x0-8,Oy,G.x0+G.cols*G.cs+8,Oy);
+        p.line(Ox,G.y0-8,Ox,G.y0+G.rows*G.cs+8);
+        // droite y=2x : passe par O et par (1 case, 2 cases)
+        p.stroke('rgba(122,200,230,0.85)'); p.strokeWeight(2.2);
+        p.line(Ox-G.cs*1.2,Oy+G.cs*2.4, Ox+G.cs*2.6,Oy-G.cs*5.2);
+        p.noStroke(); p.fill('rgba(240,236,224,0.85)');
+        p.textFont('DM Mono'); p.textSize(Math.max(11,G.cs*0.3)); p.textAlign(p.CENTER,p.CENTER);
+        p.text('O',Ox-12,Oy+14);
+        p.text('x=2',G.cx(4)+G.cs/2,Oy+16);
+        p.pop();
+      }}),
+  qcm('Signature', "La courbe d'une fonction linéaire f(x) = ax est TOUJOURS…",
+    'C\'est toujours…', [{label:'une droite passant par l\'origine',ok:true},{label:'une droite quelconque',ok:false},{label:'une courbe',ok:false}]),
+  qcm('Trouver a', "g est linéaire et g(2) = 7. Le coefficient a = 7 ÷ 2, donc g(6) = ?",
+    'g(x) = 3,5x  →  g(6) = ?', [{label:'21',ok:true},{label:'13',ok:false},{label:'42',ok:false}]),
+  finish("f(x) = ax = la proportionnalité en version fonction. Droite par l'origine, pente a = f(1).")
+]};
+
+TUT['fonction-affine'] = { title:'Fonction affine', steps:[
+  gridPick("L'ordonnée à l'origine", "f(x) = 2x + 1. Sa droite coupe l'axe VERTICAL à la hauteur b = 1. Clique sur ce point (x = 0, y = 1).",
+    { cols:7, rows:6, target:[2,4],
+      drawExtra(p,S,G){
+        p.push();
+        const Ox=G.cx(2)+G.cs/2, Oy=G.cy(5)+G.cs/2;
+        p.stroke('rgba(245,242,232,0.7)'); p.strokeWeight(2);
+        p.line(G.x0-8,Oy,G.x0+G.cols*G.cs+8,Oy);
+        p.line(Ox,G.y0-8,Ox,G.y0+G.rows*G.cs+8);
+        // droite y = 2x+1 : passe par (0,1) et (1,3) en cases
+        p.stroke('rgba(122,200,230,0.85)'); p.strokeWeight(2.2);
+        p.line(Ox-G.cs*1.4,Oy-G.cs*1+G.cs*2.8, Ox+G.cs*2.2,Oy-G.cs*1-G.cs*4.4);
+        p.noStroke(); p.fill('rgba(240,236,224,0.85)');
+        p.textFont('DM Mono'); p.textSize(Math.max(11,G.cs*0.3)); p.textAlign(p.CENTER,p.CENTER);
+        p.text('O',Ox-12,Oy+14);
+        p.pop();
+      }}),
+  qcm('a et b', "Dans f(x) = ax + b, le nombre a est la pente. Et b ?",
+    'b = ?', [{label:"l'ordonnée à l'origine",ok:true},{label:'la pente',ok:false},{label:'une image',ok:false}]),
+  qcm('Lire une image', "f(x) = 2x + 1 : calcule f(3).",
+    'f(3) = 2×3 + 1 = ?', [{label:'7',ok:true},{label:'6',ok:false},{label:'9',ok:false}]),
+  qcm('Reconnaître', "Parmi ces fonctions, laquelle est affine SANS être linéaire ?",
+    'Affine mais pas linéaire ?', [{label:'f(x) = 3x',ok:false},{label:'f(x) = 2x + 1',ok:true},{label:'f(x) = x²',ok:false}]),
+  finish("f(x) = ax + b : une droite de pente a qui coupe l'axe des y en b. Si b = 0, elle redevient linéaire.")
+]};
+
+/* ───────── PROBABILITÉS ───────── */
+
+TUT['proba-vocab'] = { title:'Vocabulaire des probabilités', steps:[
+  qcm("L'univers", "On lance un dé à 6 faces. L'univers est l'ensemble de TOUTES les issues possibles :",
+    'Univers = ?', [{label:'{1, 2, 3, 4, 5, 6}',ok:true},{label:'{6}',ok:false},{label:'{pair, impair}',ok:false}]),
+  multi("Un événement", "L'événement « obtenir un nombre pair » regroupe plusieurs issues. Clique sur les TROIS issues qui le réalisent.",
+    [{label:'1',ok:false},{label:'2',ok:true},{label:'3',ok:false},{label:'4',ok:true},{label:'5',ok:false},{label:'6',ok:true}],
+    { perRow:6, w:80, prompt:'« obtenir un nombre pair »' }),
+  qcm("L'événement contraire", "Le contraire de « obtenir un nombre pair », c'est…",
+    'Le contraire = ?', [{label:'« obtenir un impair »',ok:true},{label:'« obtenir 6 »',ok:false},{label:'« ne rien obtenir »',ok:false}]),
+  finish("Issue → événement → univers. L'événement contraire regroupe toutes les autres issues.")
+]};
+
+TUT['proba-simple'] = { title:'Probabilités simples', steps:[
+  multi('Les issues favorables', "P = favorables ÷ total. Pour « obtenir un multiple de 3 » avec un dé, clique sur les issues FAVORABLES.",
+    [{label:'1',ok:false},{label:'2',ok:false},{label:'3',ok:true},{label:'4',ok:false},{label:'5',ok:false},{label:'6',ok:true}],
+    { perRow:6, w:80, prompt:'« multiple de 3 »' }),
+  qcm('Calculer', "2 issues favorables sur 6 possibles :",
+    'P = 2/6 = ?', [{label:'1/3',ok:true},{label:'1/2',ok:false},{label:'2/3',ok:false}]),
+  qcm('Les bornes', "Une probabilité est toujours comprise entre 0 et 1. P = 1 signifie que l'événement est…",
+    'P = 1  →  événement…', [{label:'certain',ok:true},{label:'impossible',ok:false},{label:'rare',ok:false}]),
+  qcm('La somme', "P(pair) = 1/2. Alors P(impair) = ?",
+    'P(impair) = 1 − 1/2 = ?', [{label:'1/2',ok:true},{label:'1/3',ok:false},{label:'0',ok:false}]),
+  finish("P = favorables/total (équiprobabilité) · 0 ≤ P ≤ 1 · P(contraire) = 1 − P.")
+]};
+
+/* ───────── STATISTIQUES ───────── */
+
+TUT['stats-organisation'] = { title:'Organisation des données', steps:[
+  {
+    title:'Lis le diagramme', hint:"Voici les sports préférés d'une classe. Clique sur la barre du sport le PLUS choisi.",
+    onEnter(p,S){ S.bPick=null; S.bWrong=null; },
+    _bars(p){
+      const data=[{l:'Foot',v:9},{l:'Danse',v:12},{l:'Judo',v:5},{l:'Natation',v:8}];
+      const bw=p.width*0.13, gap=p.width*0.055, x0=p.width/2-(4*bw+3*gap)/2;
+      const y0=p.height*0.78, maxH=p.height*0.42;
+      return data.map((d,i)=>({...d, ok:d.v===12, x:x0+i*(bw+gap), w:bw, h:d.v/12*maxH, y0}));
+    },
+    onCanvas(p,S){
+      this._bars(p).forEach((b,i)=>{
+        if(p.mouseX>b.x&&p.mouseX<b.x+b.w&&p.mouseY>b.y0-b.h&&p.mouseY<b.y0){
+          if(b.ok) S.bPick=i; else { S.bWrong={i,f:p.frameCount}; FX().shake(8); }
+        }
+      });
+    },
+    draw(p,S){
+      p.push();
+      this._bars(p).forEach((b,i)=>{
+        const hov=p.mouseX>b.x&&p.mouseX<b.x+b.w&&p.mouseY>b.y0-b.h&&p.mouseY<b.y0;
+        const picked=S.bPick===i;
+        const wrong=S.bWrong&&S.bWrong.i===i&&p.frameCount-S.bWrong.f<26;
+        p.fill(picked?'rgba(130,214,160,0.5)':wrong?'rgba(200,80,70,0.35)':hov?'rgba(200,185,122,0.35)':'rgba(122,200,230,0.32)');
+        p.stroke('rgba(245,242,232,0.7)'); p.strokeWeight(1.6);
+        p.rect(b.x,b.y0-b.h,b.w,b.h);
+        p.noStroke(); p.fill('rgba(240,236,224,0.8)'); p.textFont('DM Sans'); p.textAlign(p.CENTER,p.TOP);
+        p.textSize(Math.max(12,p.height*0.03)); p.text(b.l,b.x+b.w/2,b.y0+8);
+        p.fill('rgba(230,210,120,0.9)'); p.textFont('DM Mono'); p.textAlign(p.CENTER,p.BOTTOM);
+        p.text(b.v,b.x+b.w/2,b.y0-b.h-6);
+      });
+      p.pop();
+    },
+    isDone(S){ return S.bPick!=null; }
+  },
+  qcm('La fréquence', "12 élèves sur 34 préfèrent la danse. La fréquence, c'est l'effectif divisé par le total :",
+    'fréquence = ?', [{label:'12 ÷ 34',ok:true},{label:'34 ÷ 12',ok:false},{label:'12 × 34',ok:false}]),
+  qcm('Bien choisir', "Pour comparer des catégories (foot, danse, judo…), le graphique le plus adapté est…",
+    'Le plus adapté ?', [{label:'diagramme en barres',ok:true},{label:'courbe',ok:false},{label:'nuage de points',ok:false}]),
+  finish("Effectif = combien · fréquence = effectif/total · et un bon graphique rend les données lisibles d'un coup d'œil.")
+]};
+
+TUT['stats-position'] = { title:'Indicateurs de position', steps:[
+  qcm('La moyenne', "Notes : 8 ; 11 ; 12 ; 14 ; 15. Moyenne = somme ÷ nombre de valeurs = 60 ÷ 5.",
+    'Moyenne = ?', [{label:'12',ok:true},{label:'11',ok:false},{label:'13',ok:false}]),
+  multi('La médiane', "La médiane partage la série ORDONNÉE en deux moitiés. Clique sur la valeur du MILIEU de 8 ; 11 ; 12 ; 14 ; 15.",
+    [{label:'8',ok:false},{label:'11',ok:false},{label:'12',ok:true},{label:'14',ok:false},{label:'15',ok:false}],
+    { perRow:5, w:90 }),
+  qcm('Le mode', "Dans la série 3 ; 5 ; 5 ; 7 ; 9, le mode (valeur la plus fréquente) est…",
+    'Mode = ?', [{label:'5',ok:true},{label:'7',ok:false},{label:'29/5',ok:false}]),
+  qcm('Moyenne ≠ médiane', "Série : 10 ; 10 ; 10 ; 10 ; 100. La moyenne vaut 28 mais la médiane vaut…",
+    'Médiane = ?', [{label:'10',ok:true},{label:'28',ok:false},{label:'100',ok:false}]),
+  finish("Moyenne = somme/nombre · médiane = valeur du milieu (robuste aux extrêmes) · mode = la plus fréquente.")
+]};
+
+TUT['stats-graphiques'] = { title:'Représentations graphiques', steps:[
+  qcm('Le camembert', "Dans un diagramme circulaire, le tout = 360°. Quel angle pour 25 % ?",
+    '25 % de 360° = ?', [{label:'90°',ok:true},{label:'25°',ok:false},{label:'180°',ok:false}]),
+  {
+    title:'Trouve la moitié', hint:"Ce diagramme circulaire a trois secteurs. Clique sur le secteur qui représente 50 % du total.",
+    onEnter(p,S){ S.secPick=null; S.secWrong=null; },
+    _secs(){ return [ {a0:-Math.PI/2, a1:Math.PI/2, ok:true, label:'?'},
+                      {a0:Math.PI/2, a1:Math.PI, ok:false, label:'?'},
+                      {a0:Math.PI, a1:Math.PI*1.5, ok:false, label:'?'} ]; },
+    onCanvas(p,S){
+      const cx=p.width/2, cy=p.height*0.5, r=Math.min(p.height*0.27,p.width*0.2);
+      const d=Math.hypot(p.mouseX-cx,p.mouseY-cy); if(d>r) return;
+      let a=Math.atan2(p.mouseY-cy,p.mouseX-cx);
+      const secs=this._secs();
+      for(let i=0;i<secs.length;i++){
+        let aa=a; while(aa<secs[i].a0) aa+=Math.PI*2;
+        if(aa>=secs[i].a0&&aa<secs[i].a1){
+          if(secs[i].ok) S.secPick=i; else { S.secWrong={i,f:p.frameCount}; FX().shake(8); }
+          return;
+        }
+      }
+    },
+    draw(p,S){
+      const cx=p.width/2, cy=p.height*0.5, r=Math.min(p.height*0.27,p.width*0.2);
+      const cols=['rgba(122,200,230,0.4)','rgba(200,160,122,0.4)','rgba(160,122,200,0.4)'];
+      p.push();
+      this._secs().forEach((s,i)=>{
+        const picked=S.secPick===i;
+        const wrong=S.secWrong&&S.secWrong.i===i&&p.frameCount-S.secWrong.f<26;
+        p.fill(picked?'rgba(130,214,160,0.55)':wrong?'rgba(200,80,70,0.45)':cols[i]);
+        p.stroke('rgba(245,242,232,0.8)'); p.strokeWeight(2);
+        p.arc(cx,cy,r*2,r*2,s.a0,s.a1,p.PIE);
+      });
+      p.pop();
+    },
+    isDone(S){ return S.secPick!=null; }
+  },
+  qcm('Bien choisir (encore)', "Pour montrer des PARTS d'un tout (50 %, 25 %…), on choisit plutôt…",
+    'Le plus adapté ?', [{label:'diagramme circulaire',ok:true},{label:'diagramme en barres',ok:false},{label:'tableau brut',ok:false}]),
+  finish("Barres pour comparer · circulaire pour des parts d'un tout (100 % = 360°) · histogramme pour des classes.")
+]};
+
+
+/* ════════════════════════════════════════════════════════════
+   LE MOTEUR
+   ════════════════════════════════════════════════════════════ */
+const params = new URLSearchParams(location.search);
+const chId = params.get('ch') || 'fractions';
+
+const placeholder = {
+  title: (params.get('title') || 'Ce chapitre'),
+  steps: [{
+    title:'Tutoriel en préparation',
+    hint:"Ce tutoriel interactif arrive bientôt. Reviens vite !",
+    onEnter(p,S,ui){ ui.push({key:'back',label:'← Retour'}); },
+    layoutButtons(p,ui){ ui.find(b=>b.key==='back').rect={x:p.width*0.5-90,y:p.height*0.72,w:180,h:54}; },
+    onButton(p,S,key){ if(key==='back') window.location.href='tutoriels.html'; },
+    draw(p,S){ p.push(); p.textAlign(p.CENTER,p.CENTER); p.fill('rgba(200,185,122,0.5)'); p.textFont('Playfair Display');
+      p.textSize(p.height*0.16); p.text('✎', p.width*0.5, p.height*0.42); p.pop(); },
+    isDone(){ return false; }
+  }]
+};
+
+const tut = TUT[chId] || placeholder;
+document.getElementById('tut-title').textContent = tut.title;
+
+const sketch = (p) => {
+  let stepIndex = 0;
+  let S = {};
+  let ui = [];
+  let stepDone = false;
+  let celebrate = 0;       // frames restants de célébration
+  let confetti = [];
+  let fadeIn = 0;          // 0..1 transition d'entrée
+  let shake = 0;
+
+  // hook : les étapes de la bibliothèque peuvent secouer l'écran
+  window.__fx = { shake: v => { shake = Math.max(shake, v); } };
+
+  function setupCanvas(){
+    const host = document.getElementById('canvas-host');
+    const w = host.clientWidth || 900;
+    return p.createCanvas(w, Math.round(w*0.6));
+  }
+
+  p.setup = () => {
+    const c = setupCanvas();
+    c.parent('canvas-host');
+    p.textFont('DM Sans');
+    enterStep();
+  };
+
+  p.windowResized = () => {
+    const host = document.getElementById('canvas-host');
+    const w = host.clientWidth || 900;
+    p.resizeCanvas(w, Math.round(w*0.6));
+    layout();
+  };
+
+  function enterStep(){
+    ui = [];
+    stepDone = false;
+    celebrate = 0;
+    confetti = [];
+    fadeIn = 0;
+    const st = tut.steps[stepIndex];
+    if (st.onEnter) st.onEnter(p, S, ui);
+    layout();
+    updateProgress();
+  }
+
+  function layout(){
+    const st = tut.steps[stepIndex];
+    if (st.type === 'choice') layoutChoice(st);
+    else if (st.layoutButtons) st.layoutButtons(p, ui);
+  }
+
+  function layoutChoice(st){
+    const n = st.options.length;
+    const maxLbl = Math.max(...st.options.map(o => o.label.length));
+    const bw = Math.min(maxLbl > 14 ? 240 : 170, p.width*0.29), bh = 60, gap = p.width*0.03;
+    const totalW = n*bw + (n-1)*gap;
+    const x0 = p.width/2 - totalW/2, y = p.height*0.66;
+    ui = st.options.map((o,i)=>({key:'opt'+i, label:o.label, ok:o.ok,
+      rect:{x:x0+i*(bw+gap), y, w:bw, h:bh}, wrong:false}));
+  }
+
+  function updateProgress(){
+    const total = tut.steps.length;
+    document.getElementById('progress-fill').style.width = ((stepIndex)/total*100)+'%';
+    document.getElementById('progress-label').textContent = `Étape ${stepIndex+1} / ${total}`;
+  }
+
+  p.draw = () => {
+    // fond tableau sombre
+    p.background(13,18,15);
+    drawGrain();
+
+    if (fadeIn < 1) fadeIn = Math.min(1, fadeIn + 0.06);
+
+    const st = tut.steps[stepIndex];
+
+    p.push();
+    p.translate((1-easeOut(fadeIn))* p.width*0.06, 0);
+    p.drawingContext.globalAlpha = fadeIn;
+
+    // titre + consigne
+    p.push();
+    p.textAlign(p.CENTER, p.TOP);
+    p.fill(200,185,122); p.textFont('DM Mono'); p.textSize(Math.max(11,p.width*0.014));
+    p.text(('Étape '+(stepIndex+1)+' · '+st.title).toUpperCase(), p.width/2, p.height*0.05);
+    p.fill(240,236,224,210); p.textFont('DM Sans'); p.textSize(Math.max(14,p.width*0.020));
+    wrapText(p, st.hint, p.width/2, p.height*0.105, p.width*0.84, p.width*0.028);
+    p.pop();
+
+    if (shake>0){ p.translate(Math.sin(p.frameCount*1.2)*shake, 0); shake*=0.85; if(shake<0.3) shake=0; }
+
+    if (st.type === 'choice') drawChoice(p, st);
+    else if (st.draw) st.draw(p, S);
+
+    drawButtons(p);
+    p.drawingContext.globalAlpha = 1;
+    p.pop();
+
+    // détection de réussite
+    if (!stepDone && st.isDone && st.isDone(S)){ triggerComplete(); }
+
+    // célébration
+    if (celebrate > 0){
+      drawConfetti(p);
+      drawBravo(p);
+      celebrate--;
+      if (celebrate === 0) goNext();
+    }
+  };
+
+  function drawChoice(p, st){
+    p.push();
+    p.textAlign(p.CENTER, p.CENTER);
+    p.fill(240,236,224); p.textFont('Playfair Display');
+    let size = p.height*0.11;
+    p.textSize(size);
+    while (p.textWidth(st.question) > p.width*0.88 && size > p.height*0.045){
+      size *= 0.93; p.textSize(size);
+    }
+    p.text(st.question, p.width/2, p.height*0.40);
+    p.pop();
+  }
+
+  function drawButtons(p){
+    for (const b of ui){
+      if (!b.rect) continue;
+      const {x,y,w,h} = b.rect;
+      const hover = p.mouseX>x && p.mouseX<x+w && p.mouseY>y && p.mouseY<y+h;
+      p.push();
+      p.rectMode(p.CORNER);
+      p.noStroke();
+      p.fill(b.wrong ? 'rgba(200,80,70,0.18)' : (hover ? 'rgba(200,185,122,0.16)' : 'rgba(255,255,255,0.05)'));
+      p.stroke(b.wrong ? 'rgba(200,80,70,0.7)' : 'rgba(200,185,122,0.45)'); p.strokeWeight(1.4);
+      p.rect(x, y, w, h, 12);
+      p.noStroke();
+      p.fill(b.wrong ? 'rgba(220,140,130,1)' : '#f0ece0');
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textFont('DM Sans'); p.textStyle(p.BOLD);
+      let ts = Math.max(18, h*0.4); p.textSize(ts);
+      while (p.textWidth(b.label) > w-18 && ts > 11){ ts--; p.textSize(ts); }
+      p.text(b.label, x+w/2, y+h/2);
+      p.pop();
+    }
+  }
+
+  p.mousePressed = () => {
+    if (celebrate > 0) return;
+    const st = tut.steps[stepIndex];
+    // boutons
+    for (const b of ui){
+      if (!b.rect) continue;
+      const {x,y,w,h} = b.rect;
+      if (p.mouseX>x && p.mouseX<x+w && p.mouseY>y && p.mouseY<y+h){
+        if (st.type === 'choice'){
+          if (b.ok){ triggerComplete(); }
+          else { b.wrong = true; shake = 8; setTimeout(()=>{ b.wrong=false; }, 500); }
+        } else if (st.onButton){
+          st.onButton(p, S, b.key);
+          layout();
+        }
+        return;
+      }
+    }
+    // clic libre sur le canvas
+    if (st.onCanvas){ st.onCanvas(p, S); }
+  };
+
+  function triggerComplete(){
+    if (stepDone) return;
+    stepDone = true;
+    celebrate = 70;
+    // confetti
+    confetti = [];
+    for (let i=0;i<70;i++){
+      confetti.push({ x:p.width/2, y:p.height*0.45,
+        vx:(Math.random()-0.5)*9, vy:(Math.random()-0.9)*11,
+        c:[ '#c8b97a','#7ac8e6','#82d6a0','#e6d278' ][i%4], s:3+Math.random()*4, a:1 });
+    }
+  }
+
+  function drawConfetti(p){
+    p.push(); p.noStroke();
+    for (const c of confetti){
+      c.x+=c.vx; c.y+=c.vy; c.vy+=0.35; c.a-=0.013;
+      p.fill(p.color(c.c)); p.drawingContext.globalAlpha=Math.max(0,c.a);
+      p.rect(c.x, c.y, c.s, c.s);
+    }
+    p.drawingContext.globalAlpha=1; p.pop();
+  }
+
+  function drawBravo(p){
+    const t = 1 - celebrate/70;
+    p.push();
+    p.textAlign(p.CENTER, p.CENTER);
+    p.drawingContext.globalAlpha = Math.min(1, t*3) * Math.min(1,(celebrate/12));
+    p.fill('#82d6a0'); p.textFont('Playfair Display'); p.textSize(p.height*0.10);
+    p.text('Bravo !', p.width/2, p.height*0.30);
+    p.pop();
+  }
+
+  function goNext(){
+    if (stepIndex < tut.steps.length-1){ stepIndex++; enterStep(); }
+    else {
+      document.getElementById('progress-fill').style.width='100%';
+      document.getElementById('progress-label').textContent='Terminé ✓';
+    }
+  }
+
+  // ── helpers de dessin partagés ──
+  function drawGrain(){
+    p.push(); p.noStroke();
+    for (let y=0;y<p.height;y+=4){ p.fill(255,255,255, y%8===0?4:0); p.rect(0,y,p.width,1); }
+    p.pop();
+  }
+  function wrapText(p, str, cx, y, maxW, lh){
+    const words=str.split(' '); let line='', yy=y;
+    for (const w of words){ const test=line?line+' '+w:w;
+      if (p.textWidth(test)>maxW){ p.text(line, cx, yy); line=w; yy+=lh; } else line=test; }
+    p.text(line, cx, yy);
+  }
+  function easeOut(t){ return 1-Math.pow(1-t,3); }
+
+  // contrôles externes
+  window.__restart = () => { S={}; stepIndex=0; enterStep(); };
+  window.__skip = () => { if(celebrate===0){ goNext(); } };
+};
+
+new p5(sketch);
+</script>
+</body>
+</html>

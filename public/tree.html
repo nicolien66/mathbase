@@ -123,6 +123,17 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .content-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem}
 .content-block-title{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:1rem}
 .content-placeholder{font-size:.9rem;color:var(--muted);line-height:1.75;font-style:italic}
+.rich-list{list-style:none;display:flex;flex-direction:column;gap:.7rem}
+.rich-list li{display:flex;gap:.7rem;font-size:.92rem;line-height:1.7;color:var(--text)}
+.rich-marker{flex-shrink:0;font-size:.85rem;transform:translateY(1px)}
+.rich-steps{list-style:none;display:flex;flex-direction:column;gap:.8rem;counter-reset:none}
+.rich-steps li{display:flex;gap:.85rem;font-size:.92rem;line-height:1.7;color:var(--text);align-items:flex-start}
+.rich-num{flex-shrink:0;width:1.6rem;height:1.6rem;border:1px solid;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-family:var(--mono);transform:translateY(2px)}
+.resolu-enonce{font-size:.95rem;color:var(--text);font-style:italic;margin-bottom:1rem;padding:.7rem 1rem;background:rgba(255,255,255,.03);border-radius:8px}
+.pb-q{font-size:.95rem;line-height:1.7;color:var(--text);margin-bottom:.9rem}
+.sol-toggle{background:none;border:1px solid;border-radius:20px;padding:.4rem 1rem;font-size:.75rem;font-family:var(--mono);letter-spacing:.05em;cursor:pointer;transition:opacity .2s}
+.sol-toggle:hover{opacity:.75}
+.pb-sol{margin-top:.9rem;padding:.8rem 1.1rem;font-size:.9rem;line-height:1.7;color:var(--muted);background:rgba(255,255,255,.02);border-radius:0 8px 8px 0}
 .content-placeholder strong{color:var(--text);font-style:normal}
 
 .cta-row{display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap}
@@ -145,6 +156,8 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
     <button class="tab" onclick="location.href='app.html'">Exercices</button>
     <button class="tab" onclick="location.href='app.html'">Séance</button>
     <button class="tab" onclick="location.href='app.html'">Ajouter</button>
+    <button class="tab" onclick="location.href='cours.html'">Cours animés</button>
+    <button class="tab" onclick="location.href='tutoriels.html'">Tutoriels</button>
     <button class="tab active">Arbre</button>
   </div>
   <a href="app.html" class="nav-cta">Démarrer une séance →</a>
@@ -207,6 +220,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
   <div id="section-content"></div>
 </div>
 
+<script src="contenu.js"></script>
 <script>
 // ─── DATA ───────────────────────────────────────────────
 const TREE_DATA = [
@@ -227,15 +241,11 @@ const TREE_DATA = [
   },
   { id:'algebre', label:'ALGÈBRE', color:'#c8a07a',
     subs:[
-      { label:'Enchaînement d\'opérations',      notions:['Priorités opératoires','Parenthèses','Calculs avec des entiers et décimaux'] },
-      { label:'Calcul littéral',                 notions:['Écriture littérale','Réduire une expression','Substituer une valeur'] },
-      { label:'Développement et factorisation',  notions:['Développer avec la distributivité','Factoriser','Identités remarquables : (a+b)²','Identités remarquables : (a-b)²','Identités remarquables : (a+b)(a-b)'] },
-      { label:'Équations du 1er degré',          notions:['Résoudre ax + b = 0','Équations avec parenthèses','Équations avec fractions','Mise en équation d\'un problème'] },
-      { label:'Systèmes d\'équations',           notions:['Méthode par substitution','Méthode par combinaison','Résolution graphique'] },
-      { label:'Équations du 2nd degré',          notions:['Discriminant Δ','Deux solutions, une solution, zéro solution','Forme factorisée','Racines d\'un trinôme'] },
-      { label:'Inéquations',                     notions:['Résoudre ax + b < 0','Inéquations avec changement de signe','Représentation sur une droite graduée'] },
-      { label:'Polynômes',                       notions:['Degré d\'un polynôme','Addition et soustraction','Multiplication','Division euclidienne'] },
-      { label:'Suites numériques',               notions:['Suite arithmétique : raison et terme général','Suite géométrique : raison et terme général','Somme des termes','Suites récurrentes','Limite d\'une suite'] },
+      { label:'Enchaînement d\'opérations',      notions:[] },
+      { label:'Calcul littéral',                 notions:[] },
+      { label:'Développement et factorisation',  notions:[] },
+      { label:'Équations',                       notions:[] },
+      { label:'Inéquations',                     notions:[] },
     ]
   },
   { id:'geometrie', label:'GÉOMÉTRIE', color:'#a07ac8',
@@ -260,36 +270,20 @@ const TREE_DATA = [
   },
   { id:'fonctions', label:'FONCTIONS', color:'#7ac8a0',
     subs:[
-      { label:'Notions de fonctions',            notions:['Image et antécédent','Tableau de valeurs','Représentation graphique','Domaine de définition'] },
-      { label:'Fonction linéaire',               notions:['Forme f(x) = ax','Représentation graphique : droite passant par O','Coefficient directeur'] },
-      { label:'Fonction affine',                 notions:['Forme f(x) = ax + b','Pente et ordonnée à l\'origine','Équation d\'une droite','Intersection de deux droites'] },
-      { label:'Fonctions de référence',          notions:['Fonction carré : f(x) = x²','Fonction inverse : f(x) = 1/x','Fonction racine carrée : f(x) = sqrt(x)','Fonction valeur absolue'] },
-      { label:'Variations et extremums',         notions:['Tableau de variations','Fonction croissante / décroissante','Maximum et minimum','Lecture graphique des variations'] },
-      { label:'Dérivation',                      notions:['Taux de variation','Nombre dérivé en un point','Fonction dérivée','Règles de dérivation : somme, produit, quotient','Dérivée de fonctions composées','Lien dérivée et variations'] },
-      { label:'Fonctions trigonométriques',      notions:['Radian et degré','Cosinus et sinus : définition sur le cercle','Périodicité','f(x) = cos(x) et f(x) = sin(x)','Équations trigonométriques simples'] },
-      { label:'Fonction exponentielle',          notions:['Définition de exp(x)','Propriétés algébriques','Dérivée de exp(x)','Variations et représentation graphique','Modélisation de la croissance'] },
-      { label:'Fonction logarithme',             notions:['Définition de ln(x)','Propriétés algébriques','Dérivée de ln(x)','Variations et représentation graphique','Équations avec ln'] },
-      { label:'Limites et continuité',           notions:['Limite en +∞ et -∞','Limite en un point','Asymptotes','Théorème des gendarmes','Continuité sur un intervalle'] },
-      { label:'Primitives et intégration',       notions:['Notion de primitive','Primitives usuelles','Intégrale définie','Calcul d\'aire sous une courbe','Intégration par parties'] },
+      { label:'Notions de fonctions',            notions:[] },
+      { label:'Fonction linéaire',               notions:[] },
+      { label:'Fonction affine',                 notions:[] },
     ]
   },
   { id:'proba', label:'PROBABILITÉS', color:'#c87a9a',
     subs:[
-      { label:'Vocabulaire des probabilités',    notions:['Expérience aléatoire','Événement, univers','Événements contraires','Événements incompatibles'] },
-      { label:'Probabilités simples',            notions:['Fréquence et probabilité','Équiprobabilité','Calcul de probabilité classique','Probabilité d\'un contraire'] },
-      { label:'Dénombrement',                    notions:['Principe multiplicatif','Arrangements','Permutations','Combinaisons : C(n,k)'] },
-      { label:'Probabilités conditionnelles',    notions:['Probabilité conditionnelle P(A|B)','Formule des probabilités totales','Indépendance de deux événements','Tableaux de contingence'] },
-      { label:'Variables aléatoires discrètes',  notions:['Loi d\'une variable aléatoire','Espérance mathématique','Variance et écart-type','Loi binomiale B(n,p)'] },
-      { label:'Loi des grands nombres',          notions:['Convergence des fréquences','Loi normale : courbe de Gauss','Intervalle de fluctuation','Estimation et marge d\'erreur'] },
+      { label:'Probabilités',                    notions:[] },
     ]
   },
   { id:'stats', label:'STATISTIQUES', color:'#e8a87c',
     subs:[
-      { label:'Organisation des données',        notions:['Extraire des données d\'un tableau','Lire un graphique','Interpréter des données','Tableaux de fréquences'] },
-      { label:'Indicateurs de position',         notions:['Moyenne','Médiane','Mode','Étendue'] },
-      { label:'Indicateurs de dispersion',       notions:['Variance','Écart-type','Quartiles Q1 et Q3','Diagramme en boîte (boxplot)'] },
-      { label:'Représentations graphiques',      notions:['Diagramme en barres','Histogramme','Diagramme circulaire','Nuage de points','Courbe des effectifs cumulés'] },
-      { label:'Statistiques à deux variables',   notions:['Nuage de points','Point moyen','Droite de régression','Coefficient de corrélation','Ajustement linéaire'] },
+      { label:'Organisation des données',        notions:['Extraire des données d\'un tableau','Lire un graphique','Interpréter des données'] },
+      { label:'Statistiques',                    notions:[] },
     ]
   },
 ];
@@ -381,6 +375,15 @@ function openTheme(label, grandLabel, color, notions){
     notionsEl.innerHTML = '';
   }
 
+  // Liens croisés : tutoriel interactif + cours animé du thème
+  const tc = (typeof THEME_CONTENT !== 'undefined') && THEME_CONTENT[label];
+  if (tc && (tc.tuto || tc.cours)){
+    const btns = [];
+    if (tc.tuto)  btns.push(`<a href="tutoriel.html?ch=${encodeURIComponent(tc.tuto)}&title=${encodeURIComponent(label)}" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(${hexToRgb(color)},.12);border:1px solid rgba(${hexToRgb(color)},.35);color:${color};padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;text-decoration:none;font-family:var(--mono);letter-spacing:.04em;transition:background .2s" onmouseover="this.style.background='rgba(${hexToRgb(color)},.22)'" onmouseout="this.style.background='rgba(${hexToRgb(color)},.12)'">▶ Tutoriel interactif</a>`);
+    if (tc.cours) btns.push(`<a href="cours.html?open=${encodeURIComponent(tc.cours)}" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(200,185,122,.1);border:1px solid rgba(200,185,122,.3);color:#c8b97a;padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;text-decoration:none;font-family:var(--mono);letter-spacing:.04em;transition:background .2s" onmouseover="this.style.background='rgba(200,185,122,.2)'" onmouseout="this.style.background='rgba(200,185,122,.1)'">🎬 Cours animé</a>`);
+    notionsEl.innerHTML += `<div style="display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:1.5rem">${btns.join('')}</div>`;
+  }
+
   showPage('theme');
 }
 
@@ -437,27 +440,69 @@ function showSection(type){
   const content = document.getElementById('section-content');
   content.innerHTML = '';
 
-  meta.blocks.forEach(block => {
+  const tc = (typeof THEME_CONTENT !== 'undefined') && THEME_CONTENT[t.label];
+
+  const mkBlock = (title, inner) => {
     const div = document.createElement('div');
     div.className = 'content-block';
     div.style.borderLeft = `3px solid ${meta.color}40`;
-    div.innerHTML = `
-      <div class="content-block-title">${block.title}</div>
-      <p class="content-placeholder">${block.placeholder}</p>
-    `;
+    div.innerHTML = `<div class="content-block-title">${title}</div>${inner}`;
     content.appendChild(div);
-  });
+  };
+  const ul = (items, marker) => `<ul class="rich-list">${items.map(i=>`<li><span class="rich-marker" style="color:${meta.color}">${marker}</span><span>${i}</span></li>`).join('')}</ul>`;
+  const ol = items => `<ol class="rich-steps">${items.map((i,n)=>`<li><span class="rich-num" style="border-color:${meta.color}66;color:${meta.color}">${n+1}</span><span>${i}</span></li>`).join('')}</ol>`;
+
+  if (tc && type === 'cours'){
+    mkBlock('DÉFINITIONS', ul(tc.lecon.definitions, '◈'));
+    mkBlock('PROPRIÉTÉS & THÉORÈMES', ul(tc.lecon.proprietes, '▸'));
+    mkBlock('EXEMPLES', ul(tc.lecon.exemples, '✎'));
+  }
+  else if (tc && type === 'methodes'){
+    mkBlock('MÉTHODE PAS-À-PAS', ol(tc.methodes.etapes));
+    mkBlock('ERREURS CLASSIQUES', ul(tc.methodes.erreurs.map(e=>`<span style="color:#c88a7a">${e}</span>`), '✗'));
+    mkBlock('EXEMPLE RÉSOLU',
+      `<p class="resolu-enonce">${tc.methodes.resolu.enonce}</p>` + ol(tc.methodes.resolu.etapes));
+  }
+  else if (tc && type === 'problemes'){
+    tc.problemes.forEach((pb, i) => {
+      const solId = `sol-${i}`;
+      mkBlock('PROBLÈME ' + (i+1),
+        `<p class="pb-q">${pb.q}</p>
+         <button class="sol-toggle" style="border-color:${meta.color}55;color:${meta.color}" onclick="toggleSol('${solId}', this)">Voir la solution ▾</button>
+         <div class="pb-sol" id="${solId}" style="display:none;border-left:2px solid ${meta.color}55">${pb.sol}</div>`);
+    });
+  }
+  else {
+    // fallback : placeholders d'origine
+    meta.blocks.forEach(block => {
+      const div = document.createElement('div');
+      div.className = 'content-block';
+      div.style.borderLeft = `3px solid ${meta.color}40`;
+      div.innerHTML = `
+        <div class="content-block-title">${block.title}</div>
+        <p class="content-placeholder">${block.placeholder}</p>
+      `;
+      content.appendChild(div);
+    });
+  }
 
   // CTA → séance sur ce thème
   const cta = document.createElement('div');
   cta.className = 'cta-row';
   cta.innerHTML = `
-    <button class="btn-primary" onclick="location.href='app.html'">S'entraîner sur ce thème →</button>
+    <button class="btn-primary" onclick="location.href='app.html#seance'">S'entraîner sur ce thème →</button>
     <button class="btn-ghost"   onclick="showPage('theme')">← Retour au thème</button>
   `;
   content.appendChild(cta);
 
   showPage('section');
+}
+
+function toggleSol(id, btn){
+  const el = document.getElementById(id);
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? 'Voir la solution ▾' : 'Masquer la solution ▴';
 }
 
 // ─── INIT ────────────────────────────────────────────────
