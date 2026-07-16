@@ -227,21 +227,23 @@ h1 em { font-style: italic; color: var(--accent); }
 .exercise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
+  gap: 0.9rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 /* ── CARTE EXERCICE ── */
 .exercise-card {
-  background: var(--surface);
+  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 1.6rem;
   cursor: none;
   display: flex; flex-direction: column; gap: 0.8rem;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
   position: relative;
+  overflow: hidden;
 }
 .exercise-card::after {
   content: '';
@@ -249,7 +251,7 @@ h1 em { font-style: italic; color: var(--accent); }
   width: 0; height: 2px; background: var(--accent);
   transition: width 0.4s ease;
 }
-.exercise-card:hover { background: var(--surface2); }
+.exercise-card:hover { background: rgba(255,255,255,0.03); border-color: var(--border2); transform: translateY(-2px); }
 .exercise-card:hover::after { width: 100%; }
 
 .card-tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
@@ -285,6 +287,7 @@ h1 em { font-style: italic; color: var(--accent); }
   font-family: var(--serif);
   font-size: 1.05rem; font-weight: 400;
   color: var(--text); line-height: 1.3;
+  overflow-wrap: break-word; hyphens: auto;
 }
 
 .card-preview {
@@ -1121,7 +1124,7 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   gap: 0.8rem;
 }
 .chapx-card {
-  background: var(--surface);
+  background: rgba(255,255,255,0.015);
   border: 1px solid var(--border);
   border-top: 2px solid var(--sc, var(--accent));
   border-radius: 12px;
@@ -1133,12 +1136,13 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 }
 .chapx-card:hover {
   transform: translateY(-3px);
-  background: var(--surface2);
+  background: rgba(255,255,255,0.035);
   border-color: var(--sc, var(--accent));
 }
 .chapx-name {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.02rem; line-height: 1.25; color: var(--text);
+  font-size: 1.02rem; line-height: 1.28; color: var(--text);
+  overflow-wrap: break-word; word-break: normal; hyphens: auto;
 }
 .chapx-count {
   font-family: 'DM Mono', monospace; font-size: 0.68rem;
