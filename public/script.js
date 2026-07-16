@@ -130,6 +130,25 @@ const DEMO_EXERCISES = [
   { id:28, title:"Résoudre une inéquation", level:"college", subject:"Algèbre", difficulty:"Difficile", classe:"4ème", chapitre:"Inéquations",
     content:"Résous l'inéquation : −2x + 6 > 0.\nAttention au sens de l'inégalité !",
     solution:"−2x > −6, on divise par −2 (négatif) donc on inverse : x < 3.", keys:["x<3","x < 3"] },
+  /* ── PROBLÈMES (énoncés longs, plusieurs étapes) ── */
+  { id:101, type:"probleme", title:"La fête d'anniversaire", level:"college", subject:"Arithmétique", difficulty:"Moyen", classe:"6ème", chapitre:"Fractions",
+    content:"Pour son anniversaire, Sofia commande 3 pizzas identiques, chacune coupée en 8 parts égales.\nSes invités mangent les 3/4 de la première pizza, la moitié de la deuxième, et 5 parts de la troisième.\n\n1) Combien de parts ont été mangées en tout ?\n2) Quelle fraction du total des 3 pizzas cela représente-t-il ?\n3) Sofia veut garder au moins une pizza entière (8 parts) pour le lendemain. A-t-elle assez de restes ?",
+    solution:"1) 3/4 de 8 = 6 parts, 1/2 de 8 = 4 parts, plus 5 parts : 6 + 4 + 5 = 15 parts mangées.\n2) Total : 24 parts. Fraction mangée : 15/24 = 5/8.\n3) Restes : 24 − 15 = 9 parts ≥ 8, donc oui, il reste de quoi faire une pizza entière (et une part en plus).", keys:["15","5/8","9"] },
+  { id:102, type:"probleme", title:"Le budget du voyage scolaire", level:"college", subject:"Arithmétique", difficulty:"Moyen", classe:"5ème", chapitre:"Proportionnalité",
+    content:"Une classe de 24 élèves organise un voyage. Le car coûte 480 € au total, à partager équitablement entre les élèves.\nLa nuit d'auberge coûte 27 € par élève, et les visites 13 € par élève.\n\n1) Quel est le prix du car par élève ?\n2) Quel est le coût total du voyage pour un élève ?\n3) La coopérative offre une réduction de 20 % sur le coût total par élève. Combien chaque élève paiera-t-il finalement ?",
+    solution:"1) 480 ÷ 24 = 20 € par élève.\n2) 20 + 27 + 13 = 60 € par élève.\n3) Réduction : 20 % de 60 = 12 €. Prix final : 60 − 12 = 48 €.", keys:["20","60","48"] },
+  { id:103, type:"probleme", title:"Le terrain de M. Ba", level:"college", subject:"Géométrie", difficulty:"Difficile", classe:"4ème", chapitre:"Théorème de Pythagore",
+    content:"M. Ba possède un terrain rectangulaire de 60 m de long et 25 m de large.\nIl veut tracer une allée en ligne droite reliant deux coins opposés du terrain, puis clôturer tout le tour du terrain.\n\n1) Calcule la longueur de l'allée diagonale.\n2) Calcule le périmètre du terrain à clôturer.\n3) Le grillage coûte 8,50 € le mètre et se vend par rouleaux de 25 m. Combien de rouleaux faut-il acheter, et pour quel prix total ?",
+    solution:"1) Diagonale² = 60² + 25² = 3600 + 625 = 4225, donc diagonale = √4225 = 65 m.\n2) Périmètre = 2 × (60 + 25) = 170 m.\n3) 170 ÷ 25 = 6,8 → il faut 7 rouleaux, soit 7 × 25 = 175 m, pour 175 × 8,50 = 1487,50 €.", keys:["65","170","7","1487,50"] },
+  { id:104, type:"probleme", title:"L'abonnement de streaming", level:"college", subject:"Algèbre", difficulty:"Moyen", classe:"4ème", chapitre:"Équations du 1er degré",
+    content:"Deux formules d'abonnement à une plateforme de musique :\n— Formule A : 5 € par mois, plus 0,50 € par album téléchargé.\n— Formule B : 11 € par mois, albums illimités.\n\nOn note x le nombre d'albums téléchargés dans le mois.\n\n1) Exprime le prix mensuel de la formule A en fonction de x.\n2) Résous l'équation qui traduit « les deux formules coûtent le même prix ».\n3) À partir de combien d'albums par mois la formule B devient-elle plus intéressante ?",
+    solution:"1) Prix A = 5 + 0,5x.\n2) 5 + 0,5x = 11 → 0,5x = 6 → x = 12.\n3) Pour x > 12 albums, la formule B est plus avantageuse (au 13ème album, A coûte 11,50 € > 11 €).", keys:["5 + 0,5x","12","13"] },
+  { id:105, type:"probleme", title:"La citerne de récupération", level:"college", subject:"Géométrie", difficulty:"Difficile", classe:"3ème", chapitre:"Longueur",
+    content:"Une citerne cylindrique de rayon 0,6 m et de hauteur 1,5 m récupère l'eau de pluie d'un toit de 45 m².\nOn rappelle que 1 mm de pluie tombée correspond à 1 L d'eau par m² de toit.\n\n1) Calcule le volume de la citerne en m³ (arrondi au centième), puis en litres.\n2) Lors d'un orage, il tombe 28 mm de pluie. Quel volume d'eau, en litres, arrive dans la citerne ?\n3) La citerne était déjà remplie à moitié avant l'orage. Déborde-t-elle ? Justifie.",
+    solution:"1) V = π × 0,6² × 1,5 = π × 0,54 ≈ 1,70 m³, soit environ 1700 L.\n2) 28 mm × 45 m² = 28 × 45 = 1260 L.\n3) Avant l'orage : 1700 ÷ 2 = 850 L. Après : 850 + 1260 = 2110 L > 1700 L → oui, la citerne déborde (d'environ 410 L).", keys:["1,70","1700","1260","déborde"] },
+  { id:106, type:"probleme", title:"Le tournoi de basket", level:"college", subject:"Arithmétique", difficulty:"Moyen", classe:"3ème", chapitre:"Arithmétique",
+    content:"Un club veut répartir 90 filles et 126 garçons en équipes mixtes toutes identiques : même nombre de filles et même nombre de garçons dans chaque équipe, sans laisser personne de côté.\n\n1) Décompose 90 et 126 en produits de facteurs premiers.\n2) Quel est le plus grand nombre d'équipes possible ?\n3) Donne alors la composition d'une équipe.",
+    solution:"1) 90 = 2 × 3² × 5 et 126 = 2 × 3² × 7.\n2) Le plus grand diviseur commun est 2 × 3² = 18 → 18 équipes.\n3) Chaque équipe compte 90 ÷ 18 = 5 filles et 126 ÷ 18 = 7 garçons.", keys:["18","5","7"] },
 ];
 
 function normalizeAnswer(s){
@@ -154,16 +173,33 @@ function demoCorrect(ex, answer){
   };
 }
 
-function showView(name) {
+function showView(name, tabName) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
   document.getElementById("view-" + name).classList.add("active");
-  const tabMap = { browse: 0, seance: 1, add: 2 };
-  document.querySelectorAll(".tab")[tabMap[name]]?.classList.add("active");
+  const tab = tabName || name;
+  document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add("active");
   if (name === "browse") loadExercises();
   if (name === "chapter") renderChapterView();
   if (name === "add") backToInput();
   if (name === "seance") resetSeanceWelcome();
+  window.scrollTo(0, 0);
+}
+
+/* ── SÉANCE : deux modes — entraînement (exercices) ou problèmes ── */
+let seanceMode = "exercice";
+function openSeance(mode) {
+  seanceMode = mode === "probleme" ? "probleme" : "exercice";
+  const title = document.getElementById("seance-hero-title");
+  const sub   = document.getElementById("seance-hero-sub");
+  if (seanceMode === "probleme") {
+    title.innerHTML = "Séance de<br><em>problèmes.</em>";
+    sub.textContent = "Des énoncés longs, en plusieurs étapes — prends le temps de raisonner, l'IA corrige ta démarche.";
+  } else {
+    title.innerHTML = "Séance<br><em>d'entraînement.</em>";
+    sub.textContent = "Choisis ton niveau — l'IA pose les exercices de MathBase et corrige chacune de tes réponses.";
+  }
+  showView("seance", seanceMode === "probleme" ? "probleme" : "entrainement");
 }
 
 function setFilter(btn, level) {
@@ -309,7 +345,7 @@ async function analyseExercise() {
   document.getElementById("ai-doublon").style.display = "none";
   document.getElementById("ai-suggestions").style.display = "none";
   try {
-    const res  = await fetch("/exercises/analyse", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({title,content}) });
+    const res  = await MB_AUTH.apiFetch("/exercises/analyse", { method:"POST", body: JSON.stringify({title,content}) });
     const data = await res.json();
     document.getElementById("ai-loading").style.display = "none";
     if (data.doublon) {
@@ -323,6 +359,7 @@ async function analyseExercise() {
       document.getElementById("ai-classe-input").value   = data.classe    || "";
       document.getElementById("ai-chapitre-input").value = data.chapitre  || "";
       pendingExercise.difficulty = data.suggestion_difficulte || pendingExercise.difficulty;
+      pendingExercise.type = (data.type === "probleme") ? "probleme" : "exercice";
     }
   } catch { document.getElementById("ai-loading").style.display="none"; showToast("Erreur lors de l'analyse IA.","error"); backToInput(); }
 }
@@ -341,7 +378,7 @@ async function forceAdd() {
 
 async function submitExercise(data) {
   try {
-    const res = await fetch("/exercises", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data) });
+    const res = await MB_AUTH.apiFetch("/exercises", { method:"POST", body:JSON.stringify(data) });
     if (!res.ok) throw new Error();
     pendingExercise = null;
     showToast("Exercice ajouté avec succès !", "success");
@@ -441,21 +478,28 @@ async function startSeance() {
   try {
     let url = "/exercises";
     const params = new URLSearchParams();
+    params.append("type", seanceMode);
     if (seanceLevel) params.append("level", seanceLevel);
     if (seanceDiff)  params.append("difficulty", seanceDiff);
-    if ([...params].length) url += "?" + params.toString();
+    url += "?" + params.toString();
 
     let data;
     try {
-      const res = await fetch(url);
+      const res = await MB_AUTH.apiFetch(url);
       if (!res.ok) throw new Error();
       data = await res.json();
       DEMO_MODE = false;
     } catch {
       DEMO_MODE = true;
       data = DEMO_EXERCISES.filter(ex =>
+        (ex.type || "exercice") === seanceMode &&
         (!seanceLevel || ex.level === seanceLevel) &&
         (!seanceDiff  || ex.difficulty === seanceDiff));
+    }
+
+    if (!data.length && seanceMode === "probleme") {
+      showToast("Aucun problème disponible pour ces filtres — ajoute-en depuis l'onglet Ajouter !", "error");
+      return;
     }
 
     if (!data.length) {

@@ -153,6 +153,7 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS classe   TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'exercice'`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
@@ -255,6 +256,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication :
   "doublon_raison": null ou explication courte de la similarité,
   "classe": "la classe française exacte (ex: 6ème, 5ème, 4ème, 3ème, 2nde, 1ère, Terminale, Licence 1, Licence 2, Licence 3, CM1, CM2, CE1, CE2)",
   "chapitre": "le chapitre mathématique précis (ex: Fractions, Équations du premier degré, Fonctions affines, Dérivation, Intégration, Probabilités, Trigonométrie, Vecteurs, Suites, Géométrie dans l'espace)",
+  "type": "exercice ou probleme — choisis 'probleme' si l'énoncé est long, contextualisé (situation concrète) et comporte plusieurs questions/étapes de raisonnement ; sinon 'exercice'",
   "suggestion_difficulte": "Facile / Moyen / Difficile"
 }`;
 
@@ -362,15 +364,15 @@ app.post("/exercises/analyse", auth, async (req, res) => {
 
 /* ── AJOUTER UN EXERCICE ── */
 app.post("/exercises", auth, async (req, res) => {
-  const { title, content, level, subject, difficulty, solution, classe, chapitre } = req.body;
+  const { title, content, level, subject, difficulty, solution, classe, chapitre, type } = req.body;
   if (!title || !content || !level) {
     return res.status(400).json({ error: "Champs obligatoires manquants." });
   }
   try {
     const result = await pool.query(
-      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null]
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice")]
     );
     res.json({ id: result.rows[0].id, message: "Exercice ajouté." });
   } catch (err) {
@@ -380,10 +382,11 @@ app.post("/exercises", auth, async (req, res) => {
 
 /* ── RÉCUPÉRER LES EXERCICES ── */
 app.get("/exercises", auth, async (req, res) => {
-  const { level, subject, difficulty } = req.query;
+  const { level, subject, difficulty, type } = req.query;
   let query  = "SELECT * FROM exercises WHERE 1=1";
   let params = [];
   let i      = 1;
+  if (type)       { query += ` AND COALESCE(type, 'exercice') = $${i++}`; params.push(type); }
   if (level)      { query += ` AND level = $${i++}`;      params.push(level); }
   if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
   if (difficulty) { query += ` AND difficulty = $${i++}`; params.push(difficulty); }
