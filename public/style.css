@@ -1239,3 +1239,196 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   opacity: 0; transform: translateX(-4px); transition: .2s;
 }
 .home-card:hover .home-card-go { opacity: 1; transform: none; }
+
+/* ── VUE CHAPITRE : sélecteur entraînement / problèmes ── */
+.chapter-switch {
+  display: inline-flex; gap: 0.3rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem;
+  margin: 0.4rem 0 1.8rem;
+}
+.chapter-switch-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: none; border: none;
+  color: var(--muted); cursor: pointer;
+  font-family: var(--sans); font-size: 0.9rem;
+  padding: 0.5rem 1.1rem; border-radius: 999px;
+  transition: .22s;
+}
+.chapter-switch-btn:hover { color: var(--text); }
+.chapter-switch-btn.active { background: var(--accent); color: #0b0b09; font-weight: 500; }
+.chapter-switch-count {
+  font-family: var(--mono); font-size: 0.7rem;
+  background: rgba(0,0,0,0.18); border-radius: 999px;
+  padding: 0.05rem 0.45rem; min-width: 1.3rem; text-align: center;
+}
+.chapter-switch-btn.active .chapter-switch-count { background: rgba(0,0,0,0.22); }
+
+/* compteur détaillé sur les cartes-chapitres */
+.chapx-count { display: flex; gap: 0.7rem; }
+
+/* ═══════════ ANNALES & EXAMEN ═══════════ */
+.annales-page, .examen-page {
+  max-width: 1200px; margin: 0 auto;
+  padding: 4rem 2.2rem 5rem;
+}
+.filter-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.8rem; }
+
+.annales-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+.annale-card {
+  display: flex; flex-direction: column; gap: 0.55rem;
+  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.4rem 1.4rem 1.2rem;
+  cursor: pointer;
+  transition: transform .2s, border-color .2s, background .2s;
+}
+.annale-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255,255,255,0.035);
+  border-color: var(--accent);
+}
+.annale-badges { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.annale-badge {
+  font-family: var(--mono); font-size: 0.66rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); border: 1px solid var(--border2);
+  border-radius: 999px; padding: 0.15rem 0.55rem;
+}
+.annale-badge.exam { color: var(--accent); border-color: rgba(200,185,122,0.45); }
+.annale-title {
+  font-family: var(--serif); font-size: 1.2rem;
+  color: var(--text); line-height: 1.3; overflow-wrap: break-word;
+}
+.annale-meta { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); }
+.annale-actions { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.7rem; flex-wrap: wrap; }
+.annale-btn {
+  background: none; border: 1px solid var(--border2); color: var(--text);
+  font-family: var(--sans); font-size: 0.84rem;
+  padding: 0.5rem 1rem; border-radius: 999px;
+  cursor: pointer; transition: .2s;
+}
+.annale-btn:hover { border-color: var(--accent); color: var(--accent); }
+.annale-btn.primary { background: var(--accent); border-color: var(--accent); color: #0b0b09; font-weight: 500; }
+.annale-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -8px rgba(200,185,122,0.5); color: #0b0b09; }
+.annale-btn.big { padding: 0.8rem 1.6rem; font-size: 0.95rem; }
+
+/* — le « sujet papier » — */
+.annale-paper {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2.2rem 2.4rem;
+  margin-top: 1.4rem;
+}
+.annale-paper-head h2 {
+  font-family: var(--serif); font-size: 1.7rem;
+  color: var(--text); margin: 0.6rem 0 0.4rem;
+}
+.annale-img {
+  display: block; width: 100%; border-radius: 10px;
+  margin: 1.4rem 0; border: 1px solid var(--border2);
+}
+.annale-content {
+  margin: 1.4rem 0; color: var(--text);
+  font-size: 0.95rem; line-height: 1.8; white-space: normal;
+}
+.annale-q {
+  border-top: 1px dashed var(--border2);
+  padding: 1.2rem 0;
+}
+.annale-q-enonce { font-size: 0.94rem; line-height: 1.75; color: var(--text); }
+.annale-q-sol { margin-top: 0.8rem; }
+.annale-q-sol summary {
+  cursor: pointer; color: var(--accent);
+  font-family: var(--mono); font-size: 0.76rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.annale-q-sol div {
+  margin-top: 0.7rem; padding: 0.9rem 1.1rem;
+  background: rgba(122,200,160,0.05);
+  border-left: 2px solid var(--accent2);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.9rem; line-height: 1.7; color: var(--text);
+}
+
+/* — surcouche consultation — */
+.annale-modal {
+  position: fixed; inset: 0; z-index: 140;
+  background: rgba(11,11,9,0.96);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+  overflow-y: auto;
+}
+.annale-modal.open { opacity: 1; pointer-events: all; }
+.annale-modal-box { max-width: 860px; margin: 0 auto; padding: 3rem 1.4rem 5rem; }
+
+/* — examen : phases — */
+.exam-notice {
+  margin: 1.2rem 0; padding: 0.9rem 1.1rem;
+  border: 1px dashed rgba(200,185,122,0.4);
+  border-radius: 10px;
+  color: var(--accent); font-size: 0.88rem; line-height: 1.6;
+}
+.exam-start-row { display: flex; gap: 0.7rem; justify-content: center; margin-top: 1.8rem; flex-wrap: wrap; }
+.exam-run-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; margin-bottom: 0.6rem; flex-wrap: wrap;
+}
+.exam-run-title { font-family: var(--serif); font-size: 1.3rem; color: var(--text); }
+.exam-progress { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); margin-top: 0.2rem; }
+.exam-chrono-box {
+  font-family: var(--mono); font-size: 1rem; color: var(--accent);
+  border: 1px solid rgba(200,185,122,0.4); border-radius: 999px;
+  padding: 0.4rem 1rem;
+}
+.exam-enonce { margin-bottom: 1.4rem; }
+.exam-label {
+  display: block; font-family: var(--mono); font-size: 0.68rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0.4rem;
+}
+.exam-answer {
+  width: 100%; background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border2); border-radius: 12px;
+  color: var(--text); font-family: var(--sans); font-size: 0.95rem;
+  line-height: 1.7; padding: 1rem 1.1rem; resize: vertical;
+  outline: none; transition: border-color .2s;
+}
+.exam-answer:focus { border-color: rgba(200,185,122,0.55); }
+.exam-answer[readonly] { opacity: 0.75; }
+.exam-actions { display: flex; gap: 0.6rem; margin: 1rem 0; flex-wrap: wrap; }
+.exam-feedback { margin: 1.2rem 0; }
+.exam-loading { color: var(--muted); font-style: italic; padding: 0.8rem 0; }
+.exam-verdict {
+  display: inline-block; font-family: var(--mono); font-size: 0.78rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border-radius: 999px; padding: 0.3rem 0.9rem; margin-bottom: 0.7rem;
+  border: 1px solid;
+}
+.exam-verdict.correct   { color: var(--facile);    border-color: rgba(122,200,160,0.5); }
+.exam-verdict.partial   { color: var(--moyen);     border-color: rgba(200,185,122,0.5); }
+.exam-verdict.incorrect { color: var(--difficile); border-color: rgba(200,122,122,0.5); }
+.exam-analyse { font-size: 0.92rem; line-height: 1.75; color: var(--text); margin-bottom: 0.8rem; }
+.exam-score {
+  font-family: var(--serif); font-size: 1.25rem; color: var(--accent);
+  margin: 1.2rem 0 1.4rem;
+}
+.exam-recap-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.65rem 0; border-top: 1px dashed var(--border2);
+  font-size: 0.9rem;
+}
+.exam-recap-q { color: var(--text); }
+.exam-recap-st { font-family: var(--mono); font-size: 0.76rem; }
+.exam-recap-st.correct   { color: var(--facile); }
+.exam-recap-st.partial   { color: var(--moyen); }
+.exam-recap-st.incorrect { color: var(--difficile); }
+.exam-recap-st.skip      { color: var(--muted); }

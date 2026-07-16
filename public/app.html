@@ -20,6 +20,8 @@
       <button class="tab" data-tab="browse" onclick="showView('browse')">Exercices</button>
       <button class="tab" data-tab="entrainement" onclick="openSeance('exercice')">Entraînement</button>
       <button class="tab" data-tab="probleme" onclick="openSeance('probleme')">Problèmes</button>
+      <button class="tab" data-tab="annales" onclick="showView('annales')">Annales</button>
+      <button class="tab" data-tab="examen" onclick="openExamen()">Examen</button>
       <button class="tab" data-tab="add" onclick="showView('add')">Ajouter</button>
       <a class="tab" href="cours.html">Cours animés</a>
       <a class="tab" href="tutoriels.html">Tutoriels</a>
@@ -59,10 +61,22 @@
           <div class="home-card-desc">Des énoncés longs et complexes, en plusieurs étapes, pour apprendre à raisonner.</div>
           <div class="home-card-go">Résoudre →</div>
         </div>
+        <div class="home-card" onclick="showView('annales')" style="--hc:var(--danger)">
+          <div class="home-card-icon">📄</div>
+          <div class="home-card-title">Annales & contrôles</div>
+          <div class="home-card-desc">La banque de sujets : brevets, contrôles et devoirs surveillés, avec leur corrigé.</div>
+          <div class="home-card-go">Consulter →</div>
+        </div>
+        <div class="home-card" onclick="openExamen()" style="--hc:var(--accent2)">
+          <div class="home-card-icon">⏱️</div>
+          <div class="home-card-title">Examen</div>
+          <div class="home-card-desc">Se mettre en conditions : découvrir le sujet entier, puis le traiter question par question.</div>
+          <div class="home-card-go">Composer →</div>
+        </div>
         <div class="home-card" onclick="showView('add')" style="--hc:var(--lycee)">
           <div class="home-card-icon">➕</div>
           <div class="home-card-title">Ajouter</div>
-          <div class="home-card-desc">Proposer un nouvel exercice ou problème — l'IA l'analyse et le classe.</div>
+          <div class="home-card-desc">Proposer un nouvel exercice, problème ou annale — l'IA l'analyse et le classe.</div>
           <div class="home-card-go">Contribuer →</div>
         </div>
         <a class="home-card" href="cours.html" style="--hc:var(--primaire)">
@@ -143,7 +157,91 @@
       <button class="chapter-back" onclick="showView('browse')">← Tous les chapitres</button>
       <h2 id="chapter-title" class="chapter-title">Chapitre</h2>
       <p id="chapter-sub" class="chapter-sub"></p>
+      <div class="chapter-switch">
+        <button id="chapswitch-ex" class="chapter-switch-btn active" onclick="setChapterMode('exercice')">
+          ✏️ Entraînement <span id="chapcount-ex" class="chapter-switch-count">0</span>
+        </button>
+        <button id="chapswitch-pb" class="chapter-switch-btn" onclick="setChapterMode('probleme')">
+          🧩 Problèmes <span id="chapcount-pb" class="chapter-switch-count">0</span>
+        </button>
+      </div>
       <div id="chapter-list" class="exercise-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       VUE : ANNALES & CONTRÔLES (banque)
+       ══════════════════════════════════ -->
+  <div id="view-annales" class="view">
+    <div class="annales-page">
+      <div class="home-hero" style="margin-bottom:2.2rem">
+        <p class="hero-tag">Banque de sujets</p>
+        <h1>Annales &<br><em>contrôles.</em></h1>
+        <p class="hero-sub">Brevets, contrôles et devoirs surveillés — consulte les sujets et leurs corrigés, ou compose en conditions réelles.</p>
+      </div>
+      <div class="filter-row" id="annales-filters"></div>
+      <div id="annales-grid" class="annales-grid"></div>
+    </div>
+  </div>
+
+  <!-- surcouche : consultation d'une annale -->
+  <div id="annale-modal" class="annale-modal">
+    <div class="annale-modal-box">
+      <button class="chapter-back" onclick="closeAnnale()">← Fermer le sujet</button>
+      <div class="annale-paper" id="annale-detail"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       VUE : EXAMEN (composer sur annale)
+       ══════════════════════════════════ -->
+  <div id="view-examen" class="view">
+    <div class="examen-page">
+
+      <!-- phase ① : choisir un sujet -->
+      <div id="examen-choice">
+        <div class="home-hero" style="margin-bottom:2.2rem">
+          <p class="hero-tag">Conditions réelles</p>
+          <h1>Séance<br><em>d'examen.</em></h1>
+          <p class="hero-sub">Choisis un sujet : tu découvriras d'abord l'épreuve en entier, puis tu la traiteras question par question, corrigée par l'IA.</p>
+        </div>
+        <div id="examen-choice-grid" class="annales-grid"></div>
+      </div>
+
+      <!-- phase ② : découverte du sujet entier -->
+      <div id="examen-sujet" style="display:none">
+        <button class="chapter-back" onclick="examPhase('choice')">← Choisir un autre sujet</button>
+        <div class="annale-paper" id="examen-sujet-body"></div>
+        <div class="exam-start-row">
+          <button class="annale-btn primary big" onclick="beginEpreuve()">J'ai pris connaissance du sujet — commencer l'épreuve →</button>
+        </div>
+      </div>
+
+      <!-- phase ③ : question par question -->
+      <div id="examen-run" style="display:none">
+        <div class="exam-run-head">
+          <div>
+            <div class="exam-run-title" id="exam-run-title"></div>
+            <div class="exam-progress" id="exam-progress"></div>
+          </div>
+          <div class="exam-chrono-box">⏱ <span id="exam-chrono">00:00</span></div>
+        </div>
+        <div class="annale-paper exam-enonce" id="exam-enonce"></div>
+        <label class="exam-label">Ta réponse (rédige comme sur ta copie)</label>
+        <textarea id="exam-answer" class="exam-answer" rows="7" placeholder="Rédige ta démarche et ton résultat…"></textarea>
+        <div class="exam-actions" id="exam-actions">
+          <button class="annale-btn primary" id="exam-validate" onclick="submitExamAnswer()">Valider ma réponse</button>
+          <button class="annale-btn" onclick="skipExamQuestion()">Passer cette question →</button>
+        </div>
+        <div id="exam-feedback" class="exam-feedback"></div>
+        <button class="annale-btn primary" id="exam-next" style="display:none" onclick="nextExamQuestion()">Question suivante →</button>
+      </div>
+
+      <!-- phase ④ : bilan -->
+      <div id="examen-done" style="display:none">
+        <div class="annale-paper" id="examen-done-body"></div>
+      </div>
+
     </div>
   </div>
 

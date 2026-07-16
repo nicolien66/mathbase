@@ -130,6 +130,52 @@ app.delete("/admin/users/:id", auth, requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+/* ═══════════ ROUTES ANNALES ═══════════ */
+app.get("/annales", auth, async (req, res) => {
+  const { level, exam, year } = req.query;
+  let query = "SELECT * FROM annales WHERE 1=1";
+  const params = [];
+  let i = 1;
+  if (level) { query += ` AND level = $${i++}`; params.push(level); }
+  if (exam)  { query += ` AND exam = $${i++}`;  params.push(exam); }
+  if (year)  { query += ` AND year = $${i++}`;  params.push(Number(year)); }
+  query += " ORDER BY year DESC NULLS LAST, created_at DESC";
+  try {
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/annales/:id", auth, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM annales WHERE id = $1", [Number(req.params.id)]);
+    if (!result.rows.length) return res.status(404).json({ error: "Annale introuvable." });
+    res.json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/annales", auth, async (req, res) => {
+  const { title, exam, year, level, classe, subject, duration, content, image_url, solution, questions } = req.body || {};
+  if (!title || !content) return res.status(400).json({ error: "Titre et énoncé requis." });
+  try {
+    const result = await pool.query(
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, solution, questions)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      [title, exam || null, year ? Number(year) : null, level || null, classe || null, subject || null,
+       duration ? Number(duration) : null, content, image_url || null, solution || null,
+       JSON.stringify(Array.isArray(questions) ? questions : [])]
+    );
+    res.json({ id: result.rows[0].id, message: "Annale ajoutée." });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    await pool.query("DELETE FROM annales WHERE id = $1", [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ── CONFIG CLIENT (clé Mistral pour la séance) — réservé aux connectés ── */
 app.get("/config", auth, (req, res) => {
   res.json({ mistralKey: process.env.MISTRAL_KEY || "" });
@@ -163,6 +209,23 @@ async function initDB() {
       role          TEXT NOT NULL DEFAULT 'eleve',
       classe        TEXT,
       created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS annales (
+      id          SERIAL PRIMARY KEY,
+      title       TEXT NOT NULL,
+      exam        TEXT,                       -- Brevet, Contrôle, DS, Bac blanc…
+      year        INTEGER,
+      level       TEXT,
+      classe      TEXT,
+      subject     TEXT,
+      duration    INTEGER,                    -- durée en minutes
+      content     TEXT NOT NULL,              -- énoncé complet du sujet
+      image_url   TEXT,                       -- image du sujet (facultatif)
+      solution    TEXT,                       -- corrigé global (facultatif)
+      questions   JSONB DEFAULT '[]'::jsonb,  -- [{ enonce, solution }]
+      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
   console.log("Base de données prête.");

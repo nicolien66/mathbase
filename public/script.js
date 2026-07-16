@@ -151,6 +151,47 @@ const DEMO_EXERCISES = [
     solution:"1) 90 = 2 × 3² × 5 et 126 = 2 × 3² × 7.\n2) Le plus grand diviseur commun est 2 × 3² = 18 → 18 équipes.\n3) Chaque équipe compte 90 ÷ 18 = 5 filles et 126 ÷ 18 = 7 garçons.", keys:["18","5","7"] },
 ];
 
+/* ── BANQUE D'ANNALES (démo locale) ── */
+const DEMO_ANNALES = [
+  {
+    id: 1, title: "Brevet blanc — Mathématiques", exam: "Brevet", year: 2025,
+    level: "college", classe: "3ème", subject: "Toutes notions", duration: 120,
+    content: "Ce sujet comporte 4 exercices indépendants.\nLe candidat traite les exercices dans l'ordre de son choix.\nLa qualité de la rédaction et le soin apporté aux justifications seront pris en compte.\n\nDurée : 2 heures — Calculatrice autorisée.",
+    image_url: null,
+    solution: null,
+    questions: [
+      { enonce: "Exercice 1 (5 points) — Calcul et fractions\nCalculer et donner le résultat sous forme d'une fraction irréductible :\nA = 3/4 + 2/3 × 5/6.", solution: "On applique la priorité : 2/3 × 5/6 = 10/18 = 5/9.\nPuis A = 3/4 + 5/9 = 27/36 + 20/36 = 47/36 (déjà irréductible)." },
+      { enonce: "Exercice 2 (5 points) — Théorème de Pythagore\nUn triangle ABC est tel que AB = 6 cm, AC = 8 cm et BC = 10 cm.\nDémontrer que ABC est rectangle et préciser en quel sommet.", solution: "BC² = 100 ; AB² + AC² = 36 + 64 = 100.\nComme BC² = AB² + AC², d'après la réciproque du théorème de Pythagore, ABC est rectangle en A." },
+      { enonce: "Exercice 3 (5 points) — Équation\nRésoudre l'équation : 5x − 7 = 2x + 8.", solution: "5x − 2x = 8 + 7 → 3x = 15 → x = 5.\nVérification : 5×5−7 = 18 et 2×5+8 = 18. ✓" },
+      { enonce: "Exercice 4 (5 points) — Pourcentages\nUn article coûte 80 €. Il subit une hausse de 15 %, puis une baisse de 15 %.\nQuel est son prix final ? Est-il égal au prix de départ ?", solution: "Après hausse : 80 × 1,15 = 92 €.\nAprès baisse : 92 × 0,85 = 78,20 €.\nLe prix final (78,20 €) est inférieur au prix de départ : les deux variations ne se compensent pas." }
+    ]
+  },
+  {
+    id: 2, title: "Contrôle — Calcul littéral et équations", exam: "Contrôle", year: 2025,
+    level: "college", classe: "4ème", subject: "Algèbre", duration: 55,
+    content: "Contrôle de mathématiques — Chapitre : calcul littéral et équations.\nToutes les réponses doivent être justifiées.\n\nDurée : 55 minutes — Calculatrice autorisée.",
+    image_url: null,
+    solution: null,
+    questions: [
+      { enonce: "Exercice 1 — Développer et réduire :\nA = 3(2x + 5) − 2(x − 4).", solution: "A = 6x + 15 − 2x + 8 = 4x + 23." },
+      { enonce: "Exercice 2 — Factoriser :\nB = 5x + 15   et   C = x² − 9.", solution: "B = 5(x + 3).\nC = x² − 3² = (x + 3)(x − 3)." },
+      { enonce: "Exercice 3 — Résoudre :\n4x + 3 = 2x + 11.", solution: "2x = 8 → x = 4." }
+    ]
+  },
+  {
+    id: 3, title: "Devoir surveillé — Géométrie dans l'espace", exam: "DS", year: 2024,
+    level: "college", classe: "4ème", subject: "Géométrie", duration: 60,
+    content: "Devoir surveillé — Prismes, cylindres et volumes.\nLes constructions doivent être faites aux instruments.\n\nDurée : 1 heure.",
+    image_url: null,
+    solution: null,
+    questions: [
+      { enonce: "Exercice 1 — Un cylindre a pour rayon 5 cm et hauteur 12 cm.\nCalculer son volume (valeur arrondie au cm³, π ≈ 3,14).", solution: "V = π × r² × h = 3,14 × 25 × 12 = 942 cm³." },
+      { enonce: "Exercice 2 — Un prisme droit a pour base un triangle rectangle de côtés 3 cm et 4 cm, et une hauteur de 10 cm.\nCalculer son volume.", solution: "Aire de la base = (3 × 4)/2 = 6 cm². Volume = 6 × 10 = 60 cm³." }
+    ]
+  }
+];
+
+
 function normalizeAnswer(s){
   return (s||"").toLowerCase().replace(/\s+/g,"").replace(/,/g,".").replace(/×/g,"*").replace(/−/g,"-");
 }
@@ -183,6 +224,7 @@ function showView(name, tabName) {
   if (name === "chapter") renderChapterView();
   if (name === "add") backToInput();
   if (name === "seance") resetSeanceWelcome();
+  if (name === "annales") loadAnnales();
   window.scrollTo(0, 0);
 }
 
@@ -254,14 +296,19 @@ function renderByChapter(data) {
   const frag = document.createDocumentFragment();
 
   function chapterCardEl(chap, exs, color) {
-    const n = exs.length;
+    const n  = exs.length;
+    const ne = exs.filter(e => (e.type || "exercice") === "exercice").length;
+    const np = exs.filter(e => (e.type || "exercice") === "probleme").length;
     const card = document.createElement("div");
     card.className = "chapx-card" + (n ? "" : " chapx-empty");
     card.style.setProperty("--sc", color || "#c8b97a");
+    const detail = n
+      ? `<span>✏️ ${ne}</span><span>🧩 ${np}</span>`
+      : `à venir`;
     card.innerHTML = `
       <div class="chapx-name">${escapeHtml(chap)}</div>
-      <div class="chapx-count">${n ? n + (n>1?" exercices":" exercice") : "à venir"}</div>
-      <div class="chapx-go">${n ? "Voir les exercices →" : "Aucun exercice"}</div>`;
+      <div class="chapx-count">${detail}</div>
+      <div class="chapx-go">${n ? "Voir le chapitre →" : "Aucun exercice"}</div>`;
     if (n) card.onclick = () => openChapter(chap);
     return card;
   }
@@ -296,21 +343,326 @@ function renderByChapter(data) {
 /* ── VUE D'UN CHAPITRE : la liste de ses exercices ── */
 function openChapter(chap) {
   currentChapter = chap;
+  chapterMode = "exercice";
   showView("chapter");
 }
 
+let chapterMode = "exercice";   // "exercice" | "probleme"
+
+function setChapterMode(mode) {
+  chapterMode = (mode === "probleme") ? "probleme" : "exercice";
+  document.getElementById("chapswitch-ex").classList.toggle("active", chapterMode === "exercice");
+  document.getElementById("chapswitch-pb").classList.toggle("active", chapterMode === "probleme");
+  renderChapterView();
+}
+
 function renderChapterView() {
-  const exs = LOADED_EXERCISES.filter(ex => (ex.chapitre || "Sans chapitre") === currentChapter);
+  const all = LOADED_EXERCISES.filter(ex => (ex.chapitre || "Sans chapitre") === currentChapter);
+  const exos = all.filter(ex => (ex.type || "exercice") === "exercice");
+  const pbs  = all.filter(ex => (ex.type || "exercice") === "probleme");
+
   document.getElementById("chapter-title").textContent = currentChapter;
+  document.getElementById("chapcount-ex").textContent = exos.length;
+  document.getElementById("chapcount-pb").textContent = pbs.length;
+
+  const shown = (chapterMode === "probleme") ? pbs : exos;
+  const wordSing = chapterMode === "probleme" ? "problème" : "exercice d'entraînement";
+  const wordPlur = chapterMode === "probleme" ? "problèmes" : "exercices d'entraînement";
   document.getElementById("chapter-sub").textContent =
-    exs.length + (exs.length>1 ? " exercices" : " exercice") + " dans ce chapitre";
+    shown.length + " " + (shown.length > 1 ? wordPlur : wordSing) + " dans ce chapitre";
+
   const grid = document.getElementById("chapter-list");
   grid.innerHTML = "";
-  if (!exs.length) {
-    grid.innerHTML = `<div class="chap-placeholder">Aucun exercice pour ce chapitre — pour l'instant !</div>`;
+  if (!shown.length) {
+    const label = chapterMode === "probleme" ? "problème" : "exercice d'entraînement";
+    grid.innerHTML = `<div class="chap-placeholder">Aucun ${label} pour ce chapitre — pour l'instant !</div>`;
     return;
   }
-  exs.forEach(ex => grid.appendChild(exerciseCard(ex)));
+  shown.forEach(ex => grid.appendChild(exerciseCard(ex)));
+}
+
+/* ═══════════════════════════════════════════
+   ANNALES & CONTRÔLES — banque + séance d'examen
+   ═══════════════════════════════════════════ */
+let LOADED_ANNALES = [];
+let annaleExamFilter = "";
+let EXAM = null;
+let examTimer = null;
+
+function nl2br(t) { return escapeHtml(t == null ? "" : t).replace(/\n/g, "<br>"); }
+
+function annaleQuestions(a) {
+  const q = a.questions;
+  if (Array.isArray(q)) return q;
+  try { return JSON.parse(q || "[]"); } catch { return []; }
+}
+
+async function loadAnnales() {
+  try {
+    const res = await MB_AUTH.apiFetch("/annales");
+    if (!res.ok) throw new Error();
+    LOADED_ANNALES = await res.json();
+    DEMO_MODE = false;
+  } catch {
+    DEMO_MODE = true;
+    LOADED_ANNALES = DEMO_ANNALES.map(a => ({ ...a }));
+  }
+  renderAnnales();
+}
+
+function annaleBadges(a) {
+  return `<div class="annale-badges">
+    <span class="annale-badge exam">${escapeHtml(a.exam || "Sujet")}</span>
+    ${a.year ? `<span class="annale-badge">${a.year}</span>` : ""}
+    ${a.classe ? `<span class="annale-badge">${escapeHtml(a.classe)}</span>` : ""}
+  </div>`;
+}
+function annaleMeta(a) {
+  const qs = annaleQuestions(a);
+  const bits = [];
+  if (a.duration) bits.push(`⏱ ${a.duration} min`);
+  bits.push(`${qs.length} exercice${qs.length > 1 ? "s" : ""}`);
+  if (a.subject) bits.push(escapeHtml(a.subject));
+  return bits.join(" · ");
+}
+
+function renderAnnales() {
+  const fl = document.getElementById("annales-filters");
+  const exams = [...new Set(LOADED_ANNALES.map(a => a.exam).filter(Boolean))];
+  fl.innerHTML = "";
+  const mkBtn = (label, val) => {
+    const b = document.createElement("button");
+    b.className = "filter-btn" + (annaleExamFilter === val ? " active" : "");
+    b.textContent = label;
+    b.onclick = () => { annaleExamFilter = val; renderAnnales(); };
+    return b;
+  };
+  fl.appendChild(mkBtn("Tous", ""));
+  exams.forEach(e => fl.appendChild(mkBtn(e, e)));
+
+  const grid = document.getElementById("annales-grid");
+  grid.innerHTML = "";
+  const list = LOADED_ANNALES.filter(a => !annaleExamFilter || a.exam === annaleExamFilter);
+  if (!list.length) {
+    grid.innerHTML = `<div class="chap-placeholder">Aucune annale pour l'instant — ajoute des sujets depuis l'onglet Ajouter !</div>`;
+    return;
+  }
+  list.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "annale-card";
+    card.innerHTML = `
+      ${annaleBadges(a)}
+      <div class="annale-title">${escapeHtml(a.title)}</div>
+      <div class="annale-meta">${annaleMeta(a)}</div>
+      <div class="annale-actions">
+        <button class="annale-btn" data-act="voir">Consulter le sujet</button>
+        <button class="annale-btn primary" data-act="composer">⏱ Composer →</button>
+      </div>`;
+    card.querySelector('[data-act="voir"]').onclick = (e) => { e.stopPropagation(); openAnnale(a.id); };
+    card.querySelector('[data-act="composer"]').onclick = (e) => { e.stopPropagation(); startExamen(a.id); };
+    card.onclick = () => openAnnale(a.id);
+    grid.appendChild(card);
+  });
+}
+
+/* ── consultation d'un sujet (avec corrigés dépliables) ── */
+function openAnnale(id) {
+  const a = LOADED_ANNALES.find(x => x.id === id);
+  if (!a) return;
+  const qs = annaleQuestions(a);
+  document.getElementById("annale-detail").innerHTML = `
+    <div class="annale-paper-head">
+      ${annaleBadges(a)}
+      <h2>${escapeHtml(a.title)}</h2>
+      <div class="annale-meta">${annaleMeta(a)}</div>
+    </div>
+    ${a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : ""}
+    <div class="annale-content">${nl2br(a.content)}</div>
+    ${qs.map((q, i) => `
+      <div class="annale-q">
+        <div class="annale-q-enonce">${nl2br(q.enonce)}</div>
+        ${q.solution ? `<details class="annale-q-sol"><summary>Voir le corrigé</summary><div>${nl2br(q.solution)}</div></details>` : ""}
+      </div>`).join("")}
+    <div class="exam-start-row">
+      <button class="annale-btn primary big" onclick="closeAnnale(); startExamen(${a.id})">⏱ Composer cet examen →</button>
+    </div>`;
+  document.getElementById("annale-modal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeAnnale() {
+  document.getElementById("annale-modal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+/* ── EXAMEN : ① choix ── */
+async function openExamen() {
+  showView("examen", "examen");
+  examPhase("choice");
+  if (!LOADED_ANNALES.length) await loadAnnales();
+  renderExamenChoice();
+}
+function examPhase(ph) {
+  ["choice", "sujet", "run", "done"].forEach(x => {
+    document.getElementById("examen-" + x).style.display = (x === ph) ? "" : "none";
+  });
+  window.scrollTo(0, 0);
+}
+function renderExamenChoice() {
+  const grid = document.getElementById("examen-choice-grid");
+  grid.innerHTML = "";
+  if (!LOADED_ANNALES.length) {
+    grid.innerHTML = `<div class="chap-placeholder">Aucune annale disponible — ajoute des sujets depuis l'onglet Ajouter !</div>`;
+    return;
+  }
+  LOADED_ANNALES.forEach(a => {
+    const card = document.createElement("div");
+    card.className = "annale-card";
+    card.innerHTML = `
+      ${annaleBadges(a)}
+      <div class="annale-title">${escapeHtml(a.title)}</div>
+      <div class="annale-meta">${annaleMeta(a)}</div>
+      <div class="annale-actions">
+        <button class="annale-btn primary">Composer ce sujet →</button>
+      </div>`;
+    card.onclick = () => startExamen(a.id);
+    grid.appendChild(card);
+  });
+}
+
+/* ── EXAMEN : ② le sujet en entier d'abord ── */
+function startExamen(id) {
+  const a = LOADED_ANNALES.find(x => x.id === id);
+  if (!a) return;
+  const qs = annaleQuestions(a);
+  if (!qs.length) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
+  clearInterval(examTimer);
+  EXAM = { annale: a, qs, index: 0, answers: Array(qs.length).fill(null), start: null };
+  showView("examen", "examen");
+  examPhase("sujet");
+  document.getElementById("examen-sujet-body").innerHTML = `
+    <div class="annale-paper-head">
+      ${annaleBadges(a)}
+      <h2>${escapeHtml(a.title)}</h2>
+      <div class="annale-meta">${annaleMeta(a)}</div>
+    </div>
+    <div class="exam-notice">Prends d'abord connaissance du sujet <strong>en entier</strong>, comme le jour de l'épreuve. Quand tu es prêt·e, lance le chronomètre — tu traiteras ensuite les questions une par une.</div>
+    ${a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : ""}
+    <div class="annale-content">${nl2br(a.content)}</div>
+    ${qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div></div>`).join("")}`;
+}
+
+/* ── EXAMEN : ③ question par question ── */
+function beginEpreuve() {
+  EXAM.start = Date.now();
+  clearInterval(examTimer);
+  examTimer = setInterval(() => {
+    const el = document.getElementById("exam-chrono");
+    if (!el || !EXAM) return;
+    const sec = Math.floor((Date.now() - EXAM.start) / 1000);
+    el.textContent = String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+    if (EXAM.annale.duration && sec === EXAM.annale.duration * 60)
+      showToast("⏱ Temps réglementaire écoulé — tu peux continuer pour t'entraîner.", "error");
+  }, 1000);
+  document.getElementById("exam-run-title").textContent = EXAM.annale.title;
+  examPhase("run");
+  paintExamQuestion();
+}
+
+function paintExamQuestion() {
+  const q = EXAM.qs[EXAM.index];
+  const saved = EXAM.answers[EXAM.index];
+  document.getElementById("exam-progress").textContent = `Question ${EXAM.index + 1} / ${EXAM.qs.length}`;
+  document.getElementById("exam-enonce").innerHTML = nl2br(q.enonce);
+  const ta = document.getElementById("exam-answer");
+  ta.value = saved ? saved.answer : "";
+  ta.readOnly = !!saved;
+  document.getElementById("exam-feedback").innerHTML = (saved && saved.result) ? examFeedbackHTML(saved.result) : "";
+  document.getElementById("exam-actions").style.display = saved ? "none" : "";
+  const next = document.getElementById("exam-next");
+  next.style.display = saved ? "" : "none";
+  next.textContent = (EXAM.index >= EXAM.qs.length - 1) ? "Terminer l'épreuve →" : "Question suivante →";
+}
+
+async function submitExamAnswer() {
+  const ta = document.getElementById("exam-answer");
+  const answer = ta.value.trim();
+  if (!answer) { showToast("Rédige ta réponse avant de valider.", "error"); return; }
+  const q = EXAM.qs[EXAM.index];
+  const pseudoEx = {
+    title: EXAM.annale.title + " — question " + (EXAM.index + 1),
+    content: q.enonce,
+    solution: q.solution || null,
+  };
+  const btn = document.getElementById("exam-validate");
+  btn.disabled = true;
+  document.getElementById("exam-feedback").innerHTML = `<div class="exam-loading">Le correcteur lit ta copie…</div>`;
+  let result;
+  try {
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 600));
+      result = { verdict: "partial", analyse: "Mode démo : compare ta réponse au corrigé ci-dessous — le serveur MathBase fournira une correction détaillée de ta démarche.", solution: q.solution || "—" };
+    } else {
+      const res = await MB_AUTH.apiFetch("/exercises/correct", { method: "POST", body: JSON.stringify({ exercise: pseudoEx, answer }) });
+      if (!res.ok) throw new Error();
+      result = await res.json();
+      if (result.error) throw new Error(result.error);
+    }
+  } catch {
+    result = { verdict: "partial", analyse: "Correction indisponible pour l'instant — compare ta copie avec le corrigé.", solution: q.solution || "—" };
+  }
+  btn.disabled = false;
+  EXAM.answers[EXAM.index] = { answer, result, skipped: false };
+  paintExamQuestion();
+}
+
+function examFeedbackHTML(r) {
+  const v = ["correct", "partial", "incorrect"].includes(r.verdict) ? r.verdict : "partial";
+  const lab = v === "correct" ? "✔ Correct" : v === "incorrect" ? "✘ À revoir" : "± Partiellement juste";
+  const sol = r.solution || r.demarche;
+  return `<div class="exam-verdict ${v}">${lab}</div>
+    ${r.analyse ? `<div class="exam-analyse">${nl2br(r.analyse)}</div>` : ""}
+    ${sol ? `<details class="annale-q-sol" open><summary>Corrigé</summary><div>${nl2br(sol)}</div></details>` : ""}`;
+}
+
+function skipExamQuestion() {
+  const ta = document.getElementById("exam-answer");
+  EXAM.answers[EXAM.index] = { answer: ta.value.trim(), result: null, skipped: true };
+  nextExamQuestion();
+}
+
+function nextExamQuestion() {
+  if (EXAM.index >= EXAM.qs.length - 1) { finishExam(); return; }
+  EXAM.index++;
+  paintExamQuestion();
+  window.scrollTo(0, 0);
+}
+
+/* ── EXAMEN : ④ bilan ── */
+function finishExam() {
+  clearInterval(examTimer);
+  examPhase("done");
+  const ok      = EXAM.answers.filter(x => x && x.result && x.result.verdict === "correct").length;
+  const partial = EXAM.answers.filter(x => x && x.result && x.result.verdict === "partial").length;
+  const elapsed = EXAM.start ? Math.round((Date.now() - EXAM.start) / 60000) : 0;
+  const rows = EXAM.qs.map((q, i) => {
+    const a = EXAM.answers[i];
+    const st = !a || a.skipped ? "— passée" :
+      a.result.verdict === "correct" ? "✔ correcte" :
+      a.result.verdict === "incorrect" ? "✘ à revoir" : "± partielle";
+    const cls = !a || a.skipped ? "skip" : a.result.verdict;
+    return `<div class="exam-recap-row"><span class="exam-recap-q">Question ${i + 1}</span><span class="exam-recap-st ${cls}">${st}</span></div>`;
+  }).join("");
+  document.getElementById("examen-done-body").innerHTML = `
+    <div class="annale-paper-head">
+      <h2>Épreuve terminée !</h2>
+      <div class="annale-meta">${escapeHtml(EXAM.annale.title)} · ${elapsed} min au chrono${EXAM.annale.duration ? ` (épreuve officielle : ${EXAM.annale.duration} min)` : ""}</div>
+    </div>
+    <div class="exam-score">✔ ${ok} correcte${ok > 1 ? "s" : ""} · ± ${partial} partielle${partial > 1 ? "s" : ""} · sur ${EXAM.qs.length} questions</div>
+    ${rows}
+    <div class="exam-start-row">
+      <button class="annale-btn" onclick="startExamen(${EXAM.annale.id})">↻ Recommencer ce sujet</button>
+      <button class="annale-btn primary" onclick="showView('annales')">Retour aux annales →</button>
+    </div>`;
 }
 
 async function loadExercises() {
