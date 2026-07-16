@@ -33,6 +33,8 @@ document.addEventListener('mouseout', e => {
 });
 
 let currentFilter = "";
+let LOADED_EXERCISES = [];   // dernier lot chargé (pour la vue chapitre)
+let currentChapter = null;
 let pendingExercise = null;
 
 /* ══════════════════════════════════════
@@ -159,6 +161,7 @@ function showView(name) {
   const tabMap = { browse: 0, seance: 1, add: 2 };
   document.querySelectorAll(".tab")[tabMap[name]]?.classList.add("active");
   if (name === "browse") loadExercises();
+  if (name === "chapter") renderChapterView();
   if (name === "add") backToInput();
   if (name === "seance") resetSeanceWelcome();
 }
@@ -189,9 +192,11 @@ function exerciseCard(ex) {
   return card;
 }
 
-/* Regroupe les exercices par chapitre et affiche TOUS les chapitres de
-   l'arbre — même ceux qui n'ont aucun exercice pour l'instant. */
+/* Catalogue : une CARTE cliquable par chapitre, les chapitres d'une
+   même matière alignés en colonnes sur une seule ligne (grille fluide).
+   Tous les chapitres de l'arbre sont montrés, même sans exercice. */
 function renderByChapter(data) {
+  LOADED_EXERCISES = data;
   const list  = document.getElementById("list");
   const empty = document.getElementById("empty-state");
   const badge = document.getElementById("total-num");
@@ -199,7 +204,6 @@ function renderByChapter(data) {
   empty.style.display = "none";
   list.innerHTML = "";
 
-  // index des exercices par chapitre
   const byChap = new Map();
   data.forEach(ex => {
     const key = ex.chapitre || "Sans chapitre";
@@ -207,72 +211,70 @@ function renderByChapter(data) {
     byChap.get(key).push(ex);
   });
 
-  // ordre officiel : matières → chapitres de l'arbre (structure partagée)
   const structure = (typeof CHAPTER_STRUCTURE !== "undefined") ? CHAPTER_STRUCTURE : (window.CHAPTER_STRUCTURE || []);
   const known = new Set();
   structure.forEach(m => m.chapters.forEach(c => known.add(c)));
 
   const frag = document.createDocumentFragment();
 
+  function chapterCardEl(chap, exs, color) {
+    const n = exs.length;
+    const card = document.createElement("div");
+    card.className = "chapx-card" + (n ? "" : " chapx-empty");
+    card.style.setProperty("--sc", color || "#c8b97a");
+    card.innerHTML = `
+      <div class="chapx-name">${escapeHtml(chap)}</div>
+      <div class="chapx-count">${n ? n + (n>1?" exercices":" exercice") : "à venir"}</div>
+      <div class="chapx-go">${n ? "Voir les exercices →" : "Aucun exercice"}</div>`;
+    if (n) card.onclick = () => openChapter(chap);
+    return card;
+  }
+
   structure.forEach(mat => {
-    // chapitres de cette matière ayant au moins 1 exercice sous le filtre courant ? on affiche tout
-    const matSection = document.createElement("div");
-    matSection.className = "chap-subject";
-    matSection.innerHTML = `<div class="chap-subject-head" style="--sc:${mat.color||'#c8b97a'}">${escapeHtml(mat.subject)}</div>`;
-    const chapWrap = document.createElement("div");
-    chapWrap.className = "chap-groups";
-
-    mat.chapters.forEach(chap => {
-      const exs = byChap.get(chap) || [];
-      const block = document.createElement("div");
-      block.className = "chap-block" + (exs.length ? "" : " chap-empty");
-      block.innerHTML = `
-        <div class="chap-head">
-          <span class="chap-name">${escapeHtml(chap)}</span>
-          <span class="chap-count">${exs.length ? exs.length + (exs.length>1?" exercices":" exercice") : "à venir"}</span>
-        </div>`;
-      const grid = document.createElement("div");
-      grid.className = "chap-grid";
-      if (exs.length) {
-        exs.forEach(ex => grid.appendChild(exerciseCard(ex)));
-      } else {
-        const ph = document.createElement("div");
-        ph.className = "chap-placeholder";
-        ph.textContent = "Aucun exercice pour ce chapitre — pour l'instant !";
-        grid.appendChild(ph);
-      }
-      block.appendChild(grid);
-      chapWrap.appendChild(block);
-    });
-
-    matSection.appendChild(chapWrap);
-    frag.appendChild(matSection);
+    const section = document.createElement("div");
+    section.className = "chapx-subject";
+    section.innerHTML = `<div class="chapx-subject-head" style="--sc:${mat.color||'#c8b97a'}">${escapeHtml(mat.subject)}</div>`;
+    const row = document.createElement("div");
+    row.className = "chapx-row";
+    mat.chapters.forEach(chap => row.appendChild(chapterCardEl(chap, byChap.get(chap) || [], mat.color)));
+    section.appendChild(row);
+    frag.appendChild(section);
   });
 
-  // chapitres présents dans les données mais absents de l'arbre (ex. anciens intitulés)
+  // intitulés hors-arbre → section « Autres »
   const extras = [...byChap.keys()].filter(k => !known.has(k));
   if (extras.length) {
-    const matSection = document.createElement("div");
-    matSection.className = "chap-subject";
-    matSection.innerHTML = `<div class="chap-subject-head" style="--sc:#9b8fb0">Autres</div>`;
-    const chapWrap = document.createElement("div");
-    chapWrap.className = "chap-groups";
-    extras.forEach(chap => {
-      const exs = byChap.get(chap);
-      const block = document.createElement("div");
-      block.className = "chap-block";
-      block.innerHTML = `<div class="chap-head"><span class="chap-name">${escapeHtml(chap)}</span><span class="chap-count">${exs.length}${exs.length>1?" exercices":" exercice"}</span></div>`;
-      const grid = document.createElement("div");
-      grid.className = "chap-grid";
-      exs.forEach(ex => grid.appendChild(exerciseCard(ex)));
-      block.appendChild(grid);
-      chapWrap.appendChild(block);
-    });
-    matSection.appendChild(chapWrap);
-    frag.appendChild(matSection);
+    const section = document.createElement("div");
+    section.className = "chapx-subject";
+    section.innerHTML = `<div class="chapx-subject-head" style="--sc:#9b8fb0">Autres</div>`;
+    const row = document.createElement("div");
+    row.className = "chapx-row";
+    extras.forEach(chap => row.appendChild(chapterCardEl(chap, byChap.get(chap), "#9b8fb0")));
+    section.appendChild(row);
+    frag.appendChild(section);
   }
 
   list.appendChild(frag);
+}
+
+/* ── VUE D'UN CHAPITRE : la liste de ses exercices ── */
+function openChapter(chap) {
+  currentChapter = chap;
+  showView("chapter");
+}
+
+function renderChapterView() {
+  const exs = LOADED_EXERCISES.filter(ex => (ex.chapitre || "Sans chapitre") === currentChapter);
+  document.getElementById("chapter-title").textContent = currentChapter;
+  document.getElementById("chapter-sub").textContent =
+    exs.length + (exs.length>1 ? " exercices" : " exercice") + " dans ce chapitre";
+  const grid = document.getElementById("chapter-list");
+  grid.innerHTML = "";
+  if (!exs.length) {
+    grid.innerHTML = `<div class="chap-placeholder">Aucun exercice pour ce chapitre — pour l'instant !</div>`;
+    return;
+  }
+  exs.forEach(ex => grid.appendChild(exerciseCard(ex)));
 }
 
 async function loadExercises() {

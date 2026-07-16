@@ -117,7 +117,7 @@ nav {
    BROWSE — HERO
 ════════════════════════════════ */
 .browse-hero {
-  max-width: 1100px; margin: 0 auto;
+  max-width: 1600px; margin: 0 auto; padding-left: 2.2rem; padding-right: 2.2rem;
   padding: 5rem 3rem 3.5rem;
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 2rem; flex-wrap: wrap;
@@ -181,7 +181,7 @@ h1 em { font-style: italic; color: var(--accent); }
    FILTRES
 ════════════════════════════════ */
 .filter-section {
-  max-width: 1100px; margin: 0 auto;
+  max-width: 1600px; margin: 0 auto; padding-left: 2.2rem; padding-right: 2.2rem;
   padding: 2rem 3rem;
   border-bottom: 1px solid var(--border);
 }
@@ -220,7 +220,7 @@ h1 em { font-style: italic; color: var(--accent); }
    GRILLE EXERCICES
 ════════════════════════════════ */
 .grid-section {
-  max-width: 1100px; margin: 0 auto;
+  max-width: 1600px; margin: 0 auto; padding-left: 2.2rem; padding-right: 2.2rem;
   padding: 2.5rem 3rem 5rem;
 }
 
@@ -1097,66 +1097,90 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   .page-leaf { display: none; }
 }
 
-/* ═══════════ PAGE EXERCICES : SECTIONS PAR CHAPITRE ═══════════ */
-.chap-subject { margin-bottom: 2.6rem; }
-.chap-subject-head {
+
+/* ═══════════ PAGE EXERCICES : CHAPITRES EN COLONNES ═══════════ */
+.chapx-subject { margin-bottom: 2.4rem; }
+.chapx-subject-head {
   font-family: 'DM Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--sc, var(--accent));
-  padding-bottom: 0.6rem;
-  margin-bottom: 1.4rem;
+  padding-bottom: 0.6rem; margin-bottom: 1.1rem;
   border-bottom: 1px solid var(--border);
   position: relative;
 }
-.chap-subject-head::before {
-  content: "";
-  position: absolute; left: 0; bottom: -1px;
-  width: 44px; height: 2px;
-  background: var(--sc, var(--accent));
+.chapx-subject-head::before {
+  content: ""; position: absolute; left: 0; bottom: -1px;
+  width: 44px; height: 2px; background: var(--sc, var(--accent));
 }
-.chap-groups { display: flex; flex-direction: column; gap: 1.4rem; }
 
-.chap-block {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--surface);
-}
-.chap-block.chap-empty { opacity: 0.6; }
-.chap-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.85rem 1.2rem;
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-}
-.chap-empty .chap-head { border-bottom: none; }
-.chap-name {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.08rem;
-  color: var(--text);
-}
-.chap-count {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  border: 1px solid var(--border2);
-  border-radius: 999px;
-  padding: 0.15rem 0.6rem;
-}
-.chap-grid {
+/* tous les chapitres d'une matière sur une seule ligne de colonnes,
+   qui s'étalent sur toute la largeur disponible */
+.chapx-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1px;
-  background: var(--border);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.8rem;
 }
-.chap-empty .chap-grid { background: transparent; }
+.chapx-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--sc, var(--accent));
+  border-radius: 12px;
+  padding: 1.1rem 1.15rem 1rem;
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 0.4rem;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+  min-height: 116px;
+}
+.chapx-card:hover {
+  transform: translateY(-3px);
+  background: var(--surface2);
+  border-color: var(--sc, var(--accent));
+}
+.chapx-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.02rem; line-height: 1.25; color: var(--text);
+}
+.chapx-count {
+  font-family: 'DM Mono', monospace; font-size: 0.68rem;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+}
+.chapx-go {
+  margin-top: auto; font-size: 0.8rem; color: var(--sc, var(--accent));
+  opacity: 0; transform: translateX(-4px); transition: .2s;
+}
+.chapx-card:hover .chapx-go { opacity: 1; transform: none; }
+
+.chapx-empty {
+  cursor: default; opacity: 0.5;
+  border-top-color: var(--border2);
+}
+.chapx-empty:hover { transform: none; background: var(--surface); border-color: var(--border); }
+.chapx-empty .chapx-go { color: var(--muted); }
+
+/* ── VUE D'UN CHAPITRE ── */
+.chapter-page {
+  max-width: 1600px; margin: 0 auto;
+  padding: 2.5rem 2.2rem 4rem;
+}
+.chapter-back {
+  background: none; border: 1px solid var(--border2); color: var(--accent);
+  padding: 0.5rem 1.1rem; border-radius: 999px;
+  font-family: 'DM Mono', monospace; font-size: 0.8rem;
+  cursor: pointer; transition: .25s;
+}
+.chapter-back:hover { background: rgba(200,185,122,0.1); }
+.chapter-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 4vw, 2.6rem); color: var(--text);
+  margin: 1.4rem 0 0.3rem;
+}
+.chapter-sub {
+  font-family: 'DM Mono', monospace; font-size: 0.8rem;
+  color: var(--muted); margin-bottom: 1.8rem;
+}
+#chapter-list.exercise-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
 .chap-placeholder {
-  padding: 1.3rem 1.4rem;
-  color: var(--muted);
-  font-size: 0.88rem;
-  font-style: italic;
+  padding: 1.4rem; color: var(--muted); font-size: 0.9rem; font-style: italic;
 }
