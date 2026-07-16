@@ -1,19 +1,15 @@
 {
-  "name": "projet1",
+  "name": "mathbase",
   "version": "1.0.0",
-  "description": "",
+  "description": "MathBase — site de tutorat de mathématiques pour le collège : exercices, séances corrigées par IA, cours animés, tutoriels interactifs et arbre des connaissances.",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "engines": { "node": ">=18" },
   "dependencies": {
-    "body-parser": "^2.2.2",
-    "express": "^5.2.1",
-    "pg": "^8.20.0"
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
   }
 }

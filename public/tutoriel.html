@@ -42,6 +42,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .ctrl.primary:hover{background:rgba(200,185,122,.1);}
 @media(max-width:700px){nav{padding:0 1.2rem;}.wrap{padding:1.4rem 1rem 3rem;}}
 </style>
+<script src="auth.js" data-protect></script>
 </head>
 <body>
 <nav>
@@ -758,18 +759,6 @@ TUT.durees = { title:'Repérage temps & durées', steps:[
   qcm('Attention au piège !', "1 h 30, ce n'est PAS 1,30 h. C'est 1 h + 30/60 h, soit…",
     '1 h 30 min = ? h', [{label:'1,3 h',ok:false},{label:'1,5 h',ok:true},{label:'1,75 h',ok:false}]),
   finish("1 h = 60 min · 1 min = 60 s. Pour une durée, on découpe le trajet en morceaux simples.")
-]};
-
-TUT.vitesse = { title:'Vitesse, distance et temps', steps:[
-  qcm('La formule', "La vitesse dit combien de distance on parcourt par unité de temps.",
-    'v = ?', [{label:'d ÷ t',ok:true},{label:'d × t',ok:false},{label:'t ÷ d',ok:false}]),
-  qcm('Calculer une vitesse', "Un cycliste parcourt 45 km en 1 h 30 (= 1,5 h). Sa vitesse moyenne ?",
-    'v = 45 ÷ 1,5 = ?', [{label:'30 km/h',ok:true},{label:'22,5 km/h',ok:false},{label:'45 km/h',ok:false}]),
-  qcm('Retrouver la distance', "On retourne la formule : d = v × t. À 60 km/h pendant 3 h ?",
-    'd = 60 × 3 = ?', [{label:'20 km',ok:false},{label:'180 km',ok:true},{label:'63 km',ok:false}]),
-  qcm('Retrouver le temps', "t = d ÷ v. Pour faire 100 km à 50 km/h ?",
-    't = 100 ÷ 50 = ?', [{label:'2 h',ok:true},{label:'5 h',ok:false},{label:'0,5 h',ok:false}]),
-  finish("Le triangle magique : v = d/t, d = v×t, t = d/v. Et on vérifie TOUJOURS les unités.")
 ]};
 
 TUT.arithmetique = { title:'Arithmétique', steps:[

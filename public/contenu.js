@@ -426,51 +426,6 @@ const THEME_CONTENT = {
   ]
 },
 
-"Vitesse, distance et temps": {
-  tuto:"vitesse", cours:"Vitesse, distance et temps",
-  lecon:{
-    definitions:[
-      "La vitesse moyenne relie la distance parcourue au temps mis : v = d ÷ t.",
-      "Elle s'exprime en km/h ou en m/s selon les unités de d et de t."
-    ],
-    proprietes:[
-      "v = d/t · d = v × t · t = d/v : trois formules pour une même relation.",
-      "À vitesse constante, distance et temps sont proportionnels.",
-      "Pour passer de m/s à km/h : × 3,6. De km/h à m/s : ÷ 3,6."
-    ],
-    exemples:[
-      "120 km en 2 h : v = 60 km/h.",
-      "10 m/s = 36 km/h."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Repérer ce qu'on cherche : v, d ou t ?",
-      "Convertir le temps en heures décimales (1 h 30 = 1,5 h) ou tout en secondes.",
-      "Appliquer la bonne formule.",
-      "Contrôler les unités du résultat."
-    ],
-    erreurs:[
-      "Utiliser 1 h 30 = 1,30 dans la formule (c'est 1,5).",
-      "Mélanger km et m, ou h et min dans le même calcul.",
-      "Inverser la formule (diviser au lieu de multiplier)."
-    ],
-    resolu:{
-      enonce:"Un cycliste parcourt 45 km en 1 h 30. Quelle est sa vitesse moyenne ?",
-      etapes:[
-        "1 h 30 = 1,5 h.",
-        "v = d ÷ t = 45 ÷ 1,5.",
-        "v = 30 km/h."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Une voiture roule à 90 km/h pendant 2 h 20. Quelle distance parcourt-elle ?", sol:"2 h 20 = 7/3 h. d = 90 × 7/3 = 210 km." },
-    { q:"Combien de temps pour parcourir 12 km à 8 km/h ?", sol:"t = 12 ÷ 8 = 1,5 h = 1 h 30." },
-    { q:"Un sprinteur court le 100 m en 10 s. Sa vitesse en m/s puis en km/h ?", sol:"v = 100 ÷ 10 = 10 m/s = 10 × 3,6 = 36 km/h." }
-  ]
-},
-
 "Arithmétique": {
   tuto:"arithmetique", cours:"Arithmétique",
   lecon:{

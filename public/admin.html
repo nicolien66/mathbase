@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration — MathBase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0b09; --panel:#14130f; --line:rgba(245,242,232,.1); --cream:#f0ece0; --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; --blue:#7ac8e6; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;padding:3rem 1rem 5rem;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.07), transparent);}
+  .wrap{width:min(980px,100%);margin:0 auto;position:relative;}
+  .back{display:inline-block;background:none;border:1px solid rgba(200,185,122,.35);color:var(--gold);
+    padding:.5rem 1.1rem;border-radius:999px;font-family:'DM Mono',monospace;font-size:.8rem;
+    cursor:pointer;text-decoration:none;transition:.25s;}
+  .back:hover{background:rgba(200,185,122,.12);}
+  h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.7rem,4vw,2.4rem);margin:1.8rem 0 .4rem;}
+  .sub{color:var(--muted);font-size:.92rem;margin-bottom:1.8rem;}
+  .demo-banner{display:none;margin-bottom:1.4rem;font-size:.82rem;color:var(--coral);
+    border:1px dashed rgba(230,130,110,.4);border-radius:10px;padding:.7rem .9rem;line-height:1.5;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;margin-bottom:2rem;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.1rem 1.3rem;}
+  .stat .n{font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:var(--gold);}
+  .stat .l{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:.2rem;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .panel-head{padding:1rem 1.3rem;border-bottom:1px solid var(--line);
+    font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-align:left;padding:.7rem 1rem;border-bottom:1px solid var(--line);font-weight:400;}
+  td{padding:.75rem 1rem;border-bottom:1px solid rgba(245,242,232,.05);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(245,242,232,.02);}
+  .role{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+    border-radius:999px;padding:.15rem .55rem;border:1px solid;}
+  .role.admin{color:var(--gold);border-color:rgba(200,185,122,.45);}
+  .role.eleve{color:var(--blue);border-color:rgba(122,200,230,.35);}
+  .muted{color:var(--muted);}
+  .act{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;
+    padding:.32rem .65rem;font:inherit;font-size:.75rem;cursor:pointer;transition:.2s;margin-right:.35rem;white-space:nowrap;}
+  .act:hover{border-color:var(--gold);color:var(--gold);}
+  .act.danger:hover{border-color:var(--coral);color:var(--coral);}
+  .empty{padding:2.5rem;text-align:center;color:var(--muted);}
+  .msg{margin-top:1rem;font-size:.85rem;border-radius:10px;padding:.7rem .9rem;display:none;}
+  .msg.err{display:block;color:var(--coral);background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);}
+  @media (max-width:640px){ .hide-sm{display:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="app.html">← Retour au site</a>
+  <h1>Administration</h1>
+  <div class="sub">Gestion des comptes MathBase — promouvoir, rétrograder ou supprimer des utilisateurs.</div>
+  <div class="demo-banner" id="demo-banner">
+    <strong>Mode démo</strong> — aucun serveur détecté : les comptes affichés sont fictifs et les actions simulées localement.
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="st-total">—</div><div class="l">comptes</div></div>
+    <div class="stat"><div class="n" id="st-eleves">—</div><div class="l">élèves</div></div>
+    <div class="stat"><div class="n" id="st-admins">—</div><div class="l">administrateurs</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">Utilisateurs</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Pseudo</th><th>E-mail</th><th>Rôle</th><th class="hide-sm">Classe</th>
+          <th class="hide-sm">Inscrit le</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty" style="display:none">Aucun utilisateur.</div>
+  </div>
+  <div class="msg err" id="msg"></div>
+</div>
+
+<script src="auth.js" data-protect="admin"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let USERS = [];
+  let demo = false;
+
+  const DEMO_USERS = [
+    { id: 1, pseudo: 'Administrateur', email: 'admin@mathbase.fr', role: 'admin', classe: null,   created_at: '2026-06-01T10:00:00Z' },
+    { id: 2, pseudo: 'Léa',            email: 'lea@exemple.fr',    role: 'eleve', classe: '5ème', created_at: '2026-06-12T14:30:00Z' },
+    { id: 3, pseudo: 'Tom',            email: 'tom@exemple.fr',    role: 'eleve', classe: '3ème', created_at: '2026-06-20T09:15:00Z' },
+    { id: 4, pseudo: 'Inès',           email: 'ines@exemple.fr',   role: 'eleve', classe: '6ème', created_at: '2026-07-02T17:45:00Z' },
+  ];
+
+  function showErr(t){ const m=$('msg'); m.textContent=t; m.classList.add('err'); m.style.display='block';
+    setTimeout(()=>{ m.style.display='none'; }, 4000); }
+
+  function fmtDate(d){
+    try { return new Date(d).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }); }
+    catch { return '—'; }
+  }
+  function escapeHtml(t){ return String(t ?? '').replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+
+  function render(){
+    const me = MB_AUTH.user() || {};
+    $('st-total').textContent  = USERS.length;
+    $('st-eleves').textContent = USERS.filter(u=>u.role==='eleve').length;
+    $('st-admins').textContent = USERS.filter(u=>u.role==='admin').length;
+    const tb = $('rows');
+    tb.innerHTML = '';
+    $('empty').style.display = USERS.length ? 'none' : 'block';
+    USERS.forEach(u => {
+      const isMe = demo ? (u.email === me.email || (u.role==='admin' && me.role==='admin' && u.id===1 && !me.id)) : (u.id === me.id);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(u.pseudo)}${isMe ? ' <span class="muted">(vous)</span>' : ''}</td>
+        <td class="muted">${escapeHtml(u.email)}</td>
+        <td><span class="role ${u.role}">${u.role}</span></td>
+        <td class="hide-sm muted">${escapeHtml(u.classe) || '—'}</td>
+        <td class="hide-sm muted">${fmtDate(u.created_at)}</td>
+        <td></td>`;
+      const cell = tr.lastElementChild;
+      if (!isMe) {
+        const bRole = document.createElement('button');
+        bRole.className = 'act';
+        bRole.textContent = u.role === 'admin' ? 'Rétrograder' : 'Promouvoir admin';
+        bRole.onclick = () => setRole(u, u.role === 'admin' ? 'eleve' : 'admin');
+        const bDel = document.createElement('button');
+        bDel.className = 'act danger';
+        bDel.textContent = 'Supprimer';
+        bDel.onclick = () => delUser(u);
+        cell.append(bRole, bDel);
+      } else {
+        cell.innerHTML = '<span class="muted">—</span>';
+      }
+      tb.appendChild(tr);
+    });
+  }
+
+  async function load(){
+    demo = !(await MB_AUTH.hasBackend()) || MB_AUTH.isDemo();
+    if (demo) {
+      $('demo-banner').style.display = 'block';
+      USERS = DEMO_USERS.map(u => ({...u}));
+      render(); return;
+    }
+    try {
+      const res = await MB_AUTH.apiFetch('/admin/users');
+      if (!res.ok) { const d = await res.json().catch(()=>({})); showErr(d.error || 'Erreur de chargement.'); return; }
+      USERS = await res.json();
+      render();
+    } catch(e) { showErr('Serveur injoignable.'); }
+  }
+
+  async function setRole(u, role){
+    if (demo) { u.role = role; render(); return; }
+    const res = await MB_AUTH.apiFetch('/admin/users/' + u.id, { method:'PATCH', body: JSON.stringify({ role }) });
+    const d = await res.json().catch(()=>({}));
+    if (!res.ok) { showErr(d.error || 'Action impossible.'); return; }
+    Object.assign(u, d); render();
+  }
+
+  async function delUser(u){
+    if (!confirm('Supprimer définitivement le compte de « ' + u.pseudo + ' » (' + u.email + ') ?')) return;
+    if (demo) { USERS = USERS.filter(x => x.id !== u.id); render(); return; }
+    const res = await MB_AUTH.apiFetch('/admin/users/' + u.id, { method:'DELETE' });
+    const d = await res.json().catch(()=>({}));
+    if (!res.ok) { showErr(d.error || 'Suppression impossible.'); return; }
+    USERS = USERS.filter(x => x.id !== u.id); render();
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
