@@ -172,62 +172,126 @@ function setFilter(btn, level) {
 
 const LEVEL_LABELS = { primaire:"Primaire", college:"Collège", lycee:"Lycée", universite:"Université" };
 
+function exerciseCard(ex) {
+  const card = document.createElement("div");
+  card.className = "exercise-card";
+  card.onclick = () => openModal(ex);
+  const levelLabel = LEVEL_LABELS[ex.level] || ex.level;
+  const diffTag    = ex.difficulty ? `<span class="tag tag-${ex.difficulty.toLowerCase()}">${ex.difficulty}</span>` : "";
+  const subjectTag = ex.subject    ? `<span class="tag tag-subject">${escapeHtml(ex.subject)}</span>` : "";
+  const classeTag  = ex.classe     ? `<span class="tag tag-classe">${escapeHtml(ex.classe)}</span>` : "";
+  card.innerHTML = `
+    <div class="card-tags"><span class="tag tag-${ex.level}">${levelLabel}</span>${diffTag}${subjectTag}</div>
+    <div class="card-title">${escapeHtml(ex.title)}</div>
+    <div class="card-preview">${escapeHtml(ex.content)}</div>
+    ${classeTag ? `<div class="card-tags">${classeTag}</div>` : ""}
+    <div class="card-footer"><span>#${String(ex.id).padStart(3,'0')}</span><span class="card-arrow">Voir →</span></div>`;
+  return card;
+}
+
+/* Regroupe les exercices par chapitre et affiche TOUS les chapitres de
+   l'arbre — même ceux qui n'ont aucun exercice pour l'instant. */
+function renderByChapter(data) {
+  const list  = document.getElementById("list");
+  const empty = document.getElementById("empty-state");
+  const badge = document.getElementById("total-num");
+  badge.textContent = data.length;
+  empty.style.display = "none";
+  list.innerHTML = "";
+
+  // index des exercices par chapitre
+  const byChap = new Map();
+  data.forEach(ex => {
+    const key = ex.chapitre || "Sans chapitre";
+    if (!byChap.has(key)) byChap.set(key, []);
+    byChap.get(key).push(ex);
+  });
+
+  // ordre officiel : matières → chapitres de l'arbre (structure partagée)
+  const structure = (typeof CHAPTER_STRUCTURE !== "undefined") ? CHAPTER_STRUCTURE : (window.CHAPTER_STRUCTURE || []);
+  const known = new Set();
+  structure.forEach(m => m.chapters.forEach(c => known.add(c)));
+
+  const frag = document.createDocumentFragment();
+
+  structure.forEach(mat => {
+    // chapitres de cette matière ayant au moins 1 exercice sous le filtre courant ? on affiche tout
+    const matSection = document.createElement("div");
+    matSection.className = "chap-subject";
+    matSection.innerHTML = `<div class="chap-subject-head" style="--sc:${mat.color||'#c8b97a'}">${escapeHtml(mat.subject)}</div>`;
+    const chapWrap = document.createElement("div");
+    chapWrap.className = "chap-groups";
+
+    mat.chapters.forEach(chap => {
+      const exs = byChap.get(chap) || [];
+      const block = document.createElement("div");
+      block.className = "chap-block" + (exs.length ? "" : " chap-empty");
+      block.innerHTML = `
+        <div class="chap-head">
+          <span class="chap-name">${escapeHtml(chap)}</span>
+          <span class="chap-count">${exs.length ? exs.length + (exs.length>1?" exercices":" exercice") : "à venir"}</span>
+        </div>`;
+      const grid = document.createElement("div");
+      grid.className = "chap-grid";
+      if (exs.length) {
+        exs.forEach(ex => grid.appendChild(exerciseCard(ex)));
+      } else {
+        const ph = document.createElement("div");
+        ph.className = "chap-placeholder";
+        ph.textContent = "Aucun exercice pour ce chapitre — pour l'instant !";
+        grid.appendChild(ph);
+      }
+      block.appendChild(grid);
+      chapWrap.appendChild(block);
+    });
+
+    matSection.appendChild(chapWrap);
+    frag.appendChild(matSection);
+  });
+
+  // chapitres présents dans les données mais absents de l'arbre (ex. anciens intitulés)
+  const extras = [...byChap.keys()].filter(k => !known.has(k));
+  if (extras.length) {
+    const matSection = document.createElement("div");
+    matSection.className = "chap-subject";
+    matSection.innerHTML = `<div class="chap-subject-head" style="--sc:#9b8fb0">Autres</div>`;
+    const chapWrap = document.createElement("div");
+    chapWrap.className = "chap-groups";
+    extras.forEach(chap => {
+      const exs = byChap.get(chap);
+      const block = document.createElement("div");
+      block.className = "chap-block";
+      block.innerHTML = `<div class="chap-head"><span class="chap-name">${escapeHtml(chap)}</span><span class="chap-count">${exs.length}${exs.length>1?" exercices":" exercice"}</span></div>`;
+      const grid = document.createElement("div");
+      grid.className = "chap-grid";
+      exs.forEach(ex => grid.appendChild(exerciseCard(ex)));
+      block.appendChild(grid);
+      chapWrap.appendChild(block);
+    });
+    matSection.appendChild(chapWrap);
+    frag.appendChild(matSection);
+  }
+
+  list.appendChild(frag);
+}
+
 async function loadExercises() {
   const list = document.getElementById("list");
   const empty = document.getElementById("empty-state");
-  const badge = document.getElementById("total-num");
   list.innerHTML = Array(6).fill(0).map(() => `<div class="skeleton"><div class="skel-line" style="height:16px;width:55%"></div><div class="skel-line" style="height:20px;width:85%"></div><div class="skel-line" style="height:14px;width:92%"></div><div class="skel-line" style="height:14px;width:70%"></div></div>`).join("");
   empty.style.display = "none";
   let url = "/exercises";
   if (currentFilter) url += "?level=" + currentFilter;
   try {
-    const res = await fetch(url);
+    const res = await MB_AUTH.apiFetch(url);
     if (!res.ok) throw new Error();
     const data = await res.json();
-    badge.textContent = data.length;
-    list.innerHTML = "";
-    if (data.length === 0) { empty.style.display = "block"; return; }
-    data.forEach(ex => {
-      const card = document.createElement("div");
-      card.className = "exercise-card";
-      card.onclick = () => openModal(ex);
-      const levelLabel = LEVEL_LABELS[ex.level] || ex.level;
-      const diffTag    = ex.difficulty ? `<span class="tag tag-${ex.difficulty.toLowerCase()}">${ex.difficulty}</span>` : "";
-      const subjectTag = ex.subject    ? `<span class="tag tag-subject">${ex.subject}</span>` : "";
-      const classeTag  = ex.classe     ? `<span class="tag tag-classe">${ex.classe}</span>` : "";
-      const chapTag    = ex.chapitre   ? `<span class="tag tag-chapitre">${ex.chapitre}</span>` : "";
-      card.innerHTML = `
-        <div class="card-tags"><span class="tag tag-${ex.level}">${levelLabel}</span>${diffTag}${subjectTag}</div>
-        <div class="card-title">${escapeHtml(ex.title)}</div>
-        <div class="card-preview">${escapeHtml(ex.content)}</div>
-        ${classeTag||chapTag ? `<div class="card-tags">${classeTag}${chapTag}</div>` : ""}
-        <div class="card-footer"><span>#${String(ex.id).padStart(3,'0')}</span><span class="card-arrow">Voir →</span></div>`;
-      list.appendChild(card);
-    });
+    renderByChapter(data);
   } catch {
     // Serveur injoignable → mode démo local
     DEMO_MODE = true;
     const data = DEMO_EXERCISES.filter(ex => !currentFilter || ex.level === currentFilter);
-    badge.textContent = data.length;
-    list.innerHTML = "";
-    if (data.length === 0) { empty.style.display = "block"; return; }
-    data.forEach(ex => {
-      const card = document.createElement("div");
-      card.className = "exercise-card";
-      card.onclick = () => openModal(ex);
-      const levelLabel = LEVEL_LABELS[ex.level] || ex.level;
-      const diffTag    = ex.difficulty ? `<span class="tag tag-${ex.difficulty.toLowerCase()}">${ex.difficulty}</span>` : "";
-      const subjectTag = ex.subject    ? `<span class="tag tag-subject">${ex.subject}</span>` : "";
-      const classeTag  = ex.classe     ? `<span class="tag tag-classe">${ex.classe}</span>` : "";
-      const chapTag    = ex.chapitre   ? `<span class="tag tag-chapitre">${ex.chapitre}</span>` : "";
-      card.innerHTML = `
-        <div class="card-tags"><span class="tag tag-${ex.level}">${levelLabel}</span>${diffTag}${subjectTag}</div>
-        <div class="card-title">${escapeHtml(ex.title)}</div>
-        <div class="card-preview">${escapeHtml(ex.content)}</div>
-        ${classeTag||chapTag ? `<div class="card-tags">${classeTag}${chapTag}</div>` : ""}
-        <div class="card-footer"><span>#${String(ex.id).padStart(3,'0')}</span><span class="card-arrow">Voir →</span></div>`;
-      list.appendChild(card);
-    });
+    renderByChapter(data);
     showToast("Mode démo : banque locale (serveur non connecté).", "info");
   }
 }

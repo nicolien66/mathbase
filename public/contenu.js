@@ -1712,3 +1712,81 @@ const THEME_CONTENT = {
 },
 
 };
+
+/* ═══════════ STRUCTURE MATIÈRE → CHAPITRES (pour la page exercices) ═══════════ */
+const CHAPTER_STRUCTURE = [
+  {
+    "subject": "NOMBRES",
+    "color": "#7ab4c8",
+    "chapters": [
+      "Entiers & décimaux",
+      "Fractions",
+      "Nombres relatifs",
+      "Puissances",
+      "Proportionnalité",
+      "Pourcentages",
+      "Longueur",
+      "Aires",
+      "Repérage temps & durées",
+      "Arithmétique"
+    ]
+  },
+  {
+    "subject": "ALGÈBRE",
+    "color": "#c8a07a",
+    "chapters": [
+      "Enchaînement d'opérations",
+      "Calcul littéral",
+      "Développement et factorisation",
+      "Équations",
+      "Inéquations"
+    ]
+  },
+  {
+    "subject": "GÉOMÉTRIE",
+    "color": "#a07ac8",
+    "chapters": [
+      "Géométrie",
+      "Symétrie axiale",
+      "Symétrie centrale",
+      "Angles et parallélisme",
+      "Les parallélogrammes",
+      "Géométrie du triangle",
+      "Périmètres et aires",
+      "Prisme droit et cylindre",
+      "Théorème de Pythagore",
+      "Théorème de Thalès",
+      "Trigonométrie",
+      "Triangles semblables",
+      "Homothéties",
+      "Translation et rotation",
+      "Pyramides et cônes",
+      "Géométrie dans l'espace"
+    ]
+  },
+  {
+    "subject": "FONCTIONS",
+    "color": "#7ac8a0",
+    "chapters": [
+      "Notions de fonctions",
+      "Fonction linéaire",
+      "Fonction affine"
+    ]
+  },
+  {
+    "subject": "PROBABILITÉS",
+    "color": "#c87a9a",
+    "chapters": [
+      "Probabilités"
+    ]
+  },
+  {
+    "subject": "STATISTIQUES",
+    "color": "#e8a87c",
+    "chapters": [
+      "Organisation des données",
+      "Statistiques"
+    ]
+  }
+];
+if (typeof window !== 'undefined') window.CHAPTER_STRUCTURE = CHAPTER_STRUCTURE;

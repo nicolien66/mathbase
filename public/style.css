@@ -1096,3 +1096,67 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 @media (prefers-reduced-motion: reduce) {
   .page-leaf { display: none; }
 }
+
+/* ═══════════ PAGE EXERCICES : SECTIONS PAR CHAPITRE ═══════════ */
+.chap-subject { margin-bottom: 2.6rem; }
+.chap-subject-head {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sc, var(--accent));
+  padding-bottom: 0.6rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.chap-subject-head::before {
+  content: "";
+  position: absolute; left: 0; bottom: -1px;
+  width: 44px; height: 2px;
+  background: var(--sc, var(--accent));
+}
+.chap-groups { display: flex; flex-direction: column; gap: 1.4rem; }
+
+.chap-block {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.chap-block.chap-empty { opacity: 0.6; }
+.chap-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1.2rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.chap-empty .chap-head { border-bottom: none; }
+.chap-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.08rem;
+  color: var(--text);
+}
+.chap-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+.chap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
+.chap-empty .chap-grid { background: transparent; }
+.chap-placeholder {
+  padding: 1.3rem 1.4rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-style: italic;
+}
