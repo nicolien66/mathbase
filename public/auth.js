@@ -100,10 +100,18 @@
   /* ── garde d'accès ── */
   async function guard() {
     if (protect === null) { renderChip(); return; }   // page publique : pastille seulement
-    const u = MB_AUTH.user();
+    let u = MB_AUTH.user();
+    const backend = await MB_AUTH.hasBackend();
+
+    // Un backend est présent mais l'utilisateur n'a qu'une session démo (sans vrai jeton) :
+    // cette session locale n'est pas valable en ligne → on la purge et on demande une vraie connexion.
+    if (backend && u && (u.demo || !MB_AUTH.token())) {
+      localStorage.removeItem("mb_token");
+      localStorage.removeItem("mb_user");
+      u = null;
+    }
 
     if (!u) {
-      const backend = await MB_AUTH.hasBackend();
       if (backend) { toLogin(); return; }
       // pas de backend → session invité locale (mode démo)
       if (protect === "admin") { toLogin(); return; } // l'admin démo passe par login.html

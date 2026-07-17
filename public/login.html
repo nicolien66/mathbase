@@ -95,12 +95,19 @@
   const next = new URLSearchParams(location.search).get('next') || 'app.html';
   let demo = false;
 
-  // déjà connecté ? → direction la suite
-  if (MB_AUTH.user()) { location.href = next; return; }
-
+  // déjà connecté avec un VRAI jeton ? → direction la suite.
+  // (une session démo résiduelle ne doit pas court-circuiter la vraie connexion en ligne)
   MB_AUTH.hasBackend().then(ok => {
     demo = !ok;
-    if (demo) $('demo-banner').style.display = 'block';
+    if (demo) {
+      $('demo-banner').style.display = 'block';
+      if (MB_AUTH.user()) { location.href = next; return; }   // démo assumée : on laisse passer
+    } else {
+      // backend présent : seule une session avec jeton est valable
+      if (MB_AUTH.user() && MB_AUTH.token() && !MB_AUTH.isDemo()) { location.href = next; return; }
+      // sinon on purge toute session démo résiduelle
+      if (MB_AUTH.isDemo()) { localStorage.removeItem('mb_token'); localStorage.removeItem('mb_user'); }
+    }
   });
 
   // onglets
