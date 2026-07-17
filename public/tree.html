@@ -154,14 +154,17 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 <nav>
   <a class="logo" href="app.html">Math<em>Base</em></a>
   <div class="nav-tabs">
-    <button class="tab" onclick="location.href='app.html'">Exercices</button>
-    <button class="tab" onclick="location.href='app.html'">Séance</button>
-    <button class="tab" onclick="location.href='app.html'">Ajouter</button>
-    <button class="tab" onclick="location.href='cours.html'">Cours animés</button>
-    <button class="tab" onclick="location.href='tutoriels.html'">Tutoriels</button>
-    <button class="tab active">Arbre</button>
+    <a class="tab active" href="tree.html">Arbre des connaissances</a>
+    <a class="tab" href="cours.html">Cours animés</a>
+    <a class="tab" href="tutoriels.html">Tutoriels</a>
+    <a class="tab" href="app.html#entrainement">Entraînement</a>
+    <a class="tab" href="app.html#probleme">Problèmes</a>
+    <a class="tab" href="app.html#examen">Examen</a>
+    <a class="tab" href="app.html#exercices">Exercices</a>
+    <a class="tab" href="app.html#annales">Annales</a>
+    <a class="tab" href="app.html#ajouter">Ajouter</a>
   </div>
-  <a href="app.html" class="nav-cta">Démarrer une séance →</a>
+  <a class="nav-cta" href="app.html#entrainement">Démarrer une séance →</a>
 </nav>
 
 <!-- ═══════════════ PAGE ARBRE ═══════════════ -->
@@ -508,5 +511,6 @@ function toggleSol(id, btn){
 // ─── INIT ────────────────────────────────────────────────
 buildTree();
 </script>
+  <script src="calc.js"></script>
 </body>
 </html>

@@ -17,15 +17,15 @@
   <nav>
     <a class="logo" href="#" onclick="showView('home')">Math<em>Base</em></a>
     <div class="nav-tabs">
-      <button class="tab" data-tab="browse" onclick="showView('browse')">Exercices</button>
-      <button class="tab" data-tab="entrainement" onclick="openSeance('exercice')">Entraînement</button>
-      <button class="tab" data-tab="probleme" onclick="openSeance('probleme')">Problèmes</button>
-      <button class="tab" data-tab="annales" onclick="showView('annales')">Annales</button>
-      <button class="tab" data-tab="examen" onclick="openExamen()">Examen</button>
-      <button class="tab" data-tab="add" onclick="showView('add')">Ajouter</button>
+      <a class="tab" href="tree.html">Arbre des connaissances</a>
       <a class="tab" href="cours.html">Cours animés</a>
       <a class="tab" href="tutoriels.html">Tutoriels</a>
-      <a class="tab" href="tree.html">Arbre des connaissances</a>
+      <button class="tab" data-tab="entrainement" onclick="openSeance('exercice')">Entraînement</button>
+      <button class="tab" data-tab="probleme" onclick="openSeance('probleme')">Problèmes</button>
+      <button class="tab" data-tab="examen" onclick="openExamen()">Examen</button>
+      <button class="tab" data-tab="browse" onclick="showView('browse')">Exercices</button>
+      <button class="tab" data-tab="annales" onclick="showView('annales')">Annales</button>
+      <button class="tab" data-tab="add" onclick="showView('add')">Ajouter</button>
     </div>
     <button class="nav-cta" onclick="openSeance('exercice')">Démarrer une séance →</button>
   </nav>
@@ -43,42 +43,12 @@
         <p class="hero-sub">Que veux-tu faire aujourd'hui ?</p>
       </div>
       <div class="home-grid">
-        <div class="home-card" onclick="showView('browse')" style="--hc:var(--accent)">
-          <div class="home-card-icon">📚</div>
-          <div class="home-card-title">Exercices</div>
-          <div class="home-card-desc">Parcourir la banque d'exercices, classée par chapitre du programme.</div>
-          <div class="home-card-go">Explorer →</div>
-        </div>
-        <div class="home-card" onclick="openSeance('exercice')" style="--hc:var(--accent2)">
-          <div class="home-card-icon">✏️</div>
-          <div class="home-card-title">Entraînement</div>
-          <div class="home-card-desc">Une séance guidée d'exercices courts — l'IA corrige chacune de tes réponses.</div>
-          <div class="home-card-go">S'entraîner →</div>
-        </div>
-        <div class="home-card" onclick="openSeance('probleme')" style="--hc:var(--college)">
-          <div class="home-card-icon">🧩</div>
-          <div class="home-card-title">Problèmes</div>
-          <div class="home-card-desc">Des énoncés longs et complexes, en plusieurs étapes, pour apprendre à raisonner.</div>
-          <div class="home-card-go">Résoudre →</div>
-        </div>
-        <div class="home-card" onclick="showView('annales')" style="--hc:var(--danger)">
-          <div class="home-card-icon">📄</div>
-          <div class="home-card-title">Annales & contrôles</div>
-          <div class="home-card-desc">La banque de sujets : brevets, contrôles et devoirs surveillés, avec leur corrigé.</div>
-          <div class="home-card-go">Consulter →</div>
-        </div>
-        <div class="home-card" onclick="openExamen()" style="--hc:var(--accent2)">
-          <div class="home-card-icon">⏱️</div>
-          <div class="home-card-title">Examen</div>
-          <div class="home-card-desc">Se mettre en conditions : découvrir le sujet entier, puis le traiter question par question.</div>
-          <div class="home-card-go">Composer →</div>
-        </div>
-        <div class="home-card" onclick="showView('add')" style="--hc:var(--lycee)">
-          <div class="home-card-icon">➕</div>
-          <div class="home-card-title">Ajouter</div>
-          <div class="home-card-desc">Proposer un nouvel exercice, problème ou annale — l'IA l'analyse et le classe.</div>
-          <div class="home-card-go">Contribuer →</div>
-        </div>
+        <a class="home-card" href="tree.html" style="--hc:var(--facile)">
+          <div class="home-card-icon">🌳</div>
+          <div class="home-card-title">Arbre des connaissances</div>
+          <div class="home-card-desc">Tout le programme du collège en une carte : leçons, méthodes et liens croisés.</div>
+          <div class="home-card-go">Découvrir →</div>
+        </a>
         <a class="home-card" href="cours.html" style="--hc:var(--primaire)">
           <div class="home-card-icon">🎬</div>
           <div class="home-card-title">Cours animés</div>
@@ -91,13 +61,42 @@
           <div class="home-card-desc">Des activités interactives pour manipuler chaque notion pas à pas.</div>
           <div class="home-card-go">Essayer →</div>
         </a>
-        <a class="home-card" href="tree.html" style="--hc:var(--facile)">
-          <div class="home-card-icon">🌳</div>
-          <div class="home-card-title">Arbre des connaissances</div>
-          <div class="home-card-desc">Tout le programme du collège en une carte : leçons, méthodes et liens croisés.</div>
-          <div class="home-card-go">Découvrir →</div>
-        </a>
-      </div>
+        <div class="home-card" onclick="openSeance('exercice')" style="--hc:var(--accent2)">
+          <div class="home-card-icon">✏️</div>
+          <div class="home-card-title">Entraînement</div>
+          <div class="home-card-desc">Une séance guidée d'exercices courts — l'IA corrige chacune de tes réponses.</div>
+          <div class="home-card-go">S'entraîner →</div>
+        </div>
+        <div class="home-card" onclick="openSeance('probleme')" style="--hc:var(--college)">
+          <div class="home-card-icon">🧩</div>
+          <div class="home-card-title">Problèmes</div>
+          <div class="home-card-desc">Des énoncés longs et complexes, en plusieurs étapes, pour apprendre à raisonner.</div>
+          <div class="home-card-go">Résoudre →</div>
+        </div>
+        <div class="home-card" onclick="openExamen()" style="--hc:var(--accent2)">
+          <div class="home-card-icon">⏱️</div>
+          <div class="home-card-title">Examen</div>
+          <div class="home-card-desc">Se mettre en conditions : découvrir le sujet entier, puis le traiter question par question.</div>
+          <div class="home-card-go">Composer →</div>
+        </div>
+        <div class="home-card" onclick="showView('browse')" style="--hc:var(--accent)">
+          <div class="home-card-icon">📚</div>
+          <div class="home-card-title">Exercices</div>
+          <div class="home-card-desc">Parcourir la banque d'exercices, classée par chapitre du programme.</div>
+          <div class="home-card-go">Explorer →</div>
+        </div>
+        <div class="home-card" onclick="showView('annales')" style="--hc:var(--danger)">
+          <div class="home-card-icon">📄</div>
+          <div class="home-card-title">Annales & contrôles</div>
+          <div class="home-card-desc">La banque de sujets : brevets, contrôles et devoirs surveillés, avec leur corrigé.</div>
+          <div class="home-card-go">Consulter →</div>
+        </div>
+        <div class="home-card" onclick="showView('add')" style="--hc:var(--lycee)">
+          <div class="home-card-icon">➕</div>
+          <div class="home-card-title">Ajouter</div>
+          <div class="home-card-desc">Proposer un nouvel exercice, problème ou annale — l'IA l'analyse et le classe.</div>
+          <div class="home-card-go">Contribuer →</div>
+        </div>
     </div>
   </div>
 
@@ -567,5 +566,6 @@
 
   <script src="contenu.js"></script>
   <script src="script.js"></script>
+  <script src="calc.js"></script>
 </body>
 </html>

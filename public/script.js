@@ -1161,10 +1161,22 @@ function restartSeance() {
   resetSeanceWelcome();
 }
 
-/* ── Liens profonds : app.html#seance ouvre directement la séance ── */
-if (location.hash === "#seance") {
-  showView("seance");
-  loadExercises();
-} else {
-  loadExercises();
+/* ── Liens profonds : app.html#vue ouvre directement une section ── */
+function routeFromHash() {
+  const h = (location.hash || "").replace("#", "");
+  switch (h) {
+    case "entrainement": openSeance("exercice"); break;
+    case "probleme":
+    case "problemes":    openSeance("probleme"); break;
+    case "examen":       openExamen(); break;
+    case "annales":      showView("annales"); break;
+    case "exercices":
+    case "browse":       showView("browse"); break;
+    case "ajouter":
+    case "add":          showView("add"); break;
+    case "seance":       openSeance("exercice"); break; // rétrocompat
+    default:             showView("home");
+  }
 }
+routeFromHash();
+window.addEventListener("hashchange", routeFromHash);
