@@ -215,9 +215,14 @@ function demoCorrect(ex, answer){
 }
 
 function showView(name, tabName) {
-  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  // Blindage : fermer toute surcouche/modal restée ouverte (sinon elle masque la page en noir)
+  document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classList.remove("open"));
+  document.body.style.overflow = "";
+  document.querySelectorAll(".view").forEach(v => { v.classList.remove("active"); v.style.display = ""; });
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  document.getElementById("view-" + name).classList.add("active");
+  const target = document.getElementById("view-" + name);
+  if (!target) { console.warn("Vue introuvable :", name); return; }
+  target.classList.add("active");
   const tab = tabName || name;
   document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add("active");
   if (name === "browse") loadExercises();
@@ -1178,5 +1183,7 @@ function routeFromHash() {
     default:             showView("home");
   }
 }
+// Sécurité au démarrage : aucune surcouche ne doit masquer la page
+document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classList.remove("open"));
 routeFromHash();
 window.addEventListener("hashchange", routeFromHash);
