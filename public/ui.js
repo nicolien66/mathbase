@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════
    MathBase — ui.js : interface partagée entre toutes les pages
    1. Barre de navigation universelle (identique partout)
-   2. Calculatrice flottante (bouton fixe en bas à gauche)
+   2. Calculatrice flottante (bouton fixe en bas à droite)
+      → deux modes : Standard et Scientifique (DEG/RAD)
    Usage : <script src="ui.js" defer></script> sur chaque page.
    ═══════════════════════════════════════════════════════════ */
 (function () {
@@ -51,7 +52,6 @@
   function currentHash() { return (location.hash || "").replace("#", ""); }
 
   function buildNav() {
-    // Retire toute barre de navigation propre à la page → une seule barre, identique partout.
     document.querySelectorAll("nav").forEach(n => n.remove());
     if (document.getElementById("mb-nav")) return;
 
@@ -72,7 +72,6 @@
       a.href = t.href;
       a.textContent = t.label;
       a.addEventListener("click", () => {
-        // Sur app.html : si le hash ne change pas, hashchange ne se déclenche pas → on route à la main.
         if (t.hashes && PAGE === "app.html") {
           const target = t.href.split("#")[1] || "";
           if (currentHash() === target && typeof window.routeFromHash === "function") {
@@ -113,25 +112,31 @@
   }
 
   /* ────────────────────────────────────────────────────────
-     2. CALCULATRICE FLOTTANTE (bas gauche, toutes les pages)
+     2. CALCULATRICE FLOTTANTE (bas droite, toutes les pages)
+        Deux modes : Standard / Scientifique · DEG / RAD
      ──────────────────────────────────────────────────────── */
   const CALC_CSS = `
-    #mb-calc-btn{position:fixed;bottom:18px;left:18px;z-index:800;width:52px;height:52px;
+    #mb-calc-btn{position:fixed;bottom:18px;right:18px;z-index:800;width:52px;height:52px;
       border-radius:50%;background:rgba(20,19,15,.95);border:1px solid rgba(200,185,122,.45);
       color:#c8b97a;cursor:pointer;display:flex;align-items:center;justify-content:center;
       box-shadow:0 8px 28px -8px rgba(0,0,0,.7);transition:transform .15s,background .2s;}
     #mb-calc-btn:hover{transform:translateY(-2px);background:rgba(200,185,122,.14);}
     #mb-calc-btn svg{width:24px;height:24px;}
-    #mb-calc{position:fixed;bottom:82px;left:18px;z-index:800;width:264px;
+    #mb-calc{position:fixed;bottom:82px;right:18px;z-index:800;width:272px;
       background:#14130f;border:1px solid rgba(200,185,122,.35);border-radius:16px;
       box-shadow:0 30px 80px -20px rgba(0,0,0,.85);padding:.9rem;display:none;
       font-family:'DM Sans',system-ui,sans-serif;}
     #mb-calc.open{display:block;animation:mbCalcIn .18s ease;}
     @keyframes mbCalcIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-    #mb-calc .mb-calc-head{display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:.6rem;}
+    #mb-calc .mb-calc-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;}
     #mb-calc .mb-calc-title{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.18em;
-      text-transform:uppercase;color:rgba(240,236,224,.45);}
+      text-transform:uppercase;color:rgba(240,236,224,.45);flex:1;}
+    #mb-calc .mb-switch{display:flex;background:rgba(245,242,232,.05);border:1px solid rgba(255,255,255,.08);
+      border-radius:999px;padding:.12rem;gap:.1rem;}
+    #mb-calc .mb-switch button{background:none;border:none;color:rgba(240,236,224,.45);cursor:pointer;
+      font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.08em;padding:.2rem .5rem;
+      border-radius:999px;transition:.2s;}
+    #mb-calc .mb-switch button.on{background:#c8b97a;color:#0b0b09;}
     #mb-calc .mb-calc-close{background:none;border:none;color:rgba(240,236,224,.45);cursor:pointer;
       font-size:.9rem;padding:.1rem .3rem;transition:color .2s;}
     #mb-calc .mb-calc-close:hover{color:#e6826e;}
@@ -147,14 +152,15 @@
       transition:background .15s,border-color .15s;}
     #mb-calc .mb-key:hover{background:rgba(245,242,232,.1);}
     #mb-calc .mb-key.op{color:#c8b97a;}
-    #mb-calc .mb-key.fn{font-size:.85rem;color:rgba(240,236,224,.7);}
+    #mb-calc .mb-key.fn{font-size:.78rem;color:rgba(240,236,224,.72);}
+    #mb-calc .mb-key.sci{font-size:.74rem;color:#7ac8e6;}
     #mb-calc .mb-key.danger{color:#e6826e;}
     #mb-calc .mb-key.eq{background:#c8b97a;color:#0b0b09;font-weight:600;border-color:transparent;}
     #mb-calc .mb-key.eq:hover{background:#d6c98e;}
     @media (max-width:420px){ #mb-calc{width:calc(100vw - 36px);} }
   `;
 
-  const KEYS = [
+  const KEYS_STD = [
     ["C","danger"],["(","fn"],[")","fn"],["⌫","danger"],
     ["7",""],["8",""],["9",""],["÷","op"],
     ["4",""],["5",""],["6",""],["×","op"],
@@ -162,8 +168,19 @@
     ["0",""],[",",""],["%","fn"],["+","op"],
     ["√","fn"],["x²","fn"],["π","fn"],["=","eq"],
   ];
+  // Mode scientifique : trois rangées de fonctions au-dessus du pavé standard
+  const KEYS_SCI = [
+    ["sin","sci"],["cos","sci"],["tan","sci"],["^","sci"],
+    ["sin⁻¹","sci"],["cos⁻¹","sci"],["tan⁻¹","sci"],["x!","sci"],
+    ["ln","sci"],["log","sci"],["eˣ","sci"],["1/x","sci"],
+    ["e","sci"],["|x|","sci"],["10ˣ","sci"],["Ans","sci"],
+    ...KEYS_STD,
+  ];
 
   let expr = "";
+  let ans  = null;
+  let sci  = localStorage.getItem("mb_calc_sci") === "1";
+  let deg  = localStorage.getItem("mb_calc_rad") !== "1";   // degrés par défaut (collège)
 
   function buildCalc() {
     if (document.getElementById("mb-calc-btn")) return;
@@ -184,6 +201,12 @@
     panel.innerHTML = `
       <div class="mb-calc-head">
         <span class="mb-calc-title">Calculatrice</span>
+        <div class="mb-switch" id="mb-deg-switch" title="Unité des angles">
+          <button id="mb-deg">DEG</button><button id="mb-rad">RAD</button>
+        </div>
+        <div class="mb-switch" title="Mode">
+          <button id="mb-std">STD</button><button id="mb-sci">SCI</button>
+        </div>
         <button class="mb-calc-close" aria-label="Fermer">✕</button>
       </div>
       <div class="mb-calc-screen">
@@ -192,32 +215,52 @@
       </div>
       <div class="mb-calc-grid" id="mb-calc-grid"></div>`;
 
-    const grid = panel.querySelector("#mb-calc-grid");
-    KEYS.forEach(([k, cls]) => {
-      const b = document.createElement("button");
-      b.className = "mb-key" + (cls ? " " + cls : "");
-      b.textContent = k;
-      b.addEventListener("click", () => press(k));
-      grid.appendChild(b);
-    });
-
     btn.addEventListener("click", () => panel.classList.toggle("open"));
     panel.querySelector(".mb-calc-close").addEventListener("click", () => panel.classList.remove("open"));
+    panel.querySelector("#mb-std").addEventListener("click", () => setSci(false));
+    panel.querySelector("#mb-sci").addEventListener("click", () => setSci(true));
+    panel.querySelector("#mb-deg").addEventListener("click", () => setDeg(true));
+    panel.querySelector("#mb-rad").addEventListener("click", () => setDeg(false));
 
     document.addEventListener("keydown", e => {
       if (!panel.classList.contains("open")) return;
       const tag = (document.activeElement && document.activeElement.tagName) || "";
       if (["INPUT", "TEXTAREA", "SELECT"].includes(tag) || document.activeElement.isContentEditable) return;
-      const map = { "*": "×", "/": "÷", "-": "−", ".": ",", "Enter": "=", "=": "=", "Backspace": "⌫", "Escape": "esc" };
+      const map = { "*": "×", "/": "÷", "-": "−", ".": ",", "Enter": "=", "=": "=", "Backspace": "⌫", "Escape": "esc", "!": "x!" };
       const k = map[e.key] !== undefined ? map[e.key] : e.key;
       if (k === "esc") { panel.classList.remove("open"); return; }
-      if (/^[0-9]$/.test(k) || ["+", "−", "×", "÷", "(", ")", ",", "%", "="].includes(k)) {
+      if (/^[0-9]$/.test(k) || ["+", "−", "×", "÷", "(", ")", ",", "%", "=", "^", "x!"].includes(k)) {
         e.preventDefault();
         press(k);
       }
     });
 
     document.body.append(btn, panel);
+    renderSwitches();
+    buildGrid();
+  }
+
+  function setSci(v) { sci = v; localStorage.setItem("mb_calc_sci", v ? "1" : "0"); renderSwitches(); buildGrid(); }
+  function setDeg(v) { deg = v; localStorage.setItem("mb_calc_rad", v ? "0" : "1"); renderSwitches(); refresh(false); }
+
+  function renderSwitches() {
+    document.getElementById("mb-std").classList.toggle("on", !sci);
+    document.getElementById("mb-sci").classList.toggle("on", sci);
+    document.getElementById("mb-deg").classList.toggle("on", deg);
+    document.getElementById("mb-rad").classList.toggle("on", !deg);
+    document.getElementById("mb-deg-switch").style.display = sci ? "flex" : "none";
+  }
+
+  function buildGrid() {
+    const grid = document.getElementById("mb-calc-grid");
+    grid.innerHTML = "";
+    (sci ? KEYS_SCI : KEYS_STD).forEach(([k, cls]) => {
+      const b = document.createElement("button");
+      b.className = "mb-key" + (cls ? " " + cls : "");
+      b.textContent = k;
+      b.addEventListener("click", () => press(k));
+      grid.appendChild(b);
+    });
   }
 
   function press(k) {
@@ -225,6 +268,17 @@
     else if (k === "⌫") { expr = expr.slice(0, -1); }
     else if (k === "=") { commit(); return; }
     else if (k === "x²") { expr += "²"; }
+    else if (k === "x!") { expr += "!"; }
+    else if (k === "sin" || k === "cos" || k === "tan" || k === "ln" || k === "log") { expr += k + "("; }
+    else if (k === "sin⁻¹") { expr += "asin("; }
+    else if (k === "cos⁻¹") { expr += "acos("; }
+    else if (k === "tan⁻¹") { expr += "atan("; }
+    else if (k === "eˣ")  { expr += "exp("; }
+    else if (k === "10ˣ") { expr += "10^("; }
+    else if (k === "|x|") { expr += "abs("; }
+    else if (k === "√")   { expr += "√("; }
+    else if (k === "1/x") { expr = expr.trim() ? "1÷(" + expr + ")" : "1÷("; }
+    else if (k === "Ans") { if (ans !== null) expr += String(ans).replace(".", ","); }
     else { expr += k; }
     refresh(false);
   }
@@ -237,30 +291,73 @@
     resEl.classList.toggle("err", r.err && final);
     if (!expr) resEl.textContent = "0";
     else if (r.err) resEl.textContent = final ? "Erreur" : "…";
-    else resEl.textContent = r.text;
+    else resEl.textContent = r.text + (sci && deg && /sin|cos|tan/.test(expr) ? "" : "");
   }
 
   function commit() {
     const r = evaluate(expr);
-    if (!r.err) expr = r.text;
+    if (!r.err) { ans = r.value; expr = r.text; }
     refresh(true);
+  }
+
+  /* — Moteur d'évaluation — jetons → M.fonction, liste blanche stricte, pas d'eval libre — */
+  const TOKEN_RE = /asin\(|acos\(|atan\(|sin\(|cos\(|tan\(|ln\(|log\(|exp\(|abs\(|√\(|π|e|²|,|×|÷|−|\^|%/g;
+  const TOKEN_MAP = {
+    "asin(": "M.asin(", "acos(": "M.acos(", "atan(": "M.atan(",
+    "sin(": "M.sin(", "cos(": "M.cos(", "tan(": "M.tan(",
+    "ln(": "M.ln(", "log(": "M.log(", "exp(": "M.exp(", "abs(": "M.abs(", "√(": "M.sqrt(",
+    "π": "(M.PI)", "e": "(M.E)", "²": "**2", ",": ".", "×": "*", "÷": "/", "−": "-", "^": "**", "%": "/100",
+  };
+
+  // a! : enveloppe l'opérande (nombre ou parenthèse fermante) dans M.fact(…)
+  function wrapFactorials(s) {
+    let i;
+    while ((i = s.indexOf("!")) !== -1) {
+      let j = i - 1;
+      if (j >= 0 && s[j] === ")") {
+        let depth = 0;
+        for (; j >= 0; j--) {
+          if (s[j] === ")") depth++;
+          else if (s[j] === "(") { depth--; if (depth === 0) break; }
+        }
+        if (j < 0) return null;
+        // inclure un éventuel nom de fonction M.xxx( juste avant la parenthèse
+        const fn = s.slice(0, j).match(/M\.[a-z]+\($/i);
+        if (fn) j -= fn[0].length;
+      } else {
+        for (; j >= 0 && /[0-9.]/.test(s[j]); j--);
+        j++;
+        if (j === i) return null;   // « ! » sans opérande
+      }
+      s = s.slice(0, j) + "M.fact(" + s.slice(j, i) + ")" + s.slice(i + 1);
+    }
+    return s;
+  }
+
+  function mathScope() {
+    const toR = x => deg ? x * Math.PI / 180 : x;
+    const frR = x => deg ? x * 180 / Math.PI : x;
+    return {
+      sin: x => Math.sin(toR(x)), cos: x => Math.cos(toR(x)), tan: x => Math.tan(toR(x)),
+      asin: x => frR(Math.asin(x)), acos: x => frR(Math.acos(x)), atan: x => frR(Math.atan(x)),
+      ln: Math.log, log: Math.log10, exp: Math.exp, abs: Math.abs, sqrt: Math.sqrt,
+      fact: n => { if (n < 0 || n % 1 !== 0 || n > 170) return NaN; let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; },
+      PI: Math.PI, E: Math.E,
+    };
   }
 
   function evaluate(src) {
     if (!src.trim()) return { err: true };
-    let s = src
-      .replace(/,/g, ".")
-      .replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-")
-      .replace(/π/g, "(Math.PI)")
-      .replace(/²/g, "**2")
-      .replace(/√\s*\(/g, "Math.sqrt(")
-      .replace(/√\s*([0-9.]+)/g, "Math.sqrt($1)")
-      .replace(/%/g, "/100")
-      .replace(/(\d)\s*(?=Math\.|\()/g, "$1*");   // 2π, 3(4+1) → multiplication implicite
-    // Liste blanche stricte : chiffres, opérateurs, parenthèses, Math.sqrt / Math.PI uniquement.
-    if (!/^[0-9+\-*/().\s]*$/.test(s.replace(/Math\.(sqrt|PI)/g, ""))) return { err: true };
+    let s = src.replace(TOKEN_RE, t => TOKEN_MAP[t]);
+    s = wrapFactorials(s);
+    if (s === null) return { err: true };
+    // multiplication implicite : 2π, 3(4+1), (2)(3), 2sin(x), )5 …
+    s = s.replace(/(\d|\))\s*(?=M\.|\()/g, "$1*").replace(/\)\s*(?=\d)/g, ")*");
+    // Liste blanche stricte : chiffres, opérateurs, parenthèses, fonctions M.xxx uniquement.
+    if (!/^[0-9+\-*/().\s]*$/.test(s.replace(/M\.(asin|acos|atan|sin|cos|tan|ln|log|exp|abs|sqrt|fact|PI|E)/g, "")))
+      return { err: true };
     try {
-      const v = new Function('"use strict";return (' + s + ")")();
+      const v = new Function("M", '"use strict";return (' + s + ")")(mathScope());
       if (typeof v !== "number" || !isFinite(v)) return { err: true };
       const rounded = Math.round(v * 1e10) / 1e10;
       return { err: false, value: rounded, text: String(rounded).replace(".", ",") };
