@@ -99,6 +99,36 @@ function checkFrame() {
   const heroTitle = doc.getElementById("seance-hero-title");
   log("titre de séance : " + (heroTitle ? '"' + heroTitle.textContent.trim() + '"' : "ABSENT du HTML"));
 
+  // INSPECTION PROFONDE de la vue active
+  log("");
+  log("═══ 3. POURQUOI LA HAUTEUR EST NULLE ═══");
+  if (active) {
+    // remonter les parents pour voir qui impose une contrainte
+    let n = active, up = [];
+    while (n && n !== doc.documentElement) {
+      const cs = win.getComputedStyle(n);
+      up.push("#" + (n.id || n.tagName) + " h=" + n.offsetHeight + " display=" + cs.display + " height=" + cs.height + " overflow=" + cs.overflow + " maxH=" + cs.maxHeight);
+      n = n.parentElement;
+    }
+    log("chaîne des parents (de la vue vers le haut) :");
+    up.forEach(u => log("   " + u));
+
+    // enfants directs de la vue
+    log("");
+    log("enfants directs de la vue active :");
+    Array.from(active.children).forEach(c => {
+      const cs = win.getComputedStyle(c);
+      log("   " + c.tagName + "#" + (c.id||"-") + " h=" + c.offsetHeight + " display=" + cs.display + " visibility=" + cs.visibility + " position=" + cs.position);
+    });
+
+    // le body lui-même
+    const bcs = win.getComputedStyle(doc.body);
+    log("");
+    log("body : h=" + doc.body.offsetHeight + " display=" + bcs.display + " height=" + bcs.height + " overflow=" + bcs.overflow + " position=" + bcs.position);
+    const hcs = win.getComputedStyle(doc.documentElement);
+    log("html : h=" + doc.documentElement.offsetHeight + " display=" + hcs.display + " height=" + hcs.height);
+  }
+
   log("");
   log("═══ FIN — envoie ce rapport tel quel ═══");
   flush();
