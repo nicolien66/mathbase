@@ -4,148 +4,198 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MathBase — Arbre des connaissances</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0b0b09; --surface:#111110; --surface2:#181815;
-  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
-  --accent:#c8b97a; --text:#f0ece0; --muted:#7a7668;
-  --sans:'DM Sans',sans-serif; --serif:'Playfair Display',serif; --mono:'DM Mono',monospace;
+  --bg:#0b0b09; --surface:#12110e; --surface2:#181815;
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.13);
+  --accent:#c8b97a; --text:#f0ece0; --muted:rgba(240,236,224,.48);
+  --sans:'DM Sans',sans-serif; --serif:'Playfair Display',Georgia,serif; --mono:'DM Mono',monospace;
 }
-html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:auto}
+html{scroll-behavior:smooth}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 75% 55% at 50% -12%, rgba(200,185,122,.08), transparent 65%);}
 
-/* NAV */
-nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:60px;background:rgba(11,11,9,.95);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
-.logo{font-family:var(--serif);font-size:1.25rem;color:var(--text);text-decoration:none}
-.logo em{font-style:italic;color:var(--accent)}
-.nav-tabs{display:flex;gap:.15rem}
-.tab{background:none;border:none;color:var(--muted);cursor:pointer;padding:.38rem .95rem;border-radius:6px;font-size:.82rem;font-family:var(--sans);transition:all .15s}
-.tab:hover,.tab.active{color:var(--text);background:var(--surface2)}
-.nav-cta{font-size:.75rem;letter-spacing:.08em;font-family:var(--sans);font-weight:500;background:var(--accent);color:var(--bg);border:none;padding:.45rem 1.1rem;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-block}
+.page{display:none;position:relative;z-index:1}
+.page.active{display:block;animation:pageIn .35s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* PAGES */
-.page{display:none}
-.page.active{display:block}
-
-/* ── TREE PAGE ── */
-#page-tree{padding:2.5rem}
-.tree-header{text-align:center;margin-bottom:2.5rem}
-.tree-eyebrow{font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-bottom:.75rem;font-family:var(--mono);display:flex;align-items:center;justify-content:center;gap:.8rem}
-.tree-eyebrow::before,.tree-eyebrow::after{content:'';width:24px;height:1px;background:var(--accent)}
-.tree-title{font-family:var(--serif);font-size:clamp(1.8rem,3vw,2.6rem);font-weight:400;letter-spacing:-.02em}
+/* ═══════════ PAGE ARBRE — arbre de compétences ═══════════ */
+#page-tree{padding:2.4rem 1.2rem 3.5rem}
+.tree-header{text-align:center;max-width:640px;margin:0 auto 1.8rem}
+.tree-eyebrow{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:1rem;font-family:var(--mono);display:flex;align-items:center;justify-content:center;gap:.9rem}
+.tree-eyebrow::before,.tree-eyebrow::after{content:'';width:34px;height:1px;
+  background:linear-gradient(to right,transparent,rgba(200,185,122,.55));}
+.tree-eyebrow::after{background:linear-gradient(to left,transparent,rgba(200,185,122,.55));}
+.tree-title{font-family:var(--serif);font-size:clamp(2rem,4.5vw,3rem);font-weight:400;letter-spacing:-.02em;line-height:1.1}
 .tree-title em{font-style:italic;color:var(--accent)}
-.tree-sub{color:var(--muted);font-size:.88rem;margin-top:.6rem}
+.tree-sub{color:var(--muted);font-size:.88rem;margin-top:.8rem;line-height:1.7}
 
-.tree-wrap{overflow-x:auto;padding-bottom:1rem}
-.tree-rows{display:flex;flex-direction:column;gap:40px;min-width:max-content;padding:0 1rem}
+.stage-wrap{max-width:1120px;margin:0 auto}
+.stage{position:relative;height:min(74vh,720px);min-height:440px;overflow:hidden;
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage.dragging{cursor:grabbing}
+.stage svg{width:100%;height:100%;display:block}
 
-.tree-row{display:flex;align-items:center;gap:0}
+/* nœuds */
+.st-edge{fill:none;stroke-linecap:round;transition:stroke-opacity .2s,stroke-width .2s}
+.st-node{cursor:pointer}
+.st-node .halo{opacity:0;transition:opacity .25s}
+.st-node:hover .halo{opacity:1}
+.st-node .core{transition:transform .18s;transform-box:fill-box;transform-origin:center}
+.st-node:hover .core{transform:scale(1.16)}
+.st-label{pointer-events:none;font-family:'DM Sans',sans-serif;fill:rgba(240,236,224,.82)}
+.st-hub-label{pointer-events:none;font-family:'Playfair Display',Georgia,serif;font-weight:600}
+.st-badge-t{pointer-events:none;font-family:'DM Mono',monospace;fill:#0b0b09;font-weight:500}
+.st-root-glyph{pointer-events:none;font-family:'Playfair Display',Georgia,serif;fill:#c8b97a}
+.st-spin{animation:stSpin 26s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes stSpin{to{transform:rotate(360deg)}}
+.st-in{opacity:0;animation:stIn .55s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes stIn{to{opacity:1}}
 
-/* Grand theme label */
-.grand-label{
-  font-family:var(--serif);font-size:12px;font-weight:700;letter-spacing:1.5px;
-  padding:9px 14px;border-radius:8px;border:2px solid;white-space:nowrap;
-  flex-shrink:0;min-width:130px;text-align:center;
-}
-.connector{height:2px;flex-shrink:0}
-.connector-long{width:20px}
-.connector-short{width:12px}
-.connector-mid{width:16px}
+/* info-bulle */
+.st-tip{position:absolute;z-index:5;pointer-events:none;max-width:230px;opacity:0;transition:opacity .15s;
+  background:rgba(16,15,12,.96);border:1px solid var(--tipc,#c8b97a);border-radius:10px;
+  padding:.55rem .8rem;box-shadow:0 14px 40px -12px rgba(0,0,0,.85);transform:translate(-50%,-100%)}
+.st-tip.on{opacity:1}
+.st-tip .t{font-size:.84rem;color:var(--text);line-height:1.35}
+.st-tip .s{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tipc,#c8b97a);margin-top:.3rem}
 
-/* Sub-theme node */
-.sub-node{
-  width:56px;height:56px;border-radius:50%;border:2px solid;
-  display:flex;align-items:center;justify-content:center;
-  font-size:8.5px;font-family:var(--sans);text-align:center;
-  flex-shrink:0;line-height:1.3;padding:4px;
-  background:rgba(0,0,0,0.4);
-  position:relative;
-}
+/* commandes + légende */
+.st-controls{position:absolute;top:12px;right:12px;z-index:5;display:flex;flex-direction:column;gap:.35rem}
+.st-controls button{width:34px;height:34px;border-radius:9px;background:rgba(20,19,15,.92);
+  border:1px solid var(--border2);color:var(--text);font-size:1rem;cursor:pointer;transition:.2s;
+  font-family:var(--sans)}
+.st-controls button:hover{border-color:var(--accent);color:var(--accent)}
+.st-hint{position:absolute;left:14px;bottom:11px;z-index:5;font-family:var(--mono);font-size:.6rem;
+  letter-spacing:.12em;text-transform:uppercase;color:rgba(240,236,224,.35)}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:.45rem .9rem;margin-top:1rem}
+.legend span{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--mono);font-size:.64rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.legend i{width:9px;height:9px;border-radius:50%;box-shadow:0 0 8px currentColor}
+@media(max-width:700px){ .stage{height:64vh;min-height:380px} .st-hint{display:none} }
 
-/* Theme node — clickable */
-.theme-node{
-  width:40px;height:40px;border-radius:50%;border:1.5px solid;
-  display:flex;align-items:center;justify-content:center;
-  font-size:7.5px;font-family:var(--sans);text-align:center;
-  flex-shrink:0;padding:3px;line-height:1.3;
-  background:#0f0f0c;cursor:pointer;
-  transition:transform .15s, filter .15s;
-  position:relative;
-}
-.theme-node:hover{transform:scale(1.18);filter:brightness(1.4)}
-.theme-node::after{
-  content:'';position:absolute;inset:-4px;border-radius:50%;
-  border:1px solid;opacity:0;transition:opacity .15s;
-}
-.theme-node:hover::after{opacity:0.4}
-
-/* ── THEME PAGE ── */
-#page-theme{padding:2.5rem;max-width:900px;margin:0 auto}
-.back-btn{
-  display:inline-flex;align-items:center;gap:.5rem;
-  background:none;border:1px solid var(--border2);color:var(--muted);
-  padding:.45rem 1rem;border-radius:6px;font-size:.8rem;
-  font-family:var(--sans);cursor:pointer;margin-bottom:2rem;
-  transition:border-color .2s,color .2s;
-}
+/* ═══════════ PAGES THÈME & SECTION ═══════════ */
+#page-theme,#page-section{padding:2.6rem 1.5rem 5rem;max-width:880px;margin:0 auto}
+.back-btn{display:inline-flex;align-items:center;gap:.5rem;background:none;
+  border:1px solid var(--border2);color:var(--muted);padding:.5rem 1.05rem;border-radius:999px;
+  font-size:.8rem;font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s}
 .back-btn:hover{border-color:var(--accent);color:var(--text)}
-
-.theme-page-header{margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
-.theme-page-eyebrow{font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;margin-bottom:.6rem;font-family:var(--mono);display:flex;align-items:center;gap:.7rem}
-.theme-page-eyebrow::before{content:'';width:20px;height:1px}
-.theme-page-title{font-family:var(--serif);font-size:clamp(1.6rem,3vw,2.4rem);font-weight:400;letter-spacing:-.02em;line-height:1.1}
-.theme-page-title em{font-style:italic}
-
-.sections-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
-
-.section-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;padding:1.75rem;
-  cursor:pointer;transition:background .2s,transform .15s,border-color .2s;
-  position:relative;overflow:hidden;
-}
-.section-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color,var(--accent));opacity:.7}
-.section-card:hover{background:var(--surface2);transform:translateY(-2px);border-color:var(--border2)}
-.section-card-icon{font-size:1.6rem;margin-bottom:1rem;display:block}
-.section-card-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;letter-spacing:-.01em;margin-bottom:.5rem;color:var(--card-color,var(--text))}
-.section-card-desc{font-size:.8rem;color:var(--muted);line-height:1.65}
-
-/* ── SECTION PAGE ── */
-#page-section{padding:2.5rem;max-width:800px;margin:0 auto}
-.section-page-header{margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
-.section-page-back-row{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem}
-.breadcrumb{font-size:.75rem;color:var(--muted);font-family:var(--mono)}
+.breadcrumb{font-size:.72rem;color:var(--muted);font-family:var(--mono);letter-spacing:.04em}
 .breadcrumb span{color:var(--accent)}
-.section-page-title{font-family:var(--serif);font-size:clamp(1.4rem,2.5vw,2rem);font-weight:400;letter-spacing:-.02em}
-.section-page-title em{font-style:italic}
 
-.content-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem}
-.content-block-title{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:1rem}
+/* — en-tête de thème — */
+.theme-hero{position:relative;margin:1.6rem 0 2rem;padding:1.9rem 2rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.theme-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 90% at 0% 0%, color-mix(in srgb,var(--tc,#c8b97a) 12%,transparent), transparent 60%)}
+.theme-hero::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tc,#c8b97a);opacity:.8}
+.theme-page-eyebrow{font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;
+  font-family:var(--mono);color:var(--tc,#c8b97a);margin-bottom:.55rem;display:flex;align-items:center;gap:.7rem}
+.theme-page-eyebrow::before{content:'';width:22px;height:1px;background:var(--tc,#c8b97a);opacity:.6}
+.theme-page-title{font-family:var(--serif);font-size:clamp(1.7rem,3.4vw,2.5rem);font-weight:400;
+  letter-spacing:-.02em;line-height:1.12;color:var(--text)}
+
+.notions-box{margin:0 0 1.4rem;padding:1.05rem 1.25rem;background:var(--surface);
+  border:1px solid var(--border);border-left:3px solid var(--tc,#c8b97a);border-radius:12px}
+.notions-title{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  font-family:var(--mono);margin-bottom:.75rem}
+.notions-chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.notion-chip{background:color-mix(in srgb,var(--tc,#c8b97a) 9%,transparent);
+  border:1px solid color-mix(in srgb,var(--tc,#c8b97a) 26%,transparent);
+  color:var(--tc,#c8b97a);padding:.3rem .75rem;border-radius:999px;font-size:.77rem}
+
+.crosslinks{display:flex;flex-wrap:wrap;gap:.65rem;margin-bottom:2rem}
+.crosslink{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem 1.1rem;border-radius:10px;
+  font-size:.8rem;font-family:var(--mono);letter-spacing:.04em;text-decoration:none;
+  border:1px solid;transition:transform .15s,background .2s}
+.crosslink:hover{transform:translateY(-1px)}
+.crosslink.tuto{color:var(--tc,#c8b97a);border-color:color-mix(in srgb,var(--tc,#c8b97a) 38%,transparent);
+  background:color-mix(in srgb,var(--tc,#c8b97a) 10%,transparent)}
+.crosslink.tuto:hover{background:color-mix(in srgb,var(--tc,#c8b97a) 20%,transparent)}
+.crosslink.cours{color:var(--accent);border-color:rgba(200,185,122,.35);background:rgba(200,185,122,.09)}
+.crosslink.cours:hover{background:rgba(200,185,122,.18)}
+
+/* — cartes de section — */
+.sections-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+.section-card{position:relative;background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:1.6rem 1.5rem 1.4rem;cursor:pointer;overflow:hidden;
+  transition:transform .18s,border-color .2s,background .2s}
+.section-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--card-color,#c8b97a);opacity:.75}
+.section-card:hover{transform:translateY(-3px);background:var(--surface2);
+  border-color:color-mix(in srgb,var(--card-color,#c8b97a) 40%,transparent)}
+.section-card-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;
+  justify-content:center;font-size:1.25rem;margin-bottom:1rem;
+  background:color-mix(in srgb,var(--card-color,#c8b97a) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--card-color,#c8b97a) 30%,transparent)}
+.section-card-title{font-family:var(--serif);font-size:1.12rem;font-weight:600;
+  color:var(--card-color,#c8b97a);margin-bottom:.45rem;letter-spacing:-.01em}
+.section-card-desc{font-size:.8rem;color:var(--muted);line-height:1.65}
+.section-card-go{margin-top:1rem;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--card-color,#c8b97a);opacity:0;transform:translateX(-5px);transition:.2s}
+.section-card:hover .section-card-go{opacity:1;transform:none}
+
+/* — page section : contenu — */
+.section-page-back-row{display:flex;align-items:center;gap:.85rem;margin-bottom:1.6rem;flex-wrap:wrap}
+.section-page-header{margin-bottom:1.8rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border)}
+.section-page-title{font-family:var(--serif);font-size:clamp(1.45rem,2.6vw,2.05rem);font-weight:400;letter-spacing:-.02em;line-height:1.2}
+.section-page-title .sec-icon{display:inline-flex;width:2.2rem;height:2.2rem;border-radius:10px;
+  align-items:center;justify-content:center;font-size:1.05rem;vertical-align:-.45rem;margin-right:.55rem;
+  background:color-mix(in srgb,var(--sc,#c8b97a) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--sc,#c8b97a) 30%,transparent)}
+
+.content-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:1.5rem 1.6rem;margin-bottom:1rem;border-left:3px solid color-mix(in srgb,var(--sc,#c8b97a) 30%,transparent)}
+.content-block-title{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);font-family:var(--mono);margin-bottom:1.05rem;display:flex;align-items:center;gap:.7rem}
+.content-block-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .content-placeholder{font-size:.9rem;color:var(--muted);line-height:1.75;font-style:italic}
-.rich-list{list-style:none;display:flex;flex-direction:column;gap:.7rem}
-.rich-list li{display:flex;gap:.7rem;font-size:.92rem;line-height:1.7;color:var(--text)}
-.rich-marker{flex-shrink:0;font-size:.85rem;transform:translateY(1px)}
-.rich-steps{list-style:none;display:flex;flex-direction:column;gap:.8rem;counter-reset:none}
-.rich-steps li{display:flex;gap:.85rem;font-size:.92rem;line-height:1.7;color:var(--text);align-items:flex-start}
-.rich-num{flex-shrink:0;width:1.6rem;height:1.6rem;border:1px solid;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-family:var(--mono);transform:translateY(2px)}
-.resolu-enonce{font-size:.95rem;color:var(--text);font-style:italic;margin-bottom:1rem;padding:.7rem 1rem;background:rgba(255,255,255,.03);border-radius:8px}
-.pb-q{font-size:.95rem;line-height:1.7;color:var(--text);margin-bottom:.9rem}
-.sol-toggle{background:none;border:1px solid;border-radius:20px;padding:.4rem 1rem;font-size:.75rem;font-family:var(--mono);letter-spacing:.05em;cursor:pointer;transition:opacity .2s}
-.sol-toggle:hover{opacity:.75}
-.pb-sol{margin-top:.9rem;padding:.8rem 1.1rem;font-size:.9rem;line-height:1.7;color:var(--muted);background:rgba(255,255,255,.02);border-radius:0 8px 8px 0}
 .content-placeholder strong{color:var(--text);font-style:normal}
 
-.cta-row{display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap}
-.btn-primary{background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:.75rem 1.6rem;font-size:.85rem;font-weight:500;font-family:var(--sans);cursor:pointer;transition:opacity .2s}
-.btn-primary:hover{opacity:.88}
-.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:8px;padding:.75rem 1.6rem;font-size:.85rem;font-family:var(--sans);cursor:pointer;transition:all .2s}
+.rich-list{list-style:none;display:flex;flex-direction:column;gap:.7rem}
+.rich-list li{display:flex;gap:.75rem;font-size:.92rem;line-height:1.7;color:var(--text)}
+.rich-marker{flex-shrink:0;font-size:.85rem;transform:translateY(1px);color:var(--sc,#c8b97a)}
+.rich-steps{list-style:none;display:flex;flex-direction:column;gap:.8rem}
+.rich-steps li{display:flex;gap:.9rem;font-size:.92rem;line-height:1.7;color:var(--text);align-items:flex-start}
+.rich-num{flex-shrink:0;width:1.65rem;height:1.65rem;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.72rem;font-family:var(--mono);transform:translateY(2px);
+  color:var(--sc,#c8b97a);border:1px solid color-mix(in srgb,var(--sc,#c8b97a) 40%,transparent)}
+.resolu-enonce{font-size:.95rem;color:var(--text);font-style:italic;margin-bottom:1rem;
+  padding:.75rem 1.05rem;background:rgba(255,255,255,.03);border-radius:10px}
+.pb-q{font-size:.95rem;line-height:1.7;color:var(--text);margin-bottom:.9rem}
+.sol-toggle{background:none;border:1px solid color-mix(in srgb,var(--sc,#c8b97a) 35%,transparent);
+  color:var(--sc,#c8b97a);border-radius:999px;padding:.42rem 1.05rem;font-size:.74rem;
+  font-family:var(--mono);letter-spacing:.05em;cursor:pointer;transition:background .2s}
+.sol-toggle:hover{background:color-mix(in srgb,var(--sc,#c8b97a) 10%,transparent)}
+.pb-sol{margin-top:.9rem;padding:.85rem 1.15rem;font-size:.9rem;line-height:1.7;color:var(--muted);
+  background:rgba(255,255,255,.02);border-left:2px solid color-mix(in srgb,var(--sc,#c8b97a) 35%,transparent);
+  border-radius:0 10px 10px 0;animation:solIn .25s ease}
+@keyframes solIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+.cta-row{display:flex;gap:.75rem;margin-top:1.7rem;flex-wrap:wrap}
+.btn-primary{background:var(--accent);color:var(--bg);border:none;border-radius:999px;
+  padding:.75rem 1.6rem;font-size:.85rem;font-weight:500;font-family:var(--sans);cursor:pointer;
+  transition:transform .15s,box-shadow .2s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px -10px rgba(200,185,122,.5)}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:999px;
+  padding:.75rem 1.6rem;font-size:.85rem;font-family:var(--sans);cursor:pointer;transition:all .2s}
 .btn-ghost:hover{border-color:var(--accent);color:var(--text)}
 
-@media(max-width:700px){
+@media(max-width:760px){
   .sections-grid{grid-template-columns:1fr}
-  nav{padding:0 1.25rem}
+  .trunk{padding-left:46px}
+  .trunk::before{left:15px}
+  .branch-node{left:-46px;width:32px;height:32px}
+  .branch-node::after{width:8px;height:8px}
+  .themes{grid-template-columns:1fr 1fr}
 }
+@media(max-width:480px){ .themes{grid-template-columns:1fr} }
 </style>
 <script src="auth.js" data-protect></script>
 <script src="ui.js" defer></script>
@@ -157,40 +207,49 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
   <div class="tree-header">
     <p class="tree-eyebrow">Carte des connaissances</p>
     <h1 class="tree-title">L'arbre des <em>mathématiques</em></h1>
-    <p class="tree-sub">Clique sur un thème (petit cercle) pour accéder à son contenu.</p>
+    <p class="tree-sub">Six branches rayonnent depuis la racine. Explore la carte, puis clique sur un nœud pour débloquer son cours, ses méthodes et ses problèmes.</p>
   </div>
-
-  <div class="tree-wrap">
-    <div class="tree-rows" id="tree-rows"></div>
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <svg id="skilltree" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="st-tip" id="st-tip"><div class="t"></div><div class="s"></div></div>
+      <div class="st-controls">
+        <button id="st-zin" title="Zoomer">+</button>
+        <button id="st-zout" title="Dézoomer">−</button>
+        <button id="st-fit" title="Recentrer">⌂</button>
+      </div>
+      <div class="st-hint">Glisse pour explorer · molette pour zoomer</div>
+    </div>
+    <div class="legend" id="legend"></div>
   </div>
 </div>
 
 <!-- ═══════════════ PAGE THÈME ═══════════════ -->
 <div id="page-theme" class="page">
   <button class="back-btn" onclick="showPage('tree')">← Retour à l'arbre</button>
-
-  <div class="theme-page-header">
+  <div class="theme-hero" id="theme-hero">
     <p class="theme-page-eyebrow" id="theme-eyebrow">Grand thème</p>
     <h1 class="theme-page-title" id="theme-title">Nom du thème</h1>
   </div>
-
   <div id="theme-notions"></div>
-
   <div class="sections-grid">
     <div class="section-card" style="--card-color:#7ac8a0" onclick="showSection('cours')">
       <span class="section-card-icon">📖</span>
       <div class="section-card-title">Comprendre le cours</div>
       <div class="section-card-desc">Définitions, propriétés, théorèmes. Tout le cours expliqué clairement avec des exemples.</div>
+      <div class="section-card-go">Explorer →</div>
     </div>
     <div class="section-card" style="--card-color:#c8b97a" onclick="showSection('methodes')">
       <span class="section-card-icon">⚙️</span>
       <div class="section-card-title">Appliquer les méthodes</div>
       <div class="section-card-desc">Méthodes pas-à-pas, techniques de résolution, erreurs classiques à éviter.</div>
+      <div class="section-card-go">Explorer →</div>
     </div>
     <div class="section-card" style="--card-color:#c87a9a" onclick="showSection('problemes')">
       <span class="section-card-icon">🎯</span>
       <div class="section-card-title">Problèmes</div>
       <div class="section-card-desc">Exercices progressifs, problèmes ouverts, annales. Entraîne-toi et valide tes acquis.</div>
+      <div class="section-card-go">Explorer →</div>
     </div>
   </div>
 </div>
@@ -199,13 +258,11 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 <div id="page-section" class="page">
   <div class="section-page-back-row">
     <button class="back-btn" onclick="showPage('theme')">← Retour</button>
-    <div class="breadcrumb" id="breadcrumb">Arbre &gt; <span>Thème</span> &gt; Section</div>
+    <div class="breadcrumb" id="breadcrumb">Arbre › <span>Thème</span> › Section</div>
   </div>
-
   <div class="section-page-header">
     <h1 class="section-page-title" id="section-title">Section</h1>
   </div>
-
   <div id="section-content"></div>
 </div>
 
@@ -213,7 +270,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 <script>
 // ─── DATA ───────────────────────────────────────────────
 const TREE_DATA = [
-  { id:'nombres', label:'NOMBRES', color:'#7ab4c8',
+  { id:'nombres', label:'Nombres', color:'#7ab4c8',
     subs:[
       { label:'Entiers & décimaux',             notions:['Écriture d\'un nombre décimal','Multiplier par 10, 100, 1000','Diviser par 10, 100, 1000'] },
       { label:'Fractions',                       notions:['Visualiser les fractions','Écriture fractionnaire et décimale','Addition et soustraction de fractions','Proportion d\'une quantité','Priorité de calculs avec les fractions'] },
@@ -227,7 +284,7 @@ const TREE_DATA = [
       { label:'Arithmétique',                    notions:[] },
     ]
   },
-  { id:'algebre', label:'ALGÈBRE', color:'#c8a07a',
+  { id:'algebre', label:'Algèbre', color:'#c8a07a',
     subs:[
       { label:'Enchaînement d\'opérations',      notions:[] },
       { label:'Calcul littéral',                 notions:[] },
@@ -236,7 +293,7 @@ const TREE_DATA = [
       { label:'Inéquations',                     notions:[] },
     ]
   },
-  { id:'geometrie', label:'GÉOMÉTRIE', color:'#a07ac8',
+  { id:'geometrie', label:'Géométrie', color:'#a07ac8',
     subs:[
       { label:'Géométrie',                       notions:['Codage géométrique','Représenter des figures','Connaître les solides'] },
       { label:'Symétrie axiale',                 notions:[] },
@@ -256,19 +313,19 @@ const TREE_DATA = [
       { label:'Géométrie dans l\'espace',        notions:[] },
     ]
   },
-  { id:'fonctions', label:'FONCTIONS', color:'#7ac8a0',
+  { id:'fonctions', label:'Fonctions', color:'#7ac8a0',
     subs:[
       { label:'Notions de fonctions',            notions:[] },
       { label:'Fonction linéaire',               notions:[] },
       { label:'Fonction affine',                 notions:[] },
     ]
   },
-  { id:'proba', label:'PROBABILITÉS', color:'#c87a9a',
+  { id:'proba', label:'Probabilités', color:'#c87a9a',
     subs:[
       { label:'Probabilités',                    notions:[] },
     ]
   },
-  { id:'stats', label:'STATISTIQUES', color:'#e8a87c',
+  { id:'stats', label:'Statistiques', color:'#e8a87c',
     subs:[
       { label:'Organisation des données',        notions:['Extraire des données d\'un tableau','Lire un graphique','Interpréter des données'] },
       { label:'Statistiques',                    notions:[] },
@@ -277,7 +334,7 @@ const TREE_DATA = [
 ];
 
 // ─── STATE ──────────────────────────────────────────────
-let currentTheme = null; // { label, grandLabel, color }
+let currentTheme = null;   // { label, grandLabel, color, notions }
 let currentSection = null;
 
 // ─── PAGES ──────────────────────────────────────────────
@@ -287,97 +344,285 @@ function showPage(id){
   window.scrollTo(0,0);
 }
 
-// ─── TREE BUILD ─────────────────────────────────────────
+// ─── ARBRE DE COMPÉTENCES (SVG, style jeu vidéo) ────────
+const SVGNS = 'http://www.w3.org/2000/svg';
+let stView = null, stFull = null;
+
+function svgEl(name, attrs, parent){
+  const e = document.createElementNS(SVGNS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const rad = d => d * Math.PI / 180;
+const polar = (r, aDeg) => [ r * Math.cos(rad(aDeg)), r * Math.sin(rad(aDeg)) ];
+
+function wrapLabel(t){
+  if (t.length <= 16) return [t];
+  const words = t.split(' ');
+  let l1 = '', l2 = '';
+  for (const w of words){
+    if ((l1 + ' ' + w).trim().length <= 16 && !l2) l1 = (l1 + ' ' + w).trim();
+    else l2 = (l2 + ' ' + w).trim();
+  }
+  if (!l1){ l1 = l2.slice(0, 16); l2 = l2.slice(16); }
+  if (l2.length > 18) l2 = l2.slice(0, 17) + '…';
+  return [l1, l2];
+}
+
 function buildTree(){
-  const wrap = document.getElementById('tree-rows');
-  wrap.innerHTML = '';
+  const svg = document.getElementById('skilltree');
+  svg.innerHTML = '';
+
+  /* défs : lueurs */
+  const defs = svgEl('defs', {}, svg);
+  const filt = svgEl('filter', { id:'st-glow', x:'-80%', y:'-80%', width:'260%', height:'260%' }, defs);
+  svgEl('feGaussianBlur', { stdDeviation:'5', result:'b' }, filt);
+  const mrg = svgEl('feMerge', {}, filt);
+  svgEl('feMergeNode', { in:'b' }, mrg);
+  svgEl('feMergeNode', { in:'SourceGraphic' }, mrg);
+
+  const gBack  = svgEl('g', {}, svg);
+  const gEdges = svgEl('g', {}, svg);
+  const gNodes = svgEl('g', {}, svg);
+
+  /* anneaux-guides en fond */
+  const RINGS = [170, 290, 405, 520];
+  RINGS.forEach(r => svgEl('circle', { cx:0, cy:0, r, fill:'none',
+    stroke:'rgba(240,236,224,.045)', 'stroke-width':1, 'stroke-dasharray':'2 7' }, gBack));
+
+  /* — répartition angulaire des branches (proportionnelle au nb de thèmes) — */
+  const PAD = 6, SPACING = 150, RB = RINGS[0];
+  const weights = TREE_DATA.map(g => Math.max(g.subs.length, 4));
+  const totalW = weights.reduce((a,b)=>a+b, 0);
+  let cursor = -90;
+  let delay = 0;
+  const nodeDelay = () => { delay += 0.028; return delay.toFixed(3); };
+
+  const edge = (x1,y1,x2,y2,color,op,w) => {
+    const mx = (x1+x2)/2 * .92, my = (y1+y2)/2 * .92;   // légère courbure vers le centre
+    return svgEl('path', { d:`M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`,
+      'class':'st-edge', stroke:color, 'stroke-opacity':op, 'stroke-width':w }, gEdges);
+  };
 
   TREE_DATA.forEach(grand => {
+    const span = 360 * weights[TREE_DATA.indexOf(grand)] / totalW;
+    const a0 = cursor + PAD/2, a1 = cursor + span - PAD/2;
+    cursor += span;
+    const mid = (a0 + a1) / 2;
     const c = grand.color;
-    const row = document.createElement('div');
-    row.className = 'tree-row';
 
-    // Grand label
-    const gl = document.createElement('div');
-    gl.className = 'grand-label';
-    gl.style.color = c;
-    gl.style.borderColor = c;
-    gl.style.background = c + '18';
-    gl.textContent = grand.label;
-    row.appendChild(gl);
+    /* moyeu de branche */
+    const [hx, hy] = polar(RB, mid);
+    edge(0, 0, hx, hy, c, .35, 2.5);
 
-    // connector grand → chain
-    row.appendChild(seg(18, c, 0.4));
+    const hub = svgEl('g', { 'class':'st-node st-in', style:`animation-delay:${nodeDelay()}s` }, gNodes);
+    svgEl('circle', { cx:hx, cy:hy, r:34, fill:c, opacity:.16, 'class':'halo', filter:'url(#st-glow)' }, hub);
+    svgEl('circle', { cx:hx, cy:hy, r:27, fill:'#0f0f0c', stroke:c, 'stroke-width':2, 'class':'core' }, hub);
+    svgEl('circle', { cx:hx, cy:hy, r:6, fill:c, filter:'url(#st-glow)' }, hub);
+    const hlbl = svgEl('text', { x:hx, y:hy + 48, 'text-anchor':'middle', 'class':'st-hub-label',
+      'font-size':15, fill:c }, hub);
+    hlbl.textContent = grand.label;
 
-    // Build chain: SUB → SUB → SUB … (no theme circles)
-    grand.subs.forEach((sub, si) => {
-      const sn = document.createElement('div');
-      sn.className = 'sub-node';
-      sn.style.borderColor = c;
-      sn.style.color = c;
-      sn.style.cursor = 'pointer';
-      sn.textContent = sub.label;
-      sn.title = sub.label;
-      sn.addEventListener('click', () => openTheme(sub.label, grand.label, c, sub.notions));
-      row.appendChild(sn);
+    /* thèmes : anneaux successifs dans le secteur */
+    const subs = grand.subs.slice();
+    let ring = 1, prevRing = [{ x:hx, y:hy, a:mid }];
+    const sectorRad = rad(a1 - a0);
+    while (subs.length){
+      const r = RINGS[Math.min(ring, RINGS.length-1)] + (ring >= RINGS.length ? (ring - RINGS.length + 1) * 115 : 0);
+      const cap = Math.max(1, Math.round(sectorRad * r / SPACING));
+      const batch = subs.splice(0, cap);
+      const cur = [];
+      batch.forEach((sub, i) => {
+        const a = a0 + (i + .5) * (a1 - a0) / batch.length;
+        const [x, y] = polar(r, a);
+        /* parent = nœud de l'anneau précédent le plus proche en angle */
+        let parent = prevRing[0];
+        for (const p of prevRing) if (Math.abs(p.a - a) < Math.abs(parent.a - a)) parent = p;
+        const e = edge(parent.x, parent.y, x, y, c, .28, 1.6);
 
-      // connector between subs
-      if (si < grand.subs.length - 1) {
-        row.appendChild(seg(18, c, 0.35));
-      }
-    });
+        const node = svgEl('g', { 'class':'st-node st-in', style:`animation-delay:${nodeDelay()}s` }, gNodes);
+        svgEl('circle', { cx:x, cy:y, r:24, fill:c, opacity:.18, 'class':'halo', filter:'url(#st-glow)' }, node);
+        svgEl('circle', { cx:x, cy:y, r:15, fill:'#12110e', stroke:c, 'stroke-width':1.8, 'class':'core' }, node);
+        svgEl('circle', { cx:x, cy:y, r:4.5, fill:c }, node);
+        if (sub.notions.length){
+          svgEl('circle', { cx:x+12, cy:y-12, r:7.5, fill:c }, node);
+          const bt = svgEl('text', { x:x+12, y:y-9.2, 'text-anchor':'middle', 'font-size':9, 'class':'st-badge-t' }, node);
+          bt.textContent = sub.notions.length;
+        }
+        wrapLabel(sub.label).forEach((line, li) => {
+          const t = svgEl('text', { x, y:y + 34 + li * 13, 'text-anchor':'middle',
+            'font-size':11.5, 'class':'st-label' }, node);
+          t.textContent = line;
+        });
 
-    wrap.appendChild(row);
+        node.addEventListener('click', () => openTheme(sub.label, grand.label, c, sub.notions));
+        node.addEventListener('mouseenter', ev => {
+          e.setAttribute('stroke-opacity', .85); e.setAttribute('stroke-width', 2.6);
+          showTip(ev.currentTarget, sub, grand);
+        });
+        node.addEventListener('mouseleave', () => {
+          e.setAttribute('stroke-opacity', .28); e.setAttribute('stroke-width', 1.6);
+          hideTip();
+        });
+        cur.push({ x, y, a });
+      });
+      prevRing = cur; ring++;
+    }
   });
+
+  /* racine */
+  const root = svgEl('g', { 'class':'st-node st-in' }, gNodes);
+  svgEl('circle', { cx:0, cy:0, r:56, fill:'#c8b97a', opacity:.12, filter:'url(#st-glow)' }, root);
+  svgEl('circle', { cx:0, cy:0, r:44, fill:'#0f0f0c', stroke:'#c8b97a', 'stroke-width':2 }, root);
+  svgEl('circle', { cx:0, cy:0, r:51, fill:'none', stroke:'rgba(200,185,122,.5)',
+    'stroke-width':1, 'stroke-dasharray':'3 9', 'class':'st-spin' }, root);
+  const glyph = svgEl('text', { x:0, y:12, 'text-anchor':'middle', 'font-size':36, 'class':'st-root-glyph' }, root);
+  glyph.textContent = '∑';
+  const rl = svgEl('text', { x:0, y:74, 'text-anchor':'middle', 'class':'st-hub-label',
+    'font-size':13, fill:'rgba(240,236,224,.6)' }, root);
+  rl.textContent = 'Mathématiques';
+
+  /* légende */
+  const leg = document.getElementById('legend');
+  leg.innerHTML = TREE_DATA.map(g =>
+    `<span style="color:${g.color}"><i style="background:${g.color}"></i>${g.label}</span>`).join('');
+
+  /* cadrage initial */
+  try {
+    const bb = gNodes.getBBox();
+    stFull = { x: bb.x - 40, y: bb.y - 40, w: bb.width + 80, h: bb.height + 80 };
+  } catch { stFull = { x:-640, y:-640, w:1280, h:1280 }; }
+  stView = { ...stFull };
+  applyView();
+  initPanZoom();
 }
 
-function seg(w, color, op){
-  const d = document.createElement('div');
-  d.style.cssText = `height:2px;width:${w}px;background:${color};opacity:${op};flex-shrink:0`;
-  return d;
+function applyView(){
+  document.getElementById('skilltree')
+    .setAttribute('viewBox', `${stView.x} ${stView.y} ${stView.w} ${stView.h}`);
 }
+
+/* — info-bulle — */
+function showTip(nodeEl, sub, grand){
+  const tip = document.getElementById('st-tip');
+  const stage = document.getElementById('stage');
+  let r;
+  try { r = nodeEl.getBoundingClientRect(); } catch { return; }
+  const sr = stage.getBoundingClientRect();
+  tip.style.setProperty('--tipc', grand.color);
+  tip.querySelector('.t').textContent = sub.label;
+  tip.querySelector('.s').textContent = grand.label
+    + (sub.notions.length ? ` · ${sub.notions.length} notion${sub.notions.length>1?'s':''}` : '')
+    + ' · cliquer pour ouvrir';
+  tip.style.left = (r.left + r.width/2 - sr.left) + 'px';
+  tip.style.top  = (r.top - sr.top - 6) + 'px';
+  tip.classList.add('on');
+}
+function hideTip(){ document.getElementById('st-tip').classList.remove('on'); }
+
+/* — déplacement & zoom — */
+function initPanZoom(){
+  const stage = document.getElementById('stage');
+  const svg = document.getElementById('skilltree');
+  if (stage.dataset.pz) return;
+  stage.dataset.pz = '1';
+
+  const toSvg = (cx, cy) => {
+    const r = svg.getBoundingClientRect();
+    return [ stView.x + (cx - r.left) / r.width * stView.w,
+             stView.y + (cy - r.top) / r.height * stView.h ];
+  };
+  const zoomAt = (cx, cy, f) => {
+    const nw = Math.min(Math.max(stView.w * f, stFull.w / 7), stFull.w * 1.7);
+    f = nw / stView.w;
+    const [sx, sy] = toSvg(cx, cy);
+    stView = { x: sx - (sx - stView.x) * f, y: sy - (sy - stView.y) * f,
+               w: stView.w * f, h: stView.h * f };
+    applyView();
+  };
+  const center = () => {
+    const r = svg.getBoundingClientRect();
+    return [ r.left + r.width/2, r.top + r.height/2 ];
+  };
+
+  stage.addEventListener('wheel', e => {
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, e.deltaY > 0 ? 1.14 : 1/1.14);
+  }, { passive:false });
+
+  document.getElementById('st-zin').onclick  = () => { const [x,y]=center(); zoomAt(x,y, 1/1.25); };
+  document.getElementById('st-zout').onclick = () => { const [x,y]=center(); zoomAt(x,y, 1.25); };
+  document.getElementById('st-fit').onclick  = () => { stView = { ...stFull }; applyView(); };
+
+  const ptrs = new Map();
+  let pinchD = 0, moved = 0;
+  stage.addEventListener('pointerdown', e => {
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 1){ stage.classList.add('dragging'); moved = 0; }
+    if (ptrs.size === 2){
+      const [a, b] = [...ptrs.values()];
+      pinchD = Math.hypot(a[0]-b[0], a[1]-b[1]);
+    }
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) return;
+    const prev = ptrs.get(e.pointerId);
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 1){
+      const r = svg.getBoundingClientRect();
+      const dx = (e.clientX - prev[0]) / r.width * stView.w;
+      const dy = (e.clientY - prev[1]) / r.height * stView.h;
+      moved += Math.abs(dx) + Math.abs(dy);
+      stView.x -= dx; stView.y -= dy;
+      applyView();
+    } else if (ptrs.size === 2){
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+      if (pinchD > 0 && d > 0) zoomAt((a[0]+b[0])/2, (a[1]+b[1])/2, pinchD / d);
+      pinchD = d;
+    }
+  });
+  const up = e => { ptrs.delete(e.pointerId); if (!ptrs.size) stage.classList.remove('dragging'); };
+  stage.addEventListener('pointerup', up);
+  stage.addEventListener('pointercancel', up);
+  stage.addEventListener('pointerleave', up);
+  /* un vrai glisser ne doit pas déclencher le clic d'un nœud */
+  stage.addEventListener('click', e => { if (moved > 14) { e.stopPropagation(); } moved = 0; }, true);
+}
+
 
 // ─── THEME PAGE ─────────────────────────────────────────
 function openTheme(label, grandLabel, color, notions){
-  currentTheme = { label, grandLabel, color, notions: notions||[] };
+  currentTheme = { label, grandLabel, color, notions: notions || [] };
 
-  const eyebrow = document.getElementById('theme-eyebrow');
-  eyebrow.style.cssText = `font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:${color};margin-bottom:.6rem;font-family:var(--mono);display:flex;align-items:center;gap:.7rem`;
-  eyebrow.innerHTML = grandLabel;
+  document.getElementById('theme-hero').style.setProperty('--tc', color);
+  document.getElementById('theme-eyebrow').textContent = grandLabel;
+  document.getElementById('theme-title').textContent = label;
 
-  const titleEl = document.getElementById('theme-title');
-  titleEl.innerHTML = label;
-  titleEl.style.color = color;
-
-  // Show notions list if any
   const notionsEl = document.getElementById('theme-notions');
-  if(notions && notions.length > 0){
-    notionsEl.innerHTML = `
-      <div style="margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--surface);border:1px solid rgba(${hexToRgb(color)},.2);border-radius:10px;border-left:3px solid ${color}">
-        <div style="font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:.75rem">Notions abordées</div>
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem">
-          ${notions.map(n=>`<span style="background:rgba(${hexToRgb(color)},.1);border:1px solid rgba(${hexToRgb(color)},.25);color:${color};padding:.3rem .75rem;border-radius:20px;font-size:.78rem">${n}</span>`).join('')}
-        </div>
+  notionsEl.style.setProperty('--tc', color);
+  let html = '';
+
+  if (notions && notions.length > 0){
+    html += `
+      <div class="notions-box">
+        <div class="notions-title">Notions abordées</div>
+        <div class="notions-chips">${notions.map(n => `<span class="notion-chip">${n}</span>`).join('')}</div>
       </div>`;
-  } else {
-    notionsEl.innerHTML = '';
   }
 
   // Liens croisés : tutoriel interactif + cours animé du thème
   const tc = (typeof THEME_CONTENT !== 'undefined') && THEME_CONTENT[label];
   if (tc && (tc.tuto || tc.cours)){
     const btns = [];
-    if (tc.tuto)  btns.push(`<a href="tutoriel.html?ch=${encodeURIComponent(tc.tuto)}&title=${encodeURIComponent(label)}" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(${hexToRgb(color)},.12);border:1px solid rgba(${hexToRgb(color)},.35);color:${color};padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;text-decoration:none;font-family:var(--mono);letter-spacing:.04em;transition:background .2s" onmouseover="this.style.background='rgba(${hexToRgb(color)},.22)'" onmouseout="this.style.background='rgba(${hexToRgb(color)},.12)'">▶ Tutoriel interactif</a>`);
-    if (tc.cours) btns.push(`<a href="cours.html?open=${encodeURIComponent(tc.cours)}" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(200,185,122,.1);border:1px solid rgba(200,185,122,.3);color:#c8b97a;padding:.55rem 1.1rem;border-radius:8px;font-size:.82rem;text-decoration:none;font-family:var(--mono);letter-spacing:.04em;transition:background .2s" onmouseover="this.style.background='rgba(200,185,122,.2)'" onmouseout="this.style.background='rgba(200,185,122,.1)'">🎬 Cours animé</a>`);
-    notionsEl.innerHTML += `<div style="display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:1.5rem">${btns.join('')}</div>`;
+    if (tc.tuto)  btns.push(`<a class="crosslink tuto" href="tutoriel.html?ch=${encodeURIComponent(tc.tuto)}&title=${encodeURIComponent(label)}">▶ Tutoriel interactif</a>`);
+    if (tc.cours) btns.push(`<a class="crosslink cours" href="cours.html?open=${encodeURIComponent(tc.cours)}">🎬 Cours animé</a>`);
+    html += `<div class="crosslinks">${btns.join('')}</div>`;
   }
 
+  notionsEl.innerHTML = html;
   showPage('theme');
-}
-
-function hexToRgb(hex){
-  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  return `${r},${g},${b}`;
 }
 
 // ─── SECTION PAGE ───────────────────────────────────────
@@ -419,11 +664,13 @@ function showSection(type){
   const meta = SECTION_META[type];
   const t = currentTheme;
 
+  document.getElementById('page-section').style.setProperty('--sc', meta.color);
+
   document.getElementById('breadcrumb').innerHTML =
     `Arbre › <span style="color:${t.color}">${t.label}</span> › ${meta.title}`;
 
   document.getElementById('section-title').innerHTML =
-    `<em style="color:${meta.color}">${meta.icon}</em> ${meta.title} — ${t.label}`;
+    `<span class="sec-icon">${meta.icon}</span>${meta.title} — <em style="font-style:italic;color:${t.color}">${t.label}</em>`;
 
   const content = document.getElementById('section-content');
   content.innerHTML = '';
@@ -433,12 +680,11 @@ function showSection(type){
   const mkBlock = (title, inner) => {
     const div = document.createElement('div');
     div.className = 'content-block';
-    div.style.borderLeft = `3px solid ${meta.color}40`;
     div.innerHTML = `<div class="content-block-title">${title}</div>${inner}`;
     content.appendChild(div);
   };
-  const ul = (items, marker) => `<ul class="rich-list">${items.map(i=>`<li><span class="rich-marker" style="color:${meta.color}">${marker}</span><span>${i}</span></li>`).join('')}</ul>`;
-  const ol = items => `<ol class="rich-steps">${items.map((i,n)=>`<li><span class="rich-num" style="border-color:${meta.color}66;color:${meta.color}">${n+1}</span><span>${i}</span></li>`).join('')}</ol>`;
+  const ul = (items, marker) => `<ul class="rich-list">${items.map(i=>`<li><span class="rich-marker">${marker}</span><span>${i}</span></li>`).join('')}</ul>`;
+  const ol = items => `<ol class="rich-steps">${items.map((i,n)=>`<li><span class="rich-num">${n+1}</span><span>${i}</span></li>`).join('')}</ol>`;
 
   if (tc && type === 'cours'){
     mkBlock('DÉFINITIONS', ul(tc.lecon.definitions, '◈'));
@@ -456,21 +702,13 @@ function showSection(type){
       const solId = `sol-${i}`;
       mkBlock('PROBLÈME ' + (i+1),
         `<p class="pb-q">${pb.q}</p>
-         <button class="sol-toggle" style="border-color:${meta.color}55;color:${meta.color}" onclick="toggleSol('${solId}', this)">Voir la solution ▾</button>
-         <div class="pb-sol" id="${solId}" style="display:none;border-left:2px solid ${meta.color}55">${pb.sol}</div>`);
+         <button class="sol-toggle" onclick="toggleSol('${solId}', this)">Voir la solution ▾</button>
+         <div class="pb-sol" id="${solId}" style="display:none">${pb.sol}</div>`);
     });
   }
   else {
-    // fallback : placeholders d'origine
     meta.blocks.forEach(block => {
-      const div = document.createElement('div');
-      div.className = 'content-block';
-      div.style.borderLeft = `3px solid ${meta.color}40`;
-      div.innerHTML = `
-        <div class="content-block-title">${block.title}</div>
-        <p class="content-placeholder">${block.placeholder}</p>
-      `;
-      content.appendChild(div);
+      mkBlock(block.title, `<p class="content-placeholder">${block.placeholder}</p>`);
     });
   }
 
