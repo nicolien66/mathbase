@@ -427,7 +427,7 @@ function annaleMeta(a) {
   const isPdf = !!(a.image_url && /\.pdf(\?|$)/i.test(a.image_url));
   const bits = [];
   if (a.duration) bits.push(`⏱ ${a.duration} min`);
-  bits.push(`${qs.length} exercice${qs.length > 1 ? "s" : ""}`);
+  bits.push(isPdf ? "\ud83d\udcc4 Sujet PDF" : `${qs.length} exercice${qs.length > 1 ? "s" : ""}`);
   if (a.subject) bits.push(escapeHtml(a.subject));
   return bits.join(" · ");
 }
@@ -476,6 +476,7 @@ function openAnnale(id) {
   const a = LOADED_ANNALES.find(x => x.id === id);
   if (!a) return;
   const qs = annaleQuestions(a);
+  const isPdf = !!(a.image_url && /\.pdf(\?|$)/i.test(a.image_url));
 
   /* Si l'énoncé d'un exercice commence par « Exercice … », cette première
      ligne devient l'en-tête de l'exercice sur la copie. */
