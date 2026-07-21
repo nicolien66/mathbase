@@ -424,6 +424,7 @@ function annaleBadges(a) {
 }
 function annaleMeta(a) {
   const qs = annaleQuestions(a);
+  const isPdf = !!(a.image_url && /\.pdf(\?|$)/i.test(a.image_url));
   const bits = [];
   if (a.duration) bits.push(`⏱ ${a.duration} min`);
   bits.push(`${qs.length} exercice${qs.length > 1 ? "s" : ""}`);
@@ -475,21 +476,62 @@ function openAnnale(id) {
   const a = LOADED_ANNALES.find(x => x.id === id);
   if (!a) return;
   const qs = annaleQuestions(a);
+
+  /* Si l'énoncé d'un exercice commence par « Exercice … », cette première
+     ligne devient l'en-tête de l'exercice sur la copie. */
+  const exHead = (q, i) => {
+    const lines = String(q.enonce || "").split("\n");
+    if (/^\s*exercice/i.test(lines[0] || "")) {
+      return { head: lines[0].trim(), body: lines.slice(1).join("\n") };
+    }
+    return { head: "Exercice " + (i + 1), body: q.enonce };
+  };
+
+  const meta = [];
+  if (a.exam) meta.push(escapeHtml(a.exam));
+  if (a.year) meta.push(a.year);
+  if (a.classe) meta.push("Classe de " + escapeHtml(a.classe));
+  if (a.subject) meta.push(escapeHtml(a.subject));
+  if (a.duration) meta.push("Dur\u00e9e : " + a.duration + " min");
+
+  document.getElementById("annale-detail").classList.add("as-sheet");
   document.getElementById("annale-detail").innerHTML = `
-    <div class="annale-paper-head">
+    <div class="annale-toolbar no-print">
       ${annaleBadges(a)}
-      <h2>${escapeHtml(a.title)}</h2>
-      <div class="annale-meta">${annaleMeta(a)}</div>
+      <div class="annale-toolbar-btns">
+        ${isPdf
+          ? `<a class="annale-btn" href="${escapeHtml(a.image_url)}" target="_blank" rel="noopener">\ud83d\udda8 Ouvrir / Imprimer le PDF</a>`
+          : `<button class="annale-btn" onclick="window.print()">\ud83d\udda8 Imprimer / PDF</button>`}
+        <button class="annale-btn primary" onclick="closeAnnale(); startExamen(${a.id})">\u23f1 Composer \u2192</button>
+      </div>
     </div>
-    ${a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : ""}
-    <div class="annale-content">${nl2br(a.content)}</div>
-    ${qs.map((q, i) => `
-      <div class="annale-q">
-        <div class="annale-q-enonce">${nl2br(q.enonce)}</div>
-        ${q.solution ? `<details class="annale-q-sol"><summary>Voir le corrigé</summary><div>${nl2br(q.solution)}</div></details>` : ""}
-      </div>`).join("")}
-    <div class="exam-start-row">
-      <button class="annale-btn primary big" onclick="closeAnnale(); startExamen(${a.id})">⏱ Composer cet examen →</button>
+    <div class="annale-sheet">
+      <div class="sheet-band"><span>Coll\u00e8ge MathBase</span><span>\u00c9valuation de math\u00e9matiques</span></div>
+      <div class="sheet-title">${escapeHtml(a.title)}</div>
+      <div class="sheet-meta">${meta.join(" \u00b7 ")}</div>
+      <div class="sheet-fields">
+        <span>NOM : \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026</span>
+        <span>Pr\u00e9nom : \u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026</span>
+        <span>Note : \u2026\u2026 / 20</span>
+      </div>
+      <div class="sheet-note">La qualit\u00e9 de la r\u00e9daction et la pr\u00e9sentation des calculs seront prises en compte dans la notation.</div>
+      ${isPdf
+        ? `<iframe class="annale-pdf" src="${escapeHtml(a.image_url)}#view=FitH" title="Sujet PDF"></iframe>`
+        : (a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : "")}
+      ${a.content ? `<div class="sheet-content">${nl2br(a.content)}</div>` : ""}
+      ${qs.map((q, i) => {
+        const { head, body } = exHead(q, i);
+        return `
+        <div class="sheet-ex">
+          <div class="sheet-ex-head"><span>${escapeHtml(head)}</span><span class="sheet-pts">\u2026\u2026 pts</span></div>
+          <div class="sheet-ex-body">${nl2br(body)}</div>
+          ${q.solution ? `<details class="annale-q-sol no-print"><summary>Voir le corrig\u00e9</summary><div>${nl2br(q.solution)}</div></details>` : ""}
+        </div>`;
+      }).join("")}
+      <div class="sheet-foot">\u2014 Fin du sujet \u2014</div>
+    </div>
+    <div class="exam-start-row no-print">
+      <button class="annale-btn primary big" onclick="closeAnnale(); startExamen(${a.id})">\u23f1 Composer cet examen \u2192</button>
     </div>`;
   document.getElementById("annale-modal").classList.add("open");
   document.body.style.overflow = "hidden";

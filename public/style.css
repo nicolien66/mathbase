@@ -1432,3 +1432,64 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 .exam-recap-st.partial   { color: var(--moyen); }
 .exam-recap-st.incorrect { color: var(--difficile); }
 .exam-recap-st.skip      { color: var(--muted); }
+
+/* ═══════════ ANNALE : « feuille d'examen » façon PDF ═══════════ */
+.annale-paper.as-sheet { background: none; border: none; padding: 0; }
+
+.annale-toolbar { display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.annale-toolbar-btns { display: flex; gap: 0.6rem; }
+
+.annale-sheet {
+  background: #fbfaf5; color: #1d1c19;
+  border-radius: 4px; padding: 2.6rem 3rem 2.2rem;
+  box-shadow: 0 30px 80px -18px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.35);
+  font-family: Georgia, 'Times New Roman', serif; line-height: 1.65;
+}
+.sheet-band { display: flex; justify-content: space-between; gap: 1rem;
+  font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: #6b6a60;
+  border-bottom: 2px solid #1d1c19; padding-bottom: 0.5rem; margin-bottom: 1.3rem; }
+.sheet-title { font-size: 1.55rem; font-weight: 700; color: #14130f; line-height: 1.25; }
+.sheet-meta { font-size: 0.85rem; color: #55544a; margin-top: 0.35rem; }
+.sheet-fields { display: flex; flex-wrap: wrap; gap: 0.6rem 2.2rem;
+  font-size: 0.85rem; color: #333; margin-top: 1.2rem; }
+.sheet-note { font-size: 0.78rem; font-style: italic; color: #6b6a60;
+  border: 1px solid #ccc9ba; background: #f4f2e7; border-radius: 3px;
+  padding: 0.5rem 0.8rem; margin-top: 1.1rem; }
+.sheet-content { font-size: 0.92rem; color: #26251f; margin: 1.4rem 0 0.3rem; }
+.sheet-ex { margin-top: 1.6rem; break-inside: avoid; }
+.sheet-ex-head { display: flex; justify-content: space-between; align-items: baseline;
+  font-weight: 700; font-size: 1rem; color: #14130f;
+  border-bottom: 1px solid #b9b6a7; padding-bottom: 0.28rem; margin-bottom: 0.65rem; }
+.sheet-pts { font-weight: 400; font-size: 0.78rem; color: #6b6a60; white-space: nowrap; }
+.sheet-ex-body { font-size: 0.93rem; color: #26251f; }
+.sheet-foot { text-align: center; font-size: 0.8rem; font-style: italic;
+  color: #6b6a60; margin-top: 2.4rem; }
+
+/* corrigés dépliables, discrets sur la feuille */
+.annale-sheet .annale-q-sol { margin-top: 0.7rem; }
+.annale-sheet .annale-q-sol summary { color: #8a6d1f; font-family: var(--mono);
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.annale-sheet .annale-q-sol div { background: #f4f2e7; border-left: 3px solid #c8b97a;
+  color: #33322b; border-radius: 0 3px 3px 0; padding: 0.7rem 0.95rem; margin-top: 0.5rem;
+  font-size: 0.88rem; line-height: 1.7; }
+
+@media (max-width: 640px) { .annale-sheet { padding: 1.6rem 1.2rem; } }
+
+/* ── impression : seule la feuille est imprimée (Ctrl+P ou bouton) ── */
+@media print {
+  body * { visibility: hidden; }
+  .annale-modal.open, .annale-modal.open * { visibility: visible; }
+  .annale-modal.open { position: absolute; inset: auto; top: 0; left: 0; width: 100%;
+    background: #fff; overflow: visible; }
+  .annale-modal-box { max-width: none; margin: 0; padding: 0; }
+  .no-print, .annale-q-sol, .chapter-back, #mb-nav, #mb-chip, #mb-calc, #mb-calc-btn { display: none !important; }
+  .annale-sheet { box-shadow: none; border-radius: 0; background: #fff; color: #000; padding: 0; }
+  body { background: #fff !important; }
+}
+
+/* visionneuse PDF intégrée pour les sujets officiels (Brevet) */
+.annale-pdf { width: 100%; height: 78vh; border: 1px solid #ccc9ba;
+  border-radius: 4px; background: #fff; margin-top: 1.2rem; }
+@media (max-width: 640px) { .annale-pdf { height: 65vh; } }
+@media print { .annale-pdf { display: none; } }
