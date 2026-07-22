@@ -394,6 +394,15 @@ let annaleExamFilter = "";
 let EXAM = null;
 let examTimer = null;
 
+function annaleFigure(fig) {
+  if (!fig || typeof fig !== "string" || fig.indexOf("<svg") !== 0) return "";
+  // sécurité : ces figures ne contiennent que des tracés ; on rejette tout
+  // ce qui pourrait exécuter du script (gestionnaires on…, balise script, href/src).
+  if (/<\s*script|\son\w+\s*=|javascript:|<\s*foreignObject|(?:xlink:)?href\s*=|src\s*=/i.test(fig)) return "";
+  const ok = /^<svg[^>]*>(?:\s*<(?:line|polyline|polygon|path|circle|ellipse|rect|g|text|tspan)\b[^>]*\/?>|\s*<\/(?:g|text|tspan|svg)>|[^<]*)*$/i;
+  if (!ok.test(fig)) return "";
+  return `<div class="annale-fig">${fig}</div>`;
+}
 function nl2br(t) { return escapeHtml(t == null ? "" : t).replace(/\n/g, "<br>"); }
 
 function annaleQuestions(a) {
@@ -582,21 +591,27 @@ function startExamen(id) {
   const a = LOADED_ANNALES.find(x => x.id === id);
   if (!a) return;
   const qs = annaleQuestions(a);
-  if (!qs.length) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
+  const isPdf = !!(a.image_url && /\.pdf(\?|$)/i.test(a.image_url));
+  if (!qs.length && !isPdf) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
   clearInterval(examTimer);
-  EXAM = { annale: a, qs, index: 0, answers: Array(qs.length).fill(null), start: null };
+  EXAM = { annale: a, qs, pdf: isPdf, index: 0, answers: Array(qs.length).fill(null), start: null };
   showView("examen", "examen");
   examPhase("sujet");
+  const notice = isPdf
+    ? `Prends d'abord connaissance du sujet <strong>en entier</strong>, comme le jour de l'épreuve. Quand tu es prêt·e, lance le chronomètre : tu composeras sur une <strong>copie unique</strong> (à l'écran ou sur papier), le sujet restant affiché à côté de ta rédaction.`
+    : `Prends d'abord connaissance du sujet <strong>en entier</strong>, comme le jour de l'épreuve. Quand tu es prêt·e, lance le chronomètre — tu traiteras ensuite les questions une par une.`;
   document.getElementById("examen-sujet-body").innerHTML = `
     <div class="annale-paper-head">
       ${annaleBadges(a)}
       <h2>${escapeHtml(a.title)}</h2>
       <div class="annale-meta">${annaleMeta(a)}</div>
     </div>
-    <div class="exam-notice">Prends d'abord connaissance du sujet <strong>en entier</strong>, comme le jour de l'épreuve. Quand tu es prêt·e, lance le chronomètre — tu traiteras ensuite les questions une par une.</div>
-    ${a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : ""}
+    <div class="exam-notice">${notice}</div>
+    ${isPdf
+      ? `<iframe class="annale-pdf" src="${escapeHtml(a.image_url)}#view=FitH" title="Sujet PDF"></iframe>`
+      : (a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : "")}
     <div class="annale-content">${nl2br(a.content)}</div>
-    ${qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div></div>`).join("")}`;
+    ${qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div>${annaleFigure(q.figure)}</div>`).join("")}`;
 }
 
 /* ── EXAMEN : ③ question par question ── */
@@ -613,14 +628,30 @@ function beginEpreuve() {
   }, 1000);
   document.getElementById("exam-run-title").textContent = EXAM.annale.title;
   examPhase("run");
-  paintExamQuestion();
+  if (EXAM.pdf) paintExamPdf(); else paintExamQuestion();
+}
+
+/* Mode « copie unique » pour les sujets officiels PDF */
+function paintExamPdf() {
+  document.getElementById("exam-progress").textContent = "Composition sur sujet officiel — copie unique";
+  document.getElementById("exam-enonce").innerHTML = `
+    <iframe class="annale-pdf" style="height:58vh;margin-top:0" src="${escapeHtml(EXAM.annale.image_url)}#view=FitH" title="Sujet PDF"></iframe>
+    <div class="exam-notice" style="margin-top:0.9rem">Le sujet reste affiché ci-dessus pendant toute l'épreuve. Rédige tes réponses exercice par exercice dans ta copie (numérote-les), ou compose sur papier et sers-toi de la zone comme brouillon.</div>`;
+  const ta = document.getElementById("exam-answer");
+  ta.value = ""; ta.readOnly = false;
+  ta.placeholder = "Exercice 1 : …\nExercice 2 : …";
+  document.getElementById("exam-feedback").innerHTML = "";
+  document.getElementById("exam-actions").style.display = "none";
+  const next = document.getElementById("exam-next");
+  next.style.display = "";
+  next.textContent = "Terminer l\u2019\u00e9preuve \u2192";
 }
 
 function paintExamQuestion() {
   const q = EXAM.qs[EXAM.index];
   const saved = EXAM.answers[EXAM.index];
   document.getElementById("exam-progress").textContent = `Question ${EXAM.index + 1} / ${EXAM.qs.length}`;
-  document.getElementById("exam-enonce").innerHTML = nl2br(q.enonce);
+  document.getElementById("exam-enonce").innerHTML = nl2br(q.enonce) + annaleFigure(q.figure);
   const ta = document.getElementById("exam-answer");
   ta.value = saved ? saved.answer : "";
   ta.readOnly = !!saved;
@@ -689,6 +720,23 @@ function nextExamQuestion() {
 function finishExam() {
   clearInterval(examTimer);
   examPhase("done");
+  if (EXAM.pdf) {
+    const copie = (document.getElementById("exam-answer").value || "").trim();
+    const elapsedP = EXAM.start ? Math.round((Date.now() - EXAM.start) / 60000) : 0;
+    document.getElementById("examen-done-body").innerHTML = `
+      <div class="annale-paper-head">
+        <h2>\u00c9preuve termin\u00e9e !</h2>
+        <div class="annale-meta">${escapeHtml(EXAM.annale.title)} \u00b7 ${elapsedP} min au chrono${EXAM.annale.duration ? ` (\u00e9preuve officielle : ${EXAM.annale.duration} min)` : ""}</div>
+      </div>
+      <div class="exam-notice">Tu as compos\u00e9 sur un <strong>sujet officiel</strong> : compare maintenant ta copie au sujet, exercice par exercice, comme le ferait un correcteur.</div>
+      ${copie ? `<details class="annale-q-sol" open><summary>Ta copie</summary><div>${nl2br(copie)}</div></details>` : ""}
+      <div class="exam-start-row">
+        <a class="annale-btn" href="${escapeHtml(EXAM.annale.image_url)}" target="_blank" rel="noopener">\ud83d\udcc4 Revoir le sujet (PDF)</a>
+        <button class="annale-btn" onclick="startExamen(${EXAM.annale.id})">\u21bb Recommencer ce sujet</button>
+        <button class="annale-btn primary" onclick="showView('annales')">Retour aux annales \u2192</button>
+      </div>`;
+    return;
+  }
   const ok      = EXAM.answers.filter(x => x && x.result && x.result.verdict === "correct").length;
   const partial = EXAM.answers.filter(x => x && x.result && x.result.verdict === "partial").length;
   const elapsed = EXAM.start ? Math.round((Date.now() - EXAM.start) / 60000) : 0;

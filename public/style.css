@@ -1493,3 +1493,9 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   border-radius: 4px; background: #fff; margin-top: 1.2rem; }
 @media (max-width: 640px) { .annale-pdf { height: 65vh; } }
 @media print { .annale-pdf { display: none; } }
+
+/* figures reconstruites (SVG) des sujets officiels */
+.annale-fig { margin: 1rem 0; padding: 0.8rem; background: #fff;
+  border: 1px solid #e5e2d6; border-radius: 6px; text-align: center; }
+.annale-fig svg { max-width: 100%; height: auto; max-height: 340px; }
+@media (max-width: 640px) { .annale-fig svg { max-height: 240px; } }
