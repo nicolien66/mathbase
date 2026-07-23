@@ -357,10 +357,13 @@ app.post("/exercises/correct", auth, async (req, res) => {
   if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
 
   const solutionCtx = exercise.solution ? `\nSOLUTION OFFICIELLE : ${exercise.solution}` : "";
+  const figureCtx = exercise.figure_desc
+    ? `\nDESCRIPTION DE LA FIGURE (l'élève la voit sur le sujet ; utilise-la pour corriger la géométrie) : ${exercise.figure_desc}`
+    : "";
   const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
 
 EXERCICE : ${exercise.title}
-ÉNONCÉ : ${exercise.content}${solutionCtx}
+ÉNONCÉ : ${exercise.content}${figureCtx}${solutionCtx}
 
 CE QUE L'ÉLÈVE A ÉCRIT (son brouillon, mot pour mot) :
 ${answer}

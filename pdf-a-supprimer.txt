@@ -1,0 +1,42 @@
+# PDF à supprimer — documents contenant des figures non décrites
+# Généré le 23/07/2026. 26 fichiers sur 307 analysés.
+# Les 281 autres PDF ont toutes leurs figures détectées décrites dans le seed.
+
+## 1. Recueils annuels (dossier BREVET/) — 23 fichiers
+# Chacun regroupe 50 à 155 exercices. Il en reste 6 à 23 sans description
+# (figures de type annexe / QCM, palier 3, volontairement écarté).
+# Ces recueils font DOUBLON avec les sujets publiés séparément à la racine,
+# qui sont eux entièrement couverts : les supprimer ne perd aucun contenu.
+BREVET/Brevet2003.pdf
+BREVET/Brevet2007.pdf
+BREVET/Brevet_2001_DV.pdf
+BREVET/Brevet_2002_DV-2.pdf
+BREVET/Brevet_2004_DV.pdf
+BREVET/Brevet_2005.pdf
+BREVET/Brevet_2006_DV-3.pdf
+BREVET/Brevet_2008_DV.pdf
+BREVET/Brevet_2009_DV.pdf
+BREVET/Brevet_2010.pdf
+BREVET/Brevet_2011_DV-2.pdf
+BREVET/Brevet_2012-2.pdf
+BREVET/Brevet_Annee_2023_DV_2.pdf
+BREVET/Brevet_anne_e_2016_DV.pdf
+BREVET/Brevet_annee_2013-2.pdf
+BREVET/Brevet_annee_2014.pdf
+BREVET/Brevet_annee_2015_DV.pdf
+BREVET/Brevet_annee_2017.pdf
+BREVET/Brevet_annee_2018_FH.pdf
+BREVET/Brevet_annee_2021_DV2.pdf
+BREVET/Brevet_annee_2022_DV.pdf
+BREVET/Brevet_annee_2024_DV.pdf
+BREVET/brevet_2019_index_v4.pdf
+
+## 2. Sujets à structure atypique (racine) — 2 fichiers
+# Découpés en « Première/Deuxième/Troisième partie » ou « EXERCICE A ou B au
+# choix », sans numérotation « Exercice N » exploitable.
+Brevet_Bordeaux_Serie_professionnelle_juin_2002.pdf
+Brevet_technologique_Bordeaux_juin_2002.pdf
+
+## 3. Fichier parasite (dossier BREVET/) — 1 fichier
+# Aucun exercice détectable.
+(1).pdf

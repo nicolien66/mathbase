@@ -628,7 +628,7 @@ function beginEpreuve() {
   }, 1000);
   document.getElementById("exam-run-title").textContent = EXAM.annale.title;
   examPhase("run");
-  if (EXAM.pdf) paintExamPdf(); else paintExamQuestion();
+  if (EXAM.pdf && !EXAM.qs.length) paintExamPdf(); else paintExamQuestion();
 }
 
 /* Mode « copie unique » pour les sujets officiels PDF */
@@ -651,7 +651,12 @@ function paintExamQuestion() {
   const q = EXAM.qs[EXAM.index];
   const saved = EXAM.answers[EXAM.index];
   document.getElementById("exam-progress").textContent = `Question ${EXAM.index + 1} / ${EXAM.qs.length}`;
-  document.getElementById("exam-enonce").innerHTML = nl2br(q.enonce) + annaleFigure(q.figure);
+  const pdfBar = EXAM.pdf && EXAM.annale.image_url
+    ? `<details class="exam-pdf-bar" open><summary>\ud83d\udcc4 Sujet officiel (PDF) \u2014 clique pour masquer/afficher</summary>`
+      + `<iframe class="annale-pdf" style="height:52vh;margin-top:0.6rem" src="${escapeHtml(EXAM.annale.image_url)}#view=FitH" title="Sujet PDF"></iframe>`
+      + `<div class="exam-notice" style="margin-top:0.5rem">Le sujet complet (avec les figures) reste consultable ici. Ci-dessous, r\u00e9dige la question demand\u00e9e.</div></details>`
+    : "";
+  document.getElementById("exam-enonce").innerHTML = pdfBar + nl2br(q.enonce) + annaleFigure(q.figure);
   const ta = document.getElementById("exam-answer");
   ta.value = saved ? saved.answer : "";
   ta.readOnly = !!saved;
@@ -671,6 +676,9 @@ async function submitExamAnswer() {
     title: EXAM.annale.title + " — question " + (EXAM.index + 1),
     content: q.enonce,
     solution: q.solution || null,
+    // La figure du sujet n'est pas visible par le correcteur : on lui transmet
+    // sa description textuelle, sinon toute la géométrie est corrigée à l'aveugle.
+    figure_desc: q.figure_desc || null,
   };
   const btn = document.getElementById("exam-validate");
   btn.disabled = true;
@@ -1165,9 +1173,9 @@ async function submitAnswer() {
       await new Promise(r => setTimeout(r, 650)); // le tuteur "lit" la copie
       result = demoCorrect(ex, answer);
     } else {
-      const res = await fetch("/exercises/correct", {
+      // apiFetch ajoute le jeton Bearer : sans lui la route renvoie 401
+      const res = await MB_AUTH.apiFetch("/exercises/correct", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ exercise: ex, answer })
       });
       if (!res.ok) throw new Error("Erreur serveur (" + res.status + ")");

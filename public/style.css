@@ -1499,3 +1499,10 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   border: 1px solid #e5e2d6; border-radius: 6px; text-align: center; }
 .annale-fig svg { max-width: 100%; height: auto; max-height: 340px; }
 @media (max-width: 640px) { .annale-fig svg { max-height: 240px; } }
+
+/* bandeau PDF pliable en mode question par question (sujets officiels) */
+.exam-pdf-bar { margin-bottom: 1rem; border: 1px solid #e5e2d6; border-radius: 6px;
+  background: #faf9f4; padding: 0.6rem 0.8rem; }
+.exam-pdf-bar > summary { cursor: pointer; font-family: var(--mono, monospace);
+  font-size: 0.8rem; color: #6b6a60; letter-spacing: 0.03em; }
+.exam-pdf-bar[open] > summary { margin-bottom: 0.4rem; }
