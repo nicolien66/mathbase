@@ -82,7 +82,10 @@ async function main() {
     const nouveau = qs.slice();
     for (const b of aAjouter) {
       if (b.index !== nouveau.length) break;     // sécurité : pas de trou
+      // enonce = libellé court (visible) ; enonce_correction = texte extrait
+      // du PDF, utile au correcteur mais jamais affiché à l'élève.
       const q = { enonce: b.enonce };
+      if (b.enonce_correction) q.enonce_correction = b.enonce_correction;
       if (b.figure_desc) q.figure_desc = b.figure_desc;
       nouveau.push(q);
       ajouts++;

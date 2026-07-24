@@ -674,7 +674,9 @@ async function submitExamAnswer() {
   const q = EXAM.qs[EXAM.index];
   const pseudoEx = {
     title: EXAM.annale.title + " — question " + (EXAM.index + 1),
-    content: q.enonce,
+    // enonce_correction : texte complet du sujet, non affiché à l'élève
+    // (il lit le PDF) mais indispensable au correcteur pour comprendre la question.
+    content: q.enonce_correction || q.enonce,
     solution: q.solution || null,
     // La figure du sujet n'est pas visible par le correcteur : on lui transmet
     // sa description textuelle, sinon toute la géométrie est corrigée à l'aveugle.
