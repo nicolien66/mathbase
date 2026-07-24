@@ -409,6 +409,7 @@ function nl2br(t) { return escapeHtml(t == null ? "" : t).replace(/\n/g, "<br>")
    L'élève lit le sujet sur le PDF officiel ; le texte extrait n'est jamais
    affiché (il ne sert qu'au correcteur, via enonce_correction). */
 function qLabel(q, i) {
+  if (q && q._label) return q._label;
   const first = String((q && q.enonce) || "").split("\n")[0].replace(/\s+/g, " ").trim();
   const m = first.match(/^(Exercice\s*n?[°o]?\s*\d+)/i);
   if (m) return m[1].replace(/\s+/g, " ");
@@ -602,15 +603,85 @@ function renderExamenChoice() {
   });
 }
 
+/* ── DÉCOUPAGE EN SOUS-QUESTIONS ───────────────────────────────────────────
+   L'élève traite « 1. », « 2. », « 4. a. »… une par une plutôt que l'exercice
+   entier. Le découpage se fait à la volée sur le texte d'énoncé conservé en
+   base (enonce_correction) : aucune migration n'est nécessaire. */
+function parseSousQuestions(texte) {
+  const lignes = String(texte || "").replace(/\r/g, "").split("\n");
+  const NUM = /^\s{0,12}(\d{1,2})\s*[.)]\s+(\S.*)$/;
+  const LET = /^\s{0,16}([a-h])\s*[.)]\s+(\S.*)$/;
+  const items = [];
+  let preambule = [], courant = null;
+
+  for (const l of lignes) {
+    const mn = l.match(NUM), ml = l.match(LET);
+    if (mn) { courant = { type: "num", num: mn[1], lettre: null, lignes: [mn[2]] }; items.push(courant); }
+    else if (ml && items.length) {
+      const parent = items.slice().reverse().find(x => x.type === "num");
+      courant = { type: "let", num: parent ? parent.num : null, lettre: ml[1], lignes: [ml[2]] };
+      items.push(courant);
+    }
+    else if (courant) courant.lignes.push(l.trim());
+    else preambule.push(l.trim());
+  }
+  if (!items.length) return null;
+
+  const sorties = [];
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i], suivant = items[i + 1];
+    const texteItem = it.lignes.join(" ").replace(/\s+/g, " ").trim();
+    // Un item numéroté suivi de lettres sert de contexte à ses lettres.
+    if (suivant && suivant.type === "let" && suivant.num === it.num && it.type === "num") {
+      it._contexte = texteItem; continue;
+    }
+    let ctx = "";
+    if (it.type === "let") {
+      const parent = items.slice(0, i).reverse().find(x => x.type === "num" && x.num === it.num);
+      if (parent && parent._contexte) ctx = parent._contexte;
+    }
+    sorties.push({
+      label: it.type === "let" ? it.num + ". " + it.lettre + "." : it.num + ".",
+      texte: (ctx ? ctx + " " : "") + texteItem,
+    });
+  }
+  if (!sorties.length) return null;
+  return { preambule: preambule.join(" ").replace(/\s+/g, " ").trim(), items: sorties };
+}
+
+/* Développe la liste des exercices en une liste de sous-questions. */
+function expanserQuestions(qs) {
+  const out = [];
+  qs.forEach((q, i) => {
+    const source = q.enonce_correction || "";
+    const dec = source ? parseSousQuestions(source) : null;
+    const base = qLabel(q, i);
+    if (!dec) { out.push(Object.assign({}, q, { _label: base, _exercice: base })); return; }
+    dec.items.forEach(sq => {
+      out.push(Object.assign({}, q, {
+        _label: base + " \u00b7 question " + sq.label,
+        _exercice: base,
+        // Contexte complet de l'exercice + la sous-question précise :
+        // le correcteur a besoin des deux pour juger.
+        enonce_correction: (dec.preambule ? dec.preambule + "\n\n" : "")
+                           + "Question " + sq.label + " " + sq.texte,
+      }));
+    });
+  });
+  return out;
+}
+
 /* ── EXAMEN : ② le sujet en entier d'abord ── */
 function startExamen(id) {
   const a = LOADED_ANNALES.find(x => x.id === id);
   if (!a) return;
-  const qs = annaleQuestions(a);
+  const brutes = annaleQuestions(a);
   const isPdf = !!(a.image_url && /\.pdf(\?|$)/i.test(a.image_url));
-  if (!qs.length && !isPdf) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
+  if (!brutes.length && !isPdf) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
+  // On compose sous-question par sous-question.
+  const qs = expanserQuestions(brutes);
   clearInterval(examTimer);
-  EXAM = { annale: a, qs, pdf: isPdf, index: 0, answers: Array(qs.length).fill(null), start: null };
+  EXAM = { annale: a, qs, brutes, pdf: isPdf, index: 0, answers: Array(qs.length).fill(null), start: null };
   showView("examen", "examen");
   examPhase("sujet");
   const notice = isPdf
@@ -628,9 +699,9 @@ function startExamen(id) {
       : (a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : "")}
     <div class="annale-content">${nl2br(a.content)}</div>
     ${isPdf
-      ? `<div class="exam-notice">Ce sujet comporte ${qs.length} question(s) : ${
-            qs.map((q, i) => escapeHtml(qLabel(q, i))).join(" \u00b7 ")
-          }. Tout l'\u00e9nonc\u00e9 se trouve dans le PDF ci-dessus.</div>`
+      ? `<div class="exam-notice">Ce sujet comporte ${brutes.length} exercice(s) : ${
+            brutes.map((q, i) => escapeHtml(qLabel(q, i))).join(" \u00b7 ")
+          }, soit ${qs.length} question(s) \u00e0 traiter une par une. Tout l'\u00e9nonc\u00e9 se trouve dans le PDF ci-dessus.</div>`
       : qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div>${annaleFigure(q.figure)}</div>`).join("")}`;
 }
 
@@ -675,19 +746,20 @@ function paintExamQuestion() {
   const pdfBar = EXAM.pdf && EXAM.annale.image_url
     ? `<details class="exam-pdf-bar" open><summary>\ud83d\udcc4 Sujet officiel (PDF) \u2014 clique pour masquer/afficher</summary>`
       + `<iframe class="annale-pdf" style="height:52vh;margin-top:0.6rem" src="${escapeHtml(EXAM.annale.image_url)}#view=FitH" title="Sujet PDF"></iframe>`
-      + `<div class="exam-notice" style="margin-top:0.5rem">Le sujet complet (avec les figures) reste consultable ici. Ci-dessous, r\u00e9dige la question demand\u00e9e.</div></details>`
+      + `<div class="exam-notice" style="margin-top:0.5rem">Le sujet complet (avec les figures) reste consultable ici. Ci-dessous, r\u00e9dige seulement la question demand\u00e9e.</div></details>`
     : "";
   // Sujet PDF : uniquement le numéro de l'exercice et le PDF. Le texte extrait
   // reste en base pour le correcteur (enonce_correction) mais n'est pas affiché.
   const titreQ = `<div class="exam-q-title" style="font-family:'Playfair Display',Georgia,serif;`
     + `font-size:1.35rem;margin:.9rem 0 .3rem">${escapeHtml(label)}</div>`
-    + `<div class="exam-notice" style="margin-top:0">Lis l'\u00e9nonc\u00e9 dans le sujet ci-dessus, puis r\u00e9dige ta r\u00e9ponse.</div>`;
+    + `<div class="exam-notice" style="margin-top:0">Traite <strong>uniquement</strong> cette question dans le sujet ci-dessus, puis r\u00e9dige ta r\u00e9ponse.</div>`;
   document.getElementById("exam-enonce").innerHTML = EXAM.pdf
     ? pdfBar + titreQ
     : pdfBar + nl2br(q.enonce) + annaleFigure(q.figure);
   const ta = document.getElementById("exam-answer");
   ta.value = saved ? saved.answer : "";
   ta.readOnly = !!saved;
+  ta.placeholder = "R\u00e9ponse \u00e0 la question " + (q._label || "").replace(/^.*\u00b7 question /, "") + " \u2026";
   document.getElementById("exam-feedback").innerHTML = (saved && saved.result) ? examFeedbackHTML(saved.result) : "";
   document.getElementById("exam-actions").style.display = saved ? "none" : "";
   const next = document.getElementById("exam-next");
@@ -701,7 +773,7 @@ async function submitExamAnswer() {
   if (!answer) { showToast("Rédige ta réponse avant de valider.", "error"); return; }
   const q = EXAM.qs[EXAM.index];
   const pseudoEx = {
-    title: EXAM.annale.title + " — question " + (EXAM.index + 1),
+    title: EXAM.annale.title + " \u2014 " + (q._label || ("question " + (EXAM.index + 1))),
     // enonce_correction : texte complet du sujet, non affiché à l'élève
     // (il lit le PDF) mais indispensable au correcteur pour comprendre la question.
     content: q.enonce_correction || q.enonce,

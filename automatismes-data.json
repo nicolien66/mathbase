@@ -1,0 +1,1195 @@
+{
+ "Brevet_0_A_2026_DV.pdf": {
+  "remap": {
+   "0": 7,
+   "1": 8,
+   "2": 9,
+   "3": 10
+  },
+  "nouveaux": {
+   "0": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nQuel est le tiers de 18 ?",
+    "pages": [
+     1
+    ]
+   },
+   "1": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nUn ﬁlm dure 240 min. Quelle est sa durée en heures ?",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nLes notes obtenues par un élève sont : 8 ; 12 ; 6 ; 19 ; 15\nQue vaut la médiane de cette série de notes ?",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\n\n E\n 0 1\n\nSur cette droite graduée, l’abscisse du point E est\n 5 3 7 5\n A. B. C. D.\n 4 2 4 2",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\n C\n ?\nDans le triangle ABC, rectangle en B, on sait\n b = 35°.\nque A\n b\nCalculer C.\n\n A 35° B\nQuestion 6 C\n\nDans le triangle ABC, rectangle en A, quel calcul doit-on\n ?\neffectuer pour déterminer le cosinus de l’angle ABC\n A B",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Dans le triangle ABC, rectangle en B, on sait ; Dans le triangle ABC, rectangle en A, quel calcul doit-on ; effectuer pour déterminer le cosinus de l’angle ABC.",
+    "pages": [
+     1
+    ]
+   },
+   "5": {
+    "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 7\n D\n\nSur la ﬁgure ci-contre, dans le triangle\nADE les droites (DE) et (CB) sont paral- 7 cm\nlèles. C\nDéterminer la longueur AD. 4 cm 2 cm\n A E\n B",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Sur la ﬁgure ci-contre, dans le triangle ; ADE les droites (DE) et (CB) sont paral- 7 cm ; Déterminer la longueur AD. 4 cm 2 cm.",
+    "pages": [
+     2
+    ]
+   },
+   "6": {
+    "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 8\nDans un collège, 25 % des 300 élèves participent à une olympiade de mathématiques.\nCombien d’élèves ne participent pas à cette olympiade ?\n\n 1 deﬁnir carré\n\nQuestion 9 2 stylo en position d’écriture\n\nUne élève souhaite réaliser un programme avec un lo-\n 3 répéter fois\ngiciel de programmation pour dessiner un carré.\nPar quelles valeurs doit-on compléter les lignes 3 et 5 4 avancer de 50 pas\npour obtenir un carré ?\n 5 tourner de degrés\n\nSujet 0 2026 2\n\n Partie 2 — Raisonnement et résolution de problèmes — 14 points — 1 h 40\n\n Dans cette partie, toutes les réponses doivent être justiﬁées, sauf si une indication\n contraire est donnée.\n La clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2\n points.\n Pour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de\n la recherche ; les essais et les démarches engagées, même non aboutis, seront pris en\n compte dans la notation.",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 11,
+  "pages_total": 5,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1
+   ],
+   "5": [
+    2
+   ],
+   "6": [
+    2,
+    3
+   ],
+   "7": [
+    3,
+    4
+   ],
+   "8": [
+    4
+   ],
+   "9": [
+    4,
+    5
+   ],
+   "10": [
+    5
+   ]
+  }
+ },
+ "Brevet_0_B_2026_DV.pdf": {
+  "remap": {
+   "0": 6,
+   "1": 7,
+   "2": 8,
+   "3": 9
+  },
+  "nouveaux": {
+   "0": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nQuelle est la mesure, en degrés, d’un angle droit ?",
+    "pages": [
+     1
+    ]
+   },
+   "1": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nVoici une série de quatre notes : 8 ; 10 ; 11 ; 11.\nQuelle est la moyenne de cette série ?\n\n A. 9,5 B. 10 C. 10,5 D. 11",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nDans un collège de 800 élèves, 25 % des élèves portent des lunettes.\nCombien d’élèves portent des lunettes ?",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nLe graphique ci-dessous donne l’évolution de la température (en degrés Celsius) en fonction\nde l’horaire (en heures).\n\n 30 b\n Température (en °C)\n\n b\n\n 15 b\n\n 0 2 4 6 8 10 12 14 16 18\n Horaire (en heures)\nEntre 8 h et 16 h, de combien de degrés la température a-t-elle augmenté ?",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Le graphique ci-dessous donne l’évolution de la température (en degrés Celsius) en fonction ; de l’horaire (en heures). ; Horaire (en heures).",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\nUne voiture roule à 90 km/h. Combien de temps met-elle pour parcourir 45 km ?\n\n A. 15 min B. 30 min C. 45 min D. 1 h\n\n D\n\n 3 cm",
+    "pages": [
+     1,
+     2
+    ]
+   },
+   "5": {
+    "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 6\n A C\nDonner le périmètre du losange ABCD représenté ci- contre.\n\n B\nQuestion 7 (1 point)\nPour résoudre l’équation 4x − 3 = 20, on effectue le calcul :\n\n 20 20 + 3\n A. x = +3 B. x = (20 − 4) + 3 C. x = 20 × 4 + 3 D. x =\n 4 4\n\nQuestion 8 (1 point)\n B\n\nSur la ﬁgure ci-contre, les droites (DE) et (AC) sont 4,5\nparallèles. 3\nÉcrire une égalité de rapports permettant de déter- E\nminer la longueur AB. D 4\n C\n A\nQuestion 9 (1 point)\n\n quand est cliqué\n\n demander Choisir un nombre et attendre\n\n mettre variable à réponse\nOn considère l’algorithme suivant :\nQuel résultat obtient-on si on choisit 1 mettre résultat à 8 * variable\ncomme nombre de départ ?\n mettre résultat à résultat + 10\n\n mettre résultat à résultat / 2\n\n dire regrouper J’obtiens comme résultat et résultat\n\n Restitution de la copie du candidat à l’issue de la partie 1\n\nSujet 0 2026 2 Sujet B\n\n Partie 2 — Raisonnement et résolution de problèmes — 14 points — 1 h 40\n\n Dans cette partie, toutes les réponses doivent être justiﬁées, sauf si une indication\n contraire est donnée.\n La clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2\n points.\n Pour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de\n la recherche ; les essais et les démarches engagées, même non aboutis, seront pris en\n compte dans la notation.",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Donner le périmètre du losange ABCD représenté ci- contre. ; Sur la ﬁgure ci-contre, les droites (DE) et (AC) sont 4,5 ; parallèles. 3 ; contraire est donnée. ; la recherche ; les essais et les démarches engagées, même non aboutis, seront pris en.",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 10,
+  "pages_total": 4,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1,
+    2
+   ],
+   "5": [
+    2,
+    3
+   ],
+   "6": [
+    3
+   ],
+   "7": [
+    3
+   ],
+   "8": [
+    3,
+    4
+   ],
+   "9": [
+    4
+   ]
+  }
+ },
+ "Brevet_16_septembre_2016.pdf": {
+  "remap": {
+   "0": 0,
+   "1": 1,
+   "2": 2,
+   "3": 3,
+   "4": 7,
+   "5": 8,
+   "6": 9,
+   "7": 10,
+   "8": 11,
+   "9": 12,
+   "10": 13,
+   "11": 14,
+   "12": 15,
+   "13": 16
+  },
+  "nouveaux": {
+   "4": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nLe nombre 2 est solution de l’inéquation :\n a. x < 2 b. −4x − 3 > −10 c. 5x − 4 ⩽ 7 d. 8 − 3x ⩾ 3",
+    "pages": [
+     2
+    ]
+   },
+   "5": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nla fonction f qui à tout nombre x associe le nombre 2x − 8 est représentée par le\n\nMétropole–Antilles-Guyane 30 2 juin 2016\n\fL’intégrale 2016 A. P. M. E. P.\n\n graphique a. graphique b.\n y\n\n y 4\n x x\n 0 0\n−1 0 1 2 3 4 −2 −1 0 1 2 3 4 5\n −4 −4\n\n −8 −8\n\n graphique c. graphique d.\n y\n\n y 4\n x x\n 0 0\n−1 0 1 2 3 4 −2 −1 0 1 2 3 4 5\n −4 −4\n\n −8 −8",
+    "pages": [
+     2,
+     3
+    ]
+   },
+   "6": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nUn coureur qui parcourt 100 mètres en 10 secondes a une vitesse égale :\n a. 6 km/min b. 36 km/h c. 3 600 m/h d. 10 km/h",
+    "pages": [
+     3
+    ]
+   }
+  },
+  "total": 17,
+  "pages_total": 11,
+  "pages_all": {
+   "0": [
+    1,
+    2
+   ],
+   "1": [
+    2
+   ],
+   "2": [
+    2
+   ],
+   "3": [
+    2
+   ],
+   "4": [
+    2
+   ],
+   "5": [
+    2,
+    3
+   ],
+   "6": [
+    3
+   ],
+   "7": [
+    3,
+    4
+   ],
+   "8": [
+    4,
+    5
+   ],
+   "9": [
+    5,
+    6,
+    7
+   ],
+   "10": [
+    7
+   ],
+   "11": [
+    7,
+    8,
+    9
+   ],
+   "12": [
+    9
+   ],
+   "13": [
+    9
+   ],
+   "14": [
+    9,
+    10
+   ],
+   "15": [
+    10
+   ],
+   "16": [
+    10,
+    11
+   ]
+  }
+ },
+ "Brevet_8_9_2025_Polynesie_DV.pdf": {
+  "remap": {
+   "0": 0,
+   "1": 1,
+   "2": 7,
+   "3": 8,
+   "4": 9,
+   "5": 10,
+   "6": 11
+  },
+  "nouveaux": {
+   "2": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nLa formule qui permet d’obtenir la pointure de chaussure p à partir de la longueur L du pied,\nexprimée en centimètres, est p = 1, 5(L + 1).\nQuelle est la pointure d’un pied de longueur 25 cm ?\n\n 37,5 38 38,5 39",
+    "pages": [
+     2
+    ]
+   },
+   "3": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\n R\n\nLe triangle MUR, rectangle en U, qui est représenté ci-\n 9,7 cm\ncontre n’est pas en vraie grandeur. 7,2 cm\n  arrondie au degré ?\nQuelle est la mesure de l’angle RMU\n ?\n M U\n 37° 42° 48° 53°",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Le triangle MUR, rectangle en U, qui est représenté ci- ; 9,7 cm ; contre n’est pas en vraie grandeur. 7,2 cm ; Quelle est la mesure de l’angle RMU.",
+    "pages": [
+     2
+    ]
+   },
+   "4": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nUn coureur a remporté la course du 100 m en 10 secondes exactement.\nÀ quelle vitesse moyenne en km/h a-t-il parcouru cette distance ?\n\n 10 km/h 36 km/h 44 km/h 60 km/h",
+    "pages": [
+     2
+    ]
+   },
+   "5": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nRoxane a acheté le modèle réduit d’un tableau célèbre à l’échelle .\nLa largeur du modèle réduit est 7 cm. Quelle est la largeur réelle du tableau ?\n\n 14 cm 27 cm 35 cm 140 cm",
+    "pages": [
+     2
+    ]
+   },
+   "6": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\n N\n\n A C 65° N : Nord\n a\n\n a\n\nTrois points nommés A, B, et C sont posi- S : Sud\n 30°\n\n 50°\n\n O 0° E\n 30°\n\ntionnés sur la sphère ci-contre.\n 0°\n\n O : Ouest\n 40°\n E : Est\n B\n 65°\n a\n\n S\nQuel point a pour coordonnées (65° N ; 30° O) ?\n\nPolynésie 2 8 septembre 2025\n\n A B C Aucun",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : tionnés sur la sphère ci-contre. ; Quel point a pour coordonnées (65° N ; 30° O) ?",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 12,
+  "pages_total": 8,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    2
+   ],
+   "2": [
+    2
+   ],
+   "3": [
+    2
+   ],
+   "4": [
+    2
+   ],
+   "5": [
+    2
+   ],
+   "6": [
+    2,
+    3
+   ],
+   "7": [
+    3,
+    4
+   ],
+   "8": [
+    4,
+    5,
+    6
+   ],
+   "9": [
+    6,
+    7,
+    8
+   ],
+   "10": [
+    8
+   ],
+   "11": [
+    8
+   ]
+  }
+ },
+ "Brevet_Asie_18_juin_2024.pdf": {
+  "remap": {
+   "0": 0,
+   "1": 6,
+   "2": 7,
+   "3": 8,
+   "4": 9,
+   "5": 10,
+   "6": 11,
+   "7": 12,
+   "8": 13,
+   "9": 14,
+   "10": 15,
+   "11": 16
+  },
+  "nouveaux": {
+   "1": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nLequel de ces quatre nombres est premier ?\n Réponse A Réponse B Réponse C Réponse D\n 1 21 37 54",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nL’aire totale du patron d’un cube d’arête 5 cm est égale à...\n\n Réponse A Réponse B Réponse C Réponse D\n 125 cm2 150 cm2 120 cm2 100 cm2",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nUne forme factorisée de l’expression littérale 4x 2 − 9 est. . .\n\n Réponse A Réponse B Réponse C Réponse D\n (4x − 3)(4x + 3) (2x − 3)(2x + 3) (2x − 3)2 (4x − 9)(4x + 9)",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nUn écran de télévision est au format 16 : 9 ce qui signifie que la longueur et la largeur de\nl’écran sont dans le ratio 16 : 9.\nDans ce cas, si la longueur de l’écran est de 110 cm, sa largeur est d’environ ...\n\n Réponse A Réponse B Réponse C Réponse D\n 62 cm 103 cm 196 cm 94 cm",
+    "pages": [
+     1
+    ]
+   },
+   "5": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\nOn considère la série de valeurs : 4,1 3,67 4,23 4,5 3,4\nQuelle est la médiane de cette série ?\n\n Réponse A Réponse B Réponse C Réponse D\n 0,83 4,1 4,23 3,98",
+    "pages": [
+     1
+    ]
+   }
+  },
+  "total": 17,
+  "pages_total": 12,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1
+   ],
+   "5": [
+    1
+   ],
+   "6": [
+    1,
+    2
+   ],
+   "7": [
+    2,
+    3
+   ],
+   "8": [
+    3,
+    4,
+    5
+   ],
+   "9": [
+    5,
+    6,
+    7
+   ],
+   "10": [
+    7,
+    8
+   ],
+   "11": [
+    8,
+    9
+   ],
+   "12": [
+    9,
+    10
+   ],
+   "13": [
+    10
+   ],
+   "14": [
+    10,
+    11,
+    12
+   ],
+   "15": [
+    12
+   ],
+   "16": [
+    12
+   ]
+  }
+ },
+ "Brevet_Asie_9_06_2025_JCS_FH2.pdf": {
+  "remap": {
+   "0": 0,
+   "1": 5,
+   "2": 6,
+   "3": 7,
+   "4": 8
+  },
+  "nouveaux": {
+   "1": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nDans une urne, on dispose de 4 boules bleues, 6 boules violettes, 7 boules rouges, 3 boules\njaunes, toutes indiscernables au toucher. On tire une boule au hasard.\nQuelle est la probabilité d’obtenir une boule violette ?\n\n Proposition A Proposition B Proposition C Proposition D\n 6 1 3 14\n 14 4 10 20",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nCalculer 70 % d’une quantité revient à multiplier cette quantité par :\n\n Proposition A Proposition B Proposition C Proposition D\n 0,30 0,70 1,70 1,30",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nOn considère la série suivante composée des 5 valeurs : 7 ; 18 ; 12 ; 13 ; 15.\n\n Proposition A Proposition B Proposition C Proposition D\n L’étendue de La médiane de La moyenne de La moyenne de\n cette série est 8 cette série est 12 cette série est 53 cette série est 13",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\n\nUne fonction afﬁne f a pour représentation\ngraphique la courbe C f ci-contre. 3\n\nL’expression de la fonction f est : Cf\n\n Proposition A f (x) = 2x + 4\n Proposition B f (x) = 4x − 2 1\n Proposition C f (x) = −2x + 4\n Proposition D f (x) = −4x + 2\n\n 1 2 3\n\fL’année 2025 A. P. M. E. P.",
+    "pages": [
+     1,
+     2
+    ]
+   }
+  },
+  "total": 9,
+  "pages_total": 6,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1,
+    2
+   ],
+   "5": [
+    2,
+    3
+   ],
+   "6": [
+    3,
+    4
+   ],
+   "7": [
+    4,
+    5
+   ],
+   "8": [
+    5,
+    6
+   ]
+  }
+ },
+ "Brevet_Grece_1_18_juin_2019.pdf": {
+  "remap": {
+   "0": 0,
+   "1": 1,
+   "2": 2,
+   "3": 3,
+   "4": 4,
+   "5": 5,
+   "6": 6
+  },
+  "nouveaux": {
+   "7": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nCompléter le programme ci-dessous en remplaçant les pointillés par les bonnes valeurs pour que le\nlosange soit dessiné tel qu’il est défini.\n\n Quand est cliqué définir Losange\n\n effacer tout\n stylo en position d’écriture\n montrer\n répéter 2 fois\n s’orienter à 90\n avancer de Côté\n aller à x: 0 y: 0\n tourner de . . . degrés\n mettre Côté à . . .\n avancer de Côté\n Losange\n tourner de . . . degrés\n Cacher\n\nGrèce 21 18 juin 2019",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Compléter le programme ci-dessous en remplaçant les pointillés par les bonnes valeurs pour que le ; losange soit dessiné tel qu’il est défini.",
+    "pages": [
+     7
+    ]
+   }
+  },
+  "total": 8,
+  "pages_total": 7,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1,
+    2
+   ],
+   "2": [
+    2
+   ],
+   "3": [
+    2,
+    3,
+    4
+   ],
+   "4": [
+    4,
+    5
+   ],
+   "5": [
+    5,
+    6,
+    7
+   ],
+   "6": [
+    7
+   ],
+   "7": [
+    7
+   ]
+  }
+ },
+ "Brevet_etranger_16_06_2025_DV.pdf": {
+  "remap": {
+   "0": 0,
+   "1": 6,
+   "2": 7,
+   "3": 8,
+   "4": 9
+  },
+  "nouveaux": {
+   "1": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nLa décomposition en produit de facteurs premiers de 120 est :\n\n Réponse A Réponse B Réponse C Réponse D\n 2×3×4×5 15 × 2 × 2 × 2 23 × 3 × 5 53 + 67",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nDans la cellule A2, la formule « = − 4 * A1 - 12 »\n A B\na été saisie.\n 1 2 5\nOn l’étire jusqu’à la cellule B2.\n 2 −20\nLa valeur obtenue dans la cellule B2 est . :\n\n Réponse A Réponse B Réponse C Réponse D\n −32 −20 8 68",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\n\nSur la ﬁgure ci-contre, le rapport de l’homothétie de centre O\n A B\n a\n\nqui transforme le carré A en le carré B est : O\n\n Réponse A Réponse B Réponse C Réponse D\n −2 −0, 5 0,5 2",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Sur la ﬁgure ci-contre, le rapport de l’homothétie de centre O ; qui transforme le carré A en le carré B est : O.",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nUne écriture factorisée de 4x 2 − 1 est :\n\n Réponse A Réponse B Réponse C Réponse D\n (2x − 1)(2x + 1) (4x − 1)(4x + 1) 4(x − 1)(x + 1) (2x − 1)2",
+    "pages": [
+     1
+    ]
+   },
+   "5": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\n\fL’année 2023 A. P. M. E. P.\n\n 7,4 cm\n T E\n 39°\nDans le triangle TER ci-contre, la mesure de la\nlongueur RE arrondie au centième de cm est :\n\n R\n Réponse A Réponse B Réponse C Réponse D\n 4,66 cm 5,75 cm 9,52 cm 11,76 cm",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : 7,4 cm ; Dans le triangle TER ci-contre, la mesure de la ; 4,66 cm 5,75 cm 9,52 cm 11,76 cm.",
+    "pages": [
+     1,
+     2
+    ]
+   }
+  },
+  "total": 10,
+  "pages_total": 5,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1
+   ],
+   "5": [
+    1,
+    2
+   ],
+   "6": [
+    2,
+    3
+   ],
+   "7": [
+    3,
+    4
+   ],
+   "8": [
+    4,
+    5
+   ],
+   "9": [
+    5
+   ]
+  }
+ },
+ "DNB_generale_Sujet_2026_06_15_Asie_DV_v3.pdf": {
+  "remap": {
+   "0": 9,
+   "1": 10,
+   "2": 11,
+   "3": 12
+  },
+  "nouveaux": {
+   "0": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nL’écriture scientifique du nombre 45 310 est :\n A. 45,31 × 103 B. 4,531 × 104 C. 4,531 × 10−4 D. 4531 × 101",
+    "pages": [
+     1
+    ]
+   },
+   "1": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nUne forme développée de l’expression (4𝑥 − 3)(4𝑥 + 3) est :\n Réponse A Réponse B Réponse C Réponse D\n 4𝑥2 − 9 16𝑥2 + 9 16𝑥2 − 9 8𝑥2 − 6",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nUn pavé droit a pour dimensions : 4,5 cm de long, 4 cm de large, 10 cm de haut. Le volume de ce pavé\nest de :\n Réponse A Réponse B Réponse C Réponse D\n 180 cm3 170 cm3 160,5 cm3 18,5 cm3",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nOn considère les nombres suivants et on s’intéresse à leur divisibilité par 9.\n\n 𝑁 = 2 025 et 𝑃 = 2 026.\n Réponse A Réponse B Réponse C Réponse D\n 𝑁 et 𝑃 sont tous les deux 𝑁 est divisible par 9 𝑃 est divisible par 9 Aucun des deux n’est\n divisibles par 9 mais 𝑃 ne l’est pas mais 𝑁 ne l’est pas divisible par 9",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\nUne personne a couru 9 km en 45 minutes.\nQuelle est sa vitesse moyenne en km/h ?\n\fSujet A. P. M. E. P.",
+    "pages": [
+     1,
+     2
+    ]
+   },
+   "5": {
+    "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 6\n\n casque\nUne roue de la fortune est utilisée pour faire gagner des cadeaux. La stylo\n\n stylo porte-clé\nroue est divisée en 10 secteurs de tailles égales, avec les gains suivants :\ndes stylos, des porte-clés, des casques audios ou un smartphone. porte-clé smartphone\n\nUn joueur tourne la roue une seule fois. casque porte-clé\nQuelle est la probabilité que le joueur gagne un casque audio ? stylo stylo",
+    "pages": [
+     2
+    ]
+   },
+   "6": {
+    "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 7\nUn article coûte 60 e. Calculer son nouveau prix après une baisse de 10 %.",
+    "pages": [
+     2
+    ]
+   },
+   "7": {
+    "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 8\n B\n\n 40∘\n ̂?\nQuelle est la mesure de l’angle BAC\n\n C A",
+    "pages": [
+     2
+    ]
+   },
+   "8": {
+    "enonce": "Question 9 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 9\nLe diagramme en barres ci-dessous donne les notes des élèves d’une classe au dernier contrôle de\nmathématiques.\na. Combien d’élèves ont participé à ce contrôle ?\nb. Quelle est la note médiane ?\n\n effectifs\n\n 6 7 8 9 10 11 12 13 14 15 16 17 18\n notes\n\n Restitution de la copie du candidat à l’issue de la partie 1\n\nAsie 2 15 juin 2026\n\fSujet A. P. M. E. P.\n\nPartie 2 – Raisonnement et résolution de problèmes – 14 points\nDans cette partie, toutes les réponses doivent être justifiées, sauf si une indication contraire est donnée.\nLa clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2 points.\nPour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de la recherche ;\nles essais et les démarches engagées, même non aboutis, seront pris en compte dans la notation.",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 13,
+  "pages_total": 7,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1,
+    2
+   ],
+   "5": [
+    2
+   ],
+   "6": [
+    2
+   ],
+   "7": [
+    2
+   ],
+   "8": [
+    2,
+    3
+   ],
+   "9": [
+    3,
+    4
+   ],
+   "10": [
+    4,
+    5
+   ],
+   "11": [
+    5,
+    6
+   ],
+   "12": [
+    6,
+    7
+   ]
+  }
+ },
+ "DNB_generale_Sujet_2026_06_18_Centres_etrangers_DV_v3.pdf": {
+  "remap": {
+   "0": 8,
+   "1": 9,
+   "2": 10
+  },
+  "nouveaux": {
+   "0": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nVoici la série des températures minimales relevées à Strasbourg lors des cinq premiers jours de février :\n0 °C ; −1 °C ; 3 °C ; 7 °C ; 1 °C.\nDéterminer la médiane de cette série.\n\n no 1 no 2 no 3",
+    "pages": [
+     1
+    ]
+   },
+   "1": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nQuelle est l’image du motif no 4 par la translation no 4 no 5 no 6\nqui transforme le motif no 2 en no 6 ?\n no 7 no 8 no 9",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nUne boîte opaque contient 3 boules rouges et 5 boules vertes identiques et indiscernables au toucher.\nOn pioche une boule au hasard.\nQuelle est la probabilité qu’elle soit rouge ?\n\nQuestion 4 L\n\nRecopier sur la copie et compléter avec des longueurs des côtés\ndu triangle JLK pour que l’égalité ci-dessous soit vraie.\n … J\n cos (L̂\n KJ) =\n …\n K",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Une boîte opaque contient 3 boules rouges et 5 boules vertes identiques et indiscernables au toucher. ; On pioche une boule au hasard. ; Recopier sur la copie et compléter avec des longueurs des côtés ; du triangle JLK pour que l’égalité ci-dessous soit vraie.",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\nLa distance entre la Terre et Mars est environ égale à 311 200 000 kilomètres.\nDonner la notation scientifique de 311 200 000.\n\fSujet A. P. M. E. P.",
+    "pages": [
+     1,
+     2
+    ]
+   },
+   "4": {
+    "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 6\nCharlie a effectué un trajet en vélo en 2 h 30 min à une vitesse moyenne de 40 km/h.\nCalculer la distance, en km, parcourue par Charlie.",
+    "pages": [
+     2
+    ]
+   },
+   "5": {
+    "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 7\nRecopier sur la copie la forme factorisée de l’expression 5𝑥 + 5.\n\n 5(𝑥 + 1) 5(𝑥 + 5) 10𝑥 25𝑥",
+    "pages": [
+     2
+    ]
+   },
+   "6": {
+    "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 8\nUn article coûte 80 e. Son prix baisse de 10 %. Recopier sur la copie le calcul permettant de trouver le\nprix final de l’article.\n\n 10 10 10\n 80 − 10 80 − 80 − × 80 (80 − ) × 80\n 100 100 100",
+    "pages": [
+     2
+    ]
+   },
+   "7": {
+    "enonce": "Question 9 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 9\nLe graphique suivant donne la hauteur d’eau dans le port de Quiberon le 23 juillet 2025.\n\n Hauteur d’eau dans le port de Quiberon – 23 juillet 2025\n Hauteur d’eau (en m)\n\n 13 h 14 h 15 h 16 h 17 h 18 h 19 h 20 h\n Heure (en h)\n\nAvec la précision permise par le graphique, recopier sur la copie la durée pendant laquelle la hauteur\nd’eau dans le port a été supérieure à 4 m.\n\n 2 h 30 min 4 h 30 min 5 h 30 min 7h\n\n Restitution de la copie du candidat à l’issue de la partie 1\n\nCentres étrangers 2 18 juin 2026\n\fSujet A. P. M. E. P.\n\n DEUXIÈME PARTIE (14 pts)\n Dans cette partie, toutes les réponses doivent être justifiées, sauf si une indication contraire\n est donnée.\n La clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2 points.\n Pour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de la\n recherche ; les essais et les démarches engagées, même non aboutis, seront pris en compte\n dans la notation.",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Le graphique suivant donne la hauteur d’eau dans le port de Quiberon le 23 juillet 2025. ; Avec la précision permise par le graphique, recopier sur la copie la durée pendant laquelle la hauteur ; d’eau dans le port a été supérieure à 4 m. ; Dans cette partie, toutes les réponses doivent être justifiées, sauf si une indication contraire ; recherche ; les essais et les démarches engagées, même non aboutis, seront pris en compte.",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 11,
+  "pages_total": 5,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1,
+    2
+   ],
+   "4": [
+    2
+   ],
+   "5": [
+    2
+   ],
+   "6": [
+    2
+   ],
+   "7": [
+    2,
+    3
+   ],
+   "8": [
+    3,
+    4
+   ],
+   "9": [
+    4,
+    5
+   ],
+   "10": [
+    5
+   ]
+  }
+ },
+ "DNB_generale_Sujet_2026_06_30_Antilles_Guyane_DV_v2.pdf": {
+  "remap": {
+   "0": 7,
+   "1": 8,
+   "2": 9
+  },
+  "nouveaux": {
+   "0": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\n P\nDans le quadrillage ci-contre, quel est le symétrique du\npoint K par la symétrie centrale de centre O ? O\n\n M N\n\nQuestion 3 B\nOn souhaite connaitre l’aire du triangle ABC représenté\nci-contre.\nQuel calcul doit-on effectuer ?\n A. AB + BC + AC B. AC × BD ÷ 2\n C. AB × BC × CA D. AC × BD\n\n A D C\n\fSujet A. P. M. E. P.",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Dans le quadrillage ci-contre, quel est le symétrique du ; point K par la symétrie centrale de centre O ? O ; On souhaite connaitre l’aire du triangle ABC représenté ; ci-contre.",
+    "pages": [
+     1,
+     2
+    ]
+   },
+   "1": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nOn lance 10 fois une pièce de monnaie.\nLes résultats obtenus sont les suivants : pile, pile, face, pile, face, face, face, face, pile, face.\nQuelle est la fréquence d’apparition de « pile » ?\n 1 6 4 4\n A. B. C. D.\n 2 10 10 6",
+    "pages": [
+     2
+    ]
+   },
+   "2": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\nOn note 𝑛 un nombre entier.\nParmi les propositions suivantes, quelle expression donne la moitié de 𝑛 ?\n 𝑛\n A. 2𝑛 B. 𝑛2 C. 𝑛+2 D.",
+    "pages": [
+     2
+    ]
+   },
+   "3": {
+    "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 6\nParmi les propositions suivantes, quelle durée correspond à d’heure ?\n A. 0,1 min B. 1 min C. 6 min D. 10 min",
+    "pages": [
+     2
+    ]
+   },
+   "4": {
+    "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 7\nOn donne la série suivante : 10 ; 10 ; 12 ; 16.\nCalculer la moyenne de cette série.\n ||\n 𝑥\n 120°",
+    "pages": [
+     2
+    ]
+   },
+   "5": {
+    "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 8\nLa figure ci-contre n’est pas en vraie grandeur. Quelle est\n ||\n\nla valeur de 𝑥 ?\n 𝑥",
+    "pages": [
+     2
+    ]
+   },
+   "6": {
+    "enonce": "Question 9 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 9\nUn vélo roule à la vitesse moyenne de 20 km/h.\nQuelle est la durée d’un trajet de 15 km ?\n\nAntilles, Guyane 2 30 juin 2026\n\fSujet A. P. M. E. P.\n\n DEUXIÈME PARTIE (14 pts)",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 10,
+  "pages_total": 6,
+  "pages_all": {
+   "0": [
+    1,
+    2
+   ],
+   "1": [
+    2
+   ],
+   "2": [
+    2
+   ],
+   "3": [
+    2
+   ],
+   "4": [
+    2
+   ],
+   "5": [
+    2
+   ],
+   "6": [
+    2,
+    3
+   ],
+   "7": [
+    3,
+    4
+   ],
+   "8": [
+    4,
+    5
+   ],
+   "9": [
+    5,
+    6
+   ]
+  }
+ },
+ "DNB_generale_Sujet_2026_06_30_Metropole_FK_v2.pdf": {
+  "remap": {
+   "0": 9,
+   "1": 10,
+   "2": 11,
+   "3": 12
+  },
+  "nouveaux": {
+   "0": {
+    "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 1\nDonner une écriture du nombre 0,75 sous la forme d’une fraction.",
+    "pages": [
+     1
+    ]
+   },
+   "1": {
+    "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 2\nCalculer la somme −4,7 + 3,5.",
+    "pages": [
+     1
+    ]
+   },
+   "2": {
+    "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 3\nOn considère le tableau de proportionnalité ci-contre. 6 18\nCombien vaut 𝑎 ? 12 𝑎",
+    "pages": [
+     1
+    ]
+   },
+   "3": {
+    "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 4\nUn sac contient 10 boules rouges, 4 boules bleues et 6 boules vertes.\nOn tire au hasard une boule dans le sac et on note sa couleur.\nSachant que toutes les boules ont la même probabilité d’être choisies, quelle est la probabilité d’obtenir\nune boule bleue ?\n 1 4 4 1\n A. B. C. D.\n 4 20 16 3",
+    "pages": [
+     1
+    ]
+   },
+   "4": {
+    "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 5\nParmi les propositions suivantes, laquelle est la solution de l’équation 10𝑥 + 16 = −64 ?\n A. 8 B. −4,8 C. −8 D. −14",
+    "pages": [
+     1
+    ]
+   },
+   "5": {
+    "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 6\nParmi les propositions suivantes, laquelle est la notation scientifique du nombre 0,004 58 ?\n A. 458 × 10−3 B. 4,58 × 103 C. 4,58 × 10−3 D. 458 × 10−5\n\fSujet A. P. M. E. P.",
+    "pages": [
+     1,
+     2
+    ]
+   },
+   "6": {
+    "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 7\n\nLe diagramme circulaire ci-contre donne la répartition des Réponse C Réponse B\nréponses de 24 élèves à une question à choix multiple.\nQuel est le nombre d’élèves ayant choisi la réponse B ? Réponse D\n Réponse A",
+    "pages": [
+     2
+    ]
+   },
+   "7": {
+    "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 8\n 10 mm\nParmi les propositions suivantes, laquelle est le pé-\nrimètre de la figure ci-contre ?\n A. 30 mm B. 30 mm2 5 mm\n C. 50 mm D. 50 mm2",
+    "pages": [
+     2
+    ]
+   },
+   "8": {
+    "enonce": "Question 9 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+    "enonce_correction": "Question 9\n ̂\nParmi les propositions suivantes, laquelle donne le cosinus de l’angle E DF dans le triangle rectangle\nci-dessous ?\n 4 3 5 4\n A. B. C. D.\n 5 5 3 3\n\n D\n\n 10 cm\n 6 cm\n\n F 8 cm E\n\nMétropole 2 30 juin 2026\n\fSujet A. P. M. E. P.\n\n DEUXIÈME PARTIE (14 points)",
+    "figure_desc": "Figure décrite d'après les données de l'énoncé : Parmi les propositions suivantes, laquelle donne le cosinus de l’angle E DF dans le triangle rectangle ; ci-dessous ? ; 10 cm ; 6 cm ; F 8 cm E.",
+    "pages": [
+     2,
+     3
+    ]
+   }
+  },
+  "total": 13,
+  "pages_total": 5,
+  "pages_all": {
+   "0": [
+    1
+   ],
+   "1": [
+    1
+   ],
+   "2": [
+    1
+   ],
+   "3": [
+    1
+   ],
+   "4": [
+    1
+   ],
+   "5": [
+    1,
+    2
+   ],
+   "6": [
+    2
+   ],
+   "7": [
+    2
+   ],
+   "8": [
+    2,
+    3
+   ],
+   "9": [
+    3,
+    4
+   ],
+   "10": [
+    4,
+    5
+   ],
+   "11": [
+    5
+   ],
+   "12": [
+    5
+   ]
+  }
+ }
+}

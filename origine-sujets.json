@@ -1,0 +1,522 @@
+{
+  "sansUrl": [
+    {
+      "id": 1,
+      "titre": "Les grands nombres entiers",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 2,
+      "titre": "Multiples, diviseurs et critères de divisibili",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 3,
+      "titre": "Division euclidienne",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 4,
+      "titre": "Comparer et ranger des nombres décimaux",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 5,
+      "titre": "Encadrer, intercaler et valeurs approchées",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 6,
+      "titre": "Addition et soustraction de nombres décimaux",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 7,
+      "titre": "Multiplier et diviser par 10, 100, 1 000, 0,1 ",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 8,
+      "titre": "Multiplication de décimaux et ordre de grandeu",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 9,
+      "titre": "Division décimale",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 10,
+      "titre": "Priorités des opérations",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 11,
+      "titre": "Comprendre la notion de fraction",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 12,
+      "titre": "Fractions et demi-droite graduée",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 13,
+      "titre": "Ajouter et comparer des fractions",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 14,
+      "titre": "Multiplier une fraction par un nombre",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 15,
+      "titre": "Reconnaître une situation de proportionnalité",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 16,
+      "titre": "Résoudre un problème de proportionnalité",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 17,
+      "titre": "Proportionnalité et représentation graphique",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 18,
+      "titre": "Les pourcentages",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 19,
+      "titre": "Organiser des données dans un tableau",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 20,
+      "titre": "Représentations graphiques : diagrammes",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 21,
+      "titre": "Nombres décimaux et unités de grandeurs",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 22,
+      "titre": "Les volumes",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 23,
+      "titre": "Bilan de début d'année — Révisions générales",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 24,
+      "titre": "Nombres relatifs : comparer et repérer",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 25,
+      "titre": "Addition et soustraction de nombres relatifs",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 26,
+      "titre": "Distance entre deux points sur une droite grad",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 27,
+      "titre": "Simplifier et comparer des fractions",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 28,
+      "titre": "Additionner et soustraire des fractions",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 29,
+      "titre": "Calcul littéral : réduire, développer, factori",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 30,
+      "titre": "Expressions littérales et programmes de calcul",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 31,
+      "titre": "Proportionnalité et produit en croix",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 32,
+      "titre": "Les ratios",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 33,
+      "titre": "Pourcentages et échelles",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 34,
+      "titre": "Effectifs, fréquences et moyennes",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 35,
+      "titre": "Lire et représenter des données",
+      "questions": 3,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 36,
+      "titre": "Calculer une probabilité",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 37,
+      "titre": "Repères et coordonnées",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 38,
+      "titre": "Symétrie centrale : construction et propriétés",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 39,
+      "titre": "Angles : complémentaires, supplémentaires, par",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 40,
+      "titre": "Triangles : somme des angles et inégalité tria",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 41,
+      "titre": "Périmètres et aires",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 42,
+      "titre": "Volumes : pavé, prisme et cylindre",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 43,
+      "titre": "Convertir et calculer avec des durées",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 44,
+      "titre": "Bilan semestriel — Révisions 5ème",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 45,
+      "titre": "Addition et soustraction de nombres relatifs",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 46,
+      "titre": "Multiplication et division de nombres relatifs",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 47,
+      "titre": "Fractions égales et simplification",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 48,
+      "titre": "Addition et soustraction de fractions",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 49,
+      "titre": "Multiplication et division de fractions",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 50,
+      "titre": "Fractions : priorités et calculs enchaînés",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 51,
+      "titre": "Puissances d'un nombre relatif",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 52,
+      "titre": "Puissances de 10 et écriture scientifique",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 53,
+      "titre": "Multiples et diviseurs d'un nombre",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 54,
+      "titre": "Calcul littéral : réduire et développer",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 55,
+      "titre": "Factoriser une expression littérale",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 56,
+      "titre": "Tester une égalité",
+      "questions": 3,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 57,
+      "titre": "Résoudre une équation du premier degré",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 58,
+      "titre": "Théorème de Pythagore",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 59,
+      "titre": "Théorème de Thalès",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 60,
+      "titre": "Cosinus d'un angle aigu",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 61,
+      "titre": "Translation, rotation et triangles égaux",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 62,
+      "titre": "Pyramides et cônes : volumes",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 63,
+      "titre": "Proportionnalité : vitesse, pourcentages, agra",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 64,
+      "titre": "Statistiques : moyenne, médiane et étendue",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 65,
+      "titre": "Probabilités",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 66,
+      "titre": "Bilan semestriel — Révisions 4ème",
+      "questions": 6,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 67,
+      "titre": "Arithmétique : nombres premiers et fractions i",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 68,
+      "titre": "Puissances de 10 et écriture scientifique",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 69,
+      "titre": "Racines carrées et équations x² = a",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 70,
+      "titre": "Équations du premier degré et mise en équation",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 71,
+      "titre": "Calcul littéral : développer et factoriser",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 72,
+      "titre": "Notion de fonction : images et antécédents",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 73,
+      "titre": "Fonctions linéaires et affines",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 74,
+      "titre": "Pourcentages et évolutions",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 75,
+      "titre": "Grandeurs composées et conversions",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 76,
+      "titre": "Statistiques : moyenne, médiane, étendue",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 77,
+      "titre": "Calculer une probabilité",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 78,
+      "titre": "Théorème de Pythagore : réciproque et contrapo",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 79,
+      "titre": "Théorème de Thalès et sa réciproque",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 80,
+      "titre": "Trigonométrie : sinus, cosinus, tangente",
+      "questions": 5,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 81,
+      "titre": "Triangles semblables",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 82,
+      "titre": "Translation et rotation",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 83,
+      "titre": "Homothétie",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 84,
+      "titre": "Sphère et boule",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 85,
+      "titre": "Volumes et sections de solides",
+      "questions": 4,
+      "texte_extrait_pdf": "non"
+    },
+    {
+      "id": 86,
+      "titre": "Brevet blanc de mathématiques",
+      "questions": 7,
+      "texte_extrait_pdf": "non"
+    }
+  ],
+  "urlFantome": [],
+  "avecFichier": 337
+}
