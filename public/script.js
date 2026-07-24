@@ -609,16 +609,25 @@ function renderExamenChoice() {
    base (enonce_correction) : aucune migration n'est nécessaire. */
 function parseSousQuestions(texte) {
   const lignes = String(texte || "").replace(/\r/g, "").split("\n");
-  const NUM = /^\s{0,12}(\d{1,2})\s*[.)]\s+(\S.*)$/;
-  const LET = /^\s{0,16}([a-h])\s*[.)]\s+(\S.*)$/;
+  const NUM = /^\s*(\d{1,2})\s*[.)]\s+(\S.*)$/;
+  const LET = /^\s*([a-h])\s*[.)]\s+(\S.*)$/;
   const items = [];
   let preambule = [], courant = null;
 
   for (const l of lignes) {
     const mn = l.match(NUM), ml = l.match(LET);
-    if (mn) { courant = { type: "num", num: mn[1], lettre: null, lignes: [mn[2]] }; items.push(courant); }
+    if (mn) {
+      // Cas « 1. a. Montrer que… » : numéro et lettre sur la même ligne.
+      const suite = mn[2].match(LET);
+      if (suite) {
+        courant = { type: "let", num: mn[1], lettre: suite[1], lignes: [suite[2]] };
+      } else {
+        courant = { type: "num", num: mn[1], lettre: null, lignes: [mn[2]] };
+      }
+      items.push(courant);
+    }
     else if (ml && items.length) {
-      const parent = items.slice().reverse().find(x => x.type === "num");
+      const parent = items.slice().reverse().find(x => x.num);
       courant = { type: "let", num: parent ? parent.num : null, lettre: ml[1], lignes: [ml[2]] };
       items.push(courant);
     }
@@ -627,13 +636,37 @@ function parseSousQuestions(texte) {
   }
   if (!items.length) return null;
 
+  /* ── Garde-fou ──────────────────────────────────────────────────────────
+     L'extraction PDF (colonnes, encarts, figures) brouille parfois la
+     numérotation : questions absorbées, ordre inversé. Plutôt que de
+     présenter à l'élève des numéros faux ou lacunaires, on ne découpe QUE
+     si la numérotation est irréprochable ; sinon l'exercice reste entier. */
+  const numeros = [];
+  for (const it of items) {
+    const n = Number(it.num);
+    if (!n) return null;                                // item sans numéro rattaché
+    if (!numeros.length || numeros[numeros.length - 1] !== n) numeros.push(n);
+  }
+  // les numéros doivent démarrer à 1, être croissants et sans trou
+  if (numeros[0] !== 1) return null;
+  for (let i = 1; i < numeros.length; i++) if (numeros[i] !== numeros[i - 1] + 1) return null;
+
+  // les lettres d'un même numéro doivent démarrer à « a » et se suivre
+  const parNum = {};
+  for (const it of items) if (it.type === "let") (parNum[it.num] = parNum[it.num] || []).push(it.lettre);
+  for (const n in parNum) {
+    const L = parNum[n];
+    if (L[0] !== "a") return null;
+    for (let i = 1; i < L.length; i++)
+      if (L[i].charCodeAt(0) !== L[i - 1].charCodeAt(0) + 1) return null;
+  }
+
   const sorties = [];
   for (let i = 0; i < items.length; i++) {
     const it = items[i], suivant = items[i + 1];
     const texteItem = it.lignes.join(" ").replace(/\s+/g, " ").trim();
-    // Un item numéroté suivi de lettres sert de contexte à ses lettres.
     if (suivant && suivant.type === "let" && suivant.num === it.num && it.type === "num") {
-      it._contexte = texteItem; continue;
+      it._contexte = texteItem; continue;               // sert de contexte à ses lettres
     }
     let ctx = "";
     if (it.type === "let") {
@@ -645,8 +678,7 @@ function parseSousQuestions(texte) {
       texte: (ctx ? ctx + " " : "") + texteItem,
     });
   }
-  if (!sorties.length) return null;
-  return { preambule: preambule.join(" ").replace(/\s+/g, " ").trim(), items: sorties };
+  return sorties.length > 1 ? { preambule: preambule.join(" ").replace(/\s+/g, " ").trim(), items: sorties } : null;
 }
 
 /* Développe la liste des exercices en une liste de sous-questions. */
