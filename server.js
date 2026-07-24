@@ -5,6 +5,40 @@ const path       = require("path");
 const crypto     = require("crypto");
 const fs         = require("fs");
 
+/* ── LECTURE TOLÉRANTE DU JSON RENVOYÉ PAR LE MODÈLE ──────────────────────
+   Les modèles insèrent souvent de vrais retours à la ligne à l'intérieur des
+   chaînes (ce que JSON interdit), ou encadrent leur réponse de texte. On
+   répare ces deux cas avant d'abandonner. */
+function parseJsonTolerant(raw) {
+  let t = String(raw || "").replace(/```json|```/g, "").trim();
+
+  // 1er essai : tel quel
+  try { return JSON.parse(t); } catch (_) {}
+
+  // 2e essai : ne garder que le premier objet { ... }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) {
+    t = t.slice(a, b + 1);
+    try { return JSON.parse(t); } catch (_) {}
+  }
+
+  // 3e essai : échapper les sauts de ligne bruts présents DANS les chaînes
+  let out = "", dansChaine = false, echap = false;
+  for (const c of t) {
+    if (echap) { out += c; echap = false; continue; }
+    if (c === "\\") { out += c; echap = true; continue; }
+    if (c === '"') { dansChaine = !dansChaine; out += c; continue; }
+    if (dansChaine) {
+      if (c === "\n") { out += "\\n"; continue; }
+      if (c === "\r") { continue; }
+      if (c === "\t") { out += "\\t"; continue; }
+    }
+    out += c;
+  }
+  try { return JSON.parse(out); } catch (_) {}
+  return null;
+}
+
 /* ── RENDU D'UNE PAGE DE SUJET EN IMAGE ───────────────────────────────────
    Le correcteur doit VOIR la figure, pas seulement en lire une description.
    On convertit la page du PDF en PNG et on la joint à l'appel Mistral.
@@ -502,17 +536,23 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
       body: JSON.stringify({
         model: "mistral-small-latest",
         messages: [{ role: "user", content: userContent }],
+        response_format: { type: "json_object" },   // garantit un JSON valide
         temperature: 0.1,
-        max_tokens: 800
+        max_tokens: 1200                            // marge : une réponse tronquée casse le JSON
       })
     });
     if (!mistralRes.ok) {
       const err = await mistralRes.text();
       throw new Error("Erreur Mistral : " + err);
     }
-    const data  = await mistralRes.json();
-    const clean = data.choices[0].message.content.replace(/```json|```/g, "").trim();
-    res.json(JSON.parse(clean));
+    const data = await mistralRes.json();
+    const brut = (data.choices && data.choices[0] && data.choices[0].message.content) || "";
+    const parsed = parseJsonTolerant(brut);
+    if (!parsed) {
+      console.error("Réponse non-JSON du modèle :", brut.slice(0, 400));
+      return res.status(502).json({ error: "Le correcteur a renvoyé une réponse illisible. Réessaie." });
+    }
+    res.json(parsed);
   } catch (err) {
     console.error("Erreur correction:", err.message);
     res.status(500).json({ error: err.message });
