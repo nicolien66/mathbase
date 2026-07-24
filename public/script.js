@@ -724,12 +724,17 @@ async function submitExamAnswer() {
       result = { verdict: "partial", analyse: "Mode démo : compare ta réponse au corrigé ci-dessous — le serveur MathBase fournira une correction détaillée de ta démarche.", solution: q.solution || "—" };
     } else {
       const res = await MB_AUTH.apiFetch("/exercises/correct", { method: "POST", body: JSON.stringify({ exercise: pseudoEx, answer }) });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        // On récupère le message réel du serveur au lieu de le perdre.
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || ("HTTP " + res.status));
+      }
       result = await res.json();
       if (result.error) throw new Error(result.error);
     }
-  } catch {
-    result = { verdict: "partial", analyse: "Correction indisponible pour l'instant — compare ta copie avec le corrigé.", solution: q.solution || "—" };
+  } catch (e) {
+    console.error("[correction] échec :", e && e.message);
+    result = { verdict: "partial", analyse: "Correction indisponible pour l'instant — compare ta copie avec le corrigé. (Détail : " + ((e && e.message) || "erreur inconnue") + ")", solution: q.solution || "—" };
   }
   btn.disabled = false;
   EXAM.answers[EXAM.index] = { answer, result, skipped: false };

@@ -435,7 +435,15 @@ app.post("/exercises/correct", auth, async (req, res) => {
       if (img) images.push(img);
     }
   }
+  // Garde-fou : au-delà de ~5 Mo cumulés, on renonce aux images plutôt que de
+  // risquer un rejet de l'API ; la correction repart alors en mode texte.
+  const poids = images.reduce((n, u) => n + u.length, 0);
+  if (poids > 5 * 1024 * 1024) {
+    console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) + " Ko) — mode texte.");
+    images.length = 0;
+  }
   const avecImage = images.length > 0;
+  if (avecImage) console.log("[pages] " + images.length + " page(s) jointe(s), " + Math.round(poids / 1024) + " Ko");
 
   const figureCtx = avecImage
     ? (exercise.figure_desc
