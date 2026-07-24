@@ -405,6 +405,17 @@ function annaleFigure(fig) {
 }
 function nl2br(t) { return escapeHtml(t == null ? "" : t).replace(/\n/g, "<br>"); }
 
+/* Libellé court d'une question : « Exercice 3 », « Problème »…
+   L'élève lit le sujet sur le PDF officiel ; le texte extrait n'est jamais
+   affiché (il ne sert qu'au correcteur, via enonce_correction). */
+function qLabel(q, i) {
+  const first = String((q && q.enonce) || "").split("\n")[0].replace(/\s+/g, " ").trim();
+  const m = first.match(/^(Exercice\s*n?[°o]?\s*\d+)/i);
+  if (m) return m[1].replace(/\s+/g, " ");
+  if (/^probl[èe]me/i.test(first)) return "Problème";
+  return "Exercice " + (i + 1);
+}
+
 function annaleQuestions(a) {
   const q = a.questions;
   if (Array.isArray(q)) return q;
@@ -530,11 +541,16 @@ function openAnnale(id) {
         : (a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : "")}
       ${a.content ? `<div class="sheet-content">${nl2br(a.content)}</div>` : ""}
       ${qs.map((q, i) => {
+        // Sujet PDF : on n'affiche que le numéro et un espace pour rédiger.
+        // Le texte extrait du PDF n'est jamais montré à l'élève.
         const { head, body } = exHead(q, i);
+        const titre = isPdf ? qLabel(q, i) : head;
         return `
         <div class="sheet-ex">
-          <div class="sheet-ex-head"><span>${escapeHtml(head)}</span><span class="sheet-pts">\u2026\u2026 pts</span></div>
-          <div class="sheet-ex-body">${nl2br(body)}</div>
+          <div class="sheet-ex-head"><span>${escapeHtml(titre)}</span><span class="sheet-pts">\u2026\u2026 pts</span></div>
+          ${isPdf
+            ? `<div class="sheet-ex-body" style="min-height:5.5rem;border-bottom:1px dashed rgba(0,0,0,.18)"></div>`
+            : `<div class="sheet-ex-body">${nl2br(body)}</div>`}
           ${q.solution ? `<details class="annale-q-sol no-print"><summary>Voir le corrig\u00e9</summary><div>${nl2br(q.solution)}</div></details>` : ""}
         </div>`;
       }).join("")}
@@ -611,7 +627,11 @@ function startExamen(id) {
       ? `<iframe class="annale-pdf" src="${escapeHtml(a.image_url)}#view=FitH" title="Sujet PDF"></iframe>`
       : (a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : "")}
     <div class="annale-content">${nl2br(a.content)}</div>
-    ${qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div>${annaleFigure(q.figure)}</div>`).join("")}`;
+    ${isPdf
+      ? `<div class="exam-notice">Ce sujet comporte ${qs.length} question(s) : ${
+            qs.map((q, i) => escapeHtml(qLabel(q, i))).join(" \u00b7 ")
+          }. Tout l'\u00e9nonc\u00e9 se trouve dans le PDF ci-dessus.</div>`
+      : qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div>${annaleFigure(q.figure)}</div>`).join("")}`;
 }
 
 /* ── EXAMEN : ③ question par question ── */
@@ -650,13 +670,21 @@ function paintExamPdf() {
 function paintExamQuestion() {
   const q = EXAM.qs[EXAM.index];
   const saved = EXAM.answers[EXAM.index];
-  document.getElementById("exam-progress").textContent = `Question ${EXAM.index + 1} / ${EXAM.qs.length}`;
+  const label = qLabel(q, EXAM.index);
+  document.getElementById("exam-progress").textContent = `${label} \u2014 ${EXAM.index + 1} / ${EXAM.qs.length}`;
   const pdfBar = EXAM.pdf && EXAM.annale.image_url
     ? `<details class="exam-pdf-bar" open><summary>\ud83d\udcc4 Sujet officiel (PDF) \u2014 clique pour masquer/afficher</summary>`
       + `<iframe class="annale-pdf" style="height:52vh;margin-top:0.6rem" src="${escapeHtml(EXAM.annale.image_url)}#view=FitH" title="Sujet PDF"></iframe>`
       + `<div class="exam-notice" style="margin-top:0.5rem">Le sujet complet (avec les figures) reste consultable ici. Ci-dessous, r\u00e9dige la question demand\u00e9e.</div></details>`
     : "";
-  document.getElementById("exam-enonce").innerHTML = pdfBar + nl2br(q.enonce) + annaleFigure(q.figure);
+  // Sujet PDF : uniquement le numéro de l'exercice et le PDF. Le texte extrait
+  // reste en base pour le correcteur (enonce_correction) mais n'est pas affiché.
+  const titreQ = `<div class="exam-q-title" style="font-family:'Playfair Display',Georgia,serif;`
+    + `font-size:1.35rem;margin:.9rem 0 .3rem">${escapeHtml(label)}</div>`
+    + `<div class="exam-notice" style="margin-top:0">Lis l'\u00e9nonc\u00e9 dans le sujet ci-dessus, puis r\u00e9dige ta r\u00e9ponse.</div>`;
+  document.getElementById("exam-enonce").innerHTML = EXAM.pdf
+    ? pdfBar + titreQ
+    : pdfBar + nl2br(q.enonce) + annaleFigure(q.figure);
   const ta = document.getElementById("exam-answer");
   ta.value = saved ? saved.answer : "";
   ta.readOnly = !!saved;
