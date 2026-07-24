@@ -1,0 +1,408 @@
+[
+  {
+    "id": 93,
+    "image_url": "annales-pdf/Brevet_0_A_2026_DV.pdf",
+    "questions_avant": [
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 1\nQuel est le tiers de 18 ?"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 2\nUn ﬁlm dure 240 min. Quelle est sa durée en heures ?"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 3\nLes notes obtenues par un élève sont : 8 ; 12 ; 6 ; 19 ; 15\nQue vaut la médiane de cette série de notes ?"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 4\n\n E\n 0 1\n\nSur cette droite graduée, l’abscisse du point E est\n 5 3 7 5\n A. B. C. D.\n 4 2 4 2"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Dans le triangle ABC, rectangle en B, on sait ; Dans le triangle ABC, rectangle en A, quel calcul doit-on ; effectuer pour déterminer le cosinus de l’angle ABC.",
+        "pages_total": 5,
+        "enonce_correction": "Question 5\n C\n ?\nDans le triangle ABC, rectangle en B, on sait\n b = 35°.\nque A\n b\nCalculer C.\n\n A 35° B\nQuestion 6 C\n\nDans le triangle ABC, rectangle en A, quel calcul doit-on\n ?\neffectuer pour déterminer le cosinus de l’angle ABC\n A B"
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Sur la ﬁgure ci-contre, dans le triangle ; ADE les droites (DE) et (CB) sont paral- 7 cm ; Déterminer la longueur AD. 4 cm 2 cm.",
+        "pages_total": 5,
+        "enonce_correction": "Question 7\n D\n\nSur la ﬁgure ci-contre, dans le triangle\nADE les droites (DE) et (CB) sont paral- 7 cm\nlèles. C\nDéterminer la longueur AD. 4 cm 2 cm\n A E\n B"
+      },
+      {
+        "pages": [
+          2,
+          3
+        ],
+        "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 8\nDans un collège, 25 % des 300 élèves participent à une olympiade de mathématiques.\nCombien d’élèves ne participent pas à cette olympiade ?\n\n 1 deﬁnir carré\n\nQuestion 9 2 stylo en position d’écriture\n\nUne élève souhaite réaliser un programme avec un lo-\n 3 répéter fois\ngiciel de programmation pour dessiner un carré.\nPar quelles valeurs doit-on compléter les lignes 3 et 5 4 avancer de 50 pas\npour obtenir un carré ?\n 5 tourner de degrés\n\nSujet 0 2026 2\n\n Partie 2 — Raisonnement et résolution de problèmes — 14 points — 1 h 40\n\n Dans cette partie, toutes les réponses doivent être justiﬁées, sauf si une indication\n contraire est donnée.\n La clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2\n points.\n Pour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de\n la recherche ; les essais et les démarches engagées, même non aboutis, seront pris en\n compte dans la notation."
+      },
+      {
+        "pages": [
+          3,
+          4
+        ],
+        "enonce": "Exercice 1 :\n\n3 points\n\nDans le cadre d’un projet de labellisation « Éducation au développement durable », un collège réalise deux enquêtes sur une période donnée.\n1. La première enquête porte sur le gaspillage alimentaire à la cantine.\nPendant sept semaines, on relève la masse totale, en kilogramme, d’aliments jetés\nchaque semaine :\nSemaine\nMasse (kg)\n\nCe collège s’est donné comme objectif que la moyenne, par semaine, de déchets alimentaires sur les 7 semaines ne dépasse pas 65 kg.\nMontrer que ce collège a atteint son objectif.\n2. La seconde enquête porte sur les déplacements des élèves à vélo entre le domicile et\nle collège.\n\nEffectif\n\nLe diagramme ci-dessous représente, pour chaque distance, l’effectif des élèves qui\nparcourent cette distance en vélo pour aller au collège. (Les élèves qui n’utilisent pas\nle vélo pour se rendre au collège parcourent 0 km à vélo.)\n\nSujet 0 2026\n\nDistance parcourue à vélo par les élèves du collège\n\nDistance parcourue en km\n\nBrevet des collèges\n\na. Déterminer l’effectif total d’élèves de ce collège.\nb. Pour ce collège, l’afﬁrmation « Plus de 30 % des élèves ont parcouru au moins\n5 km à vélo pour se rendre au collège » est-elle vraie ?\nJustiﬁer la réponse en précisant la démarche.",
+        "figure": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 289 216\" stroke=\"#1d1c19\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><line x1=\"12.0\" y1=\"203.6\" x2=\"275.6\" y2=\"203.6\"/><line x1=\"12.0\" y1=\"207.6\" x2=\"12.0\" y2=\"199.6\"/><line x1=\"12.0\" y1=\"207.6\" x2=\"12.0\" y2=\"199.6\"/><line x1=\"12.0\" y1=\"203.6\" x2=\"12.0\" y2=\"8.0\"/><line x1=\"12.0\" y1=\"203.6\" x2=\"275.6\" y2=\"203.6\"/><line x1=\"12.0\" y1=\"203.6\" x2=\"12.0\" y2=\"8.0\"/><line x1=\"8.0\" y1=\"203.6\" x2=\"16.0\" y2=\"203.6\"/><line x1=\"8.0\" y1=\"195.1\" x2=\"16.0\" y2=\"195.1\"/><line x1=\"8.0\" y1=\"186.6\" x2=\"16.0\" y2=\"186.6\"/><line x1=\"8.0\" y1=\"178.1\" x2=\"16.0\" y2=\"178.1\"/><line x1=\"8.0\" y1=\"169.6\" x2=\"16.0\" y2=\"169.6\"/><line x1=\"8.0\" y1=\"161.1\" x2=\"16.0\" y2=\"161.1\"/><line x1=\"8.0\" y1=\"152.6\" x2=\"16.0\" y2=\"152.6\"/><line x1=\"8.0\" y1=\"144.1\" x2=\"16.0\" y2=\"144.1\"/><line x1=\"8.0\" y1=\"135.6\" x2=\"16.0\" y2=\"135.6\"/><line x1=\"8.0\" y1=\"127.0\" x2=\"16.0\" y2=\"127.0\"/><line x1=\"8.0\" y1=\"118.5\" x2=\"16.0\" y2=\"118.5\"/><line x1=\"8.0\" y1=\"110.0\" x2=\"16.0\" y2=\"110.0\"/><line x1=\"8.0\" y1=\"101.5\" x2=\"16.0\" y2=\"101.5\"/><line x1=\"8.0\" y1=\"93.0\" x2=\"16.0\" y2=\"93.0\"/><line x1=\"8.0\" y1=\"84.5\" x2=\"16.0\" y2=\"84.5\"/><line x1=\"8.0\" y1=\"76.0\" x2=\"16.0\" y2=\"76.0\"/><line x1=\"8.0\" y1=\"67.5\" x2=\"16.0\" y2=\"67.5\"/><line x1=\"8.0\" y1=\"59.0\" x2=\"16.0\" y2=\"59.0\"/><line x1=\"8.0\" y1=\"50.5\" x2=\"16.0\" y2=\"50.5\"/><line x1=\"8.0\" y1=\"42.0\" x2=\"16.0\" y2=\"42.0\"/><line x1=\"8.0\" y1=\"33.5\" x2=\"16.0\" y2=\"33.5\"/><line x1=\"8.0\" y1=\"25.0\" x2=\"16.0\" y2=\"25.0\"/><line x1=\"8.0\" y1=\"16.5\" x2=\"16.0\" y2=\"16.5\"/><line x1=\"8.0\" y1=\"8.0\" x2=\"16.0\" y2=\"8.0\"/><line x1=\"8.0\" y1=\"203.6\" x2=\"16.0\" y2=\"203.6\"/><line x1=\"12.0\" y1=\"203.6\" x2=\"12.0\" y2=\"8.0\"/><line x1=\"12.0\" y1=\"203.6\" x2=\"275.6\" y2=\"203.6\"/><line x1=\"12.0\" y1=\"203.6\" x2=\"281.3\" y2=\"203.6\"/><line x1=\"12.0\" y1=\"195.1\" x2=\"281.3\" y2=\"195.1\"/><line x1=\"12.0\" y1=\"186.6\" x2=\"281.3\" y2=\"186.6\"/><line x1=\"12.0\" y1=\"178.1\" x2=\"281.3\" y2=\"178.1\"/><line x1=\"12.0\" y1=\"169.6\" x2=\"281.3\" y2=\"169.6\"/><line x1=\"12.0\" y1=\"161.1\" x2=\"281.3\" y2=\"161.1\"/><line x1=\"12.0\" y1=\"152.6\" x2=\"281.3\" y2=\"152.6\"/><line x1=\"12.0\" y1=\"144.1\" x2=\"281.3\" y2=\"144.1\"/><line x1=\"12.0\" y1=\"135.6\" x2=\"281.3\" y2=\"135.6\"/><line x1=\"12.0\" y1=\"127.0\" x2=\"281.3\" y2=\"127.0\"/><line x1=\"12.0\" y1=\"118.5\" x2=\"281.3\" y2=\"118.5\"/><line x1=\"12.0\" y1=\"110.0\" x2=\"281.3\" y2=\"110.0\"/><line x1=\"12.0\" y1=\"101.5\" x2=\"281.3\" y2=\"101.5\"/><line x1=\"12.0\" y1=\"93.0\" x2=\"281.3\" y2=\"93.0\"/><line x1=\"12.0\" y1=\"84.5\" x2=\"281.3\" y2=\"84.5\"/><line x1=\"12.0\" y1=\"76.0\" x2=\"281.3\" y2=\"76.0\"/><line x1=\"12.0\" y1=\"67.5\" x2=\"281.3\" y2=\"67.5\"/><line x1=\"12.0\" y1=\"59.0\" x2=\"281.3\" y2=\"59.0\"/><line x1=\"12.0\" y1=\"50.5\" x2=\"281.3\" y2=\"50.5\"/><line x1=\"12.0\" y1=\"42.0\" x2=\"281.3\" y2=\"42.0\"/><line x1=\"12.0\" y1=\"33.5\" x2=\"281.3\" y2=\"33.5\"/><line x1=\"12.0\" y1=\"25.0\" x2=\"281.3\" y2=\"25.0\"/><line x1=\"12.0\" y1=\"16.5\" x2=\"281.3\" y2=\"16.5\"/><line x1=\"12.0\" y1=\"8.0\" x2=\"281.3\" y2=\"8.0\"/><line x1=\"32.2\" y1=\"133.4\" x2=\"32.2\" y2=\"203.2\"/><line x1=\"32.2\" y1=\"203.2\" x2=\"48.4\" y2=\"203.2\"/><line x1=\"48.4\" y1=\"203.2\" x2=\"48.4\" y2=\"63.7\"/><line x1=\"48.4\" y1=\"63.7\" x2=\"32.2\" y2=\"63.7\"/><line x1=\"32.2\" y1=\"133.4\" x2=\"32.2\" y2=\"203.2\"/><line x1=\"32.2\" y1=\"203.2\" x2=\"48.4\" y2=\"203.2\"/><line x1=\"48.4\" y1=\"203.2\" x2=\"48.4\" y2=\"63.7\"/><line x1=\"48.4\" y1=\"63.7\" x2=\"32.2\" y2=\"63.7\"/><line x1=\"32.2\" y1=\"63.7\" x2=\"32.2\" y2=\"133.4\"/><line x1=\"60.6\" y1=\"135.6\" x2=\"60.6\" y2=\"203.2\"/><line x1=\"60.6\" y1=\"203.2\" x2=\"76.8\" y2=\"203.2\"/><line x1=\"76.8\" y1=\"203.2\" x2=\"76.8\" y2=\"67.9\"/><line x1=\"76.8\" y1=\"67.9\" x2=\"60.6\" y2=\"67.9\"/><line x1=\"60.6\" y1=\"135.6\" x2=\"60.6\" y2=\"203.2\"/><line x1=\"60.6\" y1=\"203.2\" x2=\"76.8\" y2=\"203.2\"/><line x1=\"76.8\" y1=\"203.2\" x2=\"76.8\" y2=\"67.9\"/><line x1=\"76.8\" y1=\"67.9\" x2=\"60.6\" y2=\"67.9\"/><line x1=\"60.6\" y1=\"67.9\" x2=\"60.6\" y2=\"135.6\"/><line x1=\"88.9\" y1=\"114.3\" x2=\"88.9\" y2=\"203.2\"/><line x1=\"88.9\" y1=\"203.2\" x2=\"105.1\" y2=\"203.2\"/><line x1=\"105.1\" y1=\"203.2\" x2=\"105.1\" y2=\"25.4\"/><line x1=\"105.1\" y1=\"25.4\" x2=\"88.9\" y2=\"25.4\"/><line x1=\"88.9\" y1=\"114.3\" x2=\"88.9\" y2=\"203.2\"/><line x1=\"88.9\" y1=\"203.2\" x2=\"105.1\" y2=\"203.2\"/><line x1=\"105.1\" y1=\"203.2\" x2=\"105.1\" y2=\"25.4\"/><line x1=\"105.1\" y1=\"25.4\" x2=\"88.9\" y2=\"25.4\"/><line x1=\"88.9\" y1=\"25.4\" x2=\"88.9\" y2=\"114.3\"/><line x1=\"117.3\" y1=\"137.7\" x2=\"117.3\" y2=\"203.2\"/><line x1=\"117.3\" y1=\"203.2\" x2=\"133.5\" y2=\"203.2\"/><line x1=\"133.5\" y1=\"203.2\" x2=\"133.5\" y2=\"72.2\"/><line x1=\"133.5\" y1=\"72.2\" x2=\"117.3\" y2=\"72.2\"/><line x1=\"117.3\" y1=\"137.7\" x2=\"117.3\" y2=\"203.2\"/><line x1=\"117.3\" y1=\"203.2\" x2=\"133.5\" y2=\"203.2\"/><line x1=\"133.5\" y1=\"203.2\" x2=\"133.5\" y2=\"72.2\"/><line x1=\"133.5\" y1=\"72.2\" x2=\"117.3\" y2=\"72.2\"/><line x1=\"117.3\" y1=\"72.2\" x2=\"117.3\" y2=\"137.7\"/><line x1=\"145.6\" y1=\"127.0\" x2=\"145.6\" y2=\"203.2\"/><line x1=\"145.6\" y1=\"203.2\" x2=\"161.8\" y2=\"203.2\"/><line x1=\"161.8\" y1=\"203.2\" x2=\"161.8\" y2=\"50.9\"/><line x1=\"161.8\" y1=\"50.9\" x2=\"145.6\" y2=\"50.9\"/><line x1=\"145.6\" y1=\"127.0\" x2=\"145.6\" y2=\"203.2\"/><line x1=\"145.6\" y1=\"203.2\" x2=\"161.8\" y2=\"203.2\"/><line x1=\"161.8\" y1=\"203.2\" x2=\"161.8\" y2=\"50.9\"/><line x1=\"161.8\" y1=\"50.9\" x2=\"145.6\" y2=\"50.9\"/><line x1=\"145.6\" y1=\"50.9\" x2=\"145.6\" y2=\"127.0\"/><line x1=\"174.0\" y1=\"144.1\" x2=\"174.0\" y2=\"203.2\"/><line x1=\"174.0\" y1=\"203.2\" x2=\"190.2\" y2=\"203.2\"/><line x1=\"190.2\" y1=\"203.2\" x2=\"190.2\" y2=\"84.9\"/><line x1=\"190.2\" y1=\"84.9\" x2=\"174.0\" y2=\"84.9\"/><line x1=\"174.0\" y1=\"144.1\" x2=\"174.0\" y2=\"203.2\"/><line x1=\"174.0\" y1=\"203.2\" x2=\"190.2\" y2=\"203.2\"/><line x1=\"190.2\" y1=\"203.2\" x2=\"190.2\" y2=\"84.9\"/><line x1=\"190.2\" y1=\"84.9\" x2=\"174.0\" y2=\"84.9\"/><line x1=\"174.0\" y1=\"84.9\" x2=\"174.0\" y2=\"144.1\"/><line x1=\"202.3\" y1=\"152.6\" x2=\"202.3\" y2=\"203.2\"/><line x1=\"202.3\" y1=\"203.2\" x2=\"218.5\" y2=\"203.2\"/><line x1=\"218.5\" y1=\"203.2\" x2=\"218.5\" y2=\"101.9\"/><line x1=\"218.5\" y1=\"101.9\" x2=\"202.3\" y2=\"101.9\"/><line x1=\"202.3\" y1=\"152.6\" x2=\"202.3\" y2=\"203.2\"/><line x1=\"202.3\" y1=\"203.2\" x2=\"218.5\" y2=\"203.2\"/><line x1=\"218.5\" y1=\"203.2\" x2=\"218.5\" y2=\"101.9\"/><line x1=\"218.5\" y1=\"101.9\" x2=\"202.3\" y2=\"101.9\"/><line x1=\"202.3\" y1=\"101.9\" x2=\"202.3\" y2=\"152.6\"/><line x1=\"230.7\" y1=\"156.8\" x2=\"230.7\" y2=\"203.2\"/><line x1=\"230.7\" y1=\"203.2\" x2=\"246.9\" y2=\"203.2\"/><line x1=\"246.9\" y1=\"203.2\" x2=\"246.9\" y2=\"110.4\"/><line x1=\"246.9\" y1=\"110.4\" x2=\"230.7\" y2=\"110.4\"/><line x1=\"230.7\" y1=\"156.8\" x2=\"230.7\" y2=\"203.2\"/><line x1=\"230.7\" y1=\"203.2\" x2=\"246.9\" y2=\"203.2\"/><line x1=\"246.9\" y1=\"203.2\" x2=\"246.9\" y2=\"110.4\"/><line x1=\"246.9\" y1=\"110.4\" x2=\"230.7\" y2=\"110.4\"/><line x1=\"230.7\" y1=\"110.4\" x2=\"230.7\" y2=\"156.8\"/><line x1=\"259.0\" y1=\"173.8\" x2=\"259.0\" y2=\"203.2\"/><line x1=\"259.0\" y1=\"203.2\" x2=\"275.2\" y2=\"203.2\"/><line x1=\"275.2\" y1=\"203.2\" x2=\"275.2\" y2=\"144.5\"/><line x1=\"275.2\" y1=\"144.5\" x2=\"259.0\" y2=\"144.5\"/><line x1=\"259.0\" y1=\"173.8\" x2=\"259.0\" y2=\"203.2\"/><line x1=\"259.0\" y1=\"203.2\" x2=\"275.2\" y2=\"203.2\"/><line x1=\"275.2\" y1=\"203.2\" x2=\"275.2\" y2=\"144.5\"/><line x1=\"275.2\" y1=\"144.5\" x2=\"259.0\" y2=\"144.5\"/><line x1=\"259.0\" y1=\"144.5\" x2=\"259.0\" y2=\"173.8\"/></svg>",
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Ce collège s’est donné comme objectif que la moyenne, par semaine, de déchets alimentaires sur les 7 semaines ne dépasse pas 65 kg. ; le vélo pour se rendre au collège parcourent 0 km à vélo.).",
+        "pages_total": 5
+      },
+      {
+        "pages": [
+          4
+        ],
+        "enonce": "Exercice 2 :\n\n3 points\n\nOn donne un programme de calcul :\nchoisir un nombre\nle multiplier par 2\nélever le résultat au carré\nretrancher 9\nafﬁcher le résultat\n1. Lorsque le nombre choisi est 4, vériﬁer le programme afﬁche 55, en précisant chacune\ndes étapes de calcul.\n2. On appelle x le nombre choisi au départ.\na. Écrire, en fonction de x, le résultat obtenu par le programme.\nb. Parmi les quatre expressions suivantes, laquelle correspond au résultat obtenu\npar le programme ?\nA = 55\n\nB = (2x + 3)2\n\nC = (2x − 3)(2x + 3)",
+        "figure": null,
+        "solution": null,
+        "pages_total": 5
+      },
+      {
+        "pages": [
+          4,
+          5
+        ],
+        "enonce": "Exercice 3 :\n\nD = (2x—3)2\n\n3 points\n\nOn considère les fonctions f et g suivantes :\nf :\ng :\n\nx 7−→ 4x + 3\nx 7−→ 6x\n\nLeurs représentations graphiques (d 1 ) et (d 2 ) sont tracées ci-dessous :\n1. Parmi ces deux fonctions, laquelle représente une situation de proportionnalité ?\n2. Calculer l’image de 0 par la fonction g .\n3. Déterminer l’antécédent de 0 par la fonction f .\n\nSujet 0 2026\n\nBrevet des collèges\n\n(d 1 )\n\n(d 2 )\n\n1,5\n\n−1,0\n\n−0,5\n\n0,5\n\n1,0\n\n1,5\n\n2,0\n\n2,5\n\n3,0\n\n3,5\n\n4,0\n\n4,5\n\n5,0\n\n4. Associer à chaque droite la fonction qu’elle représente. Justiﬁer la réponse.\n5. Déterminer graphiquement les coordonnées du point d’intersection des droites (d 1 )\net (d 2 ).",
+        "figure": null,
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Leurs représentations graphiques (d 1 ) et (d 2 ) sont tracées ci-dessous : ; 4. Associer à chaque droite la fonction qu’elle représente. Justiﬁer la réponse. ; 5. Déterminer graphiquement les coordonnées du point d’intersection des droites (d 1 ).",
+        "pages_total": 5
+      },
+      {
+        "pages": [
+          5
+        ],
+        "enonce": "Exercice 4 :\n\nA\n\nJ\n\nI\n\n3 points\nB\n\nSur la ﬁgure ci-contre :\n• ABCD est un carré de côté 9 cm ;\nP\n\nK\n\na. Le polygone IJKLMNOP est-il régulier,\nc’est-à-dire a-t-il tous ses côtés de même\nO\nlongueur ?\n\nL\n\n• les segments de même longueur sont codés.\n1.\n\nJustiﬁer la réponse.\nb. Justiﬁer que l’aire de la surface IJKLMNOP\ngrisée sur la ﬁgure ci-contre est égale à\n63 cm2 .\n\nD\n\nN\n\nM\n\nC\n\nA\n\nI\n\nJ\n\nB\n\n2. Les diagonales du carré ABCD se coupent en S.\nOn a tracé le cercle de centre S et de diamètre 9\ncm.\n\nP\n\nK\n\na. Déterminer l’aire du disque de centre S et\nde diamètre 9 cm.\n\nS\n\nb. Montrer que la différence entre l’aire du O\npolygone IJKLMNOP et l’aire du disque\nreprésente moins de 1 % de l’aire du\ndisque.\nD\n\nSujet 0 2026\n\nL\n\nN\n\nM\n\nC",
+        "figure": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 159 333\" stroke=\"#1d1c19\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><line x1=\"11.0\" y1=\"79.4\" x2=\"11.0\" y2=\"147.9\"/><line x1=\"11.0\" y1=\"147.9\" x2=\"147.9\" y2=\"147.9\"/><line x1=\"147.9\" y1=\"147.9\" x2=\"147.9\" y2=\"10.9\"/><line x1=\"147.9\" y1=\"10.9\" x2=\"11.0\" y2=\"10.9\"/><line x1=\"11.0\" y1=\"10.9\" x2=\"11.0\" y2=\"79.4\"/><line x1=\"33.5\" y1=\"33.5\" x2=\"56.5\" y2=\"10.6\"/><line x1=\"56.5\" y1=\"10.6\" x2=\"102.4\" y2=\"10.6\"/><line x1=\"102.4\" y1=\"10.6\" x2=\"148.3\" y2=\"56.5\"/><line x1=\"148.3\" y1=\"56.5\" x2=\"148.3\" y2=\"102.4\"/><line x1=\"148.3\" y1=\"102.4\" x2=\"102.4\" y2=\"148.3\"/><line x1=\"102.4\" y1=\"148.3\" x2=\"56.5\" y2=\"148.3\"/><line x1=\"56.5\" y1=\"148.3\" x2=\"10.6\" y2=\"102.4\"/><line x1=\"10.6\" y1=\"102.4\" x2=\"10.6\" y2=\"56.5\"/><line x1=\"33.5\" y1=\"33.5\" x2=\"56.5\" y2=\"10.6\"/><line x1=\"56.5\" y1=\"10.6\" x2=\"102.4\" y2=\"10.6\"/><line x1=\"102.4\" y1=\"10.6\" x2=\"148.3\" y2=\"56.5\"/><line x1=\"148.3\" y1=\"56.5\" x2=\"148.3\" y2=\"102.4\"/><line x1=\"148.3\" y1=\"102.4\" x2=\"102.4\" y2=\"148.3\"/><line x1=\"102.4\" y1=\"148.3\" x2=\"56.5\" y2=\"148.3\"/><line x1=\"56.5\" y1=\"148.3\" x2=\"10.6\" y2=\"102.4\"/><line x1=\"10.6\" y1=\"102.4\" x2=\"10.6\" y2=\"56.5\"/><line x1=\"10.6\" y1=\"56.5\" x2=\"33.5\" y2=\"33.5\"/><line x1=\"78.2\" y1=\"8.0\" x2=\"78.2\" y2=\"13.1\"/><line x1=\"80.7\" y1=\"8.0\" x2=\"80.7\" y2=\"13.1\"/><line x1=\"29.7\" y1=\"8.0\" x2=\"29.7\" y2=\"13.1\"/><line x1=\"32.2\" y1=\"8.0\" x2=\"32.2\" y2=\"13.1\"/><line x1=\"124.1\" y1=\"8.0\" x2=\"124.1\" y2=\"13.1\"/><line x1=\"126.6\" y1=\"8.0\" x2=\"126.6\" y2=\"13.1\"/><line x1=\"78.2\" y1=\"145.8\" x2=\"78.2\" y2=\"150.9\"/><line x1=\"80.7\" y1=\"145.8\" x2=\"80.7\" y2=\"150.9\"/><line x1=\"29.7\" y1=\"145.8\" x2=\"29.7\" y2=\"150.9\"/><line x1=\"32.2\" y1=\"145.8\" x2=\"32.2\" y2=\"150.9\"/><line x1=\"124.1\" y1=\"145.8\" x2=\"124.1\" y2=\"150.9\"/><line x1=\"126.6\" y1=\"145.8\" x2=\"126.6\" y2=\"150.9\"/><line x1=\"8.0\" y1=\"32.2\" x2=\"13.1\" y2=\"32.2\"/><line x1=\"8.0\" y1=\"34.8\" x2=\"13.1\" y2=\"34.8\"/><line x1=\"8.0\" y1=\"78.2\" x2=\"13.1\" y2=\"78.2\"/><line x1=\"8.0\" y1=\"80.7\" x2=\"13.1\" y2=\"80.7\"/><line x1=\"8.0\" y1=\"124.1\" x2=\"13.1\" y2=\"124.1\"/><line x1=\"8.0\" y1=\"126.6\" x2=\"13.1\" y2=\"126.6\"/><line x1=\"145.8\" y1=\"32.2\" x2=\"150.9\" y2=\"32.2\"/><line x1=\"145.8\" y1=\"34.8\" x2=\"150.9\" y2=\"34.8\"/><line x1=\"145.8\" y1=\"78.2\" x2=\"150.9\" y2=\"78.2\"/><line x1=\"145.8\" y1=\"80.7\" x2=\"150.9\" y2=\"80.7\"/><line x1=\"145.8\" y1=\"124.1\" x2=\"150.9\" y2=\"124.1\"/><line x1=\"145.8\" y1=\"126.6\" x2=\"150.9\" y2=\"126.6\"/><line x1=\"11.0\" y1=\"253.9\" x2=\"11.0\" y2=\"322.4\"/><line x1=\"11.0\" y1=\"322.4\" x2=\"147.9\" y2=\"322.4\"/><line x1=\"147.9\" y1=\"322.4\" x2=\"147.9\" y2=\"185.4\"/><line x1=\"147.9\" y1=\"185.4\" x2=\"11.0\" y2=\"185.4\"/><line x1=\"11.0\" y1=\"185.4\" x2=\"11.0\" y2=\"253.9\"/><line x1=\"33.5\" y1=\"208.0\" x2=\"56.5\" y2=\"185.0\"/><line x1=\"56.5\" y1=\"185.0\" x2=\"102.4\" y2=\"185.0\"/><line x1=\"102.4\" y1=\"185.0\" x2=\"148.3\" y2=\"231.0\"/><line x1=\"148.3\" y1=\"231.0\" x2=\"148.3\" y2=\"276.9\"/><line x1=\"148.3\" y1=\"276.9\" x2=\"102.4\" y2=\"322.8\"/><line x1=\"102.4\" y1=\"322.8\" x2=\"56.5\" y2=\"322.8\"/><line x1=\"56.5\" y1=\"322.8\" x2=\"10.6\" y2=\"276.9\"/><line x1=\"10.6\" y1=\"276.9\" x2=\"10.6\" y2=\"231.0\"/><line x1=\"10.6\" y1=\"231.0\" x2=\"33.5\" y2=\"208.0\"/><line x1=\"148.3\" y1=\"253.9\" x2=\"148.3\" y2=\"253.9\"/><line x1=\"148.3\" y1=\"253.9\" x2=\"79.4\" y2=\"185.0\"/><line x1=\"79.4\" y1=\"185.0\" x2=\"10.6\" y2=\"253.9\"/><line x1=\"10.6\" y1=\"253.9\" x2=\"79.4\" y2=\"322.8\"/><line x1=\"79.4\" y1=\"322.8\" x2=\"148.3\" y2=\"253.9\"/><line x1=\"148.3\" y1=\"253.9\" x2=\"148.3\" y2=\"253.9\"/><line x1=\"148.3\" y1=\"253.9\" x2=\"79.4\" y2=\"185.0\"/><line x1=\"79.4\" y1=\"185.0\" x2=\"10.6\" y2=\"253.9\"/><line x1=\"10.6\" y1=\"253.9\" x2=\"79.4\" y2=\"322.8\"/><line x1=\"79.4\" y1=\"322.8\" x2=\"148.3\" y2=\"253.9\"/><line x1=\"148.3\" y1=\"253.9\" x2=\"148.3\" y2=\"253.9\"/><line x1=\"78.2\" y1=\"182.5\" x2=\"78.2\" y2=\"187.6\"/><line x1=\"80.7\" y1=\"182.5\" x2=\"80.7\" y2=\"187.6\"/><line x1=\"29.7\" y1=\"182.5\" x2=\"29.7\" y2=\"187.6\"/><line x1=\"32.2\" y1=\"182.5\" x2=\"32.2\" y2=\"187.6\"/><line x1=\"124.1\" y1=\"182.5\" x2=\"124.1\" y2=\"187.6\"/><line x1=\"126.6\" y1=\"182.5\" x2=\"126.6\" y2=\"187.6\"/><line x1=\"78.2\" y1=\"320.2\" x2=\"78.2\" y2=\"325.3\"/><line x1=\"80.7\" y1=\"320.2\" x2=\"80.7\" y2=\"325.3\"/><line x1=\"29.7\" y1=\"320.2\" x2=\"29.7\" y2=\"325.3\"/><line x1=\"32.2\" y1=\"320.2\" x2=\"32.2\" y2=\"325.3\"/><line x1=\"124.1\" y1=\"320.2\" x2=\"124.1\" y2=\"325.3\"/><line x1=\"126.6\" y1=\"320.2\" x2=\"126.6\" y2=\"325.3\"/><line x1=\"8.0\" y1=\"206.7\" x2=\"13.1\" y2=\"206.7\"/><line x1=\"8.0\" y1=\"209.3\" x2=\"13.1\" y2=\"209.3\"/><line x1=\"8.0\" y1=\"252.6\" x2=\"13.1\" y2=\"252.6\"/><line x1=\"8.0\" y1=\"255.2\" x2=\"13.1\" y2=\"255.2\"/><line x1=\"8.0\" y1=\"298.6\" x2=\"13.1\" y2=\"298.6\"/><line x1=\"8.0\" y1=\"301.1\" x2=\"13.1\" y2=\"301.1\"/><line x1=\"145.8\" y1=\"206.7\" x2=\"150.9\" y2=\"206.7\"/><line x1=\"145.8\" y1=\"209.3\" x2=\"150.9\" y2=\"209.3\"/><line x1=\"145.8\" y1=\"252.6\" x2=\"150.9\" y2=\"252.6\"/><line x1=\"145.8\" y1=\"255.2\" x2=\"150.9\" y2=\"255.2\"/><line x1=\"145.8\" y1=\"298.6\" x2=\"150.9\" y2=\"298.6\"/><line x1=\"145.8\" y1=\"301.1\" x2=\"150.9\" y2=\"301.1\"/><line x1=\"10.6\" y1=\"185.0\" x2=\"148.3\" y2=\"322.8\"/><line x1=\"148.3\" y1=\"185.0\" x2=\"10.6\" y2=\"322.8\"/><line x1=\"33.5\" y1=\"208.0\" x2=\"56.5\" y2=\"185.0\"/><line x1=\"56.5\" y1=\"185.0\" x2=\"102.4\" y2=\"185.0\"/><line x1=\"102.4\" y1=\"185.0\" x2=\"148.3\" y2=\"231.0\"/><line x1=\"148.3\" y1=\"231.0\" x2=\"148.3\" y2=\"276.9\"/><line x1=\"148.3\" y1=\"276.9\" x2=\"102.4\" y2=\"322.8\"/><line x1=\"102.4\" y1=\"322.8\" x2=\"56.5\" y2=\"322.8\"/><line x1=\"56.5\" y1=\"322.8\" x2=\"10.6\" y2=\"276.9\"/><line x1=\"10.6\" y1=\"276.9\" x2=\"10.6\" y2=\"231.0\"/><line x1=\"10.6\" y1=\"231.0\" x2=\"33.5\" y2=\"208.0\"/></svg>",
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : ABCD est un carré de côté 9 cm ; On a tracé le cercle de centre S et de diamètre 9 ; de diamètre 9 cm.",
+        "pages_total": 5
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "image_url": "annales-pdf/Brevet_0_B_2026_DV.pdf",
+    "questions_avant": [
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 4,
+        "enonce_correction": "Question 1\nQuelle est la mesure, en degrés, d’un angle droit ?"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 4,
+        "enonce_correction": "Question 2\nVoici une série de quatre notes : 8 ; 10 ; 11 ; 11.\nQuelle est la moyenne de cette série ?\n\n A. 9,5 B. 10 C. 10,5 D. 11"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 4,
+        "enonce_correction": "Question 3\nDans un collège de 800 élèves, 25 % des élèves portent des lunettes.\nCombien d’élèves portent des lunettes ?"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Le graphique ci-dessous donne l’évolution de la température (en degrés Celsius) en fonction ; de l’horaire (en heures). ; Horaire (en heures).",
+        "pages_total": 4,
+        "enonce_correction": "Question 4\nLe graphique ci-dessous donne l’évolution de la température (en degrés Celsius) en fonction\nde l’horaire (en heures).\n\n 30 b\n Température (en °C)\n\n b\n\n 15 b\n\n 0 2 4 6 8 10 12 14 16 18\n Horaire (en heures)\nEntre 8 h et 16 h, de combien de degrés la température a-t-elle augmenté ?"
+      },
+      {
+        "pages": [
+          1,
+          2
+        ],
+        "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 4,
+        "enonce_correction": "Question 5\nUne voiture roule à 90 km/h. Combien de temps met-elle pour parcourir 45 km ?\n\n A. 15 min B. 30 min C. 45 min D. 1 h\n\n D\n\n 3 cm"
+      },
+      {
+        "pages": [
+          2,
+          3
+        ],
+        "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Donner le périmètre du losange ABCD représenté ci- contre. ; Sur la ﬁgure ci-contre, les droites (DE) et (AC) sont 4,5 ; parallèles. 3 ; contraire est donnée. ; la recherche ; les essais et les démarches engagées, même non aboutis, seront pris en.",
+        "pages_total": 4,
+        "enonce_correction": "Question 6\n A C\nDonner le périmètre du losange ABCD représenté ci- contre.\n\n B\nQuestion 7 (1 point)\nPour résoudre l’équation 4x − 3 = 20, on effectue le calcul :\n\n 20 20 + 3\n A. x = +3 B. x = (20 − 4) + 3 C. x = 20 × 4 + 3 D. x =\n 4 4\n\nQuestion 8 (1 point)\n B\n\nSur la ﬁgure ci-contre, les droites (DE) et (AC) sont 4,5\nparallèles. 3\nÉcrire une égalité de rapports permettant de déter- E\nminer la longueur AB. D 4\n C\n A\nQuestion 9 (1 point)\n\n quand est cliqué\n\n demander Choisir un nombre et attendre\n\n mettre variable à réponse\nOn considère l’algorithme suivant :\nQuel résultat obtient-on si on choisit 1 mettre résultat à 8 * variable\ncomme nombre de départ ?\n mettre résultat à résultat + 10\n\n mettre résultat à résultat / 2\n\n dire regrouper J’obtiens comme résultat et résultat\n\n Restitution de la copie du candidat à l’issue de la partie 1\n\nSujet 0 2026 2 Sujet B\n\n Partie 2 — Raisonnement et résolution de problèmes — 14 points — 1 h 40\n\n Dans cette partie, toutes les réponses doivent être justiﬁées, sauf si une indication\n contraire est donnée.\n La clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2\n points.\n Pour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de\n la recherche ; les essais et les démarches engagées, même non aboutis, seront pris en\n compte dans la notation."
+      },
+      {
+        "pages": [
+          3
+        ],
+        "enonce": "Exercice 1 :\n\n3 points\n\nSur la ﬁgure ci-contre, les points B, A et D sont\nalignés.\nLes droites (BA) et (EC) sont parallèles.\nD\n\n1. Rappeler la propriété de la somme des\nangles d’un triangle, puis calculer la me repéré par la lettre x.\nsure de l’angle ACB\n2.\n\nz\nA\n\na. Que peut-on dire des droites (AB)\net (EB) ?\nJustiﬁer la réponse.\nb. En déduire la mesure de l’angle\n repéré par la lettre y.\nCBE\n\nB\n\n36°\n\n108°\n\ny\n\nx\nC\n\n repéré par\n3. On s’intéresse à l’angle ADC\nla lettre z.\n\nDéterminer la mesure de cet angle\nen expliquant chaque étape de la démarche.\n\nE",
+        "figure": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 197 159\" stroke=\"#1d1c19\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><line x1=\"98.6\" y1=\"46.9\" x2=\"8.0\" y2=\"85.8\"/><line x1=\"8.0\" y1=\"85.8\" x2=\"33.5\" y2=\"150.9\"/><line x1=\"33.5\" y1=\"150.9\" x2=\"127.9\" y2=\"115.1\"/><line x1=\"127.9\" y1=\"115.1\" x2=\"189.1\" y2=\"8.0\"/><line x1=\"189.1\" y1=\"8.0\" x2=\"98.6\" y2=\"46.9\"/><line x1=\"76.9\" y1=\"56.0\" x2=\"127.9\" y2=\"115.1\"/><line x1=\"127.9\" y1=\"115.1\" x2=\"8.0\" y2=\"85.8\"/><line x1=\"130.7\" y1=\"30.2\" x2=\"133.0\" y2=\"34.8\"/><line x1=\"133.0\" y1=\"29.1\" x2=\"135.3\" y2=\"33.7\"/><line x1=\"155.7\" y1=\"61.6\" x2=\"160.3\" y2=\"63.8\"/><line x1=\"156.8\" y1=\"59.3\" x2=\"161.4\" y2=\"61.5\"/><line x1=\"18.0\" y1=\"87.8\" x2=\"18.2\" y2=\"85.8\"/><line x1=\"18.2\" y1=\"85.8\" x2=\"17.2\" y2=\"81.3\"/><line x1=\"14.0\" y1=\"99.9\" x2=\"23.0\" y2=\"89.0\"/><line x1=\"65.0\" y1=\"60.5\" x2=\"76.9\" y2=\"68.7\"/><line x1=\"76.9\" y1=\"68.7\" x2=\"85.1\" y2=\"65.7\"/><line x1=\"120.2\" y1=\"105.0\" x2=\"115.6\" y2=\"111.6\"/><line x1=\"174.8\" y1=\"13.5\" x2=\"181.5\" y2=\"21.3\"/><line x1=\"32.8\" y1=\"147.7\" x2=\"33.8\" y2=\"150.4\"/><line x1=\"33.8\" y1=\"150.4\" x2=\"39.0\" y2=\"148.4\"/><line x1=\"39.0\" y1=\"148.4\" x2=\"37.1\" y2=\"143.2\"/><line x1=\"37.1\" y1=\"143.2\" x2=\"31.8\" y2=\"145.1\"/><line x1=\"31.8\" y1=\"145.1\" x2=\"32.8\" y2=\"147.7\"/></svg>",
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : alignés. ; Les droites (BA) et (EC) sont parallèles. ; angles d’un triangle, puis calculer la me repéré par la lettre x.",
+        "pages_total": 4
+      },
+      {
+        "pages": [
+          3
+        ],
+        "enonce": "Exercice 2 :\n\n2 points\n\nUne urne contient 21 jetons numérotés de 1 à 21 indiscernables au toucher.\nOn tire un jeton au hasard.\n1. On note A l’évènement « obtenir 2, 3 ou 10 ».\nCalculer la probabilité de l’évènement A.\nOn donnera le résultat sous forme de fraction irréductible.\n2.\n\na. On note B l’évènement « obtenir un jeton dont le numéro est un diviseur de 24 ».\nDonner les issues de l’évènement B .\nb. Déterminer la probabilité de l’évènement B .",
+        "figure": null,
+        "solution": null,
+        "pages_total": 4
+      },
+      {
+        "pages": [
+          3,
+          4
+        ],
+        "enonce": "Exercice 3 :\n\n4,5 points\n\nUn paquet de lessive vide pèse 200 g. On y verse de la lessive.\nOn sait que 1 cm3 de lessive pèse 1,5 g.\n1. Quelle est la masse totale d’un paquet de lessive (masse de la lessive et masse du paquet vide) contenant 600 cm3 de lessive ?\n\nSujet 0 2026\n\nSujet B\n\nBrevet des collèges\n\n2. On considère la fonction f qui à x associe 1, 5x + 200.\na. Lorsque x représente le volume de lessive en cm3 , que représente la valeur f (x) ?\nb. Représenter graphiquement la fonction f dans un repère orthogonal.\nOn placera l’origine du repère en bas à gauche sur une feuille de papier millimétré. Sur l’axe des abscisses on prendra 1 cm pour 200 cm3 et sur l’axe des ordonnées 1 cm pour 200 g.\n3.\n\na. En laissant les traits de construction apparents, trouver, par lecture graphique, le\nvolume de lessive contenu dans un paquet de lessive de 2 300 g.\nb. Retrouver ce résultat par le calcul.\nc. Un paquet de lessive en forme de pavé de largeur 12 cm, de profondeur 8 cm et\nde hauteur 15 cm peut-il contenir un tel volume ?\nArgumenter la réponse en précisant la démarche.",
+        "figure": null,
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : a. Lorsque x représente le volume de lessive en cm3 , que représente la valeur f (x) ? ; b. Représenter graphiquement la fonction f dans un repère orthogonal. ; On placera l’origine du repère en bas à gauche sur une feuille de papier millimé- ; tré. Sur l’axe des abscisses on prendra 1 cm pour 200 cm3 et sur l’axe des ordon- ; nées 1 cm pour 200 g. ; volume de lessive contenu dans un paquet de lessive de 2 300 g. ; c. Un paquet de lessive en forme de pavé de largeur 12 cm, de profondeur 8 cm et ; de hauteur 15 cm peut-il contenir un tel volume ?",
+        "pages_total": 4
+      },
+      {
+        "pages": [
+          4
+        ],
+        "enonce": "Exercice 4 :\n\n2,5 points\n\nDans un collège, 91 ﬁlles et 77 garçons participent à un club sciences.\nOn souhaite former des groupes, de sorte que chaque groupe ait le même nombre de ﬁlles\net le même nombre de garçons.\n1. Décomposer 91 et 77 en produit de facteurs premiers.\n2. En déduire combien de groupes au maximum on peut former.\nArgumenter la réponse en précisant la démarche.\n3. Dans ce cas combien d’élèves y aura-t-il dans chaque groupe ?\n\nSujet 0 2026\n\nSujet B",
+        "figure": null,
+        "solution": null,
+        "pages_total": 4
+      }
+    ]
+  },
+  {
+    "id": 88,
+    "image_url": "annales-pdf/DNB_generale_Sujet_2026_06_18_Centres_etrangers_DV_v3.pdf",
+    "questions_avant": [
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 1 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 1\nVoici la série des températures minimales relevées à Strasbourg lors des cinq premiers jours de février :\n0 °C ; −1 °C ; 3 °C ; 7 °C ; 1 °C.\nDéterminer la médiane de cette série.\n\n no 1 no 2 no 3"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 2\nQuelle est l’image du motif no 4 par la translation no 4 no 5 no 6\nqui transforme le motif no 2 en no 6 ?\n no 7 no 8 no 9"
+      },
+      {
+        "pages": [
+          1
+        ],
+        "enonce": "Question 3 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Une boîte opaque contient 3 boules rouges et 5 boules vertes identiques et indiscernables au toucher. ; On pioche une boule au hasard. ; Recopier sur la copie et compléter avec des longueurs des côtés ; du triangle JLK pour que l’égalité ci-dessous soit vraie.",
+        "pages_total": 5,
+        "enonce_correction": "Question 3\nUne boîte opaque contient 3 boules rouges et 5 boules vertes identiques et indiscernables au toucher.\nOn pioche une boule au hasard.\nQuelle est la probabilité qu’elle soit rouge ?\n\nQuestion 4 L\n\nRecopier sur la copie et compléter avec des longueurs des côtés\ndu triangle JLK pour que l’égalité ci-dessous soit vraie.\n … J\n cos (L̂\n KJ) =\n …\n K"
+      },
+      {
+        "pages": [
+          1,
+          2
+        ],
+        "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 5\nLa distance entre la Terre et Mars est environ égale à 311 200 000 kilomètres.\nDonner la notation scientifique de 311 200 000.\n\fSujet A. P. M. E. P."
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 6\nCharlie a effectué un trajet en vélo en 2 h 30 min à une vitesse moyenne de 40 km/h.\nCalculer la distance, en km, parcourue par Charlie."
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 7\nRecopier sur la copie la forme factorisée de l’expression 5𝑥 + 5.\n\n 5(𝑥 + 1) 5(𝑥 + 5) 10𝑥 25𝑥"
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 5,
+        "enonce_correction": "Question 8\nUn article coûte 80 e. Son prix baisse de 10 %. Recopier sur la copie le calcul permettant de trouver le\nprix final de l’article.\n\n 10 10 10\n 80 − 10 80 − 80 − × 80 (80 − ) × 80\n 100 100 100"
+      },
+      {
+        "pages": [
+          2,
+          3
+        ],
+        "enonce": "Question 9 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Le graphique suivant donne la hauteur d’eau dans le port de Quiberon le 23 juillet 2025. ; Avec la précision permise par le graphique, recopier sur la copie la durée pendant laquelle la hauteur ; d’eau dans le port a été supérieure à 4 m. ; Dans cette partie, toutes les réponses doivent être justifiées, sauf si une indication contraire ; recherche ; les essais et les démarches engagées, même non aboutis, seront pris en compte.",
+        "pages_total": 5,
+        "enonce_correction": "Question 9\nLe graphique suivant donne la hauteur d’eau dans le port de Quiberon le 23 juillet 2025.\n\n Hauteur d’eau dans le port de Quiberon – 23 juillet 2025\n Hauteur d’eau (en m)\n\n 13 h 14 h 15 h 16 h 17 h 18 h 19 h 20 h\n Heure (en h)\n\nAvec la précision permise par le graphique, recopier sur la copie la durée pendant laquelle la hauteur\nd’eau dans le port a été supérieure à 4 m.\n\n 2 h 30 min 4 h 30 min 5 h 30 min 7h\n\n Restitution de la copie du candidat à l’issue de la partie 1\n\nCentres étrangers 2 18 juin 2026\n\fSujet A. P. M. E. P.\n\n DEUXIÈME PARTIE (14 pts)\n Dans cette partie, toutes les réponses doivent être justifiées, sauf si une indication contraire\n est donnée.\n La clarté et la précision des raisonnements ainsi que la rédaction sont évaluées sur 2 points.\n Pour chaque question, si le travail n’est pas terminé, laisser tout de même une trace de la\n recherche ; les essais et les démarches engagées, même non aboutis, seront pris en compte\n dans la notation."
+      },
+      {
+        "pages": [
+          3,
+          4
+        ],
+        "enonce": "Exercice 1\n\n4 points\n\nDans cet exercice, on considère la figure ci-contre.\nN\n\nC\n\nLes points A, B et M sont alignés.\nLes points A, C et N sont alignés.\nLe triangle ABC est rectangle en B.\nLe triangle AMN est rectangle en M.\n\nm\n\n8c\n\nB\nA\n\n6,4 cm\n\n3,2 cm\n\nM\n\nOn donne :\nAB = 6,4 cm ; BM = 3,2 cm et AC = 8 cm.\nLa figure n’est pas en vraie grandeur.\n\n1. Tracer sur la copie le triangle ABC en vraie grandeur et en laissant les traits de construction.\n2. Démontrer que BC = 4,8 cm.\n\n3. Justifier que les droites (BC) et (MN) sont parallèles.\n4. Démontrer que MN = 7,2 cm et AN = 12 cm.\n\n5. Le périmètre du triangle ABC et le périmètre du quadrilatère BMNC sont-ils égaux ?\nArgumenter la réponse en précisant la démarche.\n\nCentres étrangers\n\n18 juin 2026\n\nSujet",
+        "figure": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 229 149\" stroke=\"#1d1c19\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><line x1=\"138.4\" y1=\"118.6\" x2=\"149.7\" y2=\"118.6\"/><line x1=\"149.7\" y1=\"118.6\" x2=\"149.7\" y2=\"107.2\"/><line x1=\"149.7\" y1=\"107.2\" x2=\"138.4\" y2=\"107.2\"/><line x1=\"138.4\" y1=\"107.2\" x2=\"138.4\" y2=\"118.6\"/><line x1=\"180.9\" y1=\"118.6\" x2=\"192.3\" y2=\"118.6\"/><line x1=\"192.3\" y1=\"118.6\" x2=\"192.3\" y2=\"107.2\"/><line x1=\"192.3\" y1=\"107.2\" x2=\"180.9\" y2=\"107.2\"/><line x1=\"180.9\" y1=\"107.2\" x2=\"180.9\" y2=\"118.6\"/><line x1=\"36.3\" y1=\"118.6\" x2=\"192.3\" y2=\"118.6\"/><line x1=\"149.7\" y1=\"118.6\" x2=\"149.7\" y2=\"50.5\"/><line x1=\"8.0\" y1=\"135.6\" x2=\"220.6\" y2=\"8.0\"/><line x1=\"192.3\" y1=\"141.2\" x2=\"192.3\" y2=\"8.0\"/><line x1=\"38.3\" y1=\"116.6\" x2=\"34.4\" y2=\"120.5\"/><line x1=\"38.3\" y1=\"120.5\" x2=\"34.4\" y2=\"116.6\"/><line x1=\"151.7\" y1=\"116.6\" x2=\"147.7\" y2=\"120.5\"/><line x1=\"151.7\" y1=\"120.5\" x2=\"147.7\" y2=\"116.6\"/><line x1=\"151.7\" y1=\"48.5\" x2=\"147.7\" y2=\"52.5\"/><line x1=\"151.7\" y1=\"52.5\" x2=\"147.7\" y2=\"48.5\"/><line x1=\"194.2\" y1=\"116.6\" x2=\"190.3\" y2=\"120.5\"/><line x1=\"194.2\" y1=\"120.5\" x2=\"190.3\" y2=\"116.6\"/><line x1=\"194.2\" y1=\"23.0\" x2=\"190.3\" y2=\"27.0\"/><line x1=\"194.2\" y1=\"27.0\" x2=\"190.3\" y2=\"23.0\"/><line x1=\"38.9\" y1=\"132.7\" x2=\"147.1\" y2=\"132.7\"/><line x1=\"36.3\" y1=\"132.7\" x2=\"40.5\" y2=\"134.8\"/><line x1=\"40.5\" y1=\"134.8\" x2=\"38.9\" y2=\"132.7\"/><line x1=\"38.9\" y1=\"132.7\" x2=\"40.5\" y2=\"130.7\"/><line x1=\"149.7\" y1=\"132.7\" x2=\"145.6\" y2=\"130.7\"/><line x1=\"145.6\" y1=\"130.7\" x2=\"147.1\" y2=\"132.7\"/><line x1=\"147.1\" y1=\"132.7\" x2=\"145.6\" y2=\"134.8\"/><line x1=\"189.7\" y1=\"132.7\" x2=\"152.3\" y2=\"132.7\"/><line x1=\"192.3\" y1=\"132.7\" x2=\"188.1\" y2=\"130.7\"/><line x1=\"188.1\" y1=\"130.7\" x2=\"189.7\" y2=\"132.7\"/><line x1=\"189.7\" y1=\"132.7\" x2=\"188.1\" y2=\"134.8\"/><line x1=\"149.7\" y1=\"132.7\" x2=\"153.9\" y2=\"134.8\"/><line x1=\"153.9\" y1=\"134.8\" x2=\"152.3\" y2=\"132.7\"/><line x1=\"152.3\" y1=\"132.7\" x2=\"153.9\" y2=\"130.7\"/><line x1=\"31.5\" y1=\"104.9\" x2=\"140.4\" y2=\"39.6\"/><line x1=\"29.3\" y1=\"106.3\" x2=\"33.9\" y2=\"105.9\"/><line x1=\"33.9\" y1=\"105.9\" x2=\"31.5\" y2=\"104.9\"/><line x1=\"31.5\" y1=\"104.9\" x2=\"31.7\" y2=\"102.4\"/><line x1=\"142.6\" y1=\"38.2\" x2=\"138.0\" y2=\"38.6\"/><line x1=\"138.0\" y1=\"38.6\" x2=\"140.4\" y2=\"39.6\"/><line x1=\"140.4\" y1=\"39.6\" x2=\"140.2\" y2=\"42.2\"/></svg>",
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Les points A, B et M sont alignés. ; Les points A, C et N sont alignés. ; Le triangle ABC est rectangle en B. ; Le triangle AMN est rectangle en M. ; Centres étrangers.",
+        "pages_total": 5
+      },
+      {
+        "pages": [
+          4,
+          5
+        ],
+        "enonce": "Exercice 2\n\n3,5 points\n\nLes deux parties de l’exercice sont indépendantes.\n\nPartie A\nUne confiserie fabrique des bonbons multicolores au goût réglisse. Ces bonbons de longueur totale 15\nmm ont la forme de gélules constituées de trois parties : un cylindre et deux demi-boules identiques\nde rayon 𝑅 = 2,5 mm comme le montre le schéma ci-dessous.\n2,5\nmm\n\nRappels\n\n• Volume d’un cylindre de rayon 𝑅 et de\nhauteur ℎ :\n\nℎ\n\n𝑉 = 𝜋 × 𝑅2 × ℎ\n\nmm\n\n• Volume d’une boule de rayon 𝑅 :\n• 1 L = 1 dm3\n\n𝑉=\n\n× 𝜋 × 𝑅3\n\n1. Montrer que la hauteur ℎ du cylindre est égale à 10 mm.\n\n2. a. Montrer que le volume de la partie cylindrique d’un bonbon est environ égal à 196 mm3 .\nb. Léa affirme que le volume total d’un bonbon est compris entre 260 et 262 mm3 .\nA-t-elle raison ?\n\n3. Pour réaliser ces bonbons, la confiserie fabrique un mélange d’ingrédients qui est chauffé puis versé\ndans des moules en forme de gélule avant d’être refroidi.\nLa confiserie fabrique chaque jour 83L de mélange.\nAvec cette quantité de mélange, peut-elle produire plus de 300 000 bonbons par jour ?\n\nPartie B\nDans un magasin, les bonbons sont vendus en deux formats possibles :\nFormat A\n\nFormat B\n\nSachet de 500 g de bonbons\n\nSachet de 250 g de bonbons\n\n7,90 e le sachet\n\n4,30 e le sachet\nOffre promotionnelle : pour 3 sachets achetés, le\nquatrième est à moitié prix.\n\nLéa veut acheter 1 kg de bonbons.\nQuel format doit-elle choisir pour payer le moins cher possible ? Argumenter la réponse en précisant\nla démarche.\n\nCentres étrangers\n\n18 juin 2026\n\nSujet",
+        "figure": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 526 503\" stroke=\"#1d1c19\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><line x1=\"131.9\" y1=\"16.4\" x2=\"179.2\" y2=\"8.0\"/><line x1=\"179.2\" y1=\"8.0\" x2=\"187.6\" y2=\"55.4\"/><line x1=\"187.6\" y1=\"55.4\" x2=\"109.5\" y2=\"166.8\"/><line x1=\"109.5\" y1=\"166.8\" x2=\"62.2\" y2=\"175.2\"/><line x1=\"62.2\" y1=\"175.2\" x2=\"53.8\" y2=\"127.8\"/><line x1=\"53.8\" y1=\"127.8\" x2=\"131.9\" y2=\"16.4\"/><line x1=\"131.9\" y1=\"16.4\" x2=\"152.4\" y2=\"46.3\"/><line x1=\"152.4\" y1=\"46.3\" x2=\"187.6\" y2=\"55.4\"/><line x1=\"53.8\" y1=\"127.8\" x2=\"74.4\" y2=\"157.8\"/><line x1=\"74.4\" y1=\"157.8\" x2=\"109.5\" y2=\"166.8\"/><line x1=\"131.9\" y1=\"16.4\" x2=\"167.0\" y2=\"25.4\"/><line x1=\"167.0\" y1=\"25.4\" x2=\"187.6\" y2=\"55.4\"/><line x1=\"53.8\" y1=\"127.8\" x2=\"89.0\" y2=\"136.9\"/><line x1=\"89.0\" y1=\"136.9\" x2=\"109.5\" y2=\"166.8\"/><line x1=\"131.9\" y1=\"16.4\" x2=\"159.7\" y2=\"35.9\"/><line x1=\"43.7\" y1=\"117.6\" x2=\"118.8\" y2=\"10.3\"/><line x1=\"42.2\" y1=\"119.7\" x2=\"46.3\" y2=\"117.5\"/><line x1=\"46.3\" y1=\"117.5\" x2=\"43.7\" y2=\"117.6\"/><line x1=\"43.7\" y1=\"117.6\" x2=\"42.9\" y2=\"115.1\"/><line x1=\"120.2\" y1=\"8.2\" x2=\"116.2\" y2=\"10.4\"/><line x1=\"116.2\" y1=\"10.4\" x2=\"118.8\" y2=\"10.3\"/><line x1=\"118.8\" y1=\"10.3\" x2=\"119.6\" y2=\"12.8\"/><line x1=\"103.1\" y1=\"200.7\" x2=\"217.2\" y2=\"37.8\"/><line x1=\"101.6\" y1=\"202.8\" x2=\"105.7\" y2=\"200.6\"/><line x1=\"105.7\" y1=\"200.6\" x2=\"103.1\" y2=\"200.7\"/><line x1=\"103.1\" y1=\"200.7\" x2=\"102.3\" y2=\"198.2\"/><line x1=\"218.7\" y1=\"35.6\" x2=\"214.6\" y2=\"37.8\"/><line x1=\"214.6\" y1=\"37.8\" x2=\"217.2\" y2=\"37.8\"/><line x1=\"217.2\" y1=\"37.8\" x2=\"218.0\" y2=\"40.2\"/><line x1=\"78.9\" y1=\"147.8\" x2=\"84.5\" y2=\"146.8\"/><line x1=\"81.2\" y1=\"144.5\" x2=\"82.2\" y2=\"150.1\"/><line x1=\"156.9\" y1=\"36.4\" x2=\"162.5\" y2=\"35.4\"/><line x1=\"159.2\" y1=\"33.1\" x2=\"160.2\" y2=\"38.6\"/><line x1=\"379.0\" y1=\"144.9\" x2=\"384.9\" y2=\"144.9\"/><line x1=\"277.6\" y1=\"14.6\" x2=\"491.0\" y2=\"14.6\"/><line x1=\"277.8\" y1=\"185.2\" x2=\"277.8\" y2=\"14.6\"/><line x1=\"490.8\" y1=\"185.2\" x2=\"490.8\" y2=\"14.6\"/><line x1=\"277.6\" y1=\"185.2\" x2=\"491.0\" y2=\"185.2\"/><line x1=\"111.0\" y1=\"421.1\" x2=\"160.3\" y2=\"421.1\"/><line x1=\"365.7\" y1=\"421.1\" x2=\"415.5\" y2=\"421.1\"/><line x1=\"8.2\" y1=\"425.0\" x2=\"8.2\" y2=\"406.6\"/><line x1=\"263.1\" y1=\"425.0\" x2=\"263.1\" y2=\"406.6\"/><line x1=\"518.0\" y1=\"425.0\" x2=\"518.0\" y2=\"406.6\"/><line x1=\"8.2\" y1=\"443.4\" x2=\"8.2\" y2=\"425.0\"/><line x1=\"263.1\" y1=\"443.4\" x2=\"263.1\" y2=\"425.0\"/><line x1=\"518.0\" y1=\"443.4\" x2=\"518.0\" y2=\"425.0\"/><line x1=\"8.2\" y1=\"461.9\" x2=\"8.2\" y2=\"443.4\"/><line x1=\"263.1\" y1=\"461.9\" x2=\"263.1\" y2=\"443.4\"/><line x1=\"518.0\" y1=\"461.9\" x2=\"518.0\" y2=\"443.4\"/><line x1=\"8.2\" y1=\"495.1\" x2=\"8.2\" y2=\"461.9\"/><line x1=\"263.1\" y1=\"495.1\" x2=\"263.1\" y2=\"461.9\"/><line x1=\"518.0\" y1=\"495.1\" x2=\"518.0\" y2=\"461.9\"/><line x1=\"8.0\" y1=\"406.4\" x2=\"263.3\" y2=\"406.4\"/><line x1=\"262.9\" y1=\"406.4\" x2=\"518.2\" y2=\"406.4\"/><line x1=\"8.0\" y1=\"494.9\" x2=\"263.3\" y2=\"494.9\"/><line x1=\"262.9\" y1=\"494.9\" x2=\"518.2\" y2=\"494.9\"/></svg>",
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : mm ont la forme de gélules constituées de trois parties : un cylindre et deux demi-boules identiques ; de rayon 𝑅 = 2,5 mm comme le montre le schéma ci-dessous. ; Volume d’un cylindre de rayon 𝑅 et de ; hauteur ℎ : ; Volume d’une boule de rayon 𝑅 : ; La confiserie fabrique chaque jour 83L de mélange. ; Sachet de 500 g de bonbons ; Sachet de 250 g de bonbons ; Léa veut acheter 1 kg de bonbons. ; Centres étrangers.",
+        "pages_total": 5
+      },
+      {
+        "pages": [
+          5
+        ],
+        "enonce": "Exercice 3\n\n4,5 points\n\nVoici deux programmes de calcul :\nProgramme A\nProgramme B\n\nChoisir un nombre\nAjouter 6\n\n• Choisir un nombre.\n• Calculer le carré de ce nombre.\n• Soustraire 9.\n\nSoustraire 4\n\nMultiplier les\ndeux nombres obtenus\n1. On choisit 1 comme nombre de départ. Vérifier que le résultat obtenu avec le programme A est −21.\n2. On choisit 10 comme nombre de départ. Calculer le résultat obtenu avec le programme B.\n\n3. Donner tous les nombres de départ possibles qui permettent d’obtenir 16 avec le programme B.\n4. (Question algorithmique)\nLe programme ci-contre a été\nconçu avec le logiciel Scratch.\nRecopier et compléter sur la copie\nles lignes 3, 4 et 5 pour qu’il affiche le résultat obtenu avec le programme A lorsqu’un nombre de\ndépart est saisi.\nAucune justification n’est attendue.\n\nQuand\n\nest cliqué\n\ndemander choisir un nombre et attendre\n\nmettre Valeur 1\n\nà réponse +\n\nmettre Valeur 2\n\nà réponse -\n\nmettre Résultat\n\nà\n\ndire regrouper Le résultat du programme A est et Résultat\n\n*\n\n5. On choisit 𝑥 comme nombre de départ. Montrer que le résultat obtenu avec le programme A est\n𝑥2 + 2𝑥 − 24.\n6. On cherche quel nombre de départ choisir pour que les programmes A et B donnent le même résultat. Écrire une équation permettant d’obtenir ce nombre de départ, puis la résoudre.\n\nCentres étrangers\n\n18 juin 2026",
+        "figure": null,
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Ajouter 6 Soustraire 4 • Calculer le carré de ce nombre. ; • Soustraire 9. ; Le programme ci-contre a été.",
+        "pages_total": 5
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "image_url": "annales-pdf/DNB_generale_Sujet_2026_06_30_Antilles_Guyane_DV_v2.pdf",
+    "questions_avant": [
+      {
+        "pages": [
+          1,
+          2
+        ],
+        "enonce": "Question 2 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Dans le quadrillage ci-contre, quel est le symétrique du ; point K par la symétrie centrale de centre O ? O ; On souhaite connaitre l’aire du triangle ABC représenté ; ci-contre.",
+        "pages_total": 6,
+        "enonce_correction": "Question 2\n P\nDans le quadrillage ci-contre, quel est le symétrique du\npoint K par la symétrie centrale de centre O ? O\n\n M N\n\nQuestion 3 B\nOn souhaite connaitre l’aire du triangle ABC représenté\nci-contre.\nQuel calcul doit-on effectuer ?\n A. AB + BC + AC B. AC × BD ÷ 2\n C. AB × BC × CA D. AC × BD\n\n A D C\n\fSujet A. P. M. E. P."
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 4 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 6,
+        "enonce_correction": "Question 4\nOn lance 10 fois une pièce de monnaie.\nLes résultats obtenus sont les suivants : pile, pile, face, pile, face, face, face, face, pile, face.\nQuelle est la fréquence d’apparition de « pile » ?\n 1 6 4 4\n A. B. C. D.\n 2 10 10 6"
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 5 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 6,
+        "enonce_correction": "Question 5\nOn note 𝑛 un nombre entier.\nParmi les propositions suivantes, quelle expression donne la moitié de 𝑛 ?\n 𝑛\n A. 2𝑛 B. 𝑛2 C. 𝑛+2 D."
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 6 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 6,
+        "enonce_correction": "Question 6\nParmi les propositions suivantes, quelle durée correspond à d’heure ?\n A. 0,1 min B. 1 min C. 6 min D. 10 min"
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 7 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 6,
+        "enonce_correction": "Question 7\nOn donne la série suivante : 10 ; 10 ; 12 ; 16.\nCalculer la moyenne de cette série.\n ||\n 𝑥\n 120°"
+      },
+      {
+        "pages": [
+          2
+        ],
+        "enonce": "Question 8 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 6,
+        "enonce_correction": "Question 8\nLa figure ci-contre n’est pas en vraie grandeur. Quelle est\n ||\n\nla valeur de 𝑥 ?\n 𝑥"
+      },
+      {
+        "pages": [
+          2,
+          3
+        ],
+        "enonce": "Question 9 (automatismes) — reporte-toi au sujet PDF ci-dessus.",
+        "pages_total": 6,
+        "enonce_correction": "Question 9\nUn vélo roule à la vitesse moyenne de 20 km/h.\nQuelle est la durée d’un trajet de 15 km ?\n\nAntilles, Guyane 2 30 juin 2026\n\fSujet A. P. M. E. P.\n\n DEUXIÈME PARTIE (14 pts)"
+      },
+      {
+        "pages": [
+          3,
+          4
+        ],
+        "enonce": "Exercice 1 (4 points)\nB\n\nSur la figure ci-contre, qui n’est pas représentée en vraie grandeur :\n• A est le point d’intersection des droites (BE)\net (TM) ;\n• le triangle ABM est rectangle en A ;\n• AT = 2,2 m ; MT = 7,7 m ;\n\nT\n\n• AE = 1,92m et MB = 7,3 m.\n\nM\n\nA\n\nE\n1. Justifier que AM = 5,5 m.\n2. Montrer que la longueur AB est égale à 4,8 m.\n̂ Donner la valeur arrondie au degré.\n3. Calculer la mesure de l’angle ABM.\n4. Montrer que les droites (TE) et (BM) sont parallèles.\nDétailler la réponse en précisant la démarche.\n\n5. Le triangle ABM est l’image du triangle AET par une homothétie de centre A.\nChoisir le rapport de cette homothétie parmi les propositions suivantes. Aucune justification n’est\ndemandée.\nProposition 1\n2,5\n\nAntilles, Guyane\n\nProposition 2\n−0,4\n\nProposition 3\n−2,5\n\n30 juin 2026\n\nSujet",
+        "figure": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 369 421\" stroke=\"#1d1c19\" stroke-width=\"1.1\" fill=\"none\" stroke-linecap=\"round\"><line x1=\"208.4\" y1=\"149.7\" x2=\"216.9\" y2=\"149.7\"/><line x1=\"216.9\" y1=\"149.7\" x2=\"216.9\" y2=\"141.2\"/><line x1=\"216.9\" y1=\"141.2\" x2=\"208.4\" y2=\"141.2\"/><line x1=\"208.4\" y1=\"141.2\" x2=\"208.4\" y2=\"149.7\"/><line x1=\"208.4\" y1=\"8.0\" x2=\"143.2\" y2=\"149.7\"/><line x1=\"143.2\" y1=\"149.7\" x2=\"208.4\" y2=\"206.4\"/><line x1=\"208.4\" y1=\"206.4\" x2=\"361.4\" y2=\"149.7\"/><line x1=\"361.4\" y1=\"149.7\" x2=\"208.4\" y2=\"8.0\"/><line x1=\"143.2\" y1=\"149.7\" x2=\"361.4\" y2=\"149.7\"/><line x1=\"208.4\" y1=\"206.4\" x2=\"208.4\" y2=\"8.0\"/><line x1=\"8.0\" y1=\"383.6\" x2=\"262.2\" y2=\"383.6\"/><line x1=\"8.2\" y1=\"398.2\" x2=\"8.2\" y2=\"383.7\"/><line x1=\"92.8\" y1=\"398.2\" x2=\"92.8\" y2=\"383.7\"/><line x1=\"177.4\" y1=\"398.2\" x2=\"177.4\" y2=\"383.7\"/><line x1=\"262.0\" y1=\"398.2\" x2=\"262.0\" y2=\"383.7\"/><line x1=\"8.0\" y1=\"398.4\" x2=\"262.2\" y2=\"398.4\"/><line x1=\"8.2\" y1=\"413.0\" x2=\"8.2\" y2=\"398.6\"/><line x1=\"92.8\" y1=\"413.0\" x2=\"92.8\" y2=\"398.6\"/><line x1=\"177.4\" y1=\"413.0\" x2=\"177.4\" y2=\"398.6\"/><line x1=\"262.0\" y1=\"413.0\" x2=\"262.0\" y2=\"398.6\"/><line x1=\"8.0\" y1=\"413.2\" x2=\"262.2\" y2=\"413.2\"/></svg>",
+        "solution": null,
+        "figure_desc": "Figure non à vraie grandeur. A est le point d'intersection des droites (BE) et (TM). Le triangle ABM est rectangle en A. Deux triangles partagent le sommet A (configuration de Thalès/papillon) : T et E d'un côté, B et M de l'autre. Données : AT = 2,2 m ; MT = 7,7 m ; AE = 1,92 m ; MB = 7,3 m. On calcule AM (=5,5 m) et AB (=4,8 m), puis un angle par trigonométrie.",
+        "pages_total": 6
+      },
+      {
+        "pages": [
+          4,
+          5
+        ],
+        "enonce": "Exercice 2 (4 points)\nOn considère le programme de calcul ci-dessous.\nProgramme A\n• Choisir un nombre\n• Soustraire 2\n\n• Multiplier par 5\n\n• Ajouter le triple du nombre de départ\n\n1. Vérifier qu’en choisissant 1 comme nombre de départ, on obtient −2 avec ce programme de calcul.\n2. On note 𝑥 le nombre choisi au départ.\n\na. Montrer que le résultat du programme est 8𝑥 − 10.\nb. Quel nombre de départ faut-il choisir pour que le résultat du programme soit égal à 0 ?\n\n3. Question d’algorithmique\n\na. On considère ci-dessous le programme de calcul B, réalisé avec le logiciel « Scratch ».\nProgramme B\nQuand\n\nest cliqué\n\ndemander choisir un nombre et attendre\nmettre résultat\n\nà 4 * réponse\n\nmettre résultat\n\nà résultat - 5\n\nmettre résultat\n\nà 2 * résultat\n\ndire résultat\nEn appliquant ce programme de calcul au nombre 1, quel résultat final obtient-on ?\nb. Montrer que le résultat du programme A est toujours le même que celui du programme B quel\nque soit le nombre choisi au départ.\n\nAntilles, Guyane\n\n30 juin 2026\n\nSujet",
+        "figure": null,
+        "solution": null,
+        "pages_total": 6
+      },
+      {
+        "pages": [
+          5,
+          6
+        ],
+        "enonce": "Exercice 3 (4 points)\nUn centre de loisirs organise pour les jeunes d’une commune des activités pendant les vacances.\nPour s’inscrire dans ce centre de loisirs, plusieurs tarifs sont proposés :\n• Tarif A : on paie 5,50 e par demi-journée passée dans le centre de loisirs ;\n• Tarif B : on paie un abonnement annuel de 15 e puis 3,50 e pour chaque demi-journée passée dans\nle centre ;\n• Tarif C : on paie un forfait annuel de 64 e donnant accès à autant de demi-journées que l’on veut.\n1. Quel est le prix pour 12 demi-journées avec le tarif B ?\n2. On désigne par 𝑥 le nombre de demi-journées passées dans le centre de loisirs. On considère les\ntrois fonctions 𝑓, 𝑔, et ℎ suivantes :\n𝑓 ∶ 𝑥 ⟼ 15 + 3,5𝑥\n\n𝑔 ∶ 𝑥 ⟼ 64\n\nℎ ∶ 𝑥 ⟼ 5,5𝑥\n\nSans justifier, associer chacune de ces fonctions au tarif qu’elle représente.\n\n3. Le graphique ci-dessous représente les fonctions 𝑓, 𝑔, et ℎ. Sans justifier, associer à chaque représentation graphique (𝑑1 ), (𝑑2 ) et (𝑑3 ) la fonction 𝑓, 𝑔 ou ℎ correspondante.\n80 Prix en e\n\n(𝑑2 )\n\n(𝑑1 )\n\n(𝑑3 )\n\nNombre de\ndemi-journées\n\n4. La droite (𝑑1 ) représente-t-elle une situation de proportionnalité ?\nDétailler la réponse en précisant la démarche.\n\n5. Lire graphiquement le nombre de demi-journées à partir duquel le tarif B devient plus avantageux\nque le tarif A. Aucune justification n’est demandée.\n\nAntilles, Guyane\n\n30 juin 2026\n\nSujet\n\n6. On a réalisé dans un tableur le tableau de valeurs correspondant au tarif B suivant le nombre de\ndemi-journées de présence.\nA\n\nB\n\nC\n\nD\n\nE\n\nF\n\nG\n\nH\n\nI\n\nJ\n\nK\n\nL\n\nM\n\nN\n\nO\n\nP\n\nQ\n\nNombre de\ndemi-journées\nd’activités\n\nTarif B en e\n\n18,5 22 25,5 29 32,5 36 39,5 43 46,5 50 53,5 57 60,5 64 67,5 71\n\na. Parmi les trois formules proposées ci-dessous, recopier celle qui a été saisie dans la cellule B2,\npuis étirée vers la droite pour compléter le tableau.\n=15+3,5*𝑥\n\n=15+3,5*1\n\n=15+3,5*B1\n\nb. En utilisant le tableau de valeurs ci-dessus, déterminer le nombre de demi-journées à partir duquel le tarif C devient plus avantageux que le tarif B. Aucune justification n’est demandée.\n\nAntilles, Guyane\n\n30 juin 2026",
+        "figure": null,
+        "solution": null,
+        "figure_desc": "Figure décrite d'après les données de l'énoncé : Un centre de loisirs organise pour les jeunes d’une commune des activités pendant les vacances. ; le centre.",
+        "pages_total": 6
+      }
+    ]
+  }
+]

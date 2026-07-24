@@ -653,7 +653,9 @@ function parseSousQuestions(texte) {
 function expanserQuestions(qs) {
   const out = [];
   qs.forEach((q, i) => {
-    const source = q.enonce_correction || "";
+    // Le texte de l'énoncé est dans enonce_correction (questions migrées) ou,
+    // pour la majorité des exercices importés, directement dans enonce.
+    const source = q.enonce_correction || q.enonce || "";
     const dec = source ? parseSousQuestions(source) : null;
     const base = qLabel(q, i);
     if (!dec) { out.push(Object.assign({}, q, { _label: base, _exercice: base })); return; }
