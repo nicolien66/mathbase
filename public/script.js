@@ -707,8 +707,12 @@ async function submitExamAnswer() {
     content: q.enonce_correction || q.enonce,
     solution: q.solution || null,
     // La figure du sujet n'est pas visible par le correcteur : on lui transmet
-    // sa description textuelle, sinon toute la géométrie est corrigée à l'aveugle.
+    // sa description textuelle, en FILET DE SÉCURITÉ seulement.
     figure_desc: q.figure_desc || null,
+    // Source principale : le serveur rasterise ces pages du PDF et les joint à
+    // l'appel, pour que le correcteur voie réellement la figure.
+    pages: Array.isArray(q.pages) ? q.pages : null,
+    annale_url: EXAM.annale.image_url || null,
   };
   const btn = document.getElementById("exam-validate");
   btn.disabled = true;

@@ -3,6 +3,72 @@ const { Pool }   = require("pg");
 const bodyParser = require("body-parser");
 const path       = require("path");
 const crypto     = require("crypto");
+const fs         = require("fs");
+
+/* ── RENDU D'UNE PAGE DE SUJET EN IMAGE ───────────────────────────────────
+   Le correcteur doit VOIR la figure, pas seulement en lire une description.
+   On convertit la page du PDF en PNG et on la joint à l'appel Mistral.
+   En cas d'échec (dépendance absente, fichier manquant), on renvoie null :
+   la correction se poursuit alors en mode texte avec figure_desc en repli. */
+let _pdfjs = null, _canvas = null, _renderKO = false;
+const _pageCache = new Map();               // clé "fichier#page" -> data URL
+const PAGE_CACHE_MAX = 60;
+
+async function _loadRenderer() {
+  if (_renderKO) return null;
+  if (_pdfjs && _canvas) return { pdfjs: _pdfjs, canvas: _canvas };
+  try {
+    _pdfjs  = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    _canvas = require("@napi-rs/canvas");
+    return { pdfjs: _pdfjs, canvas: _canvas };
+  } catch (e) {
+    _renderKO = true;
+    console.warn("[pages] rendu d'image indisponible (" + e.message +
+                 ") — correction en mode texte uniquement.");
+    return null;
+  }
+}
+
+/* Seuls les PDF d'annales sont rasterisables : garde-fou anti-traversée. */
+function _cheminSujet(relUrl) {
+  const rel = String(relUrl || "").replace(/^\/+/, "");
+  if (!/^annales-pdf\/[A-Za-z0-9._-]+\.pdf$/i.test(rel)) return null;
+  return path.join(__dirname, "public", rel);
+}
+
+async function renderPageImage(relUrl, pageNum, scale = 1.7) {
+  const cle = relUrl + "#" + pageNum;
+  if (_pageCache.has(cle)) return _pageCache.get(cle);
+
+  const file = _cheminSujet(relUrl);
+  if (!file || !fs.existsSync(file)) return null;
+  const mod = await _loadRenderer();
+  if (!mod) return null;
+
+  try {
+    const data = new Uint8Array(fs.readFileSync(file));
+    const task = mod.pdfjs.getDocument({ data, isEvalSupported: false });
+    const doc  = await task.promise;
+    const fermer = () => { try { task.destroy(); } catch (_) {} };
+    if (pageNum < 1 || pageNum > doc.numPages) { fermer(); return null; }
+    const page     = await doc.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+    const cv  = mod.canvas.createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+    const ctx = cv.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const url = "data:image/png;base64," + cv.toBuffer("image/png").toString("base64");
+    fermer();
+
+    if (_pageCache.size >= PAGE_CACHE_MAX) _pageCache.delete(_pageCache.keys().next().value);
+    _pageCache.set(cle, url);
+    return url;
+  } catch (e) {
+    console.warn("[pages] échec du rendu " + relUrl + " p." + pageNum + " : " + e.message);
+    return null;
+  }
+}
 const MISTRAL_API_KEY = process.env.MISTRAL_KEY;
 
 /* ═══════════ AUTHENTIFICATION (zéro dépendance : crypto natif) ═══════════ */
@@ -357,13 +423,40 @@ app.post("/exercises/correct", auth, async (req, res) => {
   if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
 
   const solutionCtx = exercise.solution ? `\nSOLUTION OFFICIELLE : ${exercise.solution}` : "";
-  const figureCtx = exercise.figure_desc
-    ? `\nDESCRIPTION DE LA FIGURE (l'élève la voit sur le sujet ; utilise-la pour corriger la géométrie) : ${exercise.figure_desc}`
-    : "";
+
+  /* ── Source principale : l'IMAGE de la page du sujet ──
+     On rasterise la ou les pages où figure l'exercice (champ `pages`, posé par
+     seed-pages.js). Si le rendu échoue, on retombe sur figure_desc. */
+  const images = [];
+  const pagesVoulues = Array.isArray(exercise.pages) ? exercise.pages.slice(0, 2) : [];
+  if (exercise.annale_url && pagesVoulues.length) {
+    for (const n of pagesVoulues) {
+      const img = await renderPageImage(exercise.annale_url, Number(n));
+      if (img) images.push(img);
+    }
+  }
+  const avecImage = images.length > 0;
+
+  const figureCtx = avecImage
+    ? (exercise.figure_desc
+        ? `\nNOTE DE SECOURS (description textuelle approximative, reconstituée automatiquement — n'y recours QUE si l'image est illisible, et ne la fais jamais primer sur ce que tu vois) : ${exercise.figure_desc}`
+        : "")
+    : (exercise.figure_desc
+        ? `\nDESCRIPTION PARTIELLE DE LA FIGURE (reconstituée automatiquement à partir du TEXTE de l'énoncé, jamais du dessin) : ${exercise.figure_desc}
+AVERTISSEMENT : incomplète par construction. Ce qui n'est codé que sur le dessin (angle droit marqué, côtés de même longueur, position des points, mesure portée sur la figure) n'y figure PAS. L'élève, lui, a la vraie figure sous les yeux. Ne le contredis jamais sur une donnée que cette description ne permet pas de vérifier : dis-lui que tu ne peux pas la vérifier, et corrige son raisonnement plutôt que ses données.`
+        : "");
+
+  const sourceCtx = avecImage
+    ? `\n\nSOURCE PRINCIPALE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux. Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux. FAIS-EN TA RÉFÉRENCE : en cas de désaccord entre l'image et le texte reproduit ci-dessous, l'IMAGE a raison — le texte provient d'une extraction automatique imparfaite. La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`
+    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.`;
+
   const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
 
-EXERCICE : ${exercise.title}
-ÉNONCÉ : ${exercise.content}${figureCtx}${solutionCtx}
+EXERCICE : ${exercise.title}${sourceCtx}
+
+ÉNONCÉ (extraction automatique du PDF, à titre indicatif) : ${exercise.content}${figureCtx}${solutionCtx}
+
+REMARQUE SUR L'ÉNONCÉ : il provient d'une extraction automatique du sujet PDF. La mise en forme mathématique peut être dégradée (fractions, exposants, racines) et des fragments d'en-tête de page ont pu s'y glisser. S'il te paraît tronqué ou ambigu, appuie-toi sur l'image si tu en as une ; sinon dis-le explicitement et ne pénalise pas l'élève pour une ambiguïté venant du sujet.
 
 CE QUE L'ÉLÈVE A ÉCRIT (son brouillon, mot pour mot) :
 ${answer}
@@ -372,6 +465,7 @@ Ta mission : réagir DIRECTEMENT à ce que l'élève a écrit, pas à une répon
 1. Reconstitue le raisonnement de l'élève à partir de ce qu'il a écrit.
 2. Si c'est une erreur : trouve PRÉCISÉMENT à quelle étape il s'est trompé et SURTOUT pourquoi (règle mal appliquée, signe oublié, confusion entre deux notions, erreur de calcul, propriété inventée…). Explique l'origine de l'erreur AVANT de donner quoi que ce soit d'autre.
 3. Si c'est juste : confirme et dis ce qui rend le raisonnement correct.
+3 bis. En cas de doute entre « l'élève s'est trompé » et « l'énoncé dont je dispose est incomplet », choisis TOUJOURS la seconde hypothèse et signale-le. Mieux vaut ne pas trancher que sanctionner à tort.
 4. Ensuite seulement, donne la bonne démarche puis la solution finale.
 
 Utilise des maths lisibles en texte simple (ex : x^2, sqrt(2), 3/4, x = -b/2a). Pas de LaTeX, pas de markdown.
@@ -384,6 +478,12 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
   "solution": "Le résultat final attendu, en une ou deux lignes."
 }`;
 
+  /* Message multimodal : texte + image(s) de la page. */
+  const userContent = avecImage
+    ? [{ type: "text", text: prompt }].concat(
+        images.map(u => ({ type: "image_url", image_url: u })))
+    : prompt;
+
   try {
     const mistralRes = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
@@ -393,7 +493,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
       },
       body: JSON.stringify({
         model: "mistral-small-latest",
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: userContent }],
         temperature: 0.1,
         max_tokens: 800
       })
