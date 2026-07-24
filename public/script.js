@@ -410,10 +410,20 @@ function nl2br(t) { return escapeHtml(t == null ? "" : t).replace(/\n/g, "<br>")
    affiché (il ne sert qu'au correcteur, via enonce_correction). */
 function qLabel(q, i) {
   if (q && q._label) return q._label;
-  const first = String((q && q.enonce) || "").split("\n")[0].replace(/\s+/g, " ").trim();
-  const m = first.match(/^(Exercice\s*n?[°o]?\s*\d+)/i);
-  if (m) return m[1].replace(/\s+/g, " ");
+  // Les PDF composés en LaTeX rendent les petites capitales lettre par lettre :
+  // « E XERCICE 1 », « P ROBLÈME ». On recolle avant d'analyser.
+  const first = String((q && q.enonce) || "").split("\n")[0]
+    .replace(/\s+/g, " ")
+    .replace(/\b([A-ZÀ-Þ])\s+([A-ZÀ-Þ]{2,})/g, "$1$2")
+    .trim();
+  // Automatismes (format 2024+) : « Question 6 », et non « Exercice 6 ».
+  const mq = first.match(/^Question\s*n?[°o]?\s*(\d+)/i);
+  if (mq) return "Question " + mq[1];
+  const m = first.match(/^Exercice\s*n?[°o]?\s*(\d+)/i);
+  if (m) return "Exercice " + m[1];
   if (/^probl[èe]me/i.test(first)) return "Problème";
+  if (/^(Premi[èe]re|Deuxi[èe]me|Troisi[èe]me)\s+partie/i.test(first))
+    return first.match(/^\S+\s+partie/i)[0];
   return "Exercice " + (i + 1);
 }
 
