@@ -408,17 +408,35 @@ function renderChapterView() {
   const ordonnes = [...groupes.values()].sort((a, b) =>
     b.items.length - a.items.length || a.titre.localeCompare(b.titre, "fr"));
 
+  // Chaque famille est un bouton dépliant : replié par défaut, pour garder une
+  // vue d'ensemble lisible même avec beaucoup d'exercices.
   ordonnes.forEach(g => {
     const bloc = document.createElement("div");
     bloc.className = "chap-group";
-    bloc.innerHTML =
-      `<div class="chap-group-head">
-         <span class="chap-group-title">${escapeHtml(g.titre)}</span>
-         <span class="chap-group-count">${g.items.length}</span>
-       </div>`;
+
+    const tete = document.createElement("button");
+    tete.className = "chap-group-head";
+    tete.setAttribute("aria-expanded", "false");
+    tete.innerHTML =
+      `<span class="chap-group-chevron">▸</span>
+       <span class="chap-group-title">${escapeHtml(g.titre)}</span>
+       <span class="chap-group-count">${g.items.length}</span>`;
+
     const liste = document.createElement("div");
     liste.className = "chap-group-list";
-    g.items.forEach(ex => liste.appendChild(exerciseCard(ex)));
+    let remplie = false;
+
+    tete.onclick = () => {
+      const ouvert = bloc.classList.toggle("open");
+      tete.setAttribute("aria-expanded", ouvert ? "true" : "false");
+      // Les cartes ne sont construites qu'au premier dépliage.
+      if (ouvert && !remplie) {
+        g.items.forEach(ex => liste.appendChild(exerciseCard(ex)));
+        remplie = true;
+      }
+    };
+
+    bloc.appendChild(tete);
     bloc.appendChild(liste);
     grid.appendChild(bloc);
   });
