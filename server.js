@@ -788,7 +788,7 @@ async function analyseWithMistral(title, content, existingExercises) {
     `[ID:${e.id}] "${e.title}" — ${e.content.slice(0, 80)}`
   ).join("\n");
 
-  const prompt = `Tu es un assistant pédagogique spécialisé en mathématiques françaises.
+  let prompt = `Tu es un assistant pédagogique spécialisé en mathématiques françaises.
 
 Voici un nouvel exercice soumis :
 TITRE: ${title}
@@ -805,8 +805,22 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication :
   "classe": "la classe française exacte (ex: 6ème, 5ème, 4ème, 3ème, 2nde, 1ère, Terminale, Licence 1, Licence 2, Licence 3, CM1, CM2, CE1, CE2)",
   "chapitre": "le chapitre mathématique précis (ex: Fractions, Équations du premier degré, Fonctions affines, Dérivation, Intégration, Probabilités, Trigonométrie, Vecteurs, Suites, Géométrie dans l'espace)",
   "type": "exercice ou probleme — choisis 'probleme' si l'énoncé est long, contextualisé (situation concrète) et comporte plusieurs questions/étapes de raisonnement ; sinon 'exercice'",
+  "famille": "le TYPE d'exercice, c'est-à-dire la tâche demandée à l'élève, formulé en 2 à 5 mots commençant par un verbe à l'infinitif quand c'est possible (ex : 'Calculer une longueur avec Pythagore', 'Résoudre une équation du premier degré', 'Développer une expression', 'Lire un graphique', 'Construire une figure', 'Calculer une probabilité'). Ce libellé sert à regrouper les exercices qui se traitent de la MÊME MANIÈRE : deux énoncés relevant de la même technique doivent recevoir exactement la même famille. Reste général : ne mentionne ni les valeurs numériques, ni les noms de points, ni le contexte particulier de l'énoncé.",
   "suggestion_difficulte": "Facile / Moyen / Difficile"
 }`;
+
+  // On rappelle au modèle les familles déjà en base : réutiliser un libellé
+  // existant vaut mieux qu'en inventer un quasi identique.
+  try {
+    const { rows: fam } = await pool.query(
+      `SELECT famille, count(*)::int AS n FROM exercises
+        WHERE famille IS NOT NULL AND btrim(famille) <> ''
+        GROUP BY famille ORDER BY n DESC LIMIT 60`);
+    if (fam.length) {
+      prompt += `\n\nFAMILLES DÉJÀ UTILISÉES (reprends EXACTEMENT l'une d'elles si elle correspond, sinon crée-en une nouvelle) :\n`
+        + fam.map(f => "- " + f.famille).join("\n");
+    }
+  } catch (_) { /* la suggestion reste possible sans cette liste */ }
 
   const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
     method: "POST",

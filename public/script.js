@@ -1342,6 +1342,12 @@ async function analyseExercise() {
       document.getElementById("ai-chapitre-input").value = data.chapitre  || "";
       pendingExercise.difficulty = data.suggestion_difficulte || pendingExercise.difficulty;
       pendingExercise.type = (data.type === "probleme") ? "probleme" : "exercice";
+      // Type d'exercice détecté : sert au regroupement dans les chapitres.
+      pendingExercise.famille = data.famille || null;
+      const champFam = document.getElementById("ai-famille");
+      if (champFam) champFam.textContent = data.famille || "Non détecté";
+      const saisieFam = document.getElementById("ai-famille-input");
+      if (saisieFam) saisieFam.value = data.famille || "";
     }
   } catch { document.getElementById("ai-loading").style.display="none"; showToast("Erreur lors de l'analyse IA.","error"); backToInput(); }
 }
@@ -1350,6 +1356,12 @@ async function confirmAdd() {
   if (!pendingExercise) return;
   pendingExercise.classe   = document.getElementById("ai-classe-input").value.trim()   || document.getElementById("ai-classe").textContent;
   pendingExercise.chapitre = document.getElementById("ai-chapitre-input").value.trim() || document.getElementById("ai-chapitre").textContent;
+  // La famille peut être corrigée à la main avant enregistrement.
+  const famSaisie = document.getElementById("ai-famille-input");
+  const famVue    = document.getElementById("ai-famille");
+  const fam = (famSaisie && famSaisie.value.trim())
+    || (famVue && famVue.textContent !== "Non détecté" ? famVue.textContent.trim() : "");
+  pendingExercise.famille = fam || null;
   await submitExercise(pendingExercise);
 }
 
