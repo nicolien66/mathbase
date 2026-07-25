@@ -395,7 +395,44 @@ function renderChapterView() {
     grid.innerHTML = `<div class="chap-placeholder">Aucun ${label} pour ce chapitre — pour l'instant !</div>`;
     return;
   }
-  shown.forEach(ex => grid.appendChild(exerciseCard(ex)));
+  // Regroupement par type d'exercice : les énoncés portant le même titre
+  // relèvent de la même technique, on les présente ensemble.
+  const groupes = new Map();
+  shown.forEach(ex => {
+    const cle = normaliseTitre(ex.title);
+    if (!groupes.has(cle)) groupes.set(cle, { titre: ex.title || "Sans titre", items: [] });
+    groupes.get(cle).items.push(ex);
+  });
+
+  // Les familles les plus fournies d'abord, puis par ordre alphabétique.
+  const ordonnes = [...groupes.values()].sort((a, b) =>
+    b.items.length - a.items.length || a.titre.localeCompare(b.titre, "fr"));
+
+  ordonnes.forEach(g => {
+    const bloc = document.createElement("div");
+    bloc.className = "chap-group";
+    bloc.innerHTML =
+      `<div class="chap-group-head">
+         <span class="chap-group-title">${escapeHtml(g.titre)}</span>
+         <span class="chap-group-count">${g.items.length}</span>
+       </div>`;
+    const liste = document.createElement("div");
+    liste.className = "chap-group-list";
+    g.items.forEach(ex => liste.appendChild(exerciseCard(ex)));
+    bloc.appendChild(liste);
+    grid.appendChild(bloc);
+  });
+}
+
+/* Deux titres ne différant que par la casse, les accents, la ponctuation ou
+   un numéro final (« Thalès 1 », « Thalès 2 ») désignent le même type. */
+function normaliseTitre(t) {
+  return String(t || "Sans titre")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s*(n[°o]\s*)?\d+\s*$/, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim() || "sans titre";
 }
 
 /* ═══════════════════════════════════════════
