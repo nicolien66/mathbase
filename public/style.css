@@ -1318,6 +1318,9 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 .annale-btn:hover { border-color: var(--accent); color: var(--accent); }
 .annale-btn.primary { background: var(--accent); border-color: var(--accent); color: #0b0b09; font-weight: 500; }
 .annale-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -8px rgba(200,185,122,0.5); color: #0b0b09; }
+/* Suppression d'un sujet : réservé aux administrateurs, donc volontairement discret. */
+.annale-btn.danger { border-color: rgba(230,130,110,0.35); color: rgba(230,130,110,0.85); }
+.annale-btn.danger:hover { border-color: #e6826e; color: #e6826e; background: rgba(230,130,110,0.08); }
 .annale-btn.big { padding: 0.8rem 1.6rem; font-size: 0.95rem; }
 
 /* — le « sujet papier » — */

@@ -535,6 +535,7 @@ function openAnnale(id) {
           ? `<a class="annale-btn" href="${escapeHtml(a.image_url)}" target="_blank" rel="noopener">\ud83d\udda8 Ouvrir / Imprimer le PDF</a>`
           : `<button class="annale-btn" onclick="window.print()">\ud83d\udda8 Imprimer / PDF</button>`}
         <button class="annale-btn primary" onclick="closeAnnale(); startExamen(${a.id})">\u23f1 Composer \u2192</button>
+        ${estAdmin() ? `<button class="annale-btn danger" onclick="deleteAnnale(${a.id})" title="R\u00e9serv\u00e9 aux administrateurs">\ud83d\uddd1 Supprimer</button>` : ""}
       </div>
     </div>
     <div class="annale-sheet">
@@ -1025,6 +1026,33 @@ function openModal(ex) {
     ${solutionHtml}
     <div class="modal-delete-zone"><button class="btn-delete" onclick="deleteExercise(${ex.id})">Supprimer cet exercice</button></div>`;
   document.getElementById("modal-overlay").classList.add("open");
+}
+
+/* Le bouton de suppression n'apparaît que pour un administrateur connecté :
+   la route serveur exige de toute façon ce rôle. */
+function estAdmin() {
+  try { return !!(window.MB_AUTH && MB_AUTH.isAdmin() && !MB_AUTH.isDemo()); }
+  catch { return false; }
+}
+
+async function deleteAnnale(id) {
+  const a = LOADED_ANNALES.find(x => x.id === id);
+  const nom = a ? a.title : "ce sujet";
+  if (!confirm("Supprimer d\u00e9finitivement \u00ab " + nom + " \u00bb ?\n\nLe sujet et ses questions seront retir\u00e9s de la base. Le fichier PDF, lui, n'est pas supprim\u00e9.")) return;
+  try {
+    const res = await MB_AUTH.apiFetch("/annales/" + id, { method: "DELETE" });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.error || ("HTTP " + res.status));
+    }
+    closeAnnale();
+    showToast("Sujet supprim\u00e9.", "success");
+    LOADED_ANNALES = LOADED_ANNALES.filter(x => x.id !== id);
+    if (typeof loadAnnales === "function") loadAnnales();
+    else if (typeof renderAnnales === "function") renderAnnales(LOADED_ANNALES);
+  } catch (e) {
+    showToast("Suppression impossible" + (e && e.message ? " : " + e.message : "."), "error");
+  }
 }
 
 async function deleteExercise(id) {
