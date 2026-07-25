@@ -46,17 +46,11 @@
           <div class="home-card-desc">Des activités interactives pour manipuler chaque notion pas à pas.</div>
           <div class="home-card-go">Essayer →</div>
         </a>
-        <div class="home-card" onclick="openSeance('exercice')" style="--hc:var(--accent2)">
+        <div class="home-card" onclick="openSeance()" style="--hc:var(--accent2)">
           <div class="home-card-icon">✏️</div>
           <div class="home-card-title">Entraînement</div>
-          <div class="home-card-desc">Une séance guidée d'exercices courts — l'IA corrige chacune de tes réponses.</div>
+          <div class="home-card-desc">Exercices d'application ou problèmes, au choix — l'IA corrige chacune de tes réponses.</div>
           <div class="home-card-go">S'entraîner →</div>
-        </div>
-        <div class="home-card" onclick="openSeance('probleme')" style="--hc:var(--college)">
-          <div class="home-card-icon">🧩</div>
-          <div class="home-card-title">Problèmes</div>
-          <div class="home-card-desc">Des énoncés longs et complexes, en plusieurs étapes, pour apprendre à raisonner.</div>
-          <div class="home-card-go">Résoudre →</div>
         </div>
         <div class="home-card" onclick="openExamen()" style="--hc:var(--accent2)">
           <div class="home-card-icon">⏱️</div>
@@ -241,6 +235,21 @@
       </div>
 
       <div class="seance-config">
+        <div class="seance-config-block">
+          <p class="seance-section-label">TYPE DE SÉANCE</p>
+          <div class="seance-type-choice">
+            <button class="seance-type active" id="st-exercice" onclick="setSeanceMode('exercice')">
+              <span class="st-ico">✎</span>
+              <span class="st-lab">Exercices d'application</span>
+              <span class="st-sub">Énoncés courts, une technique à la fois</span>
+            </button>
+            <button class="seance-type" id="st-probleme" onclick="setSeanceMode('probleme')">
+              <span class="st-ico">🧩</span>
+              <span class="st-lab">Problèmes</span>
+              <span class="st-sub">Énoncés longs, plusieurs étapes à enchaîner</span>
+            </button>
+          </div>
+        </div>
         <div class="seance-config-block">
           <p class="seance-section-label">NIVEAU</p>
           <div class="seance-level-grid">

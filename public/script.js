@@ -236,17 +236,29 @@ function showView(name, tabName) {
 /* ── SÉANCE : deux modes — entraînement (exercices) ou problèmes ── */
 let seanceMode = "exercice";
 function openSeance(mode) {
+  // Le type se choisit désormais dans l'écran de configuration.
+  setSeanceMode(mode === "probleme" ? "probleme" : "exercice");
+  showView("seance", "entrainement");
+}
+
+/* Bascule entre séance d'exercices d'application et séance de problèmes. */
+function setSeanceMode(mode) {
   seanceMode = mode === "probleme" ? "probleme" : "exercice";
+  const be = document.getElementById("st-exercice");
+  const bp = document.getElementById("st-probleme");
+  if (be) be.classList.toggle("active", seanceMode === "exercice");
+  if (bp) bp.classList.toggle("active", seanceMode === "probleme");
+
   const title = document.getElementById("seance-hero-title");
   const sub   = document.getElementById("seance-hero-sub");
+  if (!title || !sub) return;
   if (seanceMode === "probleme") {
     title.innerHTML = "Séance de<br><em>problèmes.</em>";
     sub.textContent = "Des énoncés longs, en plusieurs étapes — prends le temps de raisonner, l'IA corrige ta démarche.";
   } else {
     title.innerHTML = "Séance<br><em>d'entraînement.</em>";
-    sub.textContent = "Choisis ton niveau — l'IA pose les exercices de MathBase et corrige chacune de tes réponses.";
+    sub.textContent = "Choisis ton type de séance et ton niveau — l'IA corrige chacune de tes réponses.";
   }
-  showView("seance", seanceMode === "probleme" ? "probleme" : "entrainement");
 }
 
 function setFilter(btn, level) {

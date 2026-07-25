@@ -1573,3 +1573,15 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   border-top:1px solid rgba(245,242,232,.06); }
 .review-pdf { flex:1; width:100%; border:none; background:#fff; }
 @media (max-width:900px){ .review-body { grid-template-columns:1fr; grid-template-rows:1fr 1fr; } }
+
+/* ══ Choix du type de séance (exercices d'application / problèmes) ══ */
+.seance-type-choice { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:.7rem; }
+.seance-type { display:flex; flex-direction:column; align-items:flex-start; gap:.2rem;
+  background:rgba(245,242,232,.03); border:1px solid rgba(245,242,232,.12); border-radius:14px;
+  padding:1rem 1.1rem; cursor:pointer; font:inherit; color:inherit; text-align:left;
+  transition:border-color .2s, background .2s, transform .15s; }
+.seance-type:hover { transform:translateY(-2px); border-color:rgba(200,185,122,.45); }
+.seance-type.active { border-color:var(--accent,#c8b97a); background:rgba(200,185,122,.1); }
+.st-ico { font-size:1.1rem; color:var(--accent,#c8b97a); }
+.st-lab { font-size:.98rem; font-weight:500; }
+.st-sub { font-size:.76rem; opacity:.55; line-height:1.35; }
