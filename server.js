@@ -48,19 +48,44 @@ let _pdfjs = null, _canvas = null, _renderKO = false;
 const _pageCache = new Map();               // clé "fichier#page" -> data URL
 const PAGE_CACHE_MAX = 60;
 
-async function _loadRenderer() {
-  if (_renderKO) return null;
-  if (_pdfjs && _canvas) return { pdfjs: _pdfjs, canvas: _canvas };
+/* pdfjs (lecture du texte) et canvas (rendu d'images) sont chargés séparément :
+   canvas embarque des binaires natifs et peut manquer sur certains hébergeurs,
+   sans que cela doive empêcher l'analyse du texte. */
+let _pdfjsKO = false, _canvasKO = false;
+
+async function _loadPdfjs() {
+  if (_pdfjsKO) return null;
+  if (_pdfjs) return _pdfjs;
   try {
-    _pdfjs  = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    _canvas = require("@napi-rs/canvas");
-    return { pdfjs: _pdfjs, canvas: _canvas };
+    _pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    return _pdfjs;
   } catch (e) {
-    _renderKO = true;
-    console.warn("[pages] rendu d'image indisponible (" + e.message +
-                 ") — correction en mode texte uniquement.");
+    _pdfjsKO = true;
+    console.warn("[pdf] pdfjs-dist indisponible (" + e.message + ") : lancez « npm install pdfjs-dist ».");
     return null;
   }
+}
+
+function _loadCanvas() {
+  if (_canvasKO) return null;
+  if (_canvas) return _canvas;
+  try {
+    _canvas = require("@napi-rs/canvas");
+    return _canvas;
+  } catch (e) {
+    _canvasKO = true;
+    console.warn("[pdf] @napi-rs/canvas indisponible (" + e.message +
+                 ") : pas d'image de page, on reste en mode texte.");
+    return null;
+  }
+}
+
+async function _loadRenderer() {
+  if (_renderKO) return null;
+  const pdfjs = await _loadPdfjs();
+  const canvas = _loadCanvas();
+  if (!pdfjs || !canvas) { _renderKO = true; return null; }
+  return { pdfjs, canvas };
 }
 
 /* Seuls les PDF d'annales sont rasterisables : garde-fou anti-traversée. */
@@ -169,9 +194,11 @@ const REBUT  = /^\s*(?:A\.\s*P\.\s*M\.\s*E\.\s*P\.|L['’]?(?:int[ée]grale|ann[
 
 /* Texte page par page via pdfjs (déjà utilisé pour le rendu d'images). */
 async function texteParPage(buffer) {
-  const mod = await _loadRenderer();
-  if (!mod) throw new Error("Analyse PDF indisponible (pdfjs manquant).");
-  const task = mod.pdfjs.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false });
+  const pdfjs = await _loadPdfjs();
+  if (!pdfjs) throw new Error(
+    "Lecture des PDF indisponible sur le serveur : la bibliothèque pdfjs-dist n'est pas installée. " +
+    "Ajoutez-la aux dépendances (npm install pdfjs-dist) et redéployez.");
+  const task = pdfjs.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false });
   const doc = await task.promise;
   const pages = [];
   for (let n = 1; n <= doc.numPages; n++) {
