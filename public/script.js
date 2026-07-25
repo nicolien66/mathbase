@@ -953,11 +953,174 @@ async function loadExercises() {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   AJOUTER : exercice / problème / annale
+   ══════════════════════════════════════════════════════════════════════════ */
+let ADD_TYPE = "exercice";
+let AN_FILE = null;      // PDF de l'annale
+let PB_FILES = [];       // PDF joints au problème
+
+function setAddType(t) {
+  ADD_TYPE = t;
+  ["exercice", "probleme", "annale"].forEach(k => {
+    const b = document.getElementById("tb-" + k);
+    if (b) b.classList.toggle("active", k === t);
+  });
+  const aff = (id, on) => { const e = document.getElementById(id); if (e) e.style.display = on ? "block" : "none"; };
+  aff("step-input",   t === "exercice");
+  aff("pane-probleme", t === "probleme");
+  aff("pane-annale",  t === "annale");
+  aff("step-result",  false);
+}
+
+function litFichier(f) {
+  return new Promise((ok, ko) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1]);
+    r.onerror = () => ko(new Error("Lecture impossible."));
+    r.readAsDataURL(f);
+  });
+}
+
+function brancheDepot(zoneId, inputId, multiple) {
+  const zone = document.getElementById(zoneId), input = document.getElementById(inputId);
+  if (!zone || !input) return;
+  const prendre = liste => {
+    const pdfs = [...liste].filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name));
+    if (!pdfs.length) { showToast("Dépose un fichier PDF.", "error"); return; }
+    if (multiple) PB_FILES = pdfs; else AN_FILE = pdfs[0];
+    const cible = document.getElementById(multiple ? "pb-list" : "an-list");
+    cible.innerHTML = pdfs.map(f =>
+      `<div class="dz-file">▤ ${escapeHtml(f.name)} <span>${Math.round(f.size / 1024)} Ko</span></div>`).join("");
+  };
+  input.onchange = e => prendre(e.target.files);
+  ["dragenter", "dragover"].forEach(ev => zone.addEventListener(ev, e => {
+    e.preventDefault(); zone.classList.add("over");
+  }));
+  ["dragleave", "drop"].forEach(ev => zone.addEventListener(ev, e => {
+    e.preventDefault(); zone.classList.remove("over");
+  }));
+  zone.addEventListener("drop", e => prendre(e.dataTransfer.files));
+}
+
+/* ── Annale : dépôt du PDF puis analyse ── */
+async function envoyerAnnale() {
+  if (!AN_FILE) { showToast("Dépose d'abord le PDF du sujet.", "error"); return; }
+  const zone = document.getElementById("an-progress");
+  const btn = document.getElementById("an-btn");
+  btn.disabled = true;
+  zone.style.display = "block";
+  zone.innerHTML = `<div class="ai-loading"><span class="spinner"></span>
+    Analyse du sujet en cours — découpage des exercices, association des pages et description des figures.
+    Cela peut prendre une minute.</div>`;
+  try {
+    const b64 = await litFichier(AN_FILE);
+    const res = await MB_AUTH.apiFetch("/annales/upload", {
+      method: "POST",
+      body: JSON.stringify({
+        nom: AN_FILE.name, pdf_base64: b64,
+        title: document.getElementById("an-title").value.trim() || null,
+        year: document.getElementById("an-year").value || null,
+        duration: document.getElementById("an-duration").value || null,
+      }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
+    zone.innerHTML = `<div class="ai-ok"><strong>${escapeHtml(d.title)}</strong> ajouté.</div>
+      <div class="ai-stats">${d.nb_exercices} exercice(s) sur ${d.pages} page(s) ·
+        ${d.avec_figure} figure(s) décrite(s)</div>
+      <table class="ai-table"><thead><tr><th>Exercice</th><th>Page(s)</th><th>Figure</th></tr></thead><tbody>
+      ${d.apercu.map(x => `<tr><td>${escapeHtml(x.titre)}</td><td>${x.pages.join(", ")}</td>
+        <td>${x.figure ? "oui" : "—"}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="form-actions"><button class="btn-ai" onclick="showView('annales')">Voir les annales →</button></div>`;
+    AN_FILE = null;
+    document.getElementById("an-list").innerHTML = "";
+    if (typeof loadAnnales === "function") loadAnnales();
+  } catch (e) {
+    zone.innerHTML = `<div class="ai-err">Analyse impossible : ${escapeHtml(e.message || "erreur inconnue")}</div>`;
+  } finally { btn.disabled = false; }
+}
+
+/* ── Problème : vérification qu'il s'agit bien d'un problème ── */
+async function verifierProbleme() {
+  const titre = document.getElementById("pb-title").value.trim();
+  const enonce = document.getElementById("pb-content").value.trim();
+  if (enonce.length < 40) { showToast("Rédige d'abord l'énoncé du problème.", "error"); return; }
+  const zone = document.getElementById("pb-verdict");
+  zone.style.display = "block";
+  zone.innerHTML = `<div class="ai-loading"><span class="spinner"></span> Analyse de l'énoncé…</div>`;
+  try {
+    const res = await MB_AUTH.apiFetch("/problemes/verifier", {
+      method: "POST", body: JSON.stringify({ titre, enonce }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
+
+    const ok = !!d.est_probleme;
+    zone.innerHTML =
+      `<div class="${ok ? "ai-ok" : "ai-warn"}">${ok
+        ? "C'est bien un problème."
+        : "Cela ressemble davantage à un exercice d'application."}</div>
+       <p class="ai-just">${escapeHtml(d.justification || "")}</p>
+       ${d.notions && d.notions.length
+          ? `<div class="ai-stats">Notions : ${d.notions.map(escapeHtml).join(" · ")}</div>` : ""}
+       ${!ok && d.conseil ? `<p class="ai-just"><strong>Piste :</strong> ${escapeHtml(d.conseil)}</p>` : ""}
+       <div class="form-actions">
+         <button class="btn-ghost" onclick="document.getElementById('pb-verdict').style.display='none'">Modifier</button>
+         <button class="btn-ai" onclick="enregistrerProbleme(${ok})">
+           ${ok ? "Enregistrer le problème" : "Enregistrer quand même"} →</button>
+       </div>`;
+    PB_VERDICT = d;
+  } catch (e) {
+    zone.innerHTML = `<div class="ai-err">Vérification impossible : ${escapeHtml(e.message || "")}</div>`;
+  }
+}
+
+let PB_VERDICT = null;
+async function enregistrerProbleme() {
+  const titre = document.getElementById("pb-title").value.trim();
+  const enonce = document.getElementById("pb-content").value.trim();
+  if (!titre) { showToast("Donne un titre au problème.", "error"); return; }
+  const d = PB_VERDICT || {};
+  try {
+    // Les PDF joints sont transmis pour être analysés et servir à la correction.
+    const pdfs = [];
+    for (const f of PB_FILES) pdfs.push({ nom: f.name, pdf_base64: await litFichier(f) });
+
+    const res = await MB_AUTH.apiFetch("/exercises", {
+      method: "POST",
+      body: JSON.stringify({
+        title: titre, content: enonce, type: "probleme",
+        level: "college", classe: d.classe || document.getElementById("pb-classe").value,
+        subject: document.getElementById("pb-subject").value,
+        difficulty: d.difficulte || "Moyen",
+        chapitre: (d.notions && d.notions[0]) || null,
+        solution: null, pdfs: pdfs.length ? pdfs : null,
+      }),
+    });
+    if (!res.ok) throw new Error();
+    showToast("Problème ajouté.", "success");
+    PB_FILES = []; PB_VERDICT = null;
+    document.getElementById("pb-title").value = "";
+    document.getElementById("pb-content").value = "";
+    document.getElementById("pb-list").innerHTML = "";
+    document.getElementById("pb-verdict").style.display = "none";
+    showView("browse");
+  } catch { showToast("Erreur lors de l'ajout.", "error"); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  brancheDepot("an-drop", "an-file", false);
+  brancheDepot("pb-drop", "pb-files", true);
+});
+
+
 async function analyseExercise() {
   const title   = document.getElementById("title").value.trim();
   const content = document.getElementById("content").value.trim();
   if (!title || !content) { showToast("Le titre et l'énoncé sont obligatoires.", "error"); return; }
-  pendingExercise = { title, content, level: document.getElementById("level").value, subject: document.getElementById("subject").value, difficulty: document.getElementById("difficulty").value, solution: document.getElementById("solution").value.trim() || null };
+  pendingExercise = { title, content, level: document.getElementById("level").value, subject: document.getElementById("subject").value, difficulty: document.getElementById("difficulty").value, solution: null };   // plus de champ Solution : la correction IA suffit
   document.getElementById("step-input").style.display = "none";
   document.getElementById("step-result").style.display = "block";
   document.getElementById("ai-loading").style.display = "flex";

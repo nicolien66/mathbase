@@ -419,8 +419,24 @@
 
       <div class="form-page-header">
         <p class="hero-tag">Contribuer</p>
-        <h1>Ajouter un<br><em>exercice.</em></h1>
-        <p class="hero-sub">Remplis le formulaire — l'IA classe automatiquement et vérifie les doublons.</p>
+        <h1>Ajouter du<br><em>contenu.</em></h1>
+        <p class="hero-sub">Choisis ce que tu veux ajouter — l'IA analyse et classe automatiquement.</p>
+      </div>
+
+      <!-- CHOIX DU TYPE -->
+      <div class="type-switch">
+        <button class="type-btn active" id="tb-exercice" onclick="setAddType('exercice')">
+          <span class="type-ico">✎</span><span class="type-lab">Exercice</span>
+          <span class="type-sub">Énoncé court, application directe</span>
+        </button>
+        <button class="type-btn" id="tb-probleme" onclick="setAddType('probleme')">
+          <span class="type-ico">◈</span><span class="type-lab">Problème</span>
+          <span class="type-sub">Plusieurs étapes, PDF possibles</span>
+        </button>
+        <button class="type-btn" id="tb-annale" onclick="setAddType('annale')">
+          <span class="type-ico">▤</span><span class="type-lab">Annale</span>
+          <span class="type-sub">Sujet complet, dépôt PDF</span>
+        </button>
       </div>
 
       <!-- ÉTAPE 1 : SAISIE -->
@@ -463,16 +479,86 @@
           <label for="content">Énoncé</label>
           <textarea id="content" rows="6" placeholder="Décris l'exercice en détail…"></textarea>
         </div>
-        <div class="form-group">
-          <label for="solution">Solution <span class="label-hint">— optionnel</span></label>
-          <textarea id="solution" rows="4" placeholder="La correction de l'exercice…"></textarea>
-        </div>
         <div class="form-actions">
           <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
           <button class="btn-ai" id="btn-analyse" onclick="analyseExercise()">
             <span class="ai-icon">✦</span> Analyser avec l'IA →
           </button>
         </div>
+      </div>
+
+      <!-- PANNEAU PROBLÈME -->
+      <div id="pane-probleme" class="form-card" style="display:none">
+        <div class="form-group">
+          <label for="pb-title">Titre du problème</label>
+          <input type="text" id="pb-title" placeholder="Ex : L'aménagement du terrain de sport">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pb-classe">Classe</label>
+            <select id="pb-classe"><option>6ème</option><option>5ème</option><option>4ème</option><option selected>3ème</option></select>
+          </div>
+          <div class="form-group">
+            <label for="pb-subject">Matière</label>
+            <select id="pb-subject">
+              <option>Arithmétique</option><option>Algèbre</option><option selected>Géométrie</option>
+              <option>Analyse</option><option>Probabilités</option><option>Statistiques</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pb-content">Énoncé complet du problème</label>
+          <textarea id="pb-content" rows="16" placeholder="Rédige ici l'énoncé complet, avec ses différentes parties et questions…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Documents PDF <span class="label-hint">— facultatif, annexes ou figures</span></label>
+          <div class="dropzone" id="pb-drop" onclick="document.getElementById('pb-files').click()">
+            <div class="dz-ico">⇪</div>
+            <div class="dz-txt">Dépose un ou plusieurs PDF ici, ou clique pour parcourir</div>
+            <div class="dz-list" id="pb-list"></div>
+          </div>
+          <input type="file" id="pb-files" accept="application/pdf" multiple style="display:none">
+        </div>
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
+          <button class="btn-ai" onclick="verifierProbleme()"><span class="ai-icon">✦</span> Vérifier avec l'IA →</button>
+        </div>
+        <div id="pb-verdict" class="ai-block" style="display:none"></div>
+      </div>
+
+      <!-- PANNEAU ANNALE -->
+      <div id="pane-annale" class="form-card" style="display:none">
+        <p class="form-note">Une annale s'ajoute uniquement en déposant son <strong>PDF</strong>.
+          L'IA découpe le sujet en exercices, associe chaque exercice à ses pages et décrit les figures
+          pour la correction.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="an-title">Titre <span class="label-hint">— facultatif</span></label>
+            <input type="text" id="an-title" placeholder="Ex : Brevet — Asie 19 juin 2023">
+          </div>
+          <div class="form-group">
+            <label for="an-year">Année</label>
+            <input type="number" id="an-year" placeholder="2024" min="1990" max="2100">
+          </div>
+          <div class="form-group">
+            <label for="an-duration">Durée (min)</label>
+            <input type="number" id="an-duration" placeholder="120" min="10" max="300">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Fichier PDF du sujet</label>
+          <div class="dropzone" id="an-drop" onclick="document.getElementById('an-file').click()">
+            <div class="dz-ico">▤</div>
+            <div class="dz-txt">Dépose le PDF du sujet ici, ou clique pour parcourir</div>
+            <div class="dz-list" id="an-list"></div>
+          </div>
+          <input type="file" id="an-file" accept="application/pdf" style="display:none">
+        </div>
+        <div class="form-actions">
+          <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
+          <button class="btn-ai" id="an-btn" onclick="envoyerAnnale()"><span class="ai-icon">✦</span> Analyser et ajouter →</button>
+        </div>
+        <div id="an-progress" class="ai-block" style="display:none"></div>
       </div>
 
       <!-- ÉTAPE 2 : RÉSULTAT IA -->
