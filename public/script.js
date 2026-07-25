@@ -418,8 +418,10 @@ function renderChapterView() {
   // relèvent de la même technique, on les présente ensemble.
   const groupes = new Map();
   shown.forEach(ex => {
-    const cle = normaliseTitre(ex.title);
-    if (!groupes.has(cle)) groupes.set(cle, { titre: ex.title || "Sans titre", items: [] });
+    // La famille vient de la base ; à défaut on la déduit du titre.
+    const brut = (ex.famille && String(ex.famille).trim()) || ex.title || "Sans titre";
+    const cle = normaliseTitre(brut);
+    if (!groupes.has(cle)) groupes.set(cle, { titre: brut, items: [] });
     groupes.get(cle).items.push(ex);
   });
 

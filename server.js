@@ -671,6 +671,19 @@ async function initDB() {
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS image_url   TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS figure_desc TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS pages       TEXT`);
+  /* `famille` : type d'exercice, sur lequel les chapitres sont regroupés.
+     Rempli à l'ajout ; pour les exercices déjà en base, il est déduit du titre. */
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS famille     TEXT`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_exercises_famille ON exercises (famille)`);
+  const { rows: aRemplir } = await pool.query(
+    `SELECT count(*)::int AS n FROM exercises WHERE famille IS NULL OR btrim(famille) = ''`);
+  if (aRemplir[0].n > 0) {
+    await pool.query(`
+      UPDATE exercises
+         SET famille = btrim(regexp_replace(title, '\\s*(n[°o]\\s*)?[0-9]+\\s*$', '', 'i'))
+       WHERE (famille IS NULL OR btrim(famille) = '') AND title IS NOT NULL`);
+    console.log(`Familles d'exercices renseignées : ${aRemplir[0].n} ligne(s).`);
+  }
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'exercice'`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -952,6 +965,9 @@ app.post("/exercises/analyse", auth, async (req, res) => {
 app.post("/exercises", auth, async (req, res) => {
   const { title, content, level, subject, difficulty, solution, classe, chapitre, type,
           image_url, figure_desc } = req.body;
+  // Type d'exercice : fourni, sinon déduit du titre (numéro final retiré).
+  const famille = (req.body.famille && String(req.body.famille).trim())
+    || String(title || "").replace(/\s*(n[°o]\s*)?\d+\s*$/i, "").trim() || null;
   if (!title || !content || !level) {
     return res.status(400).json({ error: "Champs obligatoires manquants." });
   }
@@ -959,9 +975,9 @@ app.post("/exercises", auth, async (req, res) => {
     // image_url / figure_desc : renseignés pour un problème déposé en PDF, afin que
     // les figures et annexes restent consultables et servent à la correction.
     const result = await pool.query(
-      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null]
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc, famille)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null, famille]
     );
     res.json({ id: result.rows[0].id, message: "Exercice ajouté." });
   } catch (err) {
