@@ -153,13 +153,147 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ANALYSE AUTOMATIQUE D'UNE ANNALE DÉPOSÉE EN PDF
+   Reprend la chaîne validée hors ligne : découpage en exercices, association
+   de chaque exercice à ses pages, puis description des figures par l'IA à
+   partir de l'image de la page (et non du texte, qui perd les dessins).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Petites capitales LaTeX : « E XERCICE 1 » -> « EXERCICE 1 ». */
+function recolleCapitales(l) {
+  return l.replace(/\b([A-ZÀ-Þ])\s+([A-ZÀ-Þ]{2,})/g, "$1$2");
+}
+const ENTETE = /^[ \t]*(?:exercice\s*n?[°o]?\s*\d*|probl[eè]me(?:\s+n?[°o]?\s*\d+)?|question\s+\d+\b)/i;
+const REBUT  = /^\s*(?:A\.\s*P\.\s*M\.\s*E\.\s*P\.|L['’]?(?:int[ée]grale|ann[ée]e)\s+\d{4}|Brevet des coll[èe]ges.*|\d+)\s*$/i;
+
+/* Texte page par page via pdfjs (déjà utilisé pour le rendu d'images). */
+async function texteParPage(buffer) {
+  const mod = await _loadRenderer();
+  if (!mod) throw new Error("Analyse PDF indisponible (pdfjs manquant).");
+  const task = mod.pdfjs.getDocument({ data: new Uint8Array(buffer), isEvalSupported: false });
+  const doc = await task.promise;
+  const pages = [];
+  for (let n = 1; n <= doc.numPages; n++) {
+    const page = await doc.getPage(n);
+    const tc = await page.getTextContent();
+    // Reconstitution des lignes d'après la position verticale des fragments.
+    const lignes = new Map();
+    for (const it of tc.items) {
+      const y = Math.round(it.transform[5]);
+      if (!lignes.has(y)) lignes.set(y, []);
+      lignes.get(y).push({ x: it.transform[4], s: it.str });
+    }
+    const ordonnees = [...lignes.keys()].sort((a, b) => b - a);
+    pages.push(ordonnees.map(y =>
+      lignes.get(y).sort((a, b) => a.x - b.x).map(o => o.s).join(" ").replace(/\s+/g, " ").trim()
+    ).filter(Boolean).join("\n"));
+  }
+  try { task.destroy(); } catch (_) {}
+  return pages;
+}
+
+/* Découpe en exercices et associe les pages. */
+function decouper(pages) {
+  const lp = [];
+  pages.forEach((txt, i) => txt.split("\n").forEach(l => {
+    if (!REBUT.test(l)) lp.push({ page: i + 1, l });
+  }));
+  const marques = [];
+  lp.forEach((o, i) => { if (ENTETE.test(recolleCapitales(o.l))) marques.push(i); });
+  // en-têtes identiques rapprochés = coupure de page
+  const norm = i => recolleCapitales(lp[i].l).trim().toLowerCase();
+  const gardees = marques.filter((m, k) =>
+    k === 0 || !(norm(m) === norm(marques[k - 1]) && m - marques[k - 1] <= 3));
+
+  return gardees.map((deb, k) => {
+    const fin = k + 1 < gardees.length ? gardees[k + 1] : lp.length;
+    const seg = lp.slice(deb, fin);
+    const pp = [...new Set(seg.filter(o => o.l.trim()).map(o => o.page))].sort((a, b) => a - b);
+    const texte = seg.map(o => o.l).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    const tete = recolleCapitales(seg[0].l).replace(/\s+/g, " ").trim();
+    return { titre: tete, enonce: texte, pages: pp.length ? pp : [seg[0].page] };
+  });
+}
+
+/* Décrit les figures d'une page à partir de son image. */
+async function decrisFigures(dataUrl, numeroPage) {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return null;
+  const consigne =
+    "Voici la page " + numeroPage + " d'un sujet de brevet de mathématiques. " +
+    "Décris PRÉCISÉMENT chaque figure géométrique, graphique, schéma ou tableau qui y est DESSINÉ " +
+    "(pas le texte de l'énoncé). Pour chaque figure : la forme, les points nommés, les longueurs et " +
+    "angles portés sur le dessin, les codages (angle droit, égalités de longueurs), le parallélisme " +
+    "visible, et à quel exercice elle se rapporte. " +
+    "Réponds UNIQUEMENT en JSON : {\"figures\":[{\"exercice\":\"Exercice 2\",\"description\":\"…\"}]} " +
+    "Si la page ne contient aucune figure dessinée, réponds {\"figures\":[]}.";
+  try {
+    const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [{ role: "user", content: [
+          { type: "text", text: consigne },
+          { type: "image_url", image_url: dataUrl },
+        ] }],
+        response_format: { type: "json_object" },
+        temperature: 0.1, max_tokens: 900,
+      }),
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    const parsed = parseJsonTolerant((d.choices && d.choices[0] && d.choices[0].message.content) || "");
+    return parsed && Array.isArray(parsed.figures) ? parsed.figures : null;
+  } catch (_) { return null; }
+}
+
+/* Chaîne complète : PDF -> questions prêtes pour la correction. */
+async function analyseAnnalePdf(buffer, nomFichier) {
+  const pages = await texteParPage(buffer);
+  const blocs = decouper(pages);
+  if (!blocs.length) {
+    throw new Error("Aucun exercice détecté : le PDF est peut-être scanné (sans couche texte).");
+  }
+
+  // Description des figures, page par page (plafonné pour limiter le coût).
+  const parPage = {};
+  const aVoir = [...new Set(blocs.flatMap(b => b.pages))].slice(0, 10);
+  for (const n of aVoir) {
+    const img = await renderPageImage("annales-pdf/" + nomFichier, n);
+    if (!img) continue;
+    const figs = await decrisFigures(img, n);
+    if (figs && figs.length) parPage[n] = figs;
+  }
+
+  const questions = blocs.map((b, i) => {
+    const q = {
+      enonce: (b.titre || ("Exercice " + (i + 1))) + " — reporte-toi au sujet PDF ci-dessus.",
+      enonce_correction: b.enonce,
+      pages: b.pages,
+      pages_total: pages.length,
+    };
+    // On rattache la figure dont l'exercice cité correspond, sinon celle de la page.
+    const candidates = b.pages.flatMap(n => parPage[n] || []);
+    const exact = candidates.find(f =>
+      f.exercice && b.titre && f.exercice.toLowerCase().replace(/\s+/g, "")
+        .startsWith(b.titre.toLowerCase().replace(/\s+/g, "").slice(0, 10)));
+    const choisie = exact || (candidates.length === 1 ? candidates[0] : null);
+    if (choisie && choisie.description) q.figure_desc = choisie.description;
+    return q;
+  });
+
+  return { questions, pages_total: pages.length, nb_exercices: blocs.length };
+}
+
 const app  = express();
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "25mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ═══════════ ROUTES AUTH ═══════════ */
@@ -269,6 +403,192 @@ app.post("/annales", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ── Dépôt d'une annale en PDF (administrateurs) ──────────────────────────
+   Le PDF arrive encodé en base64 dans le JSON : pas de dépendance multipart.
+   Il est écrit dans public/annales-pdf/, puis analysé. */
+app.post("/annales/upload", auth, requireAdmin, async (req, res) => {
+  try {
+    const { nom, pdf_base64, title, exam, year, classe, duration } = req.body || {};
+    if (!pdf_base64) return res.status(400).json({ error: "Aucun PDF reçu." });
+
+    const propre = String(nom || "annale.pdf")
+      .replace(/[^A-Za-z0-9._-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+    const fichier = /\.pdf$/i.test(propre) ? propre : propre + ".pdf";
+
+    const dossier = path.join(__dirname, "public", "annales-pdf");
+    fs.mkdirSync(dossier, { recursive: true });
+    const cible = path.join(dossier, fichier);
+    if (fs.existsSync(cible)) return res.status(409).json({ error: "Un sujet portant ce nom de fichier existe déjà." });
+
+    const buffer = Buffer.from(String(pdf_base64).replace(/^data:.*?base64,/, ""), "base64");
+    if (buffer.slice(0, 4).toString() !== "%PDF") return res.status(400).json({ error: "Le fichier n'est pas un PDF." });
+    fs.writeFileSync(cible, buffer);
+
+    let analyse;
+    try {
+      analyse = await analyseAnnalePdf(buffer, fichier);
+    } catch (e) {
+      fs.unlinkSync(cible);                       // on ne garde pas un PDF inexploitable
+      return res.status(422).json({ error: e.message });
+    }
+
+    const { rows } = await pool.query(
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, image_url, questions)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, title`,
+      [title || fichier.replace(/\.pdf$/i, "").replace(/_/g, " "),
+       exam || "Brevet", year ? Number(year) : null, "college",
+       classe || "3ème", "Mathématiques", duration ? Number(duration) : null,
+       "annales-pdf/" + fichier, JSON.stringify(analyse.questions)]);
+
+    res.json({
+      id: rows[0].id, title: rows[0].title, fichier,
+      nb_exercices: analyse.nb_exercices, pages: analyse.pages_total,
+      avec_figure: analyse.questions.filter(q => q.figure_desc).length,
+      apercu: analyse.questions.map((q, i) => ({
+        index: i, titre: q.enonce.split(" — ")[0], pages: q.pages, figure: !!q.figure_desc,
+      })),
+    });
+  } catch (e) {
+    console.error("Erreur upload annale:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ── Vérification qu'un énoncé est bien un PROBLÈME ─────────────────────── */
+/* ── Problème déposé en PDF ───────────────────────────────────────────────
+   Le PDF est conservé (figures, annexes, documents-réponses). Son texte est
+   extrait puis remis en forme par l'IA : le découpage d'un PDF casse souvent
+   la continuité de l'énoncé (colonnes, encarts, sauts de page), donc on lui
+   demande de rétablir la cohérence et d'ajouter les précisions nécessaires,
+   en signalant explicitement les renvois aux figures restées dans le PDF. */
+app.post("/problemes/depuis-pdf", auth, async (req, res) => {
+  try {
+    const { nom, pdf_base64 } = req.body || {};
+    if (!pdf_base64) return res.status(400).json({ error: "Aucun PDF reçu." });
+    const key = process.env.MISTRAL_KEY;
+    if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+
+    const propre = String(nom || "probleme.pdf")
+      .replace(/[^A-Za-z0-9._-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
+    const fichier = (/\.pdf$/i.test(propre) ? propre : propre + ".pdf")
+      .replace(/\.pdf$/i, "") + "-" + Date.now().toString(36) + ".pdf";
+
+    const buffer = Buffer.from(String(pdf_base64).replace(/^data:.*?base64,/, ""), "base64");
+    if (buffer.slice(0, 4).toString() !== "%PDF") return res.status(400).json({ error: "Le fichier n'est pas un PDF." });
+
+    const dossier = path.join(__dirname, "public", "annales-pdf");
+    fs.mkdirSync(dossier, { recursive: true });
+    fs.writeFileSync(path.join(dossier, fichier), buffer);
+
+    const pages = await texteParPage(buffer);
+    const texteBrut = pages.map((t, i) => `--- page ${i + 1} ---\n${t}`).join("\n\n").slice(0, 14000);
+
+    // Images des premières pages : l'IA voit ainsi les figures réellement dessinées.
+    const images = [];
+    for (let n = 1; n <= Math.min(pages.length, 3); n++) {
+      const img = await renderPageImage("annales-pdf/" + fichier, n);
+      if (img) images.push(img);
+    }
+
+    const consigne = `Voici un problème de mathématiques extrait d'un PDF. Le texte ci-dessous provient d'une extraction automatique : la mise en page (colonnes, encarts, figures, sauts de page) a pu mélanger ou tronquer des phrases.
+
+TEXTE EXTRAIT :
+${texteBrut}
+
+Ta tâche : reconstituer un énoncé PROPRE et COHÉRENT, destiné à être affiché tel quel à un élève de collège.
+
+Règles impératives :
+- N'invente aucune donnée numérique. Si une valeur est illisible ou manquante, écris « (voir le document joint) ».
+- Rétablis l'ordre logique des phrases mélangées par les colonnes, et supprime les fragments parasites (en-têtes, numéros de page, étiquettes de figure isolées).
+- Conserve la numérotation des questions telle qu'elle est dans le sujet.
+- Chaque fois que l'énoncé renvoie à une figure, un schéma, un tableau ou une annexe qui ne peut pas être retranscrit en texte, insère une phrase explicite du type « Voir la figure du document joint. » afin que l'élève sache où regarder.
+- Ajoute, si nécessaire, une courte phrase de liaison pour rendre l'énoncé compréhensible sans le PDF sous les yeux, sans jamais changer les données.
+
+Réponds UNIQUEMENT en JSON :
+{
+  "titre": "un titre court et parlant",
+  "enonce": "l'énoncé complet remis en forme, avec des retours à la ligne",
+  "figures": "description précise des figures et annexes présentes dans le PDF (formes, points nommés, longueurs et angles portés sur le dessin, codages), ou chaîne vide",
+  "est_probleme": true | false,
+  "justification": "2 phrases : est-ce un vrai problème (plusieurs étapes, choix de méthode) ou un simple exercice d'application ?",
+  "classe": "6ème | 5ème | 4ème | 3ème",
+  "difficulte": "Facile | Moyen | Difficile",
+  "notions": ["notion 1", "notion 2"]
+}`;
+
+    const contenu = images.length
+      ? [{ type: "text", text: consigne }].concat(images.map(u => ({ type: "image_url", image_url: u })))
+      : consigne;
+
+    const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [{ role: "user", content: contenu }],
+        response_format: { type: "json_object" },
+        temperature: 0.1, max_tokens: 2500,
+      }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    const parsed = parseJsonTolerant((d.choices && d.choices[0] && d.choices[0].message.content) || "");
+    if (!parsed || !parsed.enonce) throw new Error("Le modèle n'a pas renvoyé d'énoncé exploitable.");
+
+    res.json(Object.assign({ image_url: "annales-pdf/" + fichier, pages_total: pages.length }, parsed));
+  } catch (e) {
+    console.error("Erreur problème depuis PDF:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/problemes/verifier", auth, async (req, res) => {
+  const { titre, enonce } = req.body || {};
+  if (!enonce || String(enonce).trim().length < 40)
+    return res.status(400).json({ error: "L'énoncé est trop court pour être analysé." });
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+
+  const prompt = `Tu es professeur de mathématiques. On te soumet un énoncé destiné à être classé comme « problème ».
+
+Un PROBLÈME comporte plusieurs étapes liées, demande de choisir soi-même une méthode, mobilise plusieurs notions ou exige d'interpréter une situation concrète pour décider quoi calculer.
+Un simple EXERCICE D'APPLICATION consiste à appliquer directement une formule ou une technique qu'on vient d'apprendre, en une ou deux étapes évidentes.
+
+TITRE : ${titre || "(sans titre)"}
+ÉNONCÉ :
+${enonce}
+
+Réponds UNIQUEMENT en JSON :
+{
+  "est_probleme": true | false,
+  "justification": "2 phrases expliquant ton classement, adressées à l'enseignant.",
+  "notions": ["notion 1", "notion 2"],
+  "classe": "6ème | 5ème | 4ème | 3ème",
+  "difficulte": "Facile | Moyen | Difficile",
+  "conseil": "Si ce n'est pas un problème, comment l'enrichir pour en faire un. Sinon, chaîne vide."
+}`;
+  try {
+    const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+      body: JSON.stringify({
+        model: "mistral-small-latest",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.1, max_tokens: 700,
+      }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    const parsed = parseJsonTolerant((d.choices && d.choices[0] && d.choices[0].message.content) || "");
+    if (!parsed) throw new Error("Réponse illisible du modèle.");
+    res.json(parsed);
+  } catch (e) {
+    console.error("Erreur vérification problème:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
   try {
     await pool.query("DELETE FROM annales WHERE id = $1", [Number(req.params.id)]);
@@ -299,6 +619,12 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS classe   TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+  /* Problèmes déposés en PDF : le texte va dans `content` (affiché à l'élève),
+     tandis que le PDF d'origine reste consultable pour ses figures et annexes,
+     et sert de source principale au correcteur. */
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS image_url   TEXT`);
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS figure_desc TEXT`);
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS pages       TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'exercice'`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -578,15 +904,18 @@ app.post("/exercises/analyse", auth, async (req, res) => {
 
 /* ── AJOUTER UN EXERCICE ── */
 app.post("/exercises", auth, async (req, res) => {
-  const { title, content, level, subject, difficulty, solution, classe, chapitre, type } = req.body;
+  const { title, content, level, subject, difficulty, solution, classe, chapitre, type,
+          image_url, figure_desc } = req.body;
   if (!title || !content || !level) {
     return res.status(400).json({ error: "Champs obligatoires manquants." });
   }
   try {
+    // image_url / figure_desc : renseignés pour un problème déposé en PDF, afin que
+    // les figures et annexes restent consultables et servent à la correction.
     const result = await pool.query(
-      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice")]
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null]
     );
     res.json({ id: result.rows[0].id, message: "Exercice ajouté." });
   } catch (err) {

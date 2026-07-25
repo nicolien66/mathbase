@@ -1077,17 +1077,86 @@ async function verifierProbleme() {
   }
 }
 
+
+/* ── Relecture avant enregistrement : énoncé à gauche, PDF à droite ── */
+function ouvrirRelecture(d) {
+  const ok = !!d.est_probleme;
+  document.getElementById("rv-title").value = d.titre
+    || document.getElementById("pb-title").value.trim() || "";
+  document.getElementById("rv-content").value = d.enonce || "";
+  document.getElementById("rv-verdict").innerHTML =
+    (ok ? "\u25cf Vrai problème" : "\u25b2 Ressemble à un exercice d'application")
+    + " \u00b7 " + (d.pages_total || "?") + " page(s)"
+    + (d.classe ? " \u00b7 " + escapeHtml(d.classe) : "")
+    + (d.notions && d.notions.length ? " \u00b7 " + d.notions.map(escapeHtml).join(", ") : "");
+  document.getElementById("rv-hint").textContent =
+    (d.justification || "") +
+    " Relis l'énoncé : l'extraction d'un PDF est imparfaite. Compare avec le document de droite, " +
+    "corrige ce qui manque, puis confirme.";
+  const cadre = document.getElementById("rv-pdf");
+  cadre.src = d.image_url ? ("/" + String(d.image_url).replace(/^\/+/, "") + "#view=FitH") : "about:blank";
+  document.getElementById("pb-review").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function fermerRelecture() {
+  document.getElementById("pb-review").classList.remove("open");
+  document.getElementById("rv-pdf").src = "about:blank";
+  document.body.style.overflow = "";
+}
+
+/* Confirmation : on reprend le texte relu par l'utilisateur, pas celui de l'IA. */
+async function confirmerProbleme() {
+  const titre  = document.getElementById("rv-title").value.trim();
+  const enonce = document.getElementById("rv-content").value.trim();
+  if (!titre)  { showToast("Donne un titre au problème.", "error"); return; }
+  if (enonce.length < 40) { showToast("L'énoncé est trop court.", "error"); return; }
+  document.getElementById("pb-title").value = titre;
+  document.getElementById("pb-content").value = enonce;
+  fermerRelecture();
+  await enregistrerProbleme();
+}
+
 let PB_VERDICT = null;
+let PB_PDF = null;          // { image_url, figure_desc } du PDF analysé
+
+/* Dépôt d'un problème en PDF : le texte est extrait et remis en forme,
+   le PDF reste attaché pour ses figures et annexes. */
+async function analyserProblemePdf() {
+  if (!PB_FILES.length) { showToast("Dépose d'abord un PDF.", "error"); return; }
+  const zone = document.getElementById("pb-verdict");
+  zone.style.display = "block";
+  zone.innerHTML = `<div class="ai-loading"><span class="spinner"></span>
+    Lecture du PDF, remise en forme de l'énoncé et description des figures…</div>`;
+  try {
+    const f = PB_FILES[0];
+    const res = await MB_AUTH.apiFetch("/problemes/depuis-pdf", {
+      method: "POST",
+      body: JSON.stringify({ nom: f.name, pdf_base64: await litFichier(f) }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
+
+    if (d.titre && !document.getElementById("pb-title").value.trim())
+      document.getElementById("pb-title").value = d.titre;
+    document.getElementById("pb-content").value = d.enonce;
+    if (d.classe) { const e = document.getElementById("pb-classe"); if (e) e.value = d.classe; }
+    PB_PDF = { image_url: d.image_url, figure_desc: d.figures || null };
+    PB_VERDICT = d;
+
+    zone.style.display = "none";
+    ouvrirRelecture(d);
+  } catch (e) {
+    zone.innerHTML = `<div class="ai-err">Analyse impossible : ${escapeHtml(e.message || "")}</div>`;
+  }
+}
+
 async function enregistrerProbleme() {
   const titre = document.getElementById("pb-title").value.trim();
   const enonce = document.getElementById("pb-content").value.trim();
   if (!titre) { showToast("Donne un titre au problème.", "error"); return; }
   const d = PB_VERDICT || {};
   try {
-    // Les PDF joints sont transmis pour être analysés et servir à la correction.
-    const pdfs = [];
-    for (const f of PB_FILES) pdfs.push({ nom: f.name, pdf_base64: await litFichier(f) });
-
     const res = await MB_AUTH.apiFetch("/exercises", {
       method: "POST",
       body: JSON.stringify({
@@ -1096,12 +1165,14 @@ async function enregistrerProbleme() {
         subject: document.getElementById("pb-subject").value,
         difficulty: d.difficulte || "Moyen",
         chapitre: (d.notions && d.notions[0]) || null,
-        solution: null, pdfs: pdfs.length ? pdfs : null,
+        solution: null,
+        image_url:   PB_PDF ? PB_PDF.image_url   : null,
+        figure_desc: PB_PDF ? PB_PDF.figure_desc : null,
       }),
     });
     if (!res.ok) throw new Error();
     showToast("Problème ajouté.", "success");
-    PB_FILES = []; PB_VERDICT = null;
+    PB_FILES = []; PB_VERDICT = null; PB_PDF = null;
     document.getElementById("pb-title").value = "";
     document.getElementById("pb-content").value = "";
     document.getElementById("pb-list").innerHTML = "";

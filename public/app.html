@@ -511,13 +511,16 @@
           <textarea id="pb-content" rows="16" placeholder="Rédige ici l'énoncé complet, avec ses différentes parties et questions…"></textarea>
         </div>
         <div class="form-group">
-          <label>Documents PDF <span class="label-hint">— facultatif, annexes ou figures</span></label>
+          <label>Déposer le problème en PDF <span class="label-hint">— le texte sera extrait, les figures et annexes conservées</span></label>
           <div class="dropzone" id="pb-drop" onclick="document.getElementById('pb-files').click()">
             <div class="dz-ico">⇪</div>
             <div class="dz-txt">Dépose un ou plusieurs PDF ici, ou clique pour parcourir</div>
             <div class="dz-list" id="pb-list"></div>
           </div>
           <input type="file" id="pb-files" accept="application/pdf" multiple style="display:none">
+          <div class="form-actions" style="margin-top:.8rem">
+            <button class="btn-ai" onclick="analyserProblemePdf()"><span class="ai-icon">✦</span> Extraire l'énoncé du PDF</button>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
@@ -638,5 +641,31 @@
 
   <script src="contenu.js"></script>
   <script src="script.js"></script>
+
+<!-- RELECTURE D'UN PROBLÈME DÉPOSÉ EN PDF : énoncé à gauche, PDF à droite -->
+<div id="pb-review" class="review-overlay">
+  <div class="review-head">
+    <div class="review-titles">
+      <input type="text" id="rv-title" class="review-title-input" placeholder="Titre du problème">
+      <div class="review-verdict" id="rv-verdict"></div>
+    </div>
+    <div class="review-actions">
+      <button class="btn-ghost" onclick="fermerRelecture()">Annuler</button>
+      <button class="btn-ai" onclick="confirmerProbleme()"><span class="ai-icon">✓</span> Confirmer le problème</button>
+    </div>
+  </div>
+  <div class="review-body">
+    <div class="review-pane">
+      <div class="review-pane-head">Énoncé — modifiable</div>
+      <textarea id="rv-content" class="review-text" spellcheck="false"></textarea>
+      <div class="review-hint" id="rv-hint"></div>
+    </div>
+    <div class="review-pane">
+      <div class="review-pane-head">Document joint — figures et annexes</div>
+      <iframe id="rv-pdf" class="review-pdf" title="PDF du problème"></iframe>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
