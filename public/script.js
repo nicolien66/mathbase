@@ -373,6 +373,25 @@ function setChapterMode(mode) {
   renderChapterView();
 }
 
+
+/* ── Page d'une famille d'exercices ── */
+let FAMILLES = {};
+
+function ouvrirFamille(cle) {
+  const g = FAMILLES[cle];
+  if (!g) return;
+  document.getElementById("famille-title").textContent = g.titre;
+  const mot = chapterMode === "probleme" ? "problème" : "exercice";
+  document.getElementById("famille-sub").textContent =
+    g.items.length + " " + mot + (g.items.length > 1 ? "s" : "") + " \u00b7 " + currentChapter;
+  const liste = document.getElementById("famille-list");
+  liste.innerHTML = "";
+  g.items.forEach(ex => liste.appendChild(exerciseCard(ex)));
+  showView("famille", "browse");
+}
+
+function retourChapitre() { showView("chapter", "browse"); }
+
 function renderChapterView() {
   const all = LOADED_EXERCISES.filter(ex => (ex.chapitre || "Sans chapitre") === currentChapter);
   const exos = all.filter(ex => (ex.type || "exercice") === "exercice");
@@ -408,37 +427,21 @@ function renderChapterView() {
   const ordonnes = [...groupes.values()].sort((a, b) =>
     b.items.length - a.items.length || a.titre.localeCompare(b.titre, "fr"));
 
-  // Chaque famille est un bouton dépliant : replié par défaut, pour garder une
-  // vue d'ensemble lisible même avec beaucoup d'exercices.
+  // Chaque famille est un bouton : il ouvre une page dédiée listant les
+  // exercices de ce type. Le chapitre reste ainsi lisible même avec un
+  // très grand nombre d'énoncés.
+  FAMILLES = {};
   ordonnes.forEach(g => {
-    const bloc = document.createElement("div");
-    bloc.className = "chap-group";
-
+    const cle = normaliseTitre(g.titre);
+    FAMILLES[cle] = g;
     const tete = document.createElement("button");
     tete.className = "chap-group-head";
-    tete.setAttribute("aria-expanded", "false");
     tete.innerHTML =
-      `<span class="chap-group-chevron">▸</span>
-       <span class="chap-group-title">${escapeHtml(g.titre)}</span>
-       <span class="chap-group-count">${g.items.length}</span>`;
-
-    const liste = document.createElement("div");
-    liste.className = "chap-group-list";
-    let remplie = false;
-
-    tete.onclick = () => {
-      const ouvert = bloc.classList.toggle("open");
-      tete.setAttribute("aria-expanded", ouvert ? "true" : "false");
-      // Les cartes ne sont construites qu'au premier dépliage.
-      if (ouvert && !remplie) {
-        g.items.forEach(ex => liste.appendChild(exerciseCard(ex)));
-        remplie = true;
-      }
-    };
-
-    bloc.appendChild(tete);
-    bloc.appendChild(liste);
-    grid.appendChild(bloc);
+      `<span class="chap-group-title">${escapeHtml(g.titre)}</span>
+       <span class="chap-group-count">${g.items.length}</span>
+       <span class="chap-group-go">Voir →</span>`;
+    tete.onclick = () => ouvrirFamille(cle);
+    grid.appendChild(tete);
   });
 }
 

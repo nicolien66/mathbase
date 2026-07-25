@@ -1586,22 +1586,16 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 .st-lab { font-size:.98rem; font-weight:500; }
 .st-sub { font-size:.76rem; opacity:.55; line-height:1.35; }
 
-/* ══ Chapitre : familles d'exercices dépliantes ══ */
-.chap-group { margin-bottom:.7rem; }
-.chap-group-head { width:100%; display:flex; align-items:center; gap:.7rem;
+/* ══ Chapitre : familles d'exercices (chaque bouton ouvre sa page) ══ */
+.chap-group-head { width:100%; display:flex; align-items:center; gap:.8rem; margin-bottom:.7rem;
   background:var(--panel,#14130f); border:1px solid rgba(245,242,232,.1); border-radius:12px;
-  padding:.85rem 1.1rem; cursor:pointer; font:inherit; color:inherit; text-align:left;
-  transition:border-color .2s, background .2s; }
-.chap-group-head:hover { border-color:rgba(200,185,122,.45); background:rgba(200,185,122,.05); }
-.chap-group.open .chap-group-head { border-color:rgba(200,185,122,.5);
-  border-bottom-left-radius:0; border-bottom-right-radius:0; }
-.chap-group-chevron { color:var(--accent,#c8b97a); font-size:.8rem; flex:none;
-  transition:transform .2s; }
-.chap-group.open .chap-group-chevron { transform:rotate(90deg); }
+  padding:.95rem 1.15rem; cursor:pointer; font:inherit; color:inherit; text-align:left;
+  transition:border-color .2s, background .2s, transform .15s; }
+.chap-group-head:hover { border-color:rgba(200,185,122,.5); background:rgba(200,185,122,.06);
+  transform:translateY(-1px); }
 .chap-group-title { flex:1; font-family:'Playfair Display',Georgia,serif; font-size:1.1rem; }
 .chap-group-count { font-family:'DM Mono',monospace; font-size:.66rem; letter-spacing:.08em;
   opacity:.6; border:1px solid rgba(245,242,232,.18); border-radius:999px; padding:.1rem .5rem; flex:none; }
-.chap-group-list { display:none; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem;
-  padding:1rem; border:1px solid rgba(200,185,122,.5); border-top:none;
-  border-radius:0 0 12px 12px; }
-.chap-group.open .chap-group-list { display:grid; }
+.chap-group-go { font-family:'DM Mono',monospace; font-size:.7rem; letter-spacing:.08em;
+  color:var(--accent,#c8b97a); opacity:0; transition:opacity .2s; flex:none; }
+.chap-group-head:hover .chap-group-go { opacity:1; }
