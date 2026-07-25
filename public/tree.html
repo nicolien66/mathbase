@@ -618,14 +618,7 @@ function openTheme(label, grandLabel, color, notions){
       </div>`;
   }
 
-  // Liens croisés : tutoriel interactif + cours animé du thème
-  const tc = (typeof THEME_CONTENT !== 'undefined') && THEME_CONTENT[label];
-  if (tc && (tc.tuto || tc.cours)){
-    const btns = [];
-    if (tc.tuto)  btns.push(`<a class="crosslink tuto" href="tutoriel.html?ch=${encodeURIComponent(tc.tuto)}&title=${encodeURIComponent(label)}">▶ Tutoriel interactif</a>`);
-    if (tc.cours) btns.push(`<a class="crosslink cours" href="cours.html?open=${encodeURIComponent(tc.cours)}">🎬 Cours animé</a>`);
-    html += `<div class="crosslinks">${btns.join('')}</div>`;
-  }
+  // Les liens vers le cours et le tutoriel sont désormais dans les cartes ci-dessous.
 
   notionsEl.innerHTML = html;
   showPage('theme');
