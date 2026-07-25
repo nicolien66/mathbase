@@ -292,8 +292,11 @@ async function decrisFigures(dataUrl, numeroPage) {
 }
 
 /* Chaîne complète : PDF -> questions prêtes pour la correction. */
-async function analyseAnnalePdf(buffer, nomFichier) {
-  const pages = await texteParPage(buffer);
+async function analyseAnnalePdf(buffer, nomFichier, pagesFournies) {
+  // Le navigateur sait extraire le texte : on l'utilise s'il l'a fourni,
+  // ce qui évite de dépendre de pdfjs côté serveur.
+  const pages = (Array.isArray(pagesFournies) && pagesFournies.length)
+    ? pagesFournies : await texteParPage(buffer);
   const blocs = decouper(pages);
   if (!blocs.length) {
     throw new Error("Aucun exercice détecté : le PDF est peut-être scanné (sans couche texte).");
@@ -468,7 +471,7 @@ app.post("/annales/upload", auth, requireAdmin, async (req, res) => {
 
     let analyse;
     try {
-      analyse = await analyseAnnalePdf(buffer, fichier);
+      analyse = await analyseAnnalePdf(buffer, fichier, req.body.pages_texte);
     } catch (e) {
       fs.unlinkSync(cible);                       // on ne garde pas un PDF inexploitable
       return res.status(422).json({ error: e.message });
@@ -522,7 +525,8 @@ app.post("/problemes/depuis-pdf", auth, async (req, res) => {
     fs.mkdirSync(dossier, { recursive: true });
     fs.writeFileSync(path.join(dossier, fichier), buffer);
 
-    const pages = await texteParPage(buffer);
+    const pages = (Array.isArray(req.body.pages_texte) && req.body.pages_texte.length)
+      ? req.body.pages_texte : await texteParPage(buffer);
     const texteBrut = pages.map((t, i) => `--- page ${i + 1} ---\n${t}`).join("\n\n").slice(0, 14000);
 
     // Images des premières pages : l'IA voit ainsi les figures réellement dessinées.

@@ -640,7 +640,14 @@
   </div>
 
   <script src="contenu.js"></script>
-  <script src="script.js"></script>
+  <!-- pdf.js côté navigateur : permet d'extraire le texte d'un PDF sans dépendre
+     d'une bibliothèque installée sur le serveur. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
+<script src="script.js"></script>
 
 <!-- RELECTURE D'UN PROBLÈME DÉPOSÉ EN PDF : énoncé à gauche, PDF à droite -->
 <div id="pb-review" class="review-overlay">

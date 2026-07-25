@@ -1019,6 +1019,7 @@ async function envoyerAnnale() {
       method: "POST",
       body: JSON.stringify({
         nom: AN_FILE.name, pdf_base64: b64,
+        pages_texte: await extraireTextePdf(AN_FILE).catch(() => null),
         title: document.getElementById("an-title").value.trim() || null,
         year: document.getElementById("an-year").value || null,
         duration: document.getElementById("an-duration").value || null,
@@ -1078,6 +1079,32 @@ async function verifierProbleme() {
 }
 
 
+
+/* Extraction du texte d'un PDF dans le navigateur (pdf.js chargé depuis un CDN).
+   Évite de dépendre d'une bibliothèque installée sur le serveur. */
+async function extraireTextePdf(file) {
+  if (!window.pdfjsLib) return null;
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  const pages = [];
+  for (let n = 1; n <= doc.numPages; n++) {
+    const page = await doc.getPage(n);
+    const tc = await page.getTextContent();
+    // Regroupement par ligne d'après la position verticale des fragments.
+    const lignes = new Map();
+    for (const it of tc.items) {
+      const y = Math.round(it.transform[5]);
+      if (!lignes.has(y)) lignes.set(y, []);
+      lignes.get(y).push({ x: it.transform[4], s: it.str });
+    }
+    pages.push([...lignes.keys()].sort((a, b) => b - a)
+      .map(y => lignes.get(y).sort((a, b) => a.x - b.x).map(o => o.s).join(" ")
+        .replace(/\s+/g, " ").trim())
+      .filter(Boolean).join("\n"));
+  }
+  return pages;
+}
+
 /* ── Relecture avant enregistrement : énoncé à gauche, PDF à droite ── */
 function ouvrirRelecture(d) {
   const ok = !!d.est_probleme;
@@ -1132,7 +1159,11 @@ async function analyserProblemePdf() {
     const f = PB_FILES[0];
     const res = await MB_AUTH.apiFetch("/problemes/depuis-pdf", {
       method: "POST",
-      body: JSON.stringify({ nom: f.name, pdf_base64: await litFichier(f) }),
+      body: JSON.stringify({
+        nom: f.name,
+        pdf_base64: await litFichier(f),
+        pages_texte: await extraireTextePdf(f).catch(() => null),
+      }),
     });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
@@ -1184,7 +1215,33 @@ async function enregistrerProbleme() {
 document.addEventListener("DOMContentLoaded", () => {
   brancheDepot("an-drop", "an-file", false);
   brancheDepot("pb-drop", "pb-files", true);
+  ouvrirDepuisUrl();
 });
+
+/* L'arbre des connaissances renvoie ici avec ?vue=… et parfois ?chapitre=…
+   Exemples : app.html?vue=annales, app.html?vue=exercices&chapitre=Thalès */
+function ouvrirDepuisUrl() {
+  const p = new URLSearchParams(location.search);
+  const vue = p.get("vue");
+  if (!vue) return;
+  const chapitre = p.get("chapitre");
+  // On laisse la page finir de se construire avant de changer de vue.
+  setTimeout(() => {
+    if (vue === "annales") { showView("annales"); return; }
+    if (vue === "exercices" || vue === "browse") {
+      showView("browse");
+      // S'il existe un champ de recherche, on le pré-remplit avec le chapitre.
+      if (chapitre) {
+        const champ = document.querySelector('#browse input[type="search"], #browse input[type="text"]');
+        if (champ) {
+          champ.value = chapitre;
+          champ.dispatchEvent(new Event("input", { bubbles: true }));
+          showToast("Filtré sur « " + chapitre + " »", "success");
+        }
+      }
+    }
+  }, 120);
+}
 
 
 async function analyseExercise() {

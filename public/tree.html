@@ -232,24 +232,30 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     <h1 class="theme-page-title" id="theme-title">Nom du thème</h1>
   </div>
   <div id="theme-notions"></div>
-  <div class="sections-grid">
-    <div class="section-card" style="--card-color:#7ac8a0" onclick="showSection('cours')">
-      <span class="section-card-icon">📖</span>
-      <div class="section-card-title">Comprendre le cours</div>
-      <div class="section-card-desc">Définitions, propriétés, théorèmes. Tout le cours expliqué clairement avec des exemples.</div>
-      <div class="section-card-go">Explorer →</div>
+  <div class="sections-grid" id="sections-grid">
+    <div class="section-card" style="--card-color:#7ac8a0" onclick="allerVers('cours')">
+      <span class="section-card-icon">🎬</span>
+      <div class="section-card-title">Cours animés</div>
+      <div class="section-card-desc">Le cours expliqué pas à pas, avec des animations pour visualiser chaque notion.</div>
+      <div class="section-card-go">Regarder →</div>
     </div>
-    <div class="section-card" style="--card-color:#c8b97a" onclick="showSection('methodes')">
-      <span class="section-card-icon">⚙️</span>
-      <div class="section-card-title">Appliquer les méthodes</div>
-      <div class="section-card-desc">Méthodes pas-à-pas, techniques de résolution, erreurs classiques à éviter.</div>
-      <div class="section-card-go">Explorer →</div>
+    <div class="section-card" style="--card-color:#a07ac8" onclick="allerVers('tuto')">
+      <span class="section-card-icon">▶</span>
+      <div class="section-card-title">Tutoriels</div>
+      <div class="section-card-desc">Tu manipules toi-même : chaque étape réussie débloque la suivante.</div>
+      <div class="section-card-go">Manipuler →</div>
     </div>
-    <div class="section-card" style="--card-color:#c87a9a" onclick="showSection('problemes')">
-      <span class="section-card-icon">🎯</span>
-      <div class="section-card-title">Problèmes</div>
-      <div class="section-card-desc">Exercices progressifs, problèmes ouverts, annales. Entraîne-toi et valide tes acquis.</div>
-      <div class="section-card-go">Explorer →</div>
+    <div class="section-card" style="--card-color:#c8b97a" onclick="allerVers('entrainement')">
+      <span class="section-card-icon">✎</span>
+      <div class="section-card-title">Entraînement</div>
+      <div class="section-card-desc">Exercices et problèmes du chapitre, corrigés par l'IA qui analyse ta démarche.</div>
+      <div class="section-card-go">S'entraîner →</div>
+    </div>
+    <div class="section-card" style="--card-color:#e8a87c" onclick="allerVers('annales')">
+      <span class="section-card-icon">▤</span>
+      <div class="section-card-title">Annales</div>
+      <div class="section-card-desc">Sujets de brevet complets, à composer en conditions d'examen.</div>
+      <div class="section-card-go">Composer →</div>
     </div>
   </div>
 </div>
@@ -658,6 +664,35 @@ const SECTION_META = {
     ]
   }
 };
+
+/* Navigation depuis un chapitre de l'arbre vers les quatre espaces du site.
+   Le cours et le tutoriel dépendent du chapitre : on les retrouve dans
+   THEME_CONTENT, qui sert déjà aux liens croisés plus haut. */
+function allerVers(dest){
+  const t = currentTheme;
+  if (!t) return;
+  const tc = (typeof THEME_CONTENT !== 'undefined') && THEME_CONTENT[t.label];
+  const titre = encodeURIComponent(t.label);
+
+  if (dest === 'cours'){
+    if (tc && tc.cours) location.href = 'cours.html?open=' + encodeURIComponent(tc.cours);
+    else location.href = 'cours.html';
+    return;
+  }
+  if (dest === 'tuto'){
+    if (tc && tc.tuto) location.href = 'tutoriel.html?ch=' + encodeURIComponent(tc.tuto) + '&title=' + titre;
+    else location.href = 'tutoriels.html';
+    return;
+  }
+  if (dest === 'entrainement'){
+    // L'espace exercices filtre sur le chapitre passé en paramètre.
+    location.href = 'app.html?vue=exercices&chapitre=' + titre;
+    return;
+  }
+  if (dest === 'annales'){
+    location.href = 'app.html?vue=annales';
+  }
+}
 
 function showSection(type){
   currentSection = type;
