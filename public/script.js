@@ -619,26 +619,33 @@ function renderExamenChoice() {
    base (enonce_correction) : aucune migration n'est nécessaire. */
 function parseSousQuestions(texte) {
   const lignes = String(texte || "").replace(/\r/g, "").split("\n");
-  const NUM = /^\s*(\d{1,2})\s*[.)]\s+(\S.*)$/;
-  const LET = /^\s*([a-h])\s*[.)]\s+(\S.*)$/;
+  // Le texte peut renvoyer la suite à la ligne suivante (« 2. » seul), et les
+  // étiquettes de figure s'intercalent quand le sujet est sur deux colonnes.
+  const NUM = /^\s*(\d{1,2})\s*[.)]\s*(\S.*)?$/;
+  const LET = /^\s*([a-h])\s*[.)]\s*(\S.*)?$/;
+  // Lignes parasites : lettres isolées, angles, cotes — issues du dessin.
+  const BRUIT = /^\s*(?:[A-Za-z]|\d+\s*°|\d+[,.]?\d*|[A-Za-z]\s*[=:]\s*\S{0,6})\s*$/;
   const items = [];
   let preambule = [], courant = null;
 
   for (const l of lignes) {
     const mn = l.match(NUM), ml = l.match(LET);
+    // Le bruit n'est écarté que si la ligne n'est pas un marqueur : « 2. »
+    // ressemble à un nombre isolé mais introduit bien une sous-question.
+    if (!mn && !ml && BRUIT.test(l)) continue;
     if (mn) {
       // Cas « 1. a. Montrer que… » : numéro et lettre sur la même ligne.
-      const suite = mn[2].match(LET);
+      const suite = (mn[2] || "").match(LET);
       if (suite) {
-        courant = { type: "let", num: mn[1], lettre: suite[1], lignes: [suite[2]] };
+        courant = { type: "let", num: mn[1], lettre: suite[1], lignes: suite[2] ? [suite[2]] : [] };
       } else {
-        courant = { type: "num", num: mn[1], lettre: null, lignes: [mn[2]] };
+        courant = { type: "num", num: mn[1], lettre: null, lignes: mn[2] ? [mn[2]] : [] };
       }
       items.push(courant);
     }
     else if (ml && items.length) {
       const parent = items.slice().reverse().find(x => x.num);
-      courant = { type: "let", num: parent ? parent.num : null, lettre: ml[1], lignes: [ml[2]] };
+      courant = { type: "let", num: parent ? parent.num : null, lettre: ml[1], lignes: ml[2] ? [ml[2]] : [] };
       items.push(courant);
     }
     else if (courant) courant.lignes.push(l.trim());
