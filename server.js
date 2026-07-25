@@ -56,14 +56,29 @@ let _pdfjsKO = false, _canvasKO = false;
 async function _loadPdfjs() {
   if (_pdfjsKO) return null;
   if (_pdfjs) return _pdfjs;
-  try {
-    _pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    return _pdfjs;
-  } catch (e) {
-    _pdfjsKO = true;
-    console.warn("[pdf] pdfjs-dist indisponible (" + e.message + ") : lancez « npm install pdfjs-dist ».");
-    return null;
+  // Le chemin du module varie selon la version de pdfjs-dist : on essaie les
+  // variantes connues plutôt que d'échouer sur la première.
+  const chemins = [
+    "pdfjs-dist/legacy/build/pdf.mjs",
+    "pdfjs-dist/build/pdf.mjs",
+    "pdfjs-dist/legacy/build/pdf.js",
+    "pdfjs-dist",
+  ];
+  const erreurs = [];
+  for (const c of chemins) {
+    try {
+      const m = await import(c);
+      _pdfjs = m.getDocument ? m : (m.default || m);
+      if (_pdfjs && _pdfjs.getDocument) {
+        console.log("[pdf] pdfjs-dist chargé depuis " + c);
+        return _pdfjs;
+      }
+      erreurs.push(c + " : pas de getDocument");
+    } catch (e) { erreurs.push(c + " : " + e.code || e.message); }
   }
+  _pdfjsKO = true;
+  console.warn("[pdf] pdfjs-dist introuvable. Tentatives : " + erreurs.join(" | "));
+  return null;
 }
 
 function _loadCanvas() {
