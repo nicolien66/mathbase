@@ -665,6 +665,11 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS classe   TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+  /* Fusion du chapitre « Développement et factorisation » dans « Calcul littéral » :
+     on rebascule les exercices déjà en base sur le chapitre unique. */
+  await pool.query(
+    `UPDATE exercises SET chapitre = 'Calcul littéral'
+      WHERE chapitre IN ('Développement et factorisation', 'Developpement et factorisation')`);
   /* Problèmes déposés en PDF : le texte va dans `content` (affiché à l'élève),
      tandis que le PDF d'origine reste consultable pour ses figures et annexes,
      et sert de source principale au correcteur. */
@@ -746,7 +751,7 @@ const SEED = [
   ["Décomposition en facteurs premiers","Décompose 84 en produit de facteurs premiers, puis donne le PGCD de 84 et 60.","college","Arithmétique","Difficile","84 = 2² × 3 × 7. 60 = 2² × 3 × 5. PGCD(84, 60) = 2² × 3 = 12.","3ème","Arithmétique"],
   ["Priorités opératoires","Calcule en respectant les priorités : 7 + 3 × (8 − 5).","college","Algèbre","Facile","7 + 3 × (8 − 5) = 7 + 3 × 3 = 7 + 9 = 16.","5ème","Enchaînement d'opérations"],
   ["Réduire une expression","Réduis l'expression : A = 5x + 3 − 2x + 7.","college","Algèbre","Moyen","A = 5x − 2x + 3 + 7 = 3x + 10.","4ème","Calcul littéral"],
-  ["Développer avec la distributivité","Développe et réduis : B = 4(2x − 3) + 5x.","college","Algèbre","Moyen","B = 8x − 12 + 5x = 13x − 12.","3ème","Développement et factorisation"],
+  ["Développer avec la distributivité","Développe et réduis : B = 4(2x − 3) + 5x.","college","Algèbre","Moyen","B = 8x − 12 + 5x = 13x − 12.","3ème","Calcul littéral"],
   ["Équation du premier degré","Résous l'équation : 3x + 5 = 20.","college","Algèbre","Moyen","3x = 20 − 5 = 15, donc x = 15 ÷ 3 = 5.","3ème","Équations du 1er degré"],
   ["Équation avec x des deux côtés","Résous l'équation : 7x − 4 = 3x + 12.","college","Algèbre","Difficile","7x − 3x = 12 + 4, soit 4x = 16, donc x = 4.","3ème","Équations du 1er degré"],
   ["Somme des angles d'un triangle","Dans un triangle ABC, l'angle A mesure 48° et l'angle B mesure 63°.\nCalcule la mesure de l'angle C.","college","Géométrie","Facile","C = 180 − (48 + 63) = 180 − 111 = 69°.","5ème","Géométrie du triangle"],
@@ -760,7 +765,7 @@ const SEED = [
   ["Moyenne et médiane","Voici les notes d'un élève : 8 ; 11 ; 12 ; 14 ; 15.\nCalcule la moyenne, puis donne la médiane de la série.","college","Statistiques","Moyen","Moyenne = 60/5 = 12. Médiane = 12 (3ᵉ valeur sur 5).","3ème","Indicateurs de position"],
   ["Périmètre et aire d'un rectangle","Un rectangle mesure 7 cm de longueur et 4 cm de largeur.\nCalcule son périmètre puis son aire.","primaire","Géométrie","Facile","Périmètre = 2 × (7 + 4) = 22 cm. Aire = 7 × 4 = 28 cm².","CM2","Périmètres et aires"],
   ["Fractions de quantité","Dans une classe de 28 élèves, 3/4 mangent à la cantine.\nCombien d'élèves mangent à la cantine ?","primaire","Arithmétique","Moyen","28 ÷ 4 = 7 et 7 × 3 = 21 élèves.","CM2","Fractions"],
-  ["Développer une identité remarquable","Développe : (x + 5)² puis factorise : x² − 49.","lycee","Algèbre","Moyen","(x + 5)² = x² + 10x + 25 et x² − 49 = (x − 7)(x + 7).","2nde","Développement et factorisation"],
+  ["Développer une identité remarquable","Développe : (x + 5)² puis factorise : x² − 49.","lycee","Algèbre","Moyen","(x + 5)² = x² + 10x + 25 et x² − 49 = (x − 7)(x + 7).","2nde","Calcul littéral"],
   ["Résoudre une inéquation","Résous l'inéquation : −2x + 6 > 0.\nAttention au sens de l'inégalité !","college","Algèbre","Difficile","−2x > −6, on divise par −2 (négatif) donc on inverse : x < 3.","4ème","Inéquations"],
 ];
 

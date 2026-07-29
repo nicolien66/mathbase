@@ -526,85 +526,54 @@ const THEME_CONTENT = {
     definitions:[
       "En calcul littéral, des lettres représentent des nombres inconnus ou quelconques.",
       "3x signifie 3 × x (le signe × est sous-entendu devant une lettre ou une parenthèse).",
-      "Des termes sont semblables quand ils ont exactement la même partie littérale : 5x et −2x, mais pas 5x et 5x²."
-    ],
-    proprietes:[
-      "Réduire = regrouper les termes semblables : 5x + 3 − 2x + 7 = 3x + 10.",
-      "x + x = 2x, mais x × x = x².",
-      "Substituer = remplacer la lettre par une valeur pour tester ou calculer."
-    ],
-    exemples:[
-      "2x + 5 + 3x − 1 = 5x + 4.",
-      "Pour x = 4 : 2x + 1 = 2 × 4 + 1 = 9."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Repérer les familles de termes (les x², les x, les nombres).",
-      "Regrouper chaque famille avec son signe.",
-      "Additionner les coefficients de chaque famille.",
-      "Écrire le résultat rangé (x² puis x puis nombres)."
-    ],
-    erreurs:[
-      "Additionner 3x et 5 en « 8x » : ils ne sont pas semblables !",
-      "Perdre le signe − devant un terme lors du regroupement.",
-      "Écrire x × x = 2x au lieu de x²."
-    ],
-    resolu:{
-      enonce:"Réduire B = 4x² + 3x − x² + 5 − 7x.",
-      etapes:[
-        "Les x² : 4x² − x² = 3x².",
-        "Les x : 3x − 7x = −4x.",
-        "B = 3x² − 4x + 5."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Réduis : 7a + 2 − 3a + 9.", sol:"7a − 3a + 2 + 9 = 4a + 11." },
-    { q:"Calcule la valeur de 3x² − 2x pour x = 2.", sol:"3 × 4 − 2 × 2 = 12 − 4 = 8." },
-    { q:"Exprime le périmètre d'un rectangle de largeur x et de longueur x + 3.", sol:"P = 2(x + x + 3) = 2(2x + 3) = 4x + 6." }
-  ]
-},
-
-"Développement et factorisation": {
-  tuto:"developpement", cours:"Développement et factorisation",
-  lecon:{
-    definitions:[
+      "Des termes sont semblables quand ils ont exactement la même partie littérale : 5x et −2x, mais pas 5x et 5x².",
       "Développer : transformer un produit en somme (enlever les parenthèses).",
       "Factoriser : le chemin inverse, transformer une somme en produit (mettre en facteur commun)."
     ],
     proprietes:[
+      "Réduire = regrouper les termes semblables : 5x + 3 − 2x + 7 = 3x + 10.",
+      "x + x = 2x, mais x × x = x².",
+      "Substituer = remplacer la lettre par une valeur pour tester ou calculer.",
       "Distributivité simple : k(a + b) = ka + kb.",
       "Double distributivité : (a + b)(c + d) = ac + ad + bc + bd.",
       "Identités remarquables : (a+b)² = a² + 2ab + b² · (a−b)² = a² − 2ab + b² · a² − b² = (a−b)(a+b)."
     ],
     exemples:[
+      "2x + 5 + 3x − 1 = 5x + 4.",
+      "Pour x = 4 : 2x + 1 = 2 × 4 + 1 = 9.",
       "3(x + 2) = 3x + 6 · (x + 1)(x + 4) = x² + 5x + 4.",
       "5x + 10 = 5(x + 2) · x² − 9 = (x − 3)(x + 3)."
     ]
   },
   methodes:{
     etapes:[
-      "Pour développer : distribuer chaque terme, en gardant les signes, puis réduire.",
-      "Pour factoriser : chercher le facteur commun (nombre, lettre, ou parenthèse entière).",
+      "Réduire : repérer les familles de termes (les x², les x, les nombres), les regrouper avec leur signe, additionner les coefficients, puis ranger le résultat (x² puis x puis nombres).",
+      "Développer : distribuer chaque terme en gardant bien les signes, puis réduire.",
+      "Factoriser : chercher le facteur commun (un nombre, une lettre, ou une parenthèse entière).",
       "Sinon, reconnaître une identité remarquable (deux carrés ? un double produit ?).",
-      "Vérifier en re-développant le résultat."
+      "Vérifier : re-développer le résultat factorisé, ou substituer une valeur de x dans les deux expressions."
     ],
     erreurs:[
-      "(a + b)² = a² + b² : FAUX, il manque le double produit 2ab.",
+      "Additionner 3x et 5 en « 8x » : ils ne sont pas semblables !",
+      "Perdre le signe − devant un terme lors du regroupement.",
+      "Écrire x × x = 2x au lieu de x².",
       "Oublier de distribuer sur le deuxième terme : 3(x + 2) = 3x + 2 est faux.",
-      "Erreur de signe avec un − devant la parenthèse : −(x − 3) = −x + 3."
+      "Erreur de signe avec un − devant la parenthèse : −(x − 3) = −x + 3.",
+      "(a + b)² = a² + b² : FAUX, il manque le double produit 2ab."
     ],
     resolu:{
-      enonce:"Développer et réduire C = (x + 3)(x − 2) + 4x.",
+      enonce:"Réduire B = 4x² + 3x − x² + 5 − 7x, puis développer et réduire C = (x + 3)(x − 2) + 4x.",
       etapes:[
-        "Double distributivité : (x + 3)(x − 2) = x² − 2x + 3x − 6 = x² + x − 6.",
-        "C = x² + x − 6 + 4x.",
-        "C = x² + 5x − 6."
+        "B — les x² : 4x² − x² = 3x² ; les x : 3x − 7x = −4x. Donc B = 3x² − 4x + 5.",
+        "C — double distributivité : (x + 3)(x − 2) = x² − 2x + 3x − 6 = x² + x − 6.",
+        "C = x² + x − 6 + 4x, soit C = x² + 5x − 6."
       ]
     }
   },
   problemes:[
+    { q:"Réduis : 7a + 2 − 3a + 9.", sol:"7a − 3a + 2 + 9 = 4a + 11." },
+    { q:"Calcule la valeur de 3x² − 2x pour x = 2.", sol:"3 × 4 − 2 × 2 = 12 − 4 = 8." },
+    { q:"Exprime le périmètre d'un rectangle de largeur x et de longueur x + 3.", sol:"P = 2(x + x + 3) = 2(2x + 3) = 4x + 6." },
     { q:"Développe : 5(2x − 3) puis (x + 4)².", sol:"10x − 15 et x² + 8x + 16." },
     { q:"Factorise : 7x + 21 puis x² − 25.", sol:"7(x + 3) et (x − 5)(x + 5)." },
     { q:"Calcule astucieusement 101² à l'aide d'une identité remarquable.", sol:"101² = (100 + 1)² = 10000 + 200 + 1 = 10201." }
@@ -1737,7 +1706,6 @@ const CHAPTER_STRUCTURE = [
     "chapters": [
       "Enchaînement d'opérations",
       "Calcul littéral",
-      "Développement et factorisation",
       "Équations",
       "Inéquations"
     ]

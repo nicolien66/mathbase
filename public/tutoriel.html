@@ -796,10 +796,6 @@ TUT.litteral = { title:'Calcul littéral', steps:[
     '2×4 + 1 = ?', [{label:'9',ok:true},{label:'12',ok:false},{label:'6',ok:false}]),
   qcm('Attention !', "x + x et x × x, ce n'est pas pareil !",
     'x + x = ?', [{label:'2x',ok:true},{label:'x²',ok:false},{label:'2x²',ok:false}]),
-  finish("On regroupe les termes semblables, et on n'oublie jamais : x + x = 2x mais x × x = x².")
-]};
-
-TUT.developpement = { title:'Développement et factorisation', steps:[
   qcm('Distribuer', "Développer = enlever les parenthèses avec k(a+b) = ka + kb.",
     '3(x + 2) = ?', [{label:'3x + 2',ok:false},{label:'3x + 6',ok:true},{label:'x + 6',ok:false}]),
   qcm('Factoriser', "Factoriser = le chemin inverse : trouver le facteur commun.",
@@ -808,8 +804,12 @@ TUT.developpement = { title:'Développement et factorisation', steps:[
     '(a + b)² = ?', [{label:'a² + b²',ok:false},{label:'a² + 2ab + b²',ok:true},{label:'a² + ab + b²',ok:false}]),
   qcm('La différence de carrés', "a² − b² = (a − b)(a + b). Applique-la :",
     'x² − 9 = ?', [{label:'(x − 3)(x + 3)',ok:true},{label:'(x − 9)(x + 9)',ok:false},{label:'(x − 3)²',ok:false}]),
-  finish("Développer étale, factoriser regroupe. Les identités remarquables font gagner un temps fou.")
+  finish("On regroupe les termes semblables (x + x = 2x mais x × x = x²), on développe pour étaler, on factorise pour regrouper — et les identités remarquables font gagner un temps fou.")
 ]};
+
+/* Le chapitre « Développement et factorisation » a été fusionné dans
+   « Calcul littéral » : l'alias garde les anciens liens fonctionnels. */
+TUT.developpement = TUT.litteral;
 
 TUT.equation1 = { title:'Équations du 1er degré', steps:[
   {

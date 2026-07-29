@@ -2288,12 +2288,185 @@ const LESSONS = [
   },
 
   /* ══════════════════════════════════════
-     CHAPITRE DÉVELOPPEMENT ET FACTORISATION — 4 vidéos
-     ① La distributivité (5e–4e)  ② La double distributivité (4e–3e)
-     ③ Les identités remarquables (3e)  ④ La factorisation (3e)
+     CHAPITRE CALCUL LITTÉRAL — ① le cours animé (8 pages)
+     x = le prix d'un stylo : additionner = compter des stylos,
+     multiplier = x², puis la distributivité (avec + et −).
   ══════════════════════════════════════ */
   {
-    id:'distributivite', chapter:'Développement et factorisation', branch:'algebre',
+    id:'litteral', chapter:'Calcul littéral', branch:'algebre', tag:'Algèbre · 4ème', title:'Calcul littéral',
+    desc:"x, c'est le prix d'un stylo : additionner des x revient à compter des stylos, multiplier des x fabrique des x², et la distributivité fait entrer un nombre dans une parenthèse — additions, soustractions et exemples à l'appui.",
+    duration:'~2 min', level:'4ème',
+    steps:[
+
+      /* ① La lettre x : la valeur d'un stylo */
+      { label:'La lettre x', dur:14000, caption:"Imaginons un stylo dont on ne connaît pas le prix : appelons-le x euros. La valeur d'un stylo, additionnée à la valeur d'un stylo, ça fait DEUX FOIS la valeur d'un stylo : x + x = 2x. Additionner des x, c'est juste compter des stylos !",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LA LETTRE x : LA VALEUR D\u2019UN STYLO',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const sl=Math.min(W*0.12,90);
+          litStylo(ctx,W*0.36,H*0.24,sl,clamp((p-0.06)/0.14));
+          if(p>0.14) chalkText(ctx,'prix inconnu : x €',W*0.64,H*0.24,clamp((p-0.14)/0.14),REL.dot+'0.92)',18,'DM Mono, monospace','center');
+          // stylo + stylo
+          litStylo(ctx,W*0.2,H*0.46,sl,clamp((p-0.3)/0.12));
+          if(p>0.38) chalkText(ctx,'+',W*0.4,H*0.46,clamp((p-0.38)/0.1),'rgba(245,242,232,0.85)',26,'DM Mono, monospace','center');
+          litStylo(ctx,W*0.46,H*0.46,sl,clamp((p-0.42)/0.12));
+          if(p>0.52) chalkText(ctx,'=  2 stylos',W*0.76,H*0.46,clamp((p-0.52)/0.14),'rgba(245,242,232,0.9)',20,'DM Sans, sans-serif','center');
+          if(p>0.62) chalkText(ctx,'x + x = 2x',W/2,H*0.64,clamp((p-0.62)/0.16),REL.gold+'0.97)',32,'DM Mono, monospace','center');
+          if(p>0.76) chalkText(ctx,'la valeur d\u2019un stylo + la valeur d\u2019un stylo = deux fois la valeur d\u2019un stylo',W/2,H*0.76,clamp((p-0.76)/0.14),'rgba(240,236,224,0.7)',15,'DM Sans, sans-serif','center');
+          relBox(ctx,W,H*0.84,'Additionner des x = compter des stylos.',clamp((p-0.86)/0.14),REL.gold);
+        } },
+
+      /* ② Additionner : exemples */
+      { label:'Additionner : exemples', dur:15000, caption:"2 stylos plus 3 stylos font 5 stylos : 2x + 3x = 5x. On peut aussi en enlever : 7x − 4x = 3x. Mais attention : 2x + 3 ne fait PAS 5x — 3 n'est pas un stylo, on ne peut pas les compter ensemble !",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'ADDITIONNER DES x : ON COMPTE',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const sl=Math.min(W*0.07,52);
+          // 2x + 3x
+          for(let i=0;i<2;i++) litStylo(ctx,W*0.14+i*(sl+8),H*0.24,sl,clamp((p-0.06-i*0.03)/0.1));
+          if(p>0.13) chalkText(ctx,'+',W*0.33,H*0.24,clamp((p-0.13)/0.08),'rgba(245,242,232,0.8)',20,'DM Mono, monospace','center');
+          for(let i=0;i<3;i++) litStylo(ctx,W*0.37+i*(sl+8),H*0.24,sl,clamp((p-0.16-i*0.03)/0.1));
+          if(p>0.28) chalkText(ctx,'2x + 3x = 5x',W*0.79,H*0.24,clamp((p-0.28)/0.12),REL.gold+'0.95)',21,'DM Mono, monospace','center');
+          if(p>0.4)  chalkText(ctx,'x + x + x = 3x',W/2,H*0.42,clamp((p-0.4)/0.14),'rgba(245,242,232,0.9)',21,'DM Mono, monospace','center');
+          if(p>0.52) chalkText(ctx,'7x − 4x = 3x    (on enlève 4 stylos)',W/2,H*0.55,clamp((p-0.52)/0.14),'rgba(245,242,232,0.9)',21,'DM Mono, monospace','center');
+          // le piège
+          if(p>0.64){ const a=clamp((p-0.64)/0.14);
+            chalkText(ctx,'2x + 3 = 5x ?',W*0.36,H*0.71,a,'rgba(245,242,232,0.8)',22,'DM Mono, monospace','center');
+            if(p>0.72){ const b=easeOut(clamp((p-0.72)/0.12));
+              ctx.save(); ctx.globalAlpha=b; ctx.strokeStyle=REL.neg+'0.95)'; ctx.lineWidth=3; ctx.lineCap='round';
+              ctx.beginPath(); ctx.moveTo(W*0.26,H*0.74); ctx.lineTo(W*0.26+(W*0.2)*b,H*0.74-(H*0.06)*b); ctx.stroke(); ctx.restore(); }
+            if(p>0.78) chalkText(ctx,'3 n\u2019est pas un stylo !',W*0.68,H*0.71,clamp((p-0.78)/0.12),REL.neg+'0.92)',16,'DM Sans, sans-serif','center');
+          }
+          relBox(ctx,W,H*0.82,'On ne compte ensemble QUE les termes en x : 2x + 3 reste 2x + 3.',clamp((p-0.86)/0.14),REL.neg);
+        } },
+
+      /* ③ Multiplier : x² apparaît */
+      { label:'Multiplier : x²', dur:14000, caption:"Multiplier, ce n'est plus compter des stylos ! x × x, c'est l'aire d'un carré de côté x : on l'écrit x², « x au carré ». Et x × x × x = x³, « x au cube » — l'exposant compte les x multipliés, comme pour les puissances.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'MULTIPLIER DES x : LE CARRÉ APPARAÎT',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          if(p>0.05) chalkText(ctx,'x × x = ?',W/2,H*0.19,clamp((p-0.05)/0.14),'rgba(245,242,232,0.92)',24,'DM Mono, monospace','center');
+          const c=Math.min(H*0.28,W*0.18), x0=W*0.32-c/2, top=H*0.32;
+          if(p>0.16){ const a=clamp((p-0.16)/0.16);
+            chalkLine(ctx,x0,top,x0+c,top,a,'rgba(245,242,232,0.8)',2);
+            chalkLine(ctx,x0+c,top,x0+c,top+c,a,'rgba(245,242,232,0.8)',2);
+            chalkLine(ctx,x0+c,top+c,x0,top+c,a,'rgba(245,242,232,0.8)',2);
+            chalkLine(ctx,x0,top+c,x0,top,a,'rgba(245,242,232,0.8)',2);
+            chalkText(ctx,'x',x0+c/2,top+c+20,clamp((p-0.26)/0.12),REL.dot+'0.92)',18,'Playfair Display, Georgia, serif','center');
+            chalkText(ctx,'x',x0-16,top+c/2,clamp((p-0.3)/0.12),REL.dot+'0.92)',18,'Playfair Display, Georgia, serif','center');
+          }
+          if(p>0.4){ const a=clamp((p-0.4)/0.16);
+            ctx.save(); ctx.globalAlpha=a*0.4; ctx.fillStyle='rgba(122,200,230,0.8)';
+            ctx.fillRect(x0+2,top+2,c-4,c-4); ctx.restore();
+            chalkText(ctx,'x²',x0+c/2,top+c/2,a,'rgba(245,242,232,0.95)',26,'Playfair Display, Georgia, serif','center'); }
+          if(p>0.5)  chalkText(ctx,'l\u2019aire du carré de côté x',W*0.7,H*0.38,clamp((p-0.5)/0.14),'rgba(240,236,224,0.7)',15,'DM Sans, sans-serif','center');
+          if(p>0.6)  chalkText(ctx,'x × x = x²',W*0.7,H*0.48,clamp((p-0.6)/0.14),REL.gold+'0.97)',26,'DM Mono, monospace','center');
+          if(p>0.72) chalkText(ctx,'x × x × x = x³',W*0.7,H*0.58,clamp((p-0.72)/0.14),'rgba(245,242,232,0.9)',20,'DM Mono, monospace','center');
+          relBox(ctx,W,H*0.78,'Additionner = compter (2x) · Multiplier = monter en puissance (x²).',clamp((p-0.84)/0.16),REL.gold);
+        } },
+
+      /* ④ Multiplier : exemples */
+      { label:'Multiplier : exemples', dur:15000, caption:"Pour 2x × 3x : on multiplie les nombres entre eux (2 × 3 = 6) et les x entre eux (x × x = x²) : résultat 6x². Avec un seul x, pas de carré : 4 × 2x = 8x. Et surtout : x + x = 2x mais x × x = x² — à ne jamais confondre !",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'MULTIPLIER : LES NOMBRES ENSEMBLE, LES x ENSEMBLE',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          chalkText(ctx,'2x × 3x',W*0.28,H*0.24,clamp((p-0.04)/0.14),'rgba(245,242,232,0.95)',26,'DM Mono, monospace','center');
+          if(p>0.16) chalkText(ctx,'2 × 3 = 6',W*0.56,H*0.19,clamp((p-0.16)/0.12),REL.pos+'0.9)',17,'DM Mono, monospace','center');
+          if(p>0.26) chalkText(ctx,'x × x = x²',W*0.56,H*0.29,clamp((p-0.26)/0.12),REL.dot+'0.9)',17,'DM Mono, monospace','center');
+          if(p>0.36) chalkText(ctx,'= 6x²',W*0.8,H*0.24,clamp((p-0.36)/0.14),REL.gold+'0.97)',28,'DM Mono, monospace','center');
+          if(p>0.48) chalkText(ctx,'4 × 2x = 8x     (un seul x : pas de carré !)',W/2,H*0.44,clamp((p-0.48)/0.14),'rgba(245,242,232,0.9)',19,'DM Mono, monospace','center');
+          if(p>0.58) chalkText(ctx,'5x × x = 5x²          x × x² = x³',W/2,H*0.56,clamp((p-0.58)/0.14),'rgba(245,242,232,0.9)',19,'DM Mono, monospace','center');
+          if(p>0.7)  chalkText(ctx,'x + x = 2x        mais        x × x = x²',W/2,H*0.7,clamp((p-0.7)/0.16),REL.gold+'0.95)',20,'DM Mono, monospace','center');
+          relBox(ctx,W,H*0.8,'Ne jamais confondre : + compte les stylos, × monte en puissance !',clamp((p-0.84)/0.16),REL.neg);
+        } },
+
+      /* ⑤ La distributivité */
+      { label:'La distributivité', dur:16000, caption:"Que vaut 3 × (x + 2) ? Trois paquets contenant chacun un stylo et 2 € : au total, 3 stylos… et 3 fois 2 €. Le 3 multiplie CHAQUE terme de la parenthèse : 3 × x et 3 × 2, donc 3(x + 2) = 3x + 6. C'est la distributivité.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'LA DISTRIBUTIVITÉ',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          // 3 paquets (x + 2)
+          const bw=Math.min(W*0.16,120), bh=H*0.14;
+          for(let i=0;i<3;i++){
+            const a=easeOut(clamp((p-0.06-i*0.07)/0.12)); if(a<=0) continue;
+            const bx=W*0.2+i*(bw+W*0.04);
+            ctx.save(); ctx.globalAlpha=a; ctx.strokeStyle=REL.gold+'0.55)'; ctx.fillStyle=REL.gold+'0.05)'; ctx.lineWidth=1.4;
+            rrPath(ctx,bx,H*0.18,bw,bh,9); ctx.fill(); ctx.stroke(); ctx.restore();
+            chalkText(ctx,'x + 2',bx+bw/2,H*0.18+bh/2,a,'rgba(245,242,232,0.9)',18,'DM Mono, monospace','center');
+          }
+          if(p>0.28) chalkText(ctx,'3 paquets de (x + 2)  →  3 stylos… et 3 fois 2 €',W/2,H*0.4,clamp((p-0.28)/0.14),'rgba(240,236,224,0.7)',15,'DM Sans, sans-serif','center');
+          // les flèches de distribution
+          const ey=H*0.56;
+          if(p>0.4) chalkText(ctx,'3 ( x + 2 )',W/2,ey,clamp((p-0.4)/0.14),'rgba(245,242,232,0.95)',30,'DM Mono, monospace','center');
+          if(p>0.52) decArc(ctx,W/2-62,W/2-4,ey-22,clamp((p-0.52)/0.12),'3×x',REL.pos,false);
+          if(p>0.62) decArc(ctx,W/2-62,W/2+52,ey-38,clamp((p-0.62)/0.12),'3×2',REL.dot,false);
+          if(p>0.74) chalkText(ctx,'= 3x + 6',W/2,H*0.74,clamp((p-0.74)/0.16),REL.gold+'0.97)',30,'DM Mono, monospace','center');
+          relBox(ctx,W,H*0.84,'k (a + b) = k×a + k×b : le nombre devant multiplie CHAQUE terme.',clamp((p-0.84)/0.16),REL.gold);
+        } },
+
+      /* ⑥ Distributivité : avec un − */
+      { label:'Avec une soustraction', dur:14000, caption:"Même règle avec une soustraction : le nombre multiplie chaque terme, et le signe − reste entre les deux ! 5(2x − 4) : 5 × 2x = 10x, 5 × 4 = 20, donc 10x − 20. Autre exemple : 2(7 − 3x) = 14 − 6x.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'DISTRIBUER SUR UNE SOUSTRACTION',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const ey=H*0.26;
+          chalkText(ctx,'5 ( 2x − 4 )',W/2,ey,clamp((p-0.04)/0.14),'rgba(245,242,232,0.95)',30,'DM Mono, monospace','center');
+          if(p>0.16) decArc(ctx,W/2-76,W/2-8,ey-22,clamp((p-0.16)/0.12),'5×2x',REL.pos,false);
+          if(p>0.28) decArc(ctx,W/2-76,W/2+62,ey-38,clamp((p-0.28)/0.12),'5×4',REL.dot,false);
+          if(p>0.4)  chalkText(ctx,'= 10x − 20',W/2,H*0.44,clamp((p-0.4)/0.16),REL.gold+'0.97)',28,'DM Mono, monospace','center');
+          if(p>0.5)  chalkText(ctx,'le signe − reste entre les deux !',W/2,H*0.54,clamp((p-0.5)/0.14),REL.neg+'0.9)',16,'DM Sans, sans-serif','center');
+          if(p>0.62) chalkText(ctx,'2 (7 − 3x) = 14 − 6x',W/2,H*0.68,clamp((p-0.62)/0.16),'rgba(245,242,232,0.9)',22,'DM Mono, monospace','center');
+          relBox(ctx,W,H*0.78,'k (a − b) = k×a − k×b : même règle, le − ne bouge pas.',clamp((p-0.82)/0.16),REL.gold);
+        } },
+
+      /* ⑦ Développer puis réduire */
+      { label:'Développer puis réduire', dur:16000, caption:"On combine tout : d'abord on DÉVELOPPE (la distributivité fait sauter les parenthèses), puis on RÉDUIT (on compte les stylos). 2(3x + 1) + 4x = 6x + 2 + 4x = 10x + 2. Et 4(x − 3) − 2x = 4x − 12 − 2x = 2x − 12.",
+        draw(ctx,W,H,p){
+          drawBoard(ctx,W,H);
+          chalkText(ctx,'DÉVELOPPER, PUIS RÉDUIRE',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
+          const casc=(x, lines, st)=>{
+            lines.forEach((l,i)=>{
+              const t=st+i*0.08; if(p<=t) return;
+              chalkText(ctx,l[0],x,H*(0.2+i*0.11),clamp((p-t)/0.1),l[1],l[2]||19,'DM Mono, monospace','center');
+            });
+          };
+          casc(W*0.28,[
+            ['2(3x + 1) + 4x','rgba(245,242,232,0.95)',20],
+            ['① on développe',REL.dot+'0.85)',13],
+            ['6x + 2 + 4x','rgba(245,242,232,0.9)',20],
+            ['② on compte les x',REL.pos+'0.85)',13],
+            ['10x + 2',REL.gold+'0.97)',24],
+          ],0.06);
+          casc(W*0.72,[
+            ['4(x − 3) − 2x','rgba(245,242,232,0.95)',20],
+            ['① on développe',REL.dot+'0.85)',13],
+            ['4x − 12 − 2x','rgba(245,242,232,0.9)',20],
+            ['② on compte les x',REL.pos+'0.85)',13],
+            ['2x − 12',REL.gold+'0.97)',24],
+          ],0.46);
+          relBox(ctx,W,H*0.84,'Développer = distribuer · Réduire = regrouper les termes en x.',clamp((p-0.86)/0.14),REL.gold);
+        } },
+
+      /* ⑧ À retenir */
+      { label:'À retenir', dur:10500, caption:"x est une valeur inconnue ; additionner des x, c'est compter ; multiplier des x, c'est monter en puissance ; et la distributivité fait multiplier chaque terme de la parenthèse, que ce soit un + ou un −.",
+        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'À RETENIR',title:'Le calcul littéral',titleColor:'rgba(200,185,122,0.92)',titleSize:24,
+          body:[
+            {t:'①  x = une valeur inconnue (le prix d\u2019un stylo)',c:'rgba(245,242,232,0.85)',s:15},
+            {t:'②  Additionner = compter : 2x + 3x = 5x (mais 2x + 3 ne se réduit pas !)',c:'rgba(122,200,230,0.9)',s:15,f:'DM Mono, monospace'},
+            {t:'③  Multiplier = puissance : x × x = x²  ·  2x × 3x = 6x²',c:'rgba(130,210,160,0.9)',s:15,f:'DM Mono, monospace'},
+            {t:'④  Distributivité : k(a ± b) = ka ± kb  →  3(x+2) = 3x+6',c:'rgba(230,210,120,0.9)',s:15,f:'DM Mono, monospace'},
+            {t:'⑤  Développer puis réduire : 2(3x+1)+4x = 10x+2',c:'rgba(230,130,110,0.9)',s:15,f:'DM Mono, monospace'},
+          ]}); } },
+    ]
+  },
+
+  /* ══════════════════════════════════════
+     CHAPITRE CALCUL LITTÉRAL (suite) — 4 vidéos
+     ② La distributivité (5e–4e)  ③ La double distributivité (4e–3e)
+     ④ Les identités remarquables (3e)  ⑤ La factorisation (3e)
+  ══════════════════════════════════════ */
+  {
+    id:'distributivite', chapter:'Calcul littéral', branch:'algebre',
     tag:'Algèbre · 5ème–4ème', title:'La distributivité',
     desc:"Le nombre devant la parenthèse multiplie chaque terme — d'abord sans x pour le calcul mental (7 × 104), puis avec x, et enfin l'enchaînement complet : développer puis réduire, même avec un − devant.",
     duration:'~1 min 05', level:'5ème–4ème',
@@ -2382,7 +2555,7 @@ const LESSONS = [
   },
 
   {
-    id:'double-distributivite', chapter:'Développement et factorisation', branch:'algebre',
+    id:'double-distributivite', chapter:'Calcul littéral', branch:'algebre',
     tag:'Algèbre · 4ème–3ème', title:'La double distributivité',
     desc:"Deux parenthèses qui se multiplient : chaque terme de la première multiplie chaque terme de la seconde — 4 chemins, prouvés par les aires d'un rectangle, puis des exemples avec des signes − partout.",
     duration:'~1 min 10', level:'4ème–3ème',
@@ -2491,7 +2664,7 @@ const LESSONS = [
   },
 
   {
-    id:'identites', chapter:'Développement et factorisation', branch:'algebre',
+    id:'identites', chapter:'Calcul littéral', branch:'algebre',
     tag:'Algèbre · 3ème', title:'Les identités remarquables',
     desc:"Trois développements qui reviennent si souvent qu'on les apprend : (a+b)², (a−b)² et (a+b)(a−b) — chacun PROUVÉ par double distributivité et réduction, avec exemples et calcul mental de 101² ou 102×98.",
     duration:'~1 min 10', level:'3ème',
@@ -2566,7 +2739,7 @@ const LESSONS = [
   },
 
   {
-    id:'factorisation', chapter:'Développement et factorisation', branch:'algebre',
+    id:'factorisation', chapter:'Calcul littéral', branch:'algebre',
     tag:'Algèbre · 3ème', title:'La factorisation',
     desc:"Le chemin inverse du développement : transformer une somme en PRODUIT. On repère le facteur commun, ou on reconnaît une identité remarquable — surtout la différence de deux carrés a² − b².",
     duration:'~1 min 10', level:'3ème',
@@ -3677,179 +3850,6 @@ const LESSONS = [
             {t:'③  Premier = exactement 2 diviseurs (1 n\u2019est pas premier !)',c:'rgba(130,210,160,0.9)',s:15},
             {t:'④  Tout non-premier = produit de premiers : 12 = 2² × 3',c:'rgba(230,210,120,0.9)',s:15,f:'DM Mono, monospace'},
             {t:'⑤  Méthode : ÷2, ÷3, ÷5… jusqu\u2019à 1 (90 = 2 × 3² × 5)',c:'rgba(230,130,110,0.9)',s:15,f:'DM Mono, monospace'},
-          ]}); } },
-    ]
-  },
-
-  /* ══════════════════════════════════════
-     COURS ANIMÉ : CALCUL LITTÉRAL — 8 pages
-     x = le prix d'un stylo : additionner = compter des stylos,
-     multiplier = x², puis la distributivité (avec + et −).
-  ══════════════════════════════════════ */
-  {
-    id:'litteral', branch:'algebre', tag:'Algèbre · 4ème', title:'Calcul littéral',
-    desc:"x, c'est le prix d'un stylo : additionner des x revient à compter des stylos, multiplier des x fabrique des x², et la distributivité fait entrer un nombre dans une parenthèse — additions, soustractions et exemples à l'appui.",
-    duration:'~2 min', level:'4ème',
-    steps:[
-
-      /* ① La lettre x : la valeur d'un stylo */
-      { label:'La lettre x', dur:14000, caption:"Imaginons un stylo dont on ne connaît pas le prix : appelons-le x euros. La valeur d'un stylo, additionnée à la valeur d'un stylo, ça fait DEUX FOIS la valeur d'un stylo : x + x = 2x. Additionner des x, c'est juste compter des stylos !",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'LA LETTRE x : LA VALEUR D\u2019UN STYLO',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          const sl=Math.min(W*0.12,90);
-          litStylo(ctx,W*0.36,H*0.24,sl,clamp((p-0.06)/0.14));
-          if(p>0.14) chalkText(ctx,'prix inconnu : x €',W*0.64,H*0.24,clamp((p-0.14)/0.14),REL.dot+'0.92)',18,'DM Mono, monospace','center');
-          // stylo + stylo
-          litStylo(ctx,W*0.2,H*0.46,sl,clamp((p-0.3)/0.12));
-          if(p>0.38) chalkText(ctx,'+',W*0.4,H*0.46,clamp((p-0.38)/0.1),'rgba(245,242,232,0.85)',26,'DM Mono, monospace','center');
-          litStylo(ctx,W*0.46,H*0.46,sl,clamp((p-0.42)/0.12));
-          if(p>0.52) chalkText(ctx,'=  2 stylos',W*0.76,H*0.46,clamp((p-0.52)/0.14),'rgba(245,242,232,0.9)',20,'DM Sans, sans-serif','center');
-          if(p>0.62) chalkText(ctx,'x + x = 2x',W/2,H*0.64,clamp((p-0.62)/0.16),REL.gold+'0.97)',32,'DM Mono, monospace','center');
-          if(p>0.76) chalkText(ctx,'la valeur d\u2019un stylo + la valeur d\u2019un stylo = deux fois la valeur d\u2019un stylo',W/2,H*0.76,clamp((p-0.76)/0.14),'rgba(240,236,224,0.7)',15,'DM Sans, sans-serif','center');
-          relBox(ctx,W,H*0.84,'Additionner des x = compter des stylos.',clamp((p-0.86)/0.14),REL.gold);
-        } },
-
-      /* ② Additionner : exemples */
-      { label:'Additionner : exemples', dur:15000, caption:"2 stylos plus 3 stylos font 5 stylos : 2x + 3x = 5x. On peut aussi en enlever : 7x − 4x = 3x. Mais attention : 2x + 3 ne fait PAS 5x — 3 n'est pas un stylo, on ne peut pas les compter ensemble !",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'ADDITIONNER DES x : ON COMPTE',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          const sl=Math.min(W*0.07,52);
-          // 2x + 3x
-          for(let i=0;i<2;i++) litStylo(ctx,W*0.14+i*(sl+8),H*0.24,sl,clamp((p-0.06-i*0.03)/0.1));
-          if(p>0.13) chalkText(ctx,'+',W*0.33,H*0.24,clamp((p-0.13)/0.08),'rgba(245,242,232,0.8)',20,'DM Mono, monospace','center');
-          for(let i=0;i<3;i++) litStylo(ctx,W*0.37+i*(sl+8),H*0.24,sl,clamp((p-0.16-i*0.03)/0.1));
-          if(p>0.28) chalkText(ctx,'2x + 3x = 5x',W*0.79,H*0.24,clamp((p-0.28)/0.12),REL.gold+'0.95)',21,'DM Mono, monospace','center');
-          if(p>0.4)  chalkText(ctx,'x + x + x = 3x',W/2,H*0.42,clamp((p-0.4)/0.14),'rgba(245,242,232,0.9)',21,'DM Mono, monospace','center');
-          if(p>0.52) chalkText(ctx,'7x − 4x = 3x    (on enlève 4 stylos)',W/2,H*0.55,clamp((p-0.52)/0.14),'rgba(245,242,232,0.9)',21,'DM Mono, monospace','center');
-          // le piège
-          if(p>0.64){ const a=clamp((p-0.64)/0.14);
-            chalkText(ctx,'2x + 3 = 5x ?',W*0.36,H*0.71,a,'rgba(245,242,232,0.8)',22,'DM Mono, monospace','center');
-            if(p>0.72){ const b=easeOut(clamp((p-0.72)/0.12));
-              ctx.save(); ctx.globalAlpha=b; ctx.strokeStyle=REL.neg+'0.95)'; ctx.lineWidth=3; ctx.lineCap='round';
-              ctx.beginPath(); ctx.moveTo(W*0.26,H*0.74); ctx.lineTo(W*0.26+(W*0.2)*b,H*0.74-(H*0.06)*b); ctx.stroke(); ctx.restore(); }
-            if(p>0.78) chalkText(ctx,'3 n\u2019est pas un stylo !',W*0.68,H*0.71,clamp((p-0.78)/0.12),REL.neg+'0.92)',16,'DM Sans, sans-serif','center');
-          }
-          relBox(ctx,W,H*0.82,'On ne compte ensemble QUE les termes en x : 2x + 3 reste 2x + 3.',clamp((p-0.86)/0.14),REL.neg);
-        } },
-
-      /* ③ Multiplier : x² apparaît */
-      { label:'Multiplier : x²', dur:14000, caption:"Multiplier, ce n'est plus compter des stylos ! x × x, c'est l'aire d'un carré de côté x : on l'écrit x², « x au carré ». Et x × x × x = x³, « x au cube » — l'exposant compte les x multipliés, comme pour les puissances.",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'MULTIPLIER DES x : LE CARRÉ APPARAÎT',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          if(p>0.05) chalkText(ctx,'x × x = ?',W/2,H*0.19,clamp((p-0.05)/0.14),'rgba(245,242,232,0.92)',24,'DM Mono, monospace','center');
-          const c=Math.min(H*0.28,W*0.18), x0=W*0.32-c/2, top=H*0.32;
-          if(p>0.16){ const a=clamp((p-0.16)/0.16);
-            chalkLine(ctx,x0,top,x0+c,top,a,'rgba(245,242,232,0.8)',2);
-            chalkLine(ctx,x0+c,top,x0+c,top+c,a,'rgba(245,242,232,0.8)',2);
-            chalkLine(ctx,x0+c,top+c,x0,top+c,a,'rgba(245,242,232,0.8)',2);
-            chalkLine(ctx,x0,top+c,x0,top,a,'rgba(245,242,232,0.8)',2);
-            chalkText(ctx,'x',x0+c/2,top+c+20,clamp((p-0.26)/0.12),REL.dot+'0.92)',18,'Playfair Display, Georgia, serif','center');
-            chalkText(ctx,'x',x0-16,top+c/2,clamp((p-0.3)/0.12),REL.dot+'0.92)',18,'Playfair Display, Georgia, serif','center');
-          }
-          if(p>0.4){ const a=clamp((p-0.4)/0.16);
-            ctx.save(); ctx.globalAlpha=a*0.4; ctx.fillStyle='rgba(122,200,230,0.8)';
-            ctx.fillRect(x0+2,top+2,c-4,c-4); ctx.restore();
-            chalkText(ctx,'x²',x0+c/2,top+c/2,a,'rgba(245,242,232,0.95)',26,'Playfair Display, Georgia, serif','center'); }
-          if(p>0.5)  chalkText(ctx,'l\u2019aire du carré de côté x',W*0.7,H*0.38,clamp((p-0.5)/0.14),'rgba(240,236,224,0.7)',15,'DM Sans, sans-serif','center');
-          if(p>0.6)  chalkText(ctx,'x × x = x²',W*0.7,H*0.48,clamp((p-0.6)/0.14),REL.gold+'0.97)',26,'DM Mono, monospace','center');
-          if(p>0.72) chalkText(ctx,'x × x × x = x³',W*0.7,H*0.58,clamp((p-0.72)/0.14),'rgba(245,242,232,0.9)',20,'DM Mono, monospace','center');
-          relBox(ctx,W,H*0.78,'Additionner = compter (2x) · Multiplier = monter en puissance (x²).',clamp((p-0.84)/0.16),REL.gold);
-        } },
-
-      /* ④ Multiplier : exemples */
-      { label:'Multiplier : exemples', dur:15000, caption:"Pour 2x × 3x : on multiplie les nombres entre eux (2 × 3 = 6) et les x entre eux (x × x = x²) : résultat 6x². Avec un seul x, pas de carré : 4 × 2x = 8x. Et surtout : x + x = 2x mais x × x = x² — à ne jamais confondre !",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'MULTIPLIER : LES NOMBRES ENSEMBLE, LES x ENSEMBLE',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          chalkText(ctx,'2x × 3x',W*0.28,H*0.24,clamp((p-0.04)/0.14),'rgba(245,242,232,0.95)',26,'DM Mono, monospace','center');
-          if(p>0.16) chalkText(ctx,'2 × 3 = 6',W*0.56,H*0.19,clamp((p-0.16)/0.12),REL.pos+'0.9)',17,'DM Mono, monospace','center');
-          if(p>0.26) chalkText(ctx,'x × x = x²',W*0.56,H*0.29,clamp((p-0.26)/0.12),REL.dot+'0.9)',17,'DM Mono, monospace','center');
-          if(p>0.36) chalkText(ctx,'= 6x²',W*0.8,H*0.24,clamp((p-0.36)/0.14),REL.gold+'0.97)',28,'DM Mono, monospace','center');
-          if(p>0.48) chalkText(ctx,'4 × 2x = 8x     (un seul x : pas de carré !)',W/2,H*0.44,clamp((p-0.48)/0.14),'rgba(245,242,232,0.9)',19,'DM Mono, monospace','center');
-          if(p>0.58) chalkText(ctx,'5x × x = 5x²          x × x² = x³',W/2,H*0.56,clamp((p-0.58)/0.14),'rgba(245,242,232,0.9)',19,'DM Mono, monospace','center');
-          if(p>0.7)  chalkText(ctx,'x + x = 2x        mais        x × x = x²',W/2,H*0.7,clamp((p-0.7)/0.16),REL.gold+'0.95)',20,'DM Mono, monospace','center');
-          relBox(ctx,W,H*0.8,'Ne jamais confondre : + compte les stylos, × monte en puissance !',clamp((p-0.84)/0.16),REL.neg);
-        } },
-
-      /* ⑤ La distributivité */
-      { label:'La distributivité', dur:16000, caption:"Que vaut 3 × (x + 2) ? Trois paquets contenant chacun un stylo et 2 € : au total, 3 stylos… et 3 fois 2 €. Le 3 multiplie CHAQUE terme de la parenthèse : 3 × x et 3 × 2, donc 3(x + 2) = 3x + 6. C'est la distributivité.",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'LA DISTRIBUTIVITÉ',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          // 3 paquets (x + 2)
-          const bw=Math.min(W*0.16,120), bh=H*0.14;
-          for(let i=0;i<3;i++){
-            const a=easeOut(clamp((p-0.06-i*0.07)/0.12)); if(a<=0) continue;
-            const bx=W*0.2+i*(bw+W*0.04);
-            ctx.save(); ctx.globalAlpha=a; ctx.strokeStyle=REL.gold+'0.55)'; ctx.fillStyle=REL.gold+'0.05)'; ctx.lineWidth=1.4;
-            rrPath(ctx,bx,H*0.18,bw,bh,9); ctx.fill(); ctx.stroke(); ctx.restore();
-            chalkText(ctx,'x + 2',bx+bw/2,H*0.18+bh/2,a,'rgba(245,242,232,0.9)',18,'DM Mono, monospace','center');
-          }
-          if(p>0.28) chalkText(ctx,'3 paquets de (x + 2)  →  3 stylos… et 3 fois 2 €',W/2,H*0.4,clamp((p-0.28)/0.14),'rgba(240,236,224,0.7)',15,'DM Sans, sans-serif','center');
-          // les flèches de distribution
-          const ey=H*0.56;
-          if(p>0.4) chalkText(ctx,'3 ( x + 2 )',W/2,ey,clamp((p-0.4)/0.14),'rgba(245,242,232,0.95)',30,'DM Mono, monospace','center');
-          if(p>0.52) decArc(ctx,W/2-62,W/2-4,ey-22,clamp((p-0.52)/0.12),'3×x',REL.pos,false);
-          if(p>0.62) decArc(ctx,W/2-62,W/2+52,ey-38,clamp((p-0.62)/0.12),'3×2',REL.dot,false);
-          if(p>0.74) chalkText(ctx,'= 3x + 6',W/2,H*0.74,clamp((p-0.74)/0.16),REL.gold+'0.97)',30,'DM Mono, monospace','center');
-          relBox(ctx,W,H*0.84,'k (a + b) = k×a + k×b : le nombre devant multiplie CHAQUE terme.',clamp((p-0.84)/0.16),REL.gold);
-        } },
-
-      /* ⑥ Distributivité : avec un − */
-      { label:'Avec une soustraction', dur:14000, caption:"Même règle avec une soustraction : le nombre multiplie chaque terme, et le signe − reste entre les deux ! 5(2x − 4) : 5 × 2x = 10x, 5 × 4 = 20, donc 10x − 20. Autre exemple : 2(7 − 3x) = 14 − 6x.",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'DISTRIBUER SUR UNE SOUSTRACTION',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          const ey=H*0.26;
-          chalkText(ctx,'5 ( 2x − 4 )',W/2,ey,clamp((p-0.04)/0.14),'rgba(245,242,232,0.95)',30,'DM Mono, monospace','center');
-          if(p>0.16) decArc(ctx,W/2-76,W/2-8,ey-22,clamp((p-0.16)/0.12),'5×2x',REL.pos,false);
-          if(p>0.28) decArc(ctx,W/2-76,W/2+62,ey-38,clamp((p-0.28)/0.12),'5×4',REL.dot,false);
-          if(p>0.4)  chalkText(ctx,'= 10x − 20',W/2,H*0.44,clamp((p-0.4)/0.16),REL.gold+'0.97)',28,'DM Mono, monospace','center');
-          if(p>0.5)  chalkText(ctx,'le signe − reste entre les deux !',W/2,H*0.54,clamp((p-0.5)/0.14),REL.neg+'0.9)',16,'DM Sans, sans-serif','center');
-          if(p>0.62) chalkText(ctx,'2 (7 − 3x) = 14 − 6x',W/2,H*0.68,clamp((p-0.62)/0.16),'rgba(245,242,232,0.9)',22,'DM Mono, monospace','center');
-          relBox(ctx,W,H*0.78,'k (a − b) = k×a − k×b : même règle, le − ne bouge pas.',clamp((p-0.82)/0.16),REL.gold);
-        } },
-
-      /* ⑦ Développer puis réduire */
-      { label:'Développer puis réduire', dur:16000, caption:"On combine tout : d'abord on DÉVELOPPE (la distributivité fait sauter les parenthèses), puis on RÉDUIT (on compte les stylos). 2(3x + 1) + 4x = 6x + 2 + 4x = 10x + 2. Et 4(x − 3) − 2x = 4x − 12 − 2x = 2x − 12.",
-        draw(ctx,W,H,p){
-          drawBoard(ctx,W,H);
-          chalkText(ctx,'DÉVELOPPER, PUIS RÉDUIRE',W/2,H*0.08,clamp(p/0.1),'rgba(200,185,122,0.7)',14,'DM Mono, monospace','center');
-          const casc=(x, lines, st)=>{
-            lines.forEach((l,i)=>{
-              const t=st+i*0.08; if(p<=t) return;
-              chalkText(ctx,l[0],x,H*(0.2+i*0.11),clamp((p-t)/0.1),l[1],l[2]||19,'DM Mono, monospace','center');
-            });
-          };
-          casc(W*0.28,[
-            ['2(3x + 1) + 4x','rgba(245,242,232,0.95)',20],
-            ['① on développe',REL.dot+'0.85)',13],
-            ['6x + 2 + 4x','rgba(245,242,232,0.9)',20],
-            ['② on compte les x',REL.pos+'0.85)',13],
-            ['10x + 2',REL.gold+'0.97)',24],
-          ],0.06);
-          casc(W*0.72,[
-            ['4(x − 3) − 2x','rgba(245,242,232,0.95)',20],
-            ['① on développe',REL.dot+'0.85)',13],
-            ['4x − 12 − 2x','rgba(245,242,232,0.9)',20],
-            ['② on compte les x',REL.pos+'0.85)',13],
-            ['2x − 12',REL.gold+'0.97)',24],
-          ],0.46);
-          relBox(ctx,W,H*0.84,'Développer = distribuer · Réduire = regrouper les termes en x.',clamp((p-0.86)/0.14),REL.gold);
-        } },
-
-      /* ⑧ À retenir */
-      { label:'À retenir', dur:10500, caption:"x est une valeur inconnue ; additionner des x, c'est compter ; multiplier des x, c'est monter en puissance ; et la distributivité fait multiplier chaque terme de la parenthèse, que ce soit un + ou un −.",
-        draw(ctx,W,H,p){ drawSlide(ctx,W,H,p,{eyebrow:'À RETENIR',title:'Le calcul littéral',titleColor:'rgba(200,185,122,0.92)',titleSize:24,
-          body:[
-            {t:'①  x = une valeur inconnue (le prix d\u2019un stylo)',c:'rgba(245,242,232,0.85)',s:15},
-            {t:'②  Additionner = compter : 2x + 3x = 5x (mais 2x + 3 ne se réduit pas !)',c:'rgba(122,200,230,0.9)',s:15,f:'DM Mono, monospace'},
-            {t:'③  Multiplier = puissance : x × x = x²  ·  2x × 3x = 6x²',c:'rgba(130,210,160,0.9)',s:15,f:'DM Mono, monospace'},
-            {t:'④  Distributivité : k(a ± b) = ka ± kb  →  3(x+2) = 3x+6',c:'rgba(230,210,120,0.9)',s:15,f:'DM Mono, monospace'},
-            {t:'⑤  Développer puis réduire : 2(3x+1)+4x = 10x+2',c:'rgba(230,130,110,0.9)',s:15,f:'DM Mono, monospace'},
           ]}); } },
     ]
   },
