@@ -47,6 +47,72 @@
              score: attendus ? Math.max(0, (justes - faux) / attendus) : 0 };
   }
 
+  /* ── repères de transformation ──
+     Un même quadrillage sert à quatre transformations. Le repère dessiné en
+     dépend :
+       v / h : une DROITE en pointillés      (symétrie axiale)
+       c     : un POINT marqué O             (symétrie centrale)
+       t     : une FLÈCHE, le vecteur        (translation)
+       r     : un POINT + un arc fléché      (rotation)
+     `reperes` accepte plusieurs entrées, pour les transformations composées. */
+  function dessineRepere(A, g, X, Y, petit) {
+    if (!A) return;
+    const R = petit ? 0.7 : 1;
+    if (A.type === "c" || A.type === "r") {
+      g.appendChild(el("circle", { cx: X(A.x), cy: Y(A.y), r: 6 * R, class: "mbq-centre-halo" }));
+      g.appendChild(el("circle", { cx: X(A.x), cy: Y(A.y), r: 3.5 * R, class: "mbq-centre" }));
+      if (!petit) {
+        const t = el("text", { class: "mbq-axe-lab", x: X(A.x) + 10, y: Y(A.y) - 8 });
+        t.textContent = A.nom || "O"; g.appendChild(t);
+      }
+      if (A.type === "r") {
+        /* arc de rayon fixe autour du centre, terminé par une pointe : il
+           montre l'angle ET le sens, que le texte seul rend mal. */
+        const rr = 26 * R, h = A.sens !== "antihoraire";
+        const a0 = -Math.PI / 2, a1 = a0 + (h ? 1 : -1) * (A.angle || 90) * Math.PI / 180;
+        const px = a => X(A.x) + rr * Math.cos(a), py = a => Y(A.y) + rr * Math.sin(a);
+        const grand = (A.angle || 90) > 180 ? 1 : 0;
+        g.appendChild(el("path", { class: "mbq-arc",
+          d: `M ${px(a0)} ${py(a0)} A ${rr} ${rr} 0 ${grand} ${h ? 1 : 0} ${px(a1)} ${py(a1)}` }));
+        const tang = a1 + (h ? Math.PI / 2 : -Math.PI / 2), L = 7 * R;
+        g.appendChild(el("path", { class: "mbq-pointe",
+          d: `M ${px(a1)} ${py(a1)} l ${L * Math.cos(tang - 2.6)} ${L * Math.sin(tang - 2.6)}
+              M ${px(a1)} ${py(a1)} l ${L * Math.cos(tang + 2.6)} ${L * Math.sin(tang + 2.6)}` }));
+      }
+      return;
+    }
+    if (A.type === "t") {
+      const x1 = X(A.de[0]), y1 = Y(A.de[1]), x2 = X(A.vers[0]), y2 = Y(A.vers[1]);
+      g.appendChild(el("line", { x1, y1, x2, y2, class: "mbq-vecteur" }));
+      const ang = Math.atan2(y2 - y1, x2 - x1), L = 11 * R;
+      g.appendChild(el("path", { class: "mbq-pointe",
+        d: `M ${x2} ${y2} l ${L * Math.cos(ang - 2.6)} ${L * Math.sin(ang - 2.6)}
+            M ${x2} ${y2} l ${L * Math.cos(ang + 2.6)} ${L * Math.sin(ang + 2.6)}` }));
+      g.appendChild(el("circle", { cx: x1, cy: y1, r: 3 * R, class: "mbq-centre" }));
+      if (!petit) {
+        const t = el("text", { class: "mbq-axe-lab", x: (x1 + x2) / 2 + 8, y: (y1 + y2) / 2 - 8 });
+        t.textContent = A.nom || "v"; g.appendChild(t);
+      }
+      return;
+    }
+    let a;
+    if (A.type === "v") a = el("line", { x1: X(A.x), y1: Y(0) - 8 * R, x2: X(A.x), y2: Y(A.rows) + 8 * R });
+    else if (A.type === "h") a = el("line", { x1: X(0) - 8 * R, y1: Y(A.y), x2: X(A.cols) + 8 * R, y2: Y(A.y) });
+    if (!a) return;
+    a.setAttribute("class", "mbq-axe"); g.appendChild(a);
+    if (!petit) {
+      const t = el("text", { class: "mbq-axe-lab",
+        x: A.type === "v" ? X(A.x) + 6 : X(0) - 4,
+        y: A.type === "v" ? Y(0) - 12 : Y(A.y) - 6 });
+      t.textContent = A.nom || "(d)"; g.appendChild(t);
+    }
+  }
+  /* les repères d'un exercice, sous forme de liste, dimensions incluses */
+  function listeReperes(params) {
+    const l = params.reperes ? params.reperes.slice() : (params.axe ? [params.axe] : []);
+    return l.map(a => Object.assign({ cols: params.COLS, rows: params.ROWS }, a));
+  }
+
   /* ── plateau ── */
   function monter(params, hote) {
     const P = 18, W = 40;
@@ -73,26 +139,7 @@
       gG.appendChild(el("line", { x1: X(0), y1: Y(j), x2: X(COLS), y2: Y(j),
         class: "mbq-line" + (j % 5 === 0 ? " mbq-major" : "") }));
 
-    /* Repère de la transformation : une DROITE pour la symétrie axiale
-       (types « v » et « h »), un POINT pour la symétrie centrale (type « c »). */
-    const A = params.axe;
-    if (A) {
-      if (A.type === "c") {
-        gG.appendChild(el("circle", { cx: X(A.x), cy: Y(A.y), r: 6, class: "mbq-centre-halo" }));
-        gG.appendChild(el("circle", { cx: X(A.x), cy: Y(A.y), r: 3.5, class: "mbq-centre" }));
-        const t = el("text", { class: "mbq-axe-lab", x: X(A.x) + 10, y: Y(A.y) - 8 });
-        t.textContent = A.nom || "O"; gG.appendChild(t);
-      } else {
-        let a;
-        if (A.type === "v") a = el("line", { x1: X(A.x), y1: Y(0) - 8, x2: X(A.x), y2: Y(ROWS) + 8 });
-        else if (A.type === "h") a = el("line", { x1: X(0) - 8, y1: Y(A.y), x2: X(COLS) + 8, y2: Y(A.y) });
-        if (a) { a.setAttribute("class", "mbq-axe"); gG.appendChild(a);
-          const t = el("text", { class: "mbq-axe-lab",
-            x: A.type === "v" ? X(A.x) + 6 : X(0) - 4,
-            y: A.type === "v" ? Y(0) - 12 : Y(A.y) - 6 });
-          t.textContent = "(d)"; gG.appendChild(t); }
-      }
-    }
+    listeReperes(params).forEach(a => dessineRepere(a, gG, X, Y, false));
 
     (fixe.cases || []).forEach(c => { const r = cellsEls.get(cleC(c)); if (r) r.classList.add("mbq-fixe"); });
     (fixe.segments || []).forEach(s => gF.appendChild(el("line",
@@ -221,16 +268,7 @@
     for (let j = 0; j <= ROWS; j++)
       hote.appendChild(el("line", { x1: X(0), y1: Y(j), x2: X(COLS), y2: Y(j),
         class: "mbq-line" + (j % 5 === 0 ? " mbq-major" : "") }));
-    const A = params.axe;
-    if (A && A.type === "c") {
-      hote.appendChild(el("circle", { cx: X(A.x), cy: Y(A.y), r: 4.5, class: "mbq-centre-halo" }));
-      hote.appendChild(el("circle", { cx: X(A.x), cy: Y(A.y), r: 2.5, class: "mbq-centre" }));
-    } else if (A) {
-      let a;
-      if (A.type === "v") a = el("line", { x1: X(A.x), y1: Y(0) - 6, x2: X(A.x), y2: Y(ROWS) + 6 });
-      else if (A.type === "h") a = el("line", { x1: X(0) - 6, y1: Y(A.y), x2: X(COLS) + 6, y2: Y(A.y) });
-      if (a) { a.setAttribute("class", "mbq-axe"); hote.appendChild(a); }
-    }
+    listeReperes(params).forEach(a => dessineRepere(a, hote, X, Y, true));
     (fixe.segments || []).forEach(g => hote.appendChild(el("line",
       { x1: X(g[0][0]), y1: Y(g[0][1]), x2: X(g[1][0]), y2: Y(g[1][1]),
         class: "mbq-seg mbq-seg-fixe" })));
@@ -283,6 +321,9 @@
 .mbq-axe{stroke:var(--accent2);stroke-width:2;stroke-dasharray:9 5;stroke-opacity:.85}
 .mbq-centre{fill:var(--accent2)}
 .mbq-centre-halo{fill:none;stroke:var(--accent2);stroke-width:1.5;stroke-opacity:.55}
+.mbq-vecteur{stroke:var(--accent2);stroke-width:2.5;stroke-linecap:round}
+.mbq-pointe{stroke:var(--accent2);stroke-width:2.5;fill:none;stroke-linecap:round}
+.mbq-arc{stroke:var(--accent2);stroke-width:2;fill:none;stroke-opacity:.85}
 .mbq-axe-lab{fill:var(--accent2);font-family:var(--mono);font-size:11px;opacity:.9}
 .mbq-foot{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.8rem}
 .mbq-verdict{font-size:.85rem;line-height:1.5;flex:1;min-width:180px}
