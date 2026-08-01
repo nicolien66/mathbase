@@ -947,52 +947,6 @@ const THEME_CONTENT = {
   ]
 },
 
-"Périmètres et aires": {
-  tuto:"perimetres", cours:"Périmètres et aires",
-  lecon:{
-    definitions:[
-      "Le périmètre mesure le CONTOUR d'une figure (une longueur, en cm).",
-      "L'aire mesure sa SURFACE (en cm²)."
-    ],
-    proprietes:[
-      "Rectangle : P = 2(L + l) et A = L × l.",
-      "Carré : P = 4c et A = c².",
-      "Triangle : A = (b × h) ÷ 2 · Disque : P = 2πr et A = πr².",
-      "Deux figures peuvent avoir le même périmètre et des aires différentes (et inversement) !"
-    ],
-    exemples:[
-      "Rectangle 5 × 3 : P = 16 cm, A = 15 cm².",
-      "Disque r = 2 : P ≈ 12,6 cm, A ≈ 12,6 cm² (coïncidence amusante pour r = 2)."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Lire la question : contour (périmètre) ou surface (aire) ?",
-      "Mettre toutes les longueurs dans la même unité.",
-      "Appliquer la formule adaptée, ou découper la figure en morceaux simples.",
-      "Choisir l'unité du résultat : cm pour P, cm² pour A."
-    ],
-    erreurs:[
-      "Répondre à l'aire quand on demande le périmètre (et vice-versa).",
-      "Utiliser le diamètre à la place du rayon dans πr².",
-      "Additionner les aires de morceaux qui se recouvrent."
-    ],
-    resolu:{
-      enonce:"Un terrain est un rectangle de 20 m sur 12 m. Calculer la longueur de clôture et l'aire de pelouse.",
-      etapes:[
-        "Clôture = périmètre : P = 2 × (20 + 12) = 64 m.",
-        "Pelouse = aire : A = 20 × 12 = 240 m².",
-        "64 m de clôture et 240 m² de pelouse."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Périmètre et aire d'un carré de côté 9 cm ?", sol:"P = 36 cm et A = 81 cm²." },
-    { q:"Un disque a un diamètre de 10 cm. Son aire ? (π ≈ 3,14)", sol:"r = 5, donc A = π × 25 ≈ 78,5 cm²." },
-    { q:"Donne deux rectangles de périmètre 20 cm avec des aires différentes.", sol:"Par exemple 6 × 4 (A = 24 cm²) et 8 × 2 (A = 16 cm²) : même P = 20 cm." }
-  ]
-},
-
 "Prisme droit et cylindre": {
   tuto:"prisme", cours:"Prisme droit et cylindre",
   lecon:{
@@ -1695,7 +1649,6 @@ const CHAPTER_STRUCTURE = [
       "Proportionnalité",
       "Pourcentages",
       "Longueur",
-      "Aires",
       "Repérage temps & durées",
       "Arithmétique"
     ]
@@ -1720,7 +1673,7 @@ const CHAPTER_STRUCTURE = [
       "Angles et parallélisme",
       "Les parallélogrammes",
       "Géométrie du triangle",
-      "Périmètres et aires",
+      "Aires",
       "Prisme droit et cylindre",
       "Théorème de Pythagore",
       "Théorème de Thalès",

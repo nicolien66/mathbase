@@ -1599,3 +1599,47 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 .chap-group-go { font-family:'DM Mono',monospace; font-size:.7rem; letter-spacing:.08em;
   color:var(--accent,#c8b97a); opacity:0; transition:opacity .2s; flex:none; }
 .chap-group-head:hover .chap-group-go { opacity:1; }
+
+
+/* ── Filtre par chapitre (séance d'entraînement) ──
+   Reprend l'habillage des boutons de difficulté : même bordure, même rayon,
+   même accent à l'ouverture. La flèche est dessinée en fond pour éviter
+   l'apparence native, très différente d'un système à l'autre. */
+.seance-chapitre {
+  width: 100%;
+  max-width: 420px;
+  font-family: var(--sans);
+  font-size: 0.92rem;
+  font-weight: 300;
+  color: var(--text);
+  background-color: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 2.4rem 0.7rem 1rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  transition: border-color 0.16s, color 0.16s;
+}
+.seance-chapitre:hover { border-color: var(--border2); }
+.seance-chapitre:focus {
+  outline: none;
+  border-color: var(--accent);
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+                    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+}
+.seance-chapitre:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+.seance-chapitre option  { background: var(--surface2); color: var(--text); }
+.seance-chapitre optgroup {
+  background: var(--surface);
+  color: var(--accent-dim);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-style: normal;
+  letter-spacing: 0.06em;
+}

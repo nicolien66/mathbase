@@ -5,3 +5,7 @@ annales-backup-*.json
 annales-avant-problemes-*.json
 diagnostic.txt
 *.log
+
+# sauvegardes et vidages des scripts de maintenance
+*.avant-*
+*-avant-*.json

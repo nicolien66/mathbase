@@ -294,6 +294,13 @@
         </div>
 
         <div class="seance-config-block">
+          <p class="seance-section-label">CHAPITRE</p>
+          <select class="seance-chapitre" id="seance-chapitre" onchange="selectChapitre(this.value)">
+            <option value="">Tous les chapitres</option>
+          </select>
+        </div>
+
+        <div class="seance-config-block">
           <p class="seance-section-label">DIFFICULTÉ</p>
           <div class="seance-diff-row">
             <button class="seance-diff-btn active" data-diff="" onclick="selectDiff(this, '')">Toutes</button>
@@ -673,6 +680,7 @@
   if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 </script>
+<script src="quadrillage.js"></script>
 <script src="script.js"></script>
 
 <!-- RELECTURE D'UN PROBLÈME DÉPOSÉ EN PDF : énoncé à gauche, PDF à droite -->

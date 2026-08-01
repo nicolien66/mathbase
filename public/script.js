@@ -1401,6 +1401,90 @@ function openModal(ex) {
     ${solutionHtml}
     <div class="modal-delete-zone"><button class="btn-delete" onclick="deleteExercise(${ex.id})">Supprimer cet exercice</button></div>`;
   document.getElementById("modal-overlay").classList.add("open");
+  apercuInteractif(ex);
+}
+
+/* ═══ EXERCICES INTERACTIFS ═══
+   Le champ `interactif` décrit un plateau : { widget, …, reponse }.
+   Deux usages, volontairement séparés :
+     · au CATALOGUE, on montre seulement la figure à compléter (aperçu figé) ;
+     · en SÉANCE, l'élève construit sa réponse sur le plateau, et la
+       correction est locale — la réponse attendue est connue, la comparaison
+       est exacte, aucun appel au correcteur IA n'est nécessaire. */
+function litInteractif(ex) {
+  let p = ex && ex.interactif;
+  if (!p) return null;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { return null; } }
+  return (p && p.widget === "quadrillage" && window.MB_QUADRILLAGE) ? p : null;
+}
+
+function apercuInteractif(ex) {
+  const params = litInteractif(ex);
+  if (!params) return;
+  const contenu = document.getElementById("modal-content");
+  const bloc = document.createElement("div");
+  bloc.className = "modal-section";
+  bloc.innerHTML = '<div class="modal-section-label">Figure</div>';
+  const boite = document.createElement("div");
+  bloc.appendChild(boite);
+  const sections = contenu.querySelectorAll(".modal-section");
+  const cible = sections[sections.length - 1];
+  if (cible && cible.parentNode) cible.parentNode.insertBefore(bloc, cible.nextSibling);
+  else contenu.appendChild(bloc);
+  MB_QUADRILLAGE.installerApercu(params, boite);
+}
+
+/* Plateau de séance : monté dans la zone de brouillon, qui est masquée.
+   Renseigne seanceHistory au même format que le correcteur IA. */
+let plateauSeance = null;
+function plateauInteractif(ex, hist) {
+  const zone = document.getElementById("page-answer");
+  const ta = document.getElementById("session-answer");
+  const label = document.getElementById("page-answer-label");
+  const ancien = document.getElementById("mbq-seance");
+  if (ancien) ancien.remove();
+  plateauSeance = null;
+
+  const params = litInteractif(ex);
+  if (!params) { if (ta) ta.style.display = ""; return; }
+
+  if (ta) ta.style.display = "none";
+  label.textContent = hist && (hist.result || hist.skipped) ? "Ta construction" : "Construis la figure";
+  const boite = document.createElement("div");
+  boite.id = "mbq-seance";
+  zone.appendChild(boite);
+  plateauSeance = MB_QUADRILLAGE.installer(params, boite);
+
+  /* le bouton « Valider » du plateau fait double emploi avec « Corriger » */
+  const v = boite.querySelector('[data-a="valider"]');
+  if (v) v.style.display = "none";
+  if (hist && hist.result && plateauSeance.instance)
+    plateauSeance.instance().corriger(params.reponse);
+}
+
+/* Correction locale d'un exercice interactif : renvoie le même objet que
+   la route /exercises/correct, pour que la page de droite ne change pas. */
+function corrigerInteractif(ex) {
+  const params = litInteractif(ex);
+  if (!params || !plateauSeance) return null;
+  const inst = plateauSeance.instance();
+  const r = MB_QUADRILLAGE.verifier(inst.lire(), params.reponse);
+  inst.corriger(params.reponse);
+  const morceaux = [];
+  if (r.justes) morceaux.push(r.justes + " élément" + (r.justes > 1 ? "s" : "") + " juste" + (r.justes > 1 ? "s" : ""));
+  if (r.manques) morceaux.push(r.manques + " oubli" + (r.manques > 1 ? "s" : ""));
+  if (r.faux) morceaux.push(r.faux + " en trop");
+  return {
+    verdict: r.ok ? "correct" : (r.score >= 0.6 ? "partial" : "incorrect"),
+    analyse: r.ok
+      ? "Ta construction est exacte : chaque élément est au bon endroit."
+      : "Sur " + r.attendus + " élément" + (r.attendus > 1 ? "s" : "") + " attendu" +
+        (r.attendus > 1 ? "s" : "") + " : " + (morceaux.join(", ") || "rien de posé") + ".",
+    demarche: "Chaque point a son image de l'autre côté de l'axe, à la même distance : " +
+      "l'axe est la médiatrice du segment qui joint un point et son image.",
+    solution: ex.solution || "",
+    score: r.score
+  };
 }
 
 /* Le bouton de suppression n'apparaît que pour un administrateur connecté :
@@ -1461,6 +1545,7 @@ function escapeHtml(str) {
 ══════════════════════════════════════ */
 let seanceLevel  = "";
 let seanceDiff   = "";
+let seanceChapitre = "";
 let seanceExercises  = [];
 let seanceIndex      = 0;
 let seanceCorrect    = 0;
@@ -1471,6 +1556,7 @@ let seanceMax        = 0;    // exercice le plus loin atteint
 let isTurning        = false;
 
 function resetSeanceWelcome() {
+  remplirChapitres();
   document.getElementById("seance-welcome").style.display = "";
   document.getElementById("seance-session").style.display = "none";
   document.getElementById("seance-results").style.display = "none";
@@ -1480,6 +1566,32 @@ function selectLevel(btn, level) {
   document.querySelectorAll(".seance-level-card").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   seanceLevel = level;
+}
+
+/* Filtre par chapitre : la liste est bâtie sur CHAPTER_STRUCTURE, donc dans
+   l'ordre du catalogue et groupée par matière. On la remplit à l'ouverture de
+   la séance, une seule fois. */
+function remplirChapitres() {
+  const sel = document.getElementById("seance-chapitre");
+  if (!sel || sel.dataset.rempli) return;
+  const structure = (typeof CHAPTER_STRUCTURE !== "undefined")
+    ? CHAPTER_STRUCTURE : (window.CHAPTER_STRUCTURE || []);
+  structure.forEach(m => {
+    if (!m.chapters || !m.chapters.length) return;
+    const grp = document.createElement("optgroup");
+    grp.label = m.subject;
+    m.chapters.forEach(c => {
+      const o = document.createElement("option");
+      o.value = c; o.textContent = c;
+      grp.appendChild(o);
+    });
+    sel.appendChild(grp);
+  });
+  sel.dataset.rempli = "1";
+}
+
+function selectChapitre(chapitre) {
+  seanceChapitre = chapitre || "";
 }
 
 function selectDiff(btn, diff) {
@@ -1502,6 +1614,7 @@ async function startSeance() {
     params.append("type", seanceMode);
     if (seanceLevel) params.append("level", seanceLevel);
     if (seanceDiff)  params.append("difficulty", seanceDiff);
+    if (seanceChapitre) params.append("chapitre", seanceChapitre);
     url += "?" + params.toString();
 
     let data;
@@ -1515,6 +1628,7 @@ async function startSeance() {
       data = DEMO_EXERCISES.filter(ex =>
         (ex.type || "exercice") === seanceMode &&
         (!seanceLevel || ex.level === seanceLevel) &&
+        (!seanceChapitre || ex.chapitre === seanceChapitre) &&
         (!seanceDiff  || ex.difficulty === seanceDiff));
     }
 
@@ -1524,7 +1638,9 @@ async function startSeance() {
     }
 
     if (!data.length) {
-      showToast("Aucun exercice trouvé pour ces filtres.", "error");
+      showToast(seanceChapitre
+        ? "Aucun exercice dans « " + seanceChapitre + " » pour ces filtres."
+        : "Aucun exercice trouvé pour ces filtres.", "error");
       return;
     }
 
@@ -1592,6 +1708,7 @@ function paintLeft() {
     label.textContent = "Ton brouillon";
     if (btnCorrect) btnCorrect.disabled = false;
   }
+  plateauInteractif(ex, hist);
 }
 
 function paintRight() {
@@ -1723,9 +1840,26 @@ function goTo(target, direction) {
 
 async function submitAnswer() {
   const ta     = document.getElementById("session-answer");
+  if (isTurning) return;
+
+  /* Exercice interactif : la correction est locale et immédiate. */
+  const exI = seanceExercises[seanceIndex];
+  if (litInteractif(exI)) {
+    const result = corrigerInteractif(exI);
+    if (!result) return;
+    seanceHistory[seanceIndex] = { answer: "(construction)", result, skipped: false };
+    if (seanceIndex > seanceMax) seanceMax = seanceIndex;
+    document.getElementById("page-answer").classList.add("locked");
+    document.getElementById("page-answer-label").textContent = "Ta construction";
+    const bc = document.getElementById("btn-correct");
+    if (bc) bc.disabled = true;
+    showTutor("result", result);
+    paintNav();
+    return;
+  }
+
   const answer = ta.value.trim();
   if (!answer) { showToast("Écris ton brouillon avant de corriger.", "error"); return; }
-  if (isTurning) return;
 
   const ex  = seanceExercises[seanceIndex];
   const btn = document.getElementById("btn-correct");

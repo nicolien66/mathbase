@@ -25,8 +25,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -36,8 +36,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -47,8 +47,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -58,8 +58,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -69,8 +69,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -80,8 +80,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -91,8 +91,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -102,8 +102,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -113,8 +113,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -124,8 +124,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -135,8 +135,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -146,8 +146,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -157,8 +157,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -168,8 +168,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -179,8 +179,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -190,8 +190,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -201,8 +201,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -212,8 +212,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -223,8 +223,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -234,8 +234,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -245,8 +245,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -256,8 +256,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -267,8 +267,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -278,8 +278,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -289,8 +289,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -300,8 +300,8 @@ const EXOS = [
   "classe": "6ème",
   "subject": "Arithmétique",
   "difficulty": "Facile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -311,8 +311,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -322,8 +322,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -333,8 +333,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -344,8 +344,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -355,8 +355,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -366,8 +366,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -377,8 +377,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -388,8 +388,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -399,8 +399,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -410,8 +410,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -421,8 +421,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -432,8 +432,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -443,8 +443,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -454,8 +454,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -465,8 +465,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -476,8 +476,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -487,8 +487,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -498,8 +498,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -509,8 +509,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -520,8 +520,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -531,8 +531,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -542,8 +542,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -553,8 +553,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -564,8 +564,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -575,8 +575,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -586,8 +586,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -597,8 +597,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -608,8 +608,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -619,8 +619,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -630,8 +630,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -641,8 +641,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -652,8 +652,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -663,8 +663,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -674,8 +674,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -685,8 +685,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -696,8 +696,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -707,8 +707,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -718,8 +718,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -729,8 +729,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -740,8 +740,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -751,8 +751,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -762,8 +762,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -773,8 +773,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -784,8 +784,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -795,8 +795,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -806,8 +806,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -817,8 +817,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -828,8 +828,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -839,8 +839,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -850,8 +850,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -861,8 +861,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -872,8 +872,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -883,8 +883,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -894,8 +894,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -905,8 +905,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -916,8 +916,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -927,8 +927,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -938,8 +938,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -949,8 +949,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -960,8 +960,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -971,8 +971,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -982,8 +982,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -993,8 +993,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1004,8 +1004,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1015,8 +1015,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1026,8 +1026,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1037,8 +1037,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1048,8 +1048,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1059,8 +1059,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1070,8 +1070,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1081,8 +1081,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1092,8 +1092,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1103,8 +1103,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1114,8 +1114,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1125,8 +1125,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1136,8 +1136,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1147,8 +1147,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1158,8 +1158,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1169,8 +1169,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1180,8 +1180,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1191,8 +1191,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1202,8 +1202,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1213,8 +1213,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1224,8 +1224,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1235,8 +1235,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1246,8 +1246,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1257,8 +1257,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1268,8 +1268,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1279,8 +1279,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1290,8 +1290,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1301,8 +1301,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1312,8 +1312,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1323,8 +1323,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1334,8 +1334,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1345,8 +1345,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1356,8 +1356,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1367,8 +1367,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1378,8 +1378,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1389,8 +1389,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1400,8 +1400,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1411,8 +1411,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1422,8 +1422,8 @@ const EXOS = [
   "classe": "5ème",
   "subject": "Arithmétique",
   "difficulty": "Moyen",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1433,8 +1433,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  },
  {
@@ -1444,8 +1444,8 @@ const EXOS = [
   "classe": "4ème",
   "subject": "Arithmétique",
   "difficulty": "Difficile",
-  "chapitre": "Priorités opératoires",
-  "famille": "Appliquer la priorité de la multiplication",
+  "chapitre": "Enchaînement d'opérations",
+  "famille": "Priorité de la multiplication",
   "type": "exercice"
  }
 ];

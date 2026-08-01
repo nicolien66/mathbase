@@ -690,6 +690,10 @@ async function initDB() {
     console.log(`Familles d'exercices renseignées : ${aRemplir[0].n} ligne(s).`);
   }
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'exercice'`);
+  /* Exercices interactifs : { widget, params…, reponse } décrivant le plateau
+     et la réponse attendue. La route /exercises fait un SELECT *, la colonne
+     est donc servie sans autre modification. */
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS interactif JSONB`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
@@ -1006,7 +1010,7 @@ app.post("/exercises", auth, async (req, res) => {
 
 /* ── RÉCUPÉRER LES EXERCICES ── */
 app.get("/exercises", auth, async (req, res) => {
-  const { level, subject, difficulty, type } = req.query;
+  const { level, subject, difficulty, type, chapitre } = req.query;
   let query  = "SELECT * FROM exercises WHERE 1=1";
   let params = [];
   let i      = 1;
@@ -1014,6 +1018,7 @@ app.get("/exercises", auth, async (req, res) => {
   if (level)      { query += ` AND level = $${i++}`;      params.push(level); }
   if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
   if (difficulty) { query += ` AND difficulty = $${i++}`; params.push(difficulty); }
+  if (chapitre)   { query += ` AND chapitre = $${i++}`;   params.push(chapitre); }
   query += " ORDER BY created_at DESC";
   try {
     const result = await pool.query(query, params);
