@@ -1309,7 +1309,7 @@ const THEME_CONTENT = {
   ]
 },
 
-"Géométrie dans l'espace": {
+"Volumes": {
   tuto:null, cours:null,
   lecon:{
     definitions:[
@@ -1682,7 +1682,7 @@ const CHAPTER_STRUCTURE = [
       "Homothéties",
       "Translation et rotation",
       "Pyramides et cônes",
-      "Géométrie dans l'espace"
+      "Volumes"
     ]
   },
   {
