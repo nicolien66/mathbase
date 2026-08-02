@@ -947,8 +947,8 @@ const THEME_CONTENT = {
   ]
 },
 
-"Prisme droit et cylindre": {
-  tuto:"prisme", cours:"Prisme droit et cylindre",
+"Solides": {
+  tuto:"prisme", cours:"Solides",
   lecon:{
     definitions:[
       "Un prisme droit a deux bases polygonales identiques et parallèles, reliées par des rectangles.",
@@ -1260,52 +1260,6 @@ const THEME_CONTENT = {
     { q:"Quelle transformation envoie chaque cabine d'un manège sur la suivante ?", sol:"Une rotation autour du centre du manège." },
     { q:"B(−2 ; 5), translation « +4 ; +2 ». Image ?", sol:"B′(2 ; 7)." },
     { q:"Une rotation de 90° change-t-elle les longueurs de la figure ?", sol:"Non : rotation et translation conservent longueurs, angles et aires." }
-  ]
-},
-
-"Pyramides et cônes": {
-  tuto:"pyramides", cours:"Pyramides et cônes",
-  lecon:{
-    definitions:[
-      "Une pyramide a une base polygonale et des faces triangulaires qui se rejoignent en un sommet.",
-      "Un cône de révolution a un disque pour base et un sommet.",
-      "La hauteur est la distance du sommet au plan de la base."
-    ],
-    proprietes:[
-      "Volume = (1/3) × aire de la base × hauteur.",
-      "Cône : V = (1/3) × π × r² × h.",
-      "Un solide pointu a le tiers du volume du prisme/cylindre de même base et même hauteur."
-    ],
-    exemples:[
-      "Pyramide de base 6 cm², h = 4 cm : V = 8 cm³.",
-      "Cône r = 3, h = 6 : V = (1/3) × π × 9 × 6 ≈ 56,5 cm³."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Calculer l'aire de la base.",
-      "Multiplier par la hauteur.",
-      "Diviser par 3 (le solide est pointu !).",
-      "Contrôler l'unité (cm³, m³, L…)."
-    ],
-    erreurs:[
-      "Oublier le 1/3 : c'est l'erreur numéro un.",
-      "Prendre l'arête (le côté penché) comme hauteur.",
-      "Utiliser le diamètre au lieu du rayon pour le cône."
-    ],
-    resolu:{
-      enonce:"Une pyramide a une base carrée de côté 5 cm et une hauteur de 9 cm. Volume ?",
-      etapes:[
-        "Base : 5² = 25 cm².",
-        "V = (1/3) × 25 × 9.",
-        "V = 75 cm³."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Cône : r = 2 cm, h = 6 cm. Volume ? (π ≈ 3,14)", sol:"V = (1/3) × π × 4 × 6 = 8π ≈ 25,1 cm³." },
-    { q:"Une pyramide et un prisme ont la même base et la même hauteur. Rapport de leurs volumes ?", sol:"V(pyramide) = V(prisme) ÷ 3." },
-    { q:"La pyramide de Khéops : base carrée de 230 m, hauteur 137 m. Ordre de grandeur du volume ?", sol:"V = (1/3) × 230² × 137 ≈ 2 400 000 m³ (environ 2,4 millions de m³)." }
   ]
 },
 
@@ -1674,14 +1628,13 @@ const CHAPTER_STRUCTURE = [
       "Les parallélogrammes",
       "Géométrie du triangle",
       "Aires",
-      "Prisme droit et cylindre",
+      "Solides",
       "Théorème de Pythagore",
       "Théorème de Thalès",
       "Trigonométrie",
       "Triangles semblables",
       "Homothéties",
       "Translation et rotation",
-      "Pyramides et cônes",
       "Volumes"
     ]
   },

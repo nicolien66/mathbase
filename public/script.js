@@ -1418,7 +1418,46 @@ function litInteractif(ex) {
   return (p && p.widget === "quadrillage" && window.MB_QUADRILLAGE) ? p : null;
 }
 
+/* Figures de SOLIDES : une image, pas un plateau. L'élève répond dans son
+   brouillon et la correction reste celle de l'IA. */
+function litSolide(ex) {
+  let p = ex && ex.interactif;
+  if (!p) return null;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { return null; } }
+  return (p && p.widget === "solide" && window.MB_SOLIDES) ? p : null;
+}
+
+/* place la figure dans la modale, à la place de l'énoncé */
+function apercuSolide(ex) {
+  const params = litSolide(ex);
+  if (!params) return false;
+  const contenu = document.getElementById("modal-content");
+  if (!contenu) return false;
+  let cible = null;
+  contenu.querySelectorAll(".modal-section").forEach(sec => {
+    const lab = sec.querySelector(".modal-section-label");
+    if (lab && lab.textContent.trim().toLowerCase().indexOf("nonc") >= 0) cible = sec;
+  });
+  const boite = document.createElement("div");
+  if (cible) {
+    const lab = cible.querySelector(".modal-section-label");
+    if (lab) lab.textContent = "Figure";
+    const txt = cible.querySelector(".modal-section-text");
+    if (txt) txt.remove();
+    cible.appendChild(boite);
+  } else {
+    const b = document.createElement("div");
+    b.className = "modal-section";
+    b.innerHTML = '<div class="modal-section-label">Figure</div>';
+    b.appendChild(boite);
+    contenu.appendChild(b);
+  }
+  MB_SOLIDES.installer(params, boite);
+  return true;
+}
+
 function apercuInteractif(ex) {
+  if (apercuSolide(ex)) return;
   const params = litInteractif(ex);
   if (!params) return;
   const contenu = document.getElementById("modal-content");
@@ -1459,6 +1498,23 @@ function apercuInteractif(ex) {
    Renseigne seanceHistory au même format que le correcteur IA. */
 let plateauSeance = null;
 function plateauInteractif(ex, hist) {
+  /* Solide : on affiche la figure au-dessus du brouillon, sans masquer
+     celui-ci — c'est là que l'élève rédige sa réponse. */
+  const ancienS = document.getElementById("mbs-seance");
+  if (ancienS) ancienS.remove();
+  const ps = litSolide(ex);
+  if (ps) {
+    const zone = document.getElementById("page-answer");
+    const ta = document.getElementById("session-answer");
+    if (ta) ta.style.display = "";
+    const boite = document.createElement("div");
+    boite.id = "mbs-seance";
+    boite.style.marginBottom = "0.8rem";
+    zone.insertBefore(boite, zone.firstChild);
+    MB_SOLIDES.installer(ps, boite);
+    return;
+  }
+
   const zone = document.getElementById("page-answer");
   const ta = document.getElementById("session-answer");
   const label = document.getElementById("page-answer-label");
