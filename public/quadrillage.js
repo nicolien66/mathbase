@@ -65,20 +65,9 @@
         const t = el("text", { class: "mbq-axe-lab", x: X(A.x) + 10, y: Y(A.y) - 8 });
         t.textContent = A.nom || "O"; g.appendChild(t);
       }
-      if (A.type === "r") {
-        /* arc de rayon fixe autour du centre, terminé par une pointe : il
-           montre l'angle ET le sens, que le texte seul rend mal. */
-        const rr = 26 * R, h = A.sens !== "antihoraire";
-        const a0 = -Math.PI / 2, a1 = a0 + (h ? 1 : -1) * (A.angle || 90) * Math.PI / 180;
-        const px = a => X(A.x) + rr * Math.cos(a), py = a => Y(A.y) + rr * Math.sin(a);
-        const grand = (A.angle || 90) > 180 ? 1 : 0;
-        g.appendChild(el("path", { class: "mbq-arc",
-          d: `M ${px(a0)} ${py(a0)} A ${rr} ${rr} 0 ${grand} ${h ? 1 : 0} ${px(a1)} ${py(a1)}` }));
-        const tang = a1 + (h ? Math.PI / 2 : -Math.PI / 2), L = 7 * R;
-        g.appendChild(el("path", { class: "mbq-pointe",
-          d: `M ${px(a1)} ${py(a1)} l ${L * Math.cos(tang - 2.6)} ${L * Math.sin(tang - 2.6)}
-              M ${px(a1)} ${py(a1)} l ${L * Math.cos(tang + 2.6)} ${L * Math.sin(tang + 2.6)}` }));
-      }
+      /* Pas d'arc pour la rotation : l'angle et le sens sont donnés en
+         toutes lettres dans l'énoncé, un repère graphique de plus n'apporte
+         rien et encombre le quadrillage. Seul le centre est marqué. */
       return;
     }
     if (A.type === "t") {
@@ -323,7 +312,6 @@
 .mbq-centre-halo{fill:none;stroke:var(--accent2);stroke-width:1.5;stroke-opacity:.55}
 .mbq-vecteur{stroke:var(--accent2);stroke-width:2.5;stroke-linecap:round}
 .mbq-pointe{stroke:var(--accent2);stroke-width:2.5;fill:none;stroke-linecap:round}
-.mbq-arc{stroke:var(--accent2);stroke-width:2;fill:none;stroke-opacity:.85}
 .mbq-axe-lab{fill:var(--accent2);font-family:var(--mono);font-size:11px;opacity:.9}
 .mbq-foot{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.8rem}
 .mbq-verdict{font-size:.85rem;line-height:1.5;flex:1;min-width:180px}
