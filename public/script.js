@@ -1422,15 +1422,36 @@ function apercuInteractif(ex) {
   const params = litInteractif(ex);
   if (!params) return;
   const contenu = document.getElementById("modal-content");
-  const bloc = document.createElement("div");
-  bloc.className = "modal-section";
-  bloc.innerHTML = '<div class="modal-section-label">Figure</div>';
+  if (!contenu) return;
+
+  /* On cherche le bloc « Énoncé » par son intitulé : c'est plus robuste que
+     de compter les sections, dont le nombre varie selon les exercices. */
+  const remplaceEnonce = true;
+  let cible = null;
+  contenu.querySelectorAll(".modal-section").forEach(sec => {
+    const lab = sec.querySelector(".modal-section-label");
+    if (lab && lab.textContent.trim().toLowerCase().indexOf("nonc") >= 0) cible = sec;
+  });
+
   const boite = document.createElement("div");
-  bloc.appendChild(boite);
-  const sections = contenu.querySelectorAll(".modal-section");
-  const cible = sections[sections.length - 1];
-  if (cible && cible.parentNode) cible.parentNode.insertBefore(bloc, cible.nextSibling);
-  else contenu.appendChild(bloc);
+  if (cible && remplaceEnonce) {
+    /* la figure PREND LA PLACE du texte : au catalogue, c'est elle qu'on
+       vient regarder. L'énoncé reste en base et s'affiche en séance. */
+    const lab = cible.querySelector(".modal-section-label");
+    if (lab) lab.textContent = "Figure";
+    const txt = cible.querySelector(".modal-section-text");
+    if (txt) txt.remove();
+    cible.appendChild(boite);
+  } else {
+    const bloc = document.createElement("div");
+    bloc.className = "modal-section";
+    bloc.innerHTML = '<div class="modal-section-label">Figure</div>';
+    bloc.appendChild(boite);
+    const secs = contenu.querySelectorAll(".modal-section");
+    const apres = cible || secs[secs.length - 1];
+    if (apres && apres.parentNode) apres.parentNode.insertBefore(bloc, apres.nextSibling);
+    else contenu.appendChild(bloc);
+  }
   MB_QUADRILLAGE.installerApercu(params, boite);
 }
 

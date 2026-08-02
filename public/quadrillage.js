@@ -266,8 +266,7 @@
   /* montage d'un aperçu dans un conteneur quelconque */
   function installerApercu(params, conteneur) {
     injecterStyles();
-    conteneur.innerHTML = '<div class="mbq-board mbq-board-apercu"><svg class="mbq-apercu"></svg></div>' +
-      '<p class="mbq-hint">Figure à compléter — l\'espace de tracé s\'ouvre en séance d\'entraînement.</p>';
+    conteneur.innerHTML = '<div class="mbq-board mbq-board-apercu"><svg class="mbq-apercu"></svg></div>';
     apercu(params, conteneur.querySelector(".mbq-apercu"));
   }
 
