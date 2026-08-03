@@ -123,153 +123,167 @@ const S = [
   }
 }
 
+/* ═══ VOCABULAIRE ═══
+   Pour chaque mot : à quels solides il s'applique, et pourquoi. C'est ce qui
+   permet de poser « peut-on employer ce mot pour ce solide ? », question qui
+   vaut aussi bien pour un oui que pour un non. */
+const VOC = [
+  { mot: "polyèdre", art: "un", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal","pyramide_carree","pyramide_triangulaire"],
+    oui: o => `Oui. Un polyèdre est un solide dont toutes les faces sont des polygones plans : ici ${o.faces}.`,
+    non: o => `Non. Un polyèdre n'a que des faces planes, or ce solide possède une surface courbe.` },
+  { mot: "prisme droit", art: "un", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal"],
+    oui: o => `Oui. Un prisme droit a deux bases identiques et parallèles, reliées par des faces rectangulaires : ici deux ${o.base.replace(/^une? /, "")}s.`,
+    non: o => `Non. ${o.famille === "pyramide" ? "Ses faces latérales se rejoignent en un sommet unique au lieu de relier deux bases." : "Il n'a pas deux bases polygonales reliées par des rectangles."}` },
+  { mot: "pyramide", art: "une", ou: ["pyramide_carree","pyramide_triangulaire"],
+    oui: o => `Oui. Une pyramide a une base et des faces latérales triangulaires qui se rejoignent en un sommet unique : ici ${o.F - 1} triangles.`,
+    non: o => `Non. ${o.famille === "prisme" ? "Ses faces latérales relient deux bases au lieu de converger vers un sommet." : "Ce solide n'a pas de faces latérales triangulaires."}` },
+  { mot: "solide de révolution", art: "un", ou: ["cylindre","cone","boule"],
+    oui: o => `Oui. Il s'obtient en faisant tourner une figure plane autour d'un axe : ${o.engendre}.`,
+    non: o => `Non. Toutes ses faces sont planes ; aucune rotation d'une figure plane ne l'engendre.` },
+  { mot: "base", art: "une", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal","pyramide_carree","pyramide_triangulaire","cylindre","cone"],
+    oui: o => `Oui. Sa base est ${o.base}.${o.famille === "prisme" || o.id === "cylindre" ? " Il en a même deux, parallèles et identiques." : ""}`,
+    non: o => `Non. La boule n'a aucune face plane : on ne peut désigner aucune partie comme sa base.` },
+  { mot: "arête", art: "une", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal","pyramide_carree","pyramide_triangulaire"],
+    oui: o => `Oui. Une arête est le segment où deux faces se rejoignent : ce solide en compte ${o.A}.`,
+    non: o => `Non. Une arête est un SEGMENT. ${o.id === "boule" ? "La boule n'a aucun bord." : "Les bords de ce solide sont des cercles, pas des segments."}` },
+  { mot: "sommet", art: "un", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal","pyramide_carree","pyramide_triangulaire","cone"],
+    oui: o => o.poly ? `Oui. Un sommet est un point où plusieurs arêtes se rejoignent : ce solide en compte ${o.Som}.`
+      : `Oui, un seul : sa pointe, où se rejoignent toutes les génératrices.`,
+    non: o => `Non. ${o.id === "boule" ? "Tous les points de la boule jouent le même rôle : aucun n'est un sommet." : "Ses deux bases sont des cercles, sans aucun point anguleux."}` },
+  { mot: "sommet principal", art: "un", ou: ["pyramide_carree","pyramide_triangulaire","cone"],
+    oui: o => `Oui. C'est le point où se rejoignent toutes les faces latérales${o.id === "cone" ? ", la pointe du solide" : `, opposé à la base ; les ${o.Som - 1} autres sommets sont ceux de la base`}.`,
+    non: o => `Non. ${o.famille === "prisme" ? "Dans un prisme, tous les sommets jouent le même rôle : aucun n'est privilégié." : "Ce solide n'a aucun sommet."}` },
+  { mot: "face latérale", art: "une", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal","pyramide_carree","pyramide_triangulaire"],
+    oui: o => o.famille === "prisme" ? `Oui. Ce sont les ${o.F - 2} faces rectangulaires qui relient les deux bases.`
+      : `Oui. Ce sont les ${o.F - 1} triangles qui relient la base au sommet principal.`,
+    non: o => `Non. ${o.id === "boule" ? "La boule n'a aucune face." : "Sa surface latérale est courbe : ce n'est pas une face plane."}` },
+  { mot: "génératrice", art: "une", ou: ["cylindre","cone"],
+    oui: o => o.id === "cone" ? `Oui. C'est un segment joignant le sommet à un point du cercle de base ; toutes ont la même longueur.`
+      : `Oui. C'est un segment joignant un point d'une base au point correspondant de l'autre ; toutes ont la même longueur, égale à la hauteur.`,
+    non: o => `Non. Ce mot désigne le segment qui engendre une surface courbe par rotation, ce qui ne concerne pas ce solide.` },
+  { mot: "hauteur", art: "une", ou: ["cube","pave","prisme_triangulaire","prisme_hexagonal","pyramide_carree","pyramide_triangulaire","cylindre","cone"],
+    oui: o => o.famille === "pyramide" || o.id === "cone"
+      ? `Oui. C'est le segment mené du sommet principal perpendiculairement à la base. Il est intérieur au solide, ce n'est pas une arête.`
+      : `Oui. C'est la distance entre les deux bases, mesurée perpendiculairement.`,
+    non: o => `Non. Sans base ni sommet, la boule n'a pas de hauteur : on parle de son rayon ou de son diamètre.` },
+  { mot: "rayon", art: "un", ou: ["cylindre","cone","boule"],
+    oui: o => o.id === "boule" ? `Oui. C'est la distance du centre à n'importe quel point de la surface.`
+      : `Oui. C'est le rayon du disque de base.`,
+    non: o => `Non. Ce solide n'a ni disque ni surface sphérique : aucune de ses parties n'est un cercle.` },
+  { mot: "centre", art: "un", ou: ["boule"],
+    oui: o => `Oui. C'est le point équidistant de tous les points de la surface, ce qui définit la boule.`,
+    /* Ne pas confondre le centre d'une boule — point équidistant de toute la
+       surface — avec un centre de symétrie, que plusieurs solides possèdent. */
+    non: o => `Non, pas au sens du centre d'une boule, c'est-à-dire d'un point équidistant de tous les points de la surface. `
+      + (["cube","pave","prisme_hexagonal"].indexOf(o.id) >= 0
+        ? `Ce solide possède bien un centre de SYMÉTRIE, mais c'est une autre notion.`
+        : `Ce solide n'a d'ailleurs pas non plus de centre de symétrie.`) },
+  { mot: "face courbe", art: "une", ou: ["cylindre","cone","boule"],
+    oui: o => `Oui. ${o.id === "boule" ? "Sa surface est entièrement courbe." : "Sa surface latérale est courbe, ce qui l'empêche d'être un polyèdre."}`,
+    non: o => `Non. Toutes ses faces sont planes : ${o.faces}. C'est un polyèdre.` },
+];
+
 /* ═══ LES MODÈLES DE QUESTION ═══
-   Chaque modèle reçoit un solide et rend { d, q, s }. La figure est toujours
-   affichée par le widget : l'énoncé n'y renvoie que par « ce solide ». */
+   Trois axes seulement : dénombrer, énoncer une propriété, éprouver un mot
+   du vocabulaire. La figure est toujours affichée ; l'énoncé n'y renvoie
+   que par « ce solide », sans jamais le nommer. */
 const MOD = [];
 
-/* — reconnaissance — */
-MOD.push({ d: "F", g: o => ({ q: `Quel est le nom de ce solide ?`,
-  s: `C'est ${o.nom} : ${o.indice}.` }) });
-MOD.push({ d: "F", g: o => ({ q: `Nomme ce solide, puis dis s'il s'agit d'un polyèdre.`,
-  s: `C'est ${o.nom}.\n${o.poly ? "C'est un POLYÈDRE : toutes ses faces sont planes." :
-    "Ce n'est PAS un polyèdre : il possède une surface courbe. C'est un solide de révolution."}` }) });
-MOD.push({ d: "M", g: o => ({ q: `Ce solide est-il un polyèdre ? Justifie.`,
-  s: o.poly ? `Oui. Un polyèdre est un solide dont toutes les faces sont des polygones plans, ce qui est le cas ici : ${o.faces}.`
-            : `Non. Un polyèdre n'a que des faces planes ; celui-ci possède une surface courbe. C'est ${o.nom}, un solide de révolution.` }) });
-
-/* — dénombrements, polyèdres seulement — */
+/* — A. dénombrement — */
 MOD.push({ d: "F", g: o => o.poly ? ({ q: `Combien ce solide a-t-il de faces ?`,
   s: `${o.F} faces : ${o.faces}.` }) : null });
 MOD.push({ d: "F", g: o => o.poly ? ({ q: `Combien ce solide a-t-il de sommets ?`,
   s: `${o.Som} sommets.` }) : null });
-MOD.push({ d: "M", g: o => o.poly ? ({ q: `Combien ce solide a-t-il d'arêtes ?`,
+MOD.push({ d: "F", g: o => o.poly ? ({ q: `Combien ce solide a-t-il d'arêtes ?`,
   s: `${o.A} arêtes.` }) : null });
 MOD.push({ d: "M", g: o => o.poly ? ({ q: `Donne le nombre de faces, d'arêtes et de sommets de ce solide.`,
   s: `Faces : ${o.F} · Arêtes : ${o.A} · Sommets : ${o.Som}.` }) : null });
-MOD.push({ d: "D", g: o => o.poly ? ({
-  q: `Compte les faces, les arêtes et les sommets de ce solide, puis vérifie la relation F + S − A = 2.`,
-  s: `Faces : ${o.F} · Sommets : ${o.Som} · Arêtes : ${o.A}.\n${o.F} + ${o.Som} − ${o.A} = ${o.F + o.Som - o.A} : la relation est vérifiée, comme pour tout polyèdre convexe.` }) : null });
-MOD.push({ d: "D", g: o => o.poly ? ({
-  q: `Ce solide a ${o.F} faces et ${o.A} arêtes. Retrouve son nombre de sommets sans le compter sur la figure.`,
-  s: `On utilise la relation F + S − A = 2, donc S = 2 + A − F = 2 + ${o.A} − ${o.F} = ${o.Som}.\nVérification sur la figure : on compte bien ${o.Som} sommets.` }) : null });
-
-/* — faces planes des solides de révolution — */
 MOD.push({ d: "M", g: o => !o.poly ? ({ q: `Combien ce solide a-t-il de faces planes ?`,
-  s: `${o.planes === 0 ? "Aucune" : o.planes} face${o.planes > 1 ? "s" : ""} plane${o.planes > 1 ? "s" : ""}${o.planes ? " : " + o.base.replace("un ", "un ") + (o.planes > 1 ? ", et une seconde identique" : "") : ""}. Le reste est une surface courbe.` }) : null });
-MOD.push({ d: "D", g: o => !o.poly ? ({ q: `Ce solide est engendré par la rotation d'une figure plane. Laquelle ?`,
-  s: `${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} est engendré par ${o.engendre}. C'est pourquoi on parle de solide de RÉVOLUTION.` }) : null });
+  s: `${o.planes === 0 ? "Aucune" : o.planes} face${o.planes > 1 ? "s" : ""} plane${o.planes > 1 ? "s" : ""}${o.planes ? ` : ${o.base}${o.planes > 1 ? " et sa jumelle" : ""}` : ""}. Le reste de sa surface est courbe.` }) : null });
+MOD.push({ d: "M", g: o => o.famille === "prisme" ? ({ q: `Combien ce solide a-t-il de faces latérales ?`,
+  s: `${o.F - 2} faces latérales rectangulaires, auxquelles s'ajoutent les 2 bases : ${o.F} faces en tout.` })
+  : o.famille === "pyramide" ? ({ q: `Combien ce solide a-t-il de faces latérales ?`,
+  s: `${o.F - 1} faces latérales triangulaires, plus la base : ${o.F} faces en tout.` }) : null });
+MOD.push({ d: "D", g: o => o.poly ? ({
+  q: `Compte les faces, les arêtes et les sommets de ce solide, puis vérifie la relation F + S \u2212 A = 2.`,
+  s: `Faces : ${o.F} · Sommets : ${o.Som} · Arêtes : ${o.A}.\n${o.F} + ${o.Som} \u2212 ${o.A} = ${o.F + o.Som - o.A} : la relation est vérifiée, comme pour tout polyèdre convexe.` }) : null });
+MOD.push({ d: "D", g: o => o.poly ? ({
+  q: `Ce solide a ${o.F} faces et ${o.A} arêtes. Retrouve son nombre de sommets sans les compter sur la figure.`,
+  s: `La relation F + S \u2212 A = 2 donne S = 2 + A \u2212 F = 2 + ${o.A} \u2212 ${o.F} = ${o.Som}.\nVérification sur la figure : on compte bien ${o.Som} sommets.` }) : null });
+MOD.push({ d: "D", g: o => o.poly ? ({ q: `Combien d'arêtes partent en moyenne de chaque sommet de ce solide ?`,
+  s: (() => { const v = (2 * o.A) / o.Som;
+    return Number.isInteger(v)
+      ? `Chaque arête relie 2 sommets : 2 × ${o.A} ÷ ${o.Som} = ${v} arêtes par sommet.`
+      : `2 × ${o.A} ÷ ${o.Som} = ${v.toFixed(2).replace(".", ",")} en moyenne. Le compte n'est pas le même partout : le sommet principal en réunit davantage que ceux de la base.`; })() }) : null });
 
-/* — nature des faces, base — */
-MOD.push({ d: "M", g: o => ({ q: `Quelle est la nature des faces de ce solide ?`,
+/* Les dénombrements ci-dessus ne concernent que les polyèdres ; sans ces
+   trois modèles, le quota de questions faciles ne peut être atteint pour le
+   cylindre, le cône et la boule. */
+MOD.push({ d: "F", g: o => !o.poly ? ({ q: `Combien ce solide a-t-il de sommets ?`,
+  s: o.Som === 0 ? `Aucun. Sa surface ne présente aucun point anguleux.`
+    : `Un seul : sa pointe, où se rejoignent toutes les génératrices.` }) : null });
+MOD.push({ d: "F", g: o => !o.poly ? ({ q: `Combien ce solide a-t-il d'arêtes ?`,
+  s: `Aucune. Une arête est un segment où deux faces planes se rejoignent ; ${o.id === "boule" ? "la boule n'a ni face plane ni bord" : "les bords de ce solide sont des cercles, pas des segments"}.` }) : null });
+MOD.push({ d: "F", g: o => !o.poly ? ({ q: `Combien de faces planes et combien de surfaces courbes ce solide possède-t-il ?`,
+  s: `${o.planes === 0 ? "Aucune" : o.planes} face${o.planes > 1 ? "s" : ""} plane${o.planes > 1 ? "s" : ""} et 1 surface courbe.` }) : null });
+MOD.push({ d: "F", g: o => ({ q: `Ce solide est-il un polyèdre ?`,
+  s: o.poly ? `Oui : toutes ses faces sont des polygones plans (${o.faces}).`
+            : `Non : il possède une surface courbe. C'est un solide de révolution.` }) });
+
+MOD.push({ d: "F", g: o => ({ q: `Ce solide possède-t-il des faces planes ? Combien ?`,
+  s: o.poly ? `Oui, ${o.F} faces, toutes planes : ${o.faces}.`
+    : o.planes === 0 ? `Aucune. Sa surface est entièrement courbe.`
+    : `Oui, ${o.planes} : ${o.base}${o.planes > 1 ? " et sa jumelle" : ""}. Le reste est une surface courbe.` }) });
+MOD.push({ d: "F", g: o => o.base !== "aucune base" ? ({ q: `Combien ce solide a-t-il de bases ?`,
+  s: o.famille === "prisme" || o.id === "cylindre" ? `Deux, parallèles et identiques : ${o.base} chacune.`
+    : `Une seule : ${o.base}.` }) : ({ q: `Ce solide a-t-il une base ?`,
+  s: `Non. Aucune partie de sa surface n'est plane : la boule n'a pas de base.` }) });
+
+/* — B. propriétés — */
+MOD.push({ d: "F", g: o => ({ q: `Quelle est la nature des faces de ce solide ?`,
   s: o.poly ? `Ses faces sont : ${o.faces}.` : `${o.faces.charAt(0).toUpperCase() + o.faces.slice(1)}.` }) });
-MOD.push({ d: "M", g: o => o.base !== "aucune base" ? ({ q: `Quelle est la forme de la base de ce solide ?`,
+MOD.push({ d: "F", g: o => o.base !== "aucune base" ? ({ q: `Quelle est la forme de la base de ce solide ?`,
   s: `Sa base est ${o.base}.` }) : null });
-MOD.push({ d: "D", g: o => o.poly ? ({ q: `Ce solide a-t-il des faces rectangulaires ? Si oui, combien ?`,
-  s: /rectangle/.test(o.faces) ? `Oui : ${o.faces.match(/(\d+) rectangles?/) ? o.faces.match(/(\d+) rectangles?/)[1] : "plusieurs"} faces rectangulaires.\nSes faces sont : ${o.faces}.`
-    : (o.id === "cube" ? `Oui, ses 6 faces sont des carrés — et un carré EST un rectangle particulier, dont les quatre côtés ont la même longueur.`
-    : `Non. Ses faces sont : ${o.faces}.`) }) : null });
-
-/* — patrons — */
-MOD.push({ d: "M", g: o => ({ q: `De quelles figures est composé le patron de ce solide ?`,
-  s: o.poly ? `Son patron est composé de ${o.patron}.`
-            : (o.id === "boule" ? `La boule n'a pas de patron plan : on ne peut pas l'aplatir sans la déformer. C'est ce qui rend les cartes du monde imparfaites.`
-            : `Son patron est composé de ${o.patron}.`) }) });
-MOD.push({ d: "D", g: o => o.poly ? ({ q: `Combien de figures faut-il découper pour construire le patron de ce solide ?`,
-  s: `${o.F} figures, une par face : ${o.patron}.` }) : null });
-
-/* — comparaisons et vocabulaire — */
-let tourComp = 0;
-MOD.push({ d: "D", g: o => { const cands = S.filter(x => x.id !== o.id && x.poly);
-  const autre = cands[(tourComp++) % cands.length];
-  if (!o.poly || !autre) return null;
-  return { q: `Ce solide a-t-il plus ou moins de faces qu'${autre.nom} ?`,
-    s: `Ce solide (${o.nom}) a ${o.F} faces ; ${autre.nom} en a ${autre.F}.\n${o.F > autre.F ? "Il en a donc PLUS." : o.F < autre.F ? "Il en a donc MOINS." : "Ils en ont AUTANT."}` }; } });
-MOD.push({ d: "F", g: o => ({ q: `Qu'appelle-t-on une arête d'un solide ? Montre-en une sur ce solide.`,
-  s: `Une arête est le segment où deux faces se rejoignent.\n${o.poly ? `Ce solide en compte ${o.A}.` : `Ici, les bords circulaires jouent ce rôle, mais ce ne sont pas des segments : ${o.nom} n'a pas d'arête au sens habituel.`}` }) });
-MOD.push({ d: "F", g: o => ({ q: `Qu'appelle-t-on un sommet d'un solide ?`,
-  s: `Un sommet est un point où plusieurs arêtes se rejoignent.\n${o.poly ? `Ce solide en compte ${o.Som}.` : (o.Som ? `${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} en possède un seul, sa pointe.` : `${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} n'en possède aucun.`)}` }) });
-MOD.push({ d: "M", g: o => ({ q: `Qu'appelle-t-on une face d'un solide ? Combien ce solide en a-t-il de planes ?`,
-  s: `Une face est une surface délimitée par des arêtes.\nCe solide a ${o.planes === 0 ? "aucune" : o.planes} face${o.planes > 1 ? "s" : ""} plane${o.planes > 1 ? "s" : ""}${o.poly ? "" : " ; le reste est une surface courbe"}.` }) });
-MOD.push({ d: "D", g: o => ({ q: `Sur le dessin, certaines arêtes sont en pointillés. Pourquoi ?`,
-  s: `Parce qu'elles sont CACHÉES : on ne les verrait pas si le solide était opaque. C'est la convention de la perspective cavalière.\n${o.poly ? `Ce solide a ${o.A} arêtes en tout, visibles et cachées confondues.` : `${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} n'ayant pas d'arête, les pointillés y marquent la partie cachée de sa surface courbe.`}` }) });
-MOD.push({ d: "D", g: o => ({ q: `Ce solide est-il un prisme, une pyramide, ou un solide de révolution ? Justifie.`,
-  s: o.famille === "prisme" ? `C'est un PRISME DROIT : deux bases identiques et parallèles, reliées par des faces rectangulaires. Ici, ${o.nom}.`
-    : o.famille === "pyramide" ? `C'est une PYRAMIDE : une base, et des faces latérales triangulaires qui se rejoignent en un sommet unique. Ici, ${o.nom}.`
-    : `C'est un SOLIDE DE RÉVOLUTION : il s'obtient en faisant tourner une figure plane autour d'un axe, et sa surface est courbe. Ici, ${o.nom}.` }) });
-MOD.push({ d: "M", g: o => ({ q: `Ce solide a-t-il deux faces parallèles et identiques ?`,
-  s: o.famille === "prisme" ? `Oui : ses deux bases, ${o.base === "un carré" ? "deux carrés" : o.base === "un rectangle" ? "deux rectangles" : o.base === "un triangle" ? "deux triangles" : "deux hexagones"} superposables et parallèles. C'est la définition même d'un prisme droit.`
+MOD.push({ d: "M", g: o => ({ q: `Ce solide a-t-il deux faces parallèles et superposables ?`,
+  s: o.famille === "prisme" ? `Oui : ses deux bases, deux ${o.base.replace(/^une? /, "")}s identiques et parallèles. C'est la définition même du prisme droit.`
     : o.id === "cylindre" ? `Oui : ses deux bases sont des disques parallèles de même rayon. Mais ce n'est pas un prisme, car sa surface latérale est courbe.`
-    : `Non. ${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} n'a pas deux faces parallèles identiques.` }) });
-MOD.push({ d: "D", g: o => ({ q: `Vrai ou faux : « tous les solides ont des arêtes ». Réponds en t'appuyant sur ce solide.`,
-  s: `FAUX. ${o.poly ? `Ce solide en a bien ${o.A}, mais d'autres n'en ont aucune : la boule, par exemple, n'a ni arête ni sommet.`
-    : `${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} en est justement un contre-exemple : sa surface est courbe.`}` }) });
-MOD.push({ d: "D", g: o => o.poly ? ({ q: `Combien d'arêtes partent de chaque sommet de ce solide ?`,
-  s: (() => { const parS = (2 * o.A) / o.Som;
-    return Number.isInteger(parS)
-      ? `Chaque arête relie 2 sommets, donc en tout : 2 × ${o.A} ÷ ${o.Som} = ${parS} arêtes par sommet.`
-      : `Le compte n'est pas le même partout : 2 × ${o.A} ÷ ${o.Som} = ${(parS).toFixed(2).replace(".", ",")} en moyenne. Sur ce solide, le sommet principal en réunit davantage que ceux de la base.`; })() }) : null });
-MOD.push({ d: "M", g: o => ({ q: `À quelle classe de solides celui-ci appartient-il : polyèdre ou solide de révolution ?`,
-  s: o.poly ? `Un POLYÈDRE : toutes ses faces sont des polygones plans (${o.faces}).`
-            : `Un SOLIDE DE RÉVOLUTION : sa surface est courbe, il ne peut donc pas être un polyèdre.` }) });
+    : `Non. ${o.famille === "pyramide" ? "Une pyramide n'a qu'une seule base ; les autres faces convergent vers un sommet." : "Ce solide n'a pas deux faces planes identiques."}` }) });
+MOD.push({ d: "M", g: o => o.poly ? ({ q: `Toutes les faces de ce solide ont-elles la même forme ?`,
+  s: / et /.test(o.faces) ? `Non : ${o.faces}. Deux formes différentes coexistent.`
+    : `Oui : ${o.faces}.` }) : null });
+MOD.push({ d: "M", g: o => ({ q: `Ce solide possède-t-il une surface courbe ?`,
+  s: o.poly ? `Non : toutes ses faces sont planes (${o.faces}).` : `Oui : ${o.id === "boule" ? "sa surface l'est entièrement" : "sa surface latérale l'est"}, ce qui l'empêche d'être un polyèdre.` }) });
+MOD.push({ d: "M", g: o => o.poly ? ({ q: `Ce solide a-t-il des faces rectangulaires ? Si oui, combien ?`,
+  s: /rectangle/.test(o.faces)
+    ? `Oui : ${(o.faces.match(/(\d+) rectangles?/) || [0, "plusieurs"])[1]} faces rectangulaires. Ses faces sont : ${o.faces}.`
+    : o.id === "cube" ? `Oui, ses 6 faces. Ce sont des carrés, et un carré est un rectangle particulier dont les quatre côtés sont égaux.`
+    : `Non. Ses faces sont : ${o.faces}.` }) : null });
+MOD.push({ d: "D", g: o => !o.poly ? ({ q: `La rotation de quelle figure plane engendre ce solide ?`,
+  s: `${o.engendre.charAt(0).toUpperCase() + o.engendre.slice(1)}. C'est pourquoi on parle de solide de RÉVOLUTION.` }) : null });
+MOD.push({ d: "D", g: o => ({ q: `À quelle famille ce solide appartient-il : prismes, pyramides, ou solides de révolution ?`,
+  s: o.famille === "prisme" ? `Aux PRISMES DROITS : deux bases identiques et parallèles, reliées par des faces rectangulaires.`
+    : o.famille === "pyramide" ? `Aux PYRAMIDES : une base, et des faces latérales triangulaires convergeant vers un sommet unique.`
+    : `Aux SOLIDES DE RÉVOLUTION : sa surface est courbe et il s'obtient par rotation d'une figure plane.` }) });
+MOD.push({ d: "D", g: o => o.poly ? ({ q: `Ce solide a ${o.F} faces. Est-ce suffisant pour l'identifier avec certitude ?`,
+  s: (() => { const j = S.filter(x => x.poly && x.F === o.F && x.id !== o.id);
+    return j.length ? `Non. ${j.map(x => x.nom.charAt(0).toUpperCase() + x.nom.slice(1)).join(" et ")} en ${j.length > 1 ? "ont" : "a"} aussi ${o.F}.\nIl faut regarder la NATURE des faces : ici ${o.faces}.`
+      : `Oui, parmi les solides du programme : aucun autre n'a exactement ${o.F} faces.\nSes faces sont : ${o.faces}.`; })() }) : null });
 
-/* — faces latérales, éléments caractéristiques — */
-MOD.push({ d: "M", g: o => o.famille === "prisme" ? ({ q: `Combien ce solide a-t-il de faces latérales, c'est-à-dire de faces qui ne sont pas des bases ?`,
-  s: `${o.F - 2} faces latérales, toutes rectangulaires, plus les 2 bases : ${o.F} faces en tout.` })
-  : o.famille === "pyramide" ? ({ q: `Combien ce solide a-t-il de faces latérales, c'est-à-dire de faces qui ne sont pas la base ?`,
-  s: `${o.F - 1} faces latérales, toutes triangulaires, plus la base : ${o.F} faces en tout.` }) : null });
-MOD.push({ d: "M", g: o => o.famille === "pyramide" ? ({ q: `Ce solide possède-t-il un sommet particulier ? Comment l'appelle-t-on ?`,
-  s: `Oui : le SOMMET PRINCIPAL, le point où toutes les faces latérales se rejoignent. Les ${o.Som - 1} autres sommets sont ceux de la base.` }) : null });
-MOD.push({ d: "D", g: o => o.famille === "pyramide" ? ({ q: `Qu'appelle-t-on la hauteur de ce solide ?`,
-  s: `C'est le segment mené du sommet principal perpendiculairement à la base. Ce n'est pas une arête : elle est intérieure au solide.` }) : null });
-MOD.push({ d: "D", g: o => o.id === "cone" ? ({ q: `Qu'appelle-t-on une génératrice de ce solide ?`,
-  s: `C'est un segment joignant le sommet à un point du cercle de base. Toutes les génératrices d'un cône de révolution ont la même longueur.` }) : null });
-MOD.push({ d: "M", g: o => o.famille === "prisme" || o.id === "cylindre" ? ({ q: `Qu'appelle-t-on la hauteur de ce solide ?`,
-  s: `C'est la distance entre ses deux bases, mesurée perpendiculairement à celles-ci.${o.famille === "prisme" ? " Elle correspond à la longueur des arêtes latérales." : ""}` }) : null });
-MOD.push({ d: "F", g: o => ({ q: `Ce solide peut-il rouler sur une table ? Justifie.`,
-  s: o.poly ? `Non. ${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} n'a que des faces planes : il se pose, il ne roule pas.`
-    : o.id === "boule" ? `Oui, dans toutes les directions : sa surface est entièrement courbe et sans aucune face plane.`
-    : `Oui, mais dans une seule direction, en s'appuyant sur sa surface courbe.` }) });
-MOD.push({ d: "D", g: o => o.poly ? ({ q: `Toutes les faces de ce solide ont-elles la même forme ?`,
-  s: /et/.test(o.faces) ? `Non : ${o.faces}. Deux formes différentes coexistent.`
-    : `Oui : ${o.faces}. C'est ce qui rend ce solide particulier.` }) : null });
-MOD.push({ d: "D", g: o => o.poly && o.famille === "prisme" ? ({ q: `Les deux bases de ce solide sont-elles superposables ?`,
-  s: `Oui. Dans un prisme droit, les deux bases sont identiques et parallèles ; ici, ce sont deux ${o.base.replace("un ", "").replace("une ", "")}s.` }) : null });
-MOD.push({ d: "M", g: o => ({ q: `Sur combien de faces différentes peut-on poser ce solide à plat ?`,
-  s: o.poly ? `Sur ses ${o.F} faces : elles sont toutes planes.`
-    : o.planes === 0 ? `Sur aucune : ${o.nom} n'a pas de face plane.`
-    : `Sur ${o.planes} face${o.planes > 1 ? "s" : ""} : ${o.base}${o.planes > 1 ? " et sa jumelle" : ""}. Le reste de sa surface est courbe.` }) });
-MOD.push({ d: "D", g: o => ({ q: `Décris ce solide à quelqu'un qui ne le voit pas, sans le nommer.`,
-  s: `Une description possible : ${o.indice}.
-Il s'agit ${o.nom === "une boule" ? "d'" : "d'"}${o.nom}.` }) });
-MOD.push({ d: "F", g: o => o.poly ? ({ q: `Ce solide a-t-il des faces courbes ?`,
-  s: `Non, aucune : toutes ses faces sont planes (${o.faces}). C'est un polyèdre.` })
-  : ({ q: `Ce solide a-t-il des faces courbes ?`,
-  s: `Oui : sa surface latérale est courbe. C'est pourquoi ce n'est pas un polyèdre.` }) });
-MOD.push({ d: "D", g: o => o.poly ? ({ q: `En comptant les arêtes une à une sur le dessin, combien en trouve-t-on de cachées ?`,
-  s: `Le dessin en montre quelques-unes en pointillés, mais le solide en compte ${o.A} au total. Le nombre de pointillés dépend de l'angle de vue, pas du solide.` }) : null });
-MOD.push({ d: "M", g: o => ({ q: `À quel niveau du collège étudie-t-on ce solide ?`,
-  s: `${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} figure au programme de ${o.classe}.` }) });
-
-/* — modèles difficiles applicables à TOUS les solides : sans eux, le quota
-     de difficiles ne peut être atteint pour les solides de révolution — */
-MOD.push({ d: "D", g: o => ({ q: `Un élève affirme que ce solide est un polyèdre parce qu'on peut le poser à plat. Que lui répondre ?`,
-  s: `Pouvoir se poser à plat ne suffit pas : ${o.poly ? `ce solide EST bien un polyèdre, mais pour une autre raison — toutes ses faces sont planes (${o.faces}).`
-    : `${o.nom} peut se poser sur ${o.planes ? "sa base" : "n'importe quel point"}, et pourtant ce n'est PAS un polyèdre : sa surface latérale est courbe.`}` }) });
-MOD.push({ d: "D", g: o => ({ q: `Deux solides différents peuvent-ils avoir le même nombre de faces ? Cherche un exemple à partir de celui-ci.`,
-  s: o.poly ? `Oui. Ce solide a ${o.F} faces${(() => { const j = S.filter(x => x.poly && x.F === o.F && x.id !== o.id);
-      return j.length ? `, tout comme ${j.map(x => x.nom).join(" et ")}` : ""; })()}.
-Le nombre de faces ne suffit donc pas à identifier un solide : il faut aussi regarder leur NATURE.`
-    : `La question se pose surtout pour les polyèdres. ${o.nom.charAt(0).toUpperCase() + o.nom.slice(1)} n'a que ${o.planes === 0 ? "aucune" : o.planes} face${o.planes > 1 ? "s" : ""} plane${o.planes > 1 ? "s" : ""}, ce qui le distingue immédiatement des autres.` }) });
-MOD.push({ d: "D", g: o => ({ q: `Si l'on double toutes les dimensions de ce solide, son nombre de faces change-t-il ?`,
-  s: `Non. Agrandir un solide ne change ni le nombre de ses faces, ni celui de ses arêtes ou de ses sommets : seules les mesures changent, pas la forme.${o.poly ? ` Ce solide garde ses ${o.F} faces, ses ${o.A} arêtes et ses ${o.Som} sommets.` : ""}` }) });
-MOD.push({ d: "D", g: o => ({ q: `Comment reconnaître ce solide sans le voir, à partir de sa seule description ?`,
-  s: `Il suffit de savoir que ${o.indice}. C'est ${o.nom}${o.poly ? ` : ${o.F} faces, ${o.A} arêtes, ${o.Som} sommets` : ""}.` }) });
-MOD.push({ d: "D", g: o => ({ q: `Pourquoi dessine-t-on ce solide en perspective plutôt qu'en vraie grandeur ?`,
-  s: `Parce qu'un solide occupe l'espace et qu'une feuille est plane : on ne peut pas le représenter sans déformation. En perspective cavalière, la face avant garde sa vraie forme, les fuyantes sont réduites, et les arêtes cachées sont en pointillés.` }) });
-MOD.push({ d: "D", g: o => ({ q: `Quelle question poserais-tu à un camarade pour lui faire deviner ce solide en une seule fois ?`,
-  s: `Une bonne question porte sur ce qui le distingue de tous les autres. Par exemple : ${o.poly ? `« De quelle nature sont tes faces ? » — ici, ${o.faces}.` : `« Ta surface est-elle courbe, et combien as-tu de faces planes ? » — ici, ${o.planes === 0 ? "aucune" : o.planes}.`}
-Il s'agit ${o.nom === "une boule" ? "d'" : "d'"}${o.nom}.` }) });
+/* — C. vocabulaire : le mot convient-il à ce solide ? — */
+VOC.forEach(v => {
+  MOD.push({ d: "M", g: o => {
+    const convient = v.ou.indexOf(o.id) >= 0;
+    return { q: `Peut-on employer le mot « ${v.mot} » pour décrire ce solide ? Justifie.`,
+             s: convient ? v.oui(o) : v.non(o) };
+  } });
+});
+VOC.forEach(v => {
+  MOD.push({ d: "D", g: o => {
+    const convient = v.ou.indexOf(o.id) >= 0;
+    return { q: `Vrai ou faux : « ce solide possède ${v.art} ${v.mot} ». Justifie.`,
+             s: (convient ? "VRAI. " : "FAUX. ") + (convient ? v.oui(o) : v.non(o)).replace(/^(Oui|Non)[.,] ?/, "") };
+  } });
+});
 
 /* ═══ GÉNÉRATION ═══ */
 const REPART = { F: 0.20, M: 0.30, D: 0.50 };

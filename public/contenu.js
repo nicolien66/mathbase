@@ -855,8 +855,8 @@ const THEME_CONTENT = {
   ]
 },
 
-"Les parallélogrammes": {
-  tuto:"parallelogrammes", cours:"Les parallélogrammes",
+"Figures": {
+  tuto:"parallelogrammes", cours:"Figures",
   lecon:{
     definitions:[
       "Un parallélogramme est un quadrilatère dont les côtés opposés sont parallèles deux à deux.",
@@ -1625,7 +1625,7 @@ const CHAPTER_STRUCTURE = [
       "Symétrie axiale",
       "Symétrie centrale",
       "Angles et parallélisme",
-      "Les parallélogrammes",
+      "Figures",
       "Géométrie du triangle",
       "Aires",
       "Solides",

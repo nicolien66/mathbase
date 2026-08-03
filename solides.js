@@ -30,6 +30,13 @@
   const TYPES = ["cube", "pave", "prisme_triangulaire", "prisme_hexagonal",
                  "cylindre", "pyramide_carree", "pyramide_triangulaire",
                  "cone", "boule"];
+  /* Figures PLANES. Elles passent par le même widget que les solides — le
+     champ `interactif` reste { widget: "solide", type: … } — pour n'avoir
+     qu'un seul point de branchement dans l'application. */
+  const PLANES = ["triangle_quelconque", "triangle_isocele", "triangle_equilateral",
+                  "triangle_rectangle", "carre", "rectangle", "losange",
+                  "parallelogramme", "trapeze", "trapeze_rectangle",
+                  "pentagone_regulier", "hexagone_regulier", "cercle"];
 
   /* ── outils de tracé ── */
   function trace(g, pts, cache) {
@@ -52,6 +59,32 @@
     const F = [];                       /* faces à remplir légèrement */
     const E = [];                       /* ellipses : [cx,cy,rx,ry,cache] */
     const P = (x, y, z) => [x + z * COS, -y - z * SIN];
+
+    /* ── figures planes : pas de fuyante, on trace dans le plan ── */
+    if (PLANES.indexOf(type) >= 0) {
+      const p2 = (x, y) => [x, -y];
+      const reg = (n, r, dep) => Array.from({ length: n }, (_, i) => {
+        const a = dep + i * 2 * Math.PI / n;
+        return p2(r * Math.cos(a), r * Math.sin(a)); });
+      let s2 = null;
+      if (type === "triangle_quelconque") s2 = [p2(0,0), p2(140,0), p2(38,88)];
+      else if (type === "triangle_isocele") s2 = [p2(0,0), p2(130,0), p2(65,105)];
+      /* hauteur exacte d'un équilatéral : côté × √3 / 2. Arrondie à 103,9,
+         elle donnait des côtés de 120 et 119,98 — visible au contrôle. */
+      else if (type === "triangle_equilateral") s2 = [p2(0,0), p2(120,0), p2(60, 120 * Math.sqrt(3) / 2)];
+      else if (type === "triangle_rectangle") s2 = [p2(0,0), p2(125,0), p2(0,95)];
+      else if (type === "carre") s2 = [p2(0,0), p2(110,0), p2(110,110), p2(0,110)];
+      else if (type === "rectangle") s2 = [p2(0,0), p2(140,0), p2(140,88), p2(0,88)];
+      else if (type === "losange") s2 = [p2(58,0), p2(116,80), p2(58,160), p2(0,80)];
+      else if (type === "parallelogramme") s2 = [p2(0,0), p2(125,0), p2(165,85), p2(40,85)];
+      else if (type === "trapeze") s2 = [p2(0,0), p2(150,0), p2(115,86), p2(38,86)];
+      else if (type === "trapeze_rectangle") s2 = [p2(0,0), p2(145,0), p2(145,60), p2(0,95)];
+      else if (type === "pentagone_regulier") s2 = reg(5, 72, -Math.PI / 2);
+      else if (type === "hexagone_regulier") s2 = reg(6, 72, 0);
+      if (s2) { F.push(s2); G.push({ pts: [...s2, s2[0]] }); }
+      else if (type === "cercle") { E.push([0, 0, 70, 70, false]); }
+      return { G, F, E };
+    }
 
     if (type === "cube" || type === "pave") {
       const L = p.L || p.a || 100, h = p.h || p.a || 100, d = p.l || p.a || 100;
@@ -181,6 +214,6 @@
     dessiner(params, conteneur.querySelector(".mbs-svg"));
   }
 
-  window.MB_SOLIDES = { dessiner, installer, injecterStyles, TYPES, figure };
-  if (typeof module !== "undefined" && module.exports) module.exports = { TYPES, figure };
+  window.MB_SOLIDES = { dessiner, installer, injecterStyles, TYPES, PLANES, figure };
+  if (typeof module !== "undefined" && module.exports) module.exports = { TYPES, PLANES, figure };
 })();
