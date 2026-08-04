@@ -335,8 +335,8 @@ const THEME_CONTENT = {
   ]
 },
 
-"Aires": {
-  tuto:"aires", cours:"Aires",
+"Aires et figures": {
+  tuto:"aires", cours:"Aires et figures",
   lecon:{
     definitions:[
       "L'aire mesure la surface d'une figure : le nombre d'unités carrées qui la recouvrent.",
@@ -855,52 +855,6 @@ const THEME_CONTENT = {
   ]
 },
 
-"Figures": {
-  tuto:"parallelogrammes", cours:"Figures",
-  lecon:{
-    definitions:[
-      "Un parallélogramme est un quadrilatère dont les côtés opposés sont parallèles deux à deux.",
-      "Rectangle, losange et carré sont des parallélogrammes particuliers."
-    ],
-    proprietes:[
-      "Les côtés opposés sont égaux : AB = DC et AD = BC.",
-      "Les diagonales se coupent en leur MILIEU (c'est le centre de symétrie).",
-      "Les angles opposés sont égaux.",
-      "Rectangle : diagonales de même longueur · Losange : diagonales perpendiculaires · Carré : les deux à la fois."
-    ],
-    exemples:[
-      "Si les diagonales de ABCD se coupent en leur milieu, ABCD est un parallélogramme.",
-      "Un parallélogramme avec un angle droit est un rectangle."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Pour DÉMONTRER qu'un quadrilatère est un parallélogramme : diagonales de même milieu, OU côtés opposés parallèles, OU deux côtés opposés parallèles ET égaux.",
-      "Pour préciser sa nature : tester les diagonales (égales ? perpendiculaires ?).",
-      "Pour construire : utiliser le centre (symétrie centrale des sommets).",
-      "Toujours citer LA propriété utilisée."
-    ],
-    erreurs:[
-      "« Ça a l'air d'un parallélogramme » : l'apparence ne démontre rien.",
-      "Croire que des diagonales perpendiculaires suffisent pour un losange (il faut d'abord un parallélogramme).",
-      "Confondre les propriétés du rectangle et du losange."
-    ],
-    resolu:{
-      enonce:"ABCD a ses diagonales [AC] et [BD] qui se coupent en leur milieu O, et AC = BD. Nature de ABCD ?",
-      etapes:[
-        "Diagonales de même milieu → ABCD est un parallélogramme.",
-        "Ses diagonales sont de plus de même longueur.",
-        "Un parallélogramme à diagonales égales est un rectangle."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Dans un parallélogramme ABCD, AB = 7 cm et BC = 4 cm. Donne DC et AD.", sol:"DC = AB = 7 cm et AD = BC = 4 cm (côtés opposés égaux)." },
-    { q:"Les diagonales d'un quadrilatère se coupent en leur milieu et sont perpendiculaires. Nature ?", sol:"Parallélogramme (milieu commun) + diagonales perpendiculaires = losange." },
-    { q:"Un parallélogramme a un angle de 60°. Donne les trois autres.", sol:"60°, 120°, 120° (angles opposés égaux, angles consécutifs supplémentaires)." }
-  ]
-},
-
 "Géométrie du triangle": {
   tuto:"triangle", cours:"Géométrie du triangle",
   lecon:{
@@ -944,52 +898,6 @@ const THEME_CONTENT = {
     { q:"Un triangle a des angles de 35° et 90°. Le troisième ?", sol:"180 − 125 = 55°." },
     { q:"Peut-on construire un triangle de côtés 5 cm, 7 cm, 11 cm ?", sol:"Oui : 5 + 7 = 12 > 11, l'inégalité triangulaire est vérifiée." },
     { q:"Dans un triangle équilatéral, que valent les angles ? Et les axes de symétrie ?", sol:"Trois angles de 60° et trois axes de symétrie." }
-  ]
-},
-
-"Solides": {
-  tuto:"prisme", cours:"Solides",
-  lecon:{
-    definitions:[
-      "Un prisme droit a deux bases polygonales identiques et parallèles, reliées par des rectangles.",
-      "Un cylindre de révolution a deux disques pour bases.",
-      "Le patron est le dessin « à plat » du solide."
-    ],
-    proprietes:[
-      "Volume = aire de la base × hauteur (pour les deux solides).",
-      "Cylindre : V = π × r² × h.",
-      "1 L = 1 dm³ ; 1 m³ = 1000 L."
-    ],
-    exemples:[
-      "Cylindre r = 2, h = 5 : V = π × 4 × 5 ≈ 62,8 unités³.",
-      "Prisme à base triangulaire d'aire 6 cm², hauteur 10 cm : V = 60 cm³."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Identifier la base (le polygone ou le disque qui se répète).",
-      "Calculer l'aire de cette base.",
-      "Multiplier par la hauteur (distance entre les deux bases).",
-      "Convertir si on demande des litres (1 dm³ = 1 L)."
-    ],
-    erreurs:[
-      "Prendre une face latérale pour la base.",
-      "Utiliser le diamètre au lieu du rayon dans πr².",
-      "Oublier la conversion cm³ / L (1 L = 1000 cm³)."
-    ],
-    resolu:{
-      enonce:"Une boîte cylindrique a un rayon de 4 cm et une hauteur de 10 cm. Volume en cm³ puis en L ? (π ≈ 3,14)",
-      etapes:[
-        "Base : π × 4² = 16π ≈ 50,24 cm².",
-        "V = 50,24 × 10 ≈ 502,4 cm³.",
-        "502,4 cm³ ≈ 0,5 L."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Volume d'un prisme droit de base 12 cm² et de hauteur 7 cm ?", sol:"V = 12 × 7 = 84 cm³." },
-    { q:"Un verre cylindrique : r = 3 cm, h = 12 cm. Contenance en cL ? (π ≈ 3,14)", sol:"V = π × 9 × 12 ≈ 339 cm³ ≈ 33,9 cL." },
-    { q:"De quoi est composé le patron d'un prisme droit à base triangulaire ?", sol:"2 triangles (les bases) et 3 rectangles (les faces latérales)." }
   ]
 },
 
@@ -1263,7 +1171,7 @@ const THEME_CONTENT = {
   ]
 },
 
-"Volumes": {
+"Volumes et solides": {
   tuto:null, cours:null,
   lecon:{
     definitions:[
@@ -1625,17 +1533,15 @@ const CHAPTER_STRUCTURE = [
       "Symétrie axiale",
       "Symétrie centrale",
       "Angles et parallélisme",
-      "Figures",
       "Géométrie du triangle",
-      "Aires",
-      "Solides",
+      "Aires et figures",
       "Théorème de Pythagore",
       "Théorème de Thalès",
       "Trigonométrie",
       "Triangles semblables",
       "Homothéties",
       "Translation et rotation",
-      "Volumes"
+      "Volumes et solides"
     ]
   },
   {
