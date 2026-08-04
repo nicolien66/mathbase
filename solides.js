@@ -51,11 +51,84 @@
     { cx: cx.toFixed(1), cy: cy.toFixed(1), rx: rx.toFixed(1), ry: ry.toFixed(1),
       class: "mbs-arete" + (cache ? " mbs-cache" : "") }));
 
+  /* ── CODAGE GÉOMÉTRIQUE ──
+     Les marques ne sont jamais saisies à la main : elles se DÉDUISENT du
+     tracé. Côtés de même longueur, côtés parallèles et angles droits sont
+     recalculés, ce qui interdit toute incohérence entre dessin et codage. */
+  const _v = (a, b) => [b[0] - a[0], b[1] - a[1]];
+  const _par = (u, v) => Math.abs(u[0] * v[1] - u[1] * v[0]) < 1e-6;
+  const _perp = (u, v) => Math.abs(u[0] * v[0] + u[1] * v[1]) < 1e-6;
+  const _d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+  function codageDe(P) {
+    const n = P.length;
+    const cot = P.map((p, i) => _v(p, P[(i + 1) % n]));
+    const lon = P.map((p, i) => _d(p, P[(i + 1) % n]));
+    /* groupes de côtés de même longueur, du plus long au plus court */
+    const g = {};
+    lon.forEach((x, i) => { const k = x.toFixed(3); (g[k] = g[k] || []).push(i); });
+    const egaux = Object.keys(g).filter(k => g[k].length > 1)
+      .sort((a, b) => Number(b) - Number(a)).map(k => g[k]);
+    /* groupes de côtés parallèles */
+    const vus = new Set(), paral = [];
+    for (let i = 0; i < n; i++) {
+      if (vus.has(i)) continue;
+      const grp = [i];
+      for (let j = i + 1; j < n; j++) if (!vus.has(j) && _par(cot[i], cot[j])) grp.push(j);
+      if (grp.length > 1) { grp.forEach(x => vus.add(x)); paral.push(grp); }
+    }
+    const droits = [];
+    for (let i = 0; i < n; i++) if (_perp(cot[(i - 1 + n) % n], cot[i])) droits.push(i);
+    return { egaux, paral, droits, cot, lon };
+  }
+
+  /* marques : traits sur les côtés égaux, chevrons sur les parallèles,
+     petit carré aux angles droits */
+  function marques(P, g) {
+    const n = P.length, K = [], { egaux, paral, droits, cot, lon } = codageDe(P);
+    const mil = i => [(P[i][0] + P[(i + 1) % n][0]) / 2, (P[i][1] + P[(i + 1) % n][1]) / 2];
+    egaux.forEach((grp, r) => grp.forEach(i => {
+      const u = [cot[i][0] / lon[i], cot[i][1] / lon[i]], m = mil(i);
+      for (let k = 0; k <= r; k++) {
+        const dec = (k - r / 2) * 6;
+        const c = [m[0] + u[0] * dec, m[1] + u[1] * dec];
+        K.push({ t: "trait", a: [c[0] - u[1] * 6, c[1] + u[0] * 6],
+                              b: [c[0] + u[1] * 6, c[1] - u[0] * 6] });
+      }
+    }));
+    /* Les chevrons de parallélisme ne sont portés que lorsqu'ils APPRENNENT
+       quelque chose : dans un carré ou un rectangle, le parallélisme découle
+       des quatre angles droits, et au-delà de deux paires (hexagone) le
+       dessin devient illisible. */
+    const montrerParal = paral.length <= 2 && droits.length < 4;
+    (montrerParal ? paral : []).forEach((grp, r) => grp.forEach(i => {
+      const u = [cot[i][0] / lon[i], cot[i][1] / lon[i]], m = mil(i);
+      for (let k = 0; k <= r; k++) {
+        const dec = (k - r / 2) * 7;
+        const c = [m[0] + u[0] * dec, m[1] + u[1] * dec], L = 6;
+        K.push({ t: "chevron",
+          a: [c[0] - u[0] * L - u[1] * L, c[1] - u[1] * L + u[0] * L],
+          s: c,
+          b: [c[0] - u[0] * L + u[1] * L, c[1] - u[1] * L - u[0] * L] });
+      }
+    }));
+    droits.forEach(i => {
+      const p = P[i], av = cot[(i - 1 + n) % n], ap = cot[i];
+      const la = Math.hypot(av[0], av[1]), lb = Math.hypot(ap[0], ap[1]), T = 11;
+      const u = [-av[0] / la * T, -av[1] / la * T], w = [ap[0] / lb * T, ap[1] / lb * T];
+      K.push({ t: "droit", pts: [[p[0] + u[0], p[1] + u[1]],
+                                 [p[0] + u[0] + w[0], p[1] + u[1] + w[1]],
+                                 [p[0] + w[0], p[1] + w[1]]] });
+    });
+    return K;
+  }
+
   /* ── les neuf solides ──
      Chacun renvoie ses points extrêmes, ce qui permet de recentrer et de
      mettre à l'échelle sans calcul manuel. */
   function figure(type, p) {
     const G = [];                       /* {pts, cache} pour les arêtes */
+    const K = [];                       /* marques de codage géométrique */
     const F = [];                       /* faces à remplir légèrement */
     const E = [];                       /* ellipses : [cx,cy,rx,ry,cache] */
     const P = (x, y, z) => [x + z * COS, -y - z * SIN];
@@ -81,9 +154,10 @@
       else if (type === "trapeze_rectangle") s2 = [p2(0,0), p2(145,0), p2(145,60), p2(0,95)];
       else if (type === "pentagone_regulier") s2 = reg(5, 72, -Math.PI / 2);
       else if (type === "hexagone_regulier") s2 = reg(6, 72, 0);
-      if (s2) { F.push(s2); G.push({ pts: [...s2, s2[0]] }); }
+      if (s2) { F.push(s2); G.push({ pts: [...s2, s2[0]] });
+        if (p && p.codage) K.push(...marques(s2)); }
       else if (type === "cercle") { E.push([0, 0, 70, 70, false]); }
-      return { G, F, E };
+      return { G, F, E, K };
     }
 
     if (type === "cube" || type === "pave") {
@@ -163,12 +237,12 @@
       G.push({ pts: [b[0], S] }); G.push({ pts: [b[1], S] });
       G.push({ pts: [b[2], S], cache: true });
     }
-    return { G, F, E };
+    return { G, F, E, K };
   }
 
   /* ── tracé dans un SVG, avec recentrage et mise à l'échelle ── */
   function dessiner(params, hote) {
-    const { G, F, E } = figure(params.type, params);
+    const { G, F, E, K } = figure(params.type, params);
     hote.innerHTML = "";
     hote.classList.add("mbs-svg");
 
@@ -179,6 +253,7 @@
     G.forEach(a => a.pts.forEach(p => voir(p[0], p[1])));
     F.forEach(f => f.forEach(p => voir(p[0], p[1])));
     E.forEach(e => { voir(e[0] - e[2], e[1] - e[3]); voir(e[0] + e[2], e[1] + e[3]); });
+    (K || []).forEach(k => { (k.pts || [k.a, k.b, k.s]).filter(Boolean).forEach(p => voir(p[0], p[1])); });
     if (!isFinite(x0)) return;
 
     const M = 16, W = x1 - x0 + 2 * M, H = y1 - y0 + 2 * M;
@@ -191,6 +266,21 @@
     F.forEach(f => face(g, f.map(T)));
     E.forEach(e => ell(g, e[0] + dx, e[1] + dy, e[2], e[3], e[4]));
     G.forEach(a => trace(g, a.pts.map(T), a.cache));
+    (K || []).forEach(k => {
+      if (k.t === "droit") {
+        const q = k.pts.map(T);
+        g.appendChild(el("path", { class: "mbs-codage",
+          d: `M ${q[0][0].toFixed(1)} ${q[0][1].toFixed(1)} L ${q[1][0].toFixed(1)} ${q[1][1].toFixed(1)} L ${q[2][0].toFixed(1)} ${q[2][1].toFixed(1)}` }));
+      } else if (k.t === "chevron") {
+        const a = T(k.a), c = T(k.s), b = T(k.b);
+        g.appendChild(el("path", { class: "mbs-codage",
+          d: `M ${a[0].toFixed(1)} ${a[1].toFixed(1)} L ${c[0].toFixed(1)} ${c[1].toFixed(1)} L ${b[0].toFixed(1)} ${b[1].toFixed(1)}` }));
+      } else {
+        const a = T(k.a), b = T(k.b);
+        g.appendChild(el("path", { class: "mbs-codage",
+          d: `M ${a[0].toFixed(1)} ${a[1].toFixed(1)} L ${b[0].toFixed(1)} ${b[1].toFixed(1)}` }));
+      }
+    });
   }
 
   /* ── styles, injectés une fois ── */
@@ -204,7 +294,8 @@
 .mbs-svg{width:100%;max-width:260px;height:auto;display:block}
 .mbs-arete{stroke:var(--text);stroke-width:1.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
 .mbs-cache{stroke:var(--muted);stroke-width:1.3;stroke-dasharray:5 4;stroke-opacity:.75}
-.mbs-face{fill:var(--accent);fill-opacity:.10;stroke:none}`;
+.mbs-face{fill:var(--accent);fill-opacity:.10;stroke:none}
+.mbs-codage{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}`;
     document.head.appendChild(s);
   }
 

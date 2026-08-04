@@ -255,7 +255,7 @@ MOD.push({ d: "M", g: f => f.polygone && f.droits ? ({ q: `Deux côtés de cette
 MOD.push({ d: "D", g: f => ({ q: `Cette figure a-t-elle plus d'axes de symétrie que de côtés ?`,
   s: f.axes === Infinity ? `Le cercle a une infinité d'axes et aucun côté : la comparaison n'a pas de sens ici.`
     : `Axes de symétrie : ${f.axes} · Côtés : ${f.cotes}.\n${f.axes > f.cotes ? "Plus." : f.axes === f.cotes ? "Autant — c'est le cas des polygones réguliers." : "Moins."}` }) });
-MOD.push({ d: "D", g: f => f.polygone ? ({ q: `Décris cette figure par ses côtés et ses angles, sans la nommer.`,
+MOD.push({ d: "D", codage: true, g: f => f.polygone ? ({ q: `Décris cette figure par ses côtés et ses angles, sans la nommer.`,
   s: `Une description possible : ${f.cotes} côtés, ${f.egaux}, ${f.paral ? `${f.paral} paire${f.paral > 1 ? "s" : ""} de côtés parallèles` : "aucun côté parallèle"} et ${nb(f.droits)} angle${f.droits > 1 ? "s" : ""} droit${f.droits > 1 ? "s" : ""}.\nIl s'agit ${f.nom.startsWith("un ") ? "d'" + f.nom : "d'" + f.nom}.` }) : null });
 /* Formulé sans nommer la figure : c'est à l'élève de conclure. */
 MOD.push({ d: "D", g: f => f.polygone && f.cotes === 4 ? ({
@@ -264,16 +264,38 @@ MOD.push({ d: "D", g: f => f.polygone && f.cotes === 4 ? ({
     : `Non : elle n'a qu'une seule paire de côtés parallèles.\nCe n'est donc pas un parallélogramme, mais ${f.nom}.` }) : null });
 
 /* — C. vocabulaire — */
+/* Le vocabulaire est éprouvé sous deux formulations, sans jamais recourir au
+   vrai/faux : l'élève doit produire la justification, pas cocher. Ces
+   questions portent sur la NATURE, elles reçoivent donc le codage. */
 VOC.forEach(v => {
-  MOD.push({ d: "M", g: f => {
+  MOD.push({ d: "M", codage: true, g: f => {
     const ok = v.ou.indexOf(f.id) >= 0;
-    return { q: `Peut-on employer le mot « ${v.mot} » pour décrire cette figure ? Justifie.`,
+    return { q: `Peut-on employer le mot « ${v.mot} » pour décrire cette figure ? Justifie à partir du codage.`,
              s: ok ? v.oui(f) : v.non(f) }; } });
-  MOD.push({ d: "D", g: f => {
+  MOD.push({ d: "D", codage: true, g: f => {
     const ok = v.ou.indexOf(f.id) >= 0;
-    return { q: `Vrai ou faux : « cette figure est ${v.art === "des" ? "une figure qui a des" : v.art} ${v.mot} ». Justifie.`,
-             s: (ok ? "VRAI. " : "FAUX. ") + (ok ? v.oui(f) : v.non(f)).replace(/^(Oui|Non)[.,] ?/, "") }; } });
+    return { q: `Le mot « ${v.mot} » convient-il pour cette figure ? Explique ce qui, dans le codage, permet de trancher.`,
+             s: (ok ? v.oui(f) : v.non(f)) + `\nLe codage indique ${f.polygone ? `${f.egaux}, ${f.paral ? `${f.paral} paire${f.paral > 1 ? "s" : ""} de côtés parallèles` : "aucun côté parallèle"} et ${nb(f.droits)} angle${f.droits > 1 ? "s" : ""} droit${f.droits > 1 ? "s" : ""}` : "qu'il s'agit d'une ligne courbe, sans côté ni sommet"}.` }; } });
 });
+
+/* — D. nature de la figure, à lire sur le codage — */
+MOD.push({ d: "F", codage: true, g: f => ({ q: `Quelle est la nature de cette figure ? Appuie-toi sur le codage.`,
+  s: `C'est ${f.nom} : ${f.indice}.` }) });
+MOD.push({ d: "M", codage: true, g: f => f.polygone ? ({
+  q: `Que signifient les marques portées sur cette figure ? Qu'en déduis-tu sur sa nature ?`,
+  s: (() => { const b = [];
+    if (/de même longueur/.test(f.egaux)) b.push(`les petits traits identiques marquent les côtés de même longueur (${f.egaux})`);
+    if (f.paral && f.paral <= 2 && f.droits < 4) b.push(`les chevrons marquent les côtés parallèles (${f.paral} paire${f.paral > 1 ? "s" : ""})`);
+    if (f.droits) b.push(`les petits carrés marquent les ${f.droits} angle${f.droits > 1 ? "s" : ""} droit${f.droits > 1 ? "s" : ""}`);
+    return (b.length ? b.join(", ").replace(/^./, c => c.toUpperCase()) + "." : "Cette figure ne porte aucune marque : ses côtés sont tous de longueurs différentes et aucun angle n'est droit.")
+      + `\nOn en déduit qu'il s'agit ${"d'" + f.nom}.`; })() }) : null });
+MOD.push({ d: "D", codage: true, g: f => f.polygone && f.cotes === 4 ? ({
+  q: `Le codage suffit-il à identifier cette figure avec certitude, ou faut-il une information de plus ?`,
+  s: (() => { const memes = F.filter(x => x.polygone && x.cotes === 4 && x.id !== f.id
+      && x.egaux === f.egaux && x.paral === f.paral && x.droits === f.droits);
+    return memes.length
+      ? `Non : ${memes.map(x => x.nom).join(" et ")} porterai${memes.length > 1 ? "ent" : "t"} le même codage.`
+      : `Oui. ${f.egaux.charAt(0).toUpperCase() + f.egaux.slice(1)}, ${f.paral ? `${f.paral} paire${f.paral > 1 ? "s" : ""} de côtés parallèles` : "aucun côté parallèle"} et ${nb(f.droits)} angle${f.droits > 1 ? "s" : ""} droit${f.droits > 1 ? "s" : ""} : aucune autre figure du programme ne réunit ces marques. C'est ${f.nom}.`; })() }) : null });
 
 /* ═══ GÉNÉRATION ═══ */
 const REPART = { F: 0.20, M: 0.30, D: 0.50 };
@@ -290,12 +312,16 @@ function generer(n) {
     while (reste > 0 && essais < quota[d] * 500 + 9000) {
       essais++;
       const f = F[tour % F.length]; tour++;
-      let r; try { r = pick(dispo).g(f); } catch (e) { continue; }
+      const mod = pick(dispo);
+      let r; try { r = mod.g(f); } catch (e) { continue; }
       if (!r || !r.q || !r.s) continue;
       const k = f.id + "|" + cle(r.q);
       if (vus.has(k)) continue;
       vus.add(k);
-      out.push({ figure: f, difficulty: LIB[d], content: r.q, solution: r.s });
+      /* Codage porté seulement par les questions de NATURE : sur une question
+         de propriété, l'élève doit observer la figure, pas lire les marques. */
+      out.push({ figure: f, difficulty: LIB[d], content: r.q, solution: r.s,
+                 codage: !!mod.codage });
       reste--;
     }
     if (reste > 0) console.warn(`  ⚠ ${LIB[d]} : ${reste} manquant(s).`);
@@ -364,7 +390,7 @@ if (APERCU) {
     part.forEach((e, j) => par.push(
       `${FAMILLE} ${i + j + 1}`, e.content, "college", "Géométrie", e.difficulty,
       e.solution, e.figure.classe, CHAP, FAMILLE,
-      JSON.stringify({ widget: "solide", type: e.figure.id })));
+      JSON.stringify({ widget: "solide", type: e.figure.id, codage: e.codage })));
     await pool.query(
       `INSERT INTO exercises (title, content, level, subject, difficulty, solution,
          classe, chapitre, type, famille, interactif)

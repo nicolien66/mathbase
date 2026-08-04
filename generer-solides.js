@@ -277,11 +277,13 @@ VOC.forEach(v => {
              s: convient ? v.oui(o) : v.non(o) };
   } });
 });
+/* Seconde formulation du même test de vocabulaire, sans vrai/faux : l'élève
+   doit produire la justification plutôt que cocher une case. */
 VOC.forEach(v => {
   MOD.push({ d: "D", g: o => {
     const convient = v.ou.indexOf(o.id) >= 0;
-    return { q: `Vrai ou faux : « ce solide possède ${v.art} ${v.mot} ». Justifie.`,
-             s: (convient ? "VRAI. " : "FAUX. ") + (convient ? v.oui(o) : v.non(o)).replace(/^(Oui|Non)[.,] ?/, "") };
+    return { q: `Le mot « ${v.mot} » convient-il pour décrire ce solide ? Explique ce qui permet de trancher.`,
+             s: (convient ? v.oui(o) : v.non(o)) + `\nCe qui tranche : ${o.poly ? `ce solide a ${o.F} faces planes (${o.faces}), ${o.A} arêtes et ${o.Som} sommets` : `ce solide possède une surface courbe et ${o.planes === 0 ? "aucune" : o.planes} face${o.planes > 1 ? "s" : ""} plane${o.planes > 1 ? "s" : ""}`}.` };
   } });
 });
 
