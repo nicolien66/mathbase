@@ -1643,3 +1643,60 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   font-style: normal;
   letter-spacing: 0.06em;
 }
+
+/* ═══ MATIÈRES EN COLONNES — patch-colonnes-matieres.js ═══ */
+/* Les matières se placent côte à côte : chacune empile ses chapitres.
+   Plus rien n'est relégué en bas de page, quelle que soit la taille de
+   la matière la plus fournie. Le bloc est ajouté en fin de fichier pour
+   l'emporter sur les règles d'origine, qu'il n'est pas nécessaire de
+   modifier — retirable d'un seul geste avec --annuler. */
+#list {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1.4rem;
+  align-items: start;
+}
+.chapx-subject { margin-bottom: 0; min-width: 0; }
+.chapx-subject-head {
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.45rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* les chapitres s'empilent dans la colonne de leur matière */
+.chapx-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+.chapx-card {
+  min-height: 0;
+  padding: 0.7rem 0.75rem 0.65rem;
+  gap: 0.25rem;
+  border-radius: 9px;
+}
+.chapx-name { font-size: 0.82rem; line-height: 1.25; }
+.chapx-count { font-size: 0.7rem; }
+/* le libellé d'action prend trop de place dans une colonne étroite :
+   on le réserve au survol, où il ne gêne plus la lecture */
+.chapx-go {
+  font-size: 0.62rem;
+  max-height: 0;
+  overflow: hidden;
+  margin: 0;
+  transition: max-height .18s ease, opacity .18s ease;
+}
+.chapx-card:hover .chapx-go { max-height: 1.4rem; }
+
+@media (max-width: 1500px) { #list { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1180px) { #list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 860px)  { #list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px)  {
+  #list { grid-template-columns: minmax(0, 1fr); gap: 1.8rem; }
+  .chapx-card { padding: 1rem 1.1rem; }
+  .chapx-name { font-size: 0.9rem; }
+  .chapx-go { max-height: 1.4rem; }
+}
+/* ═══ fin du bloc colonnes ═══ */
