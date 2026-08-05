@@ -1356,7 +1356,7 @@ const THEME_CONTENT = {
 
 /* ═══════════ PROBABILITÉS ═══════════ */
 
-"Probabilités": {
+"Bases des probabilités": {
   tuto:"proba-simple", cours:"Probabilités simples",
   lecon:{
     definitions:[
@@ -1557,7 +1557,7 @@ const CHAPTER_STRUCTURE = [
     "subject": "PROBABILITÉS",
     "color": "#c87a9a",
     "chapters": [
-      "Probabilités"
+      "Bases des probabilités"
     ]
   },
   {
