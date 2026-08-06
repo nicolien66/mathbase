@@ -1456,7 +1456,104 @@ function apercuSolide(ex) {
   return true;
 }
 
+/* ═══ DIAGRAMMES ═══
+   Un champ `reponse` distingue les deux usages : présent, l'exercice est une
+   CONSTRUCTION corrigée localement ; absent, c'est une LECTURE dont la
+   réponse est rédigée au brouillon et corrigée par l'IA. */
+function litDiagramme(ex) {
+  let p = ex && ex.interactif;
+  if (!p) return null;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { return null; } }
+  return (p && p.widget === "diagramme" && window.MB_DIAGRAMME) ? p : null;
+}
+const estConstruction = p => !!(p && p.reponse);
+
+function apercuDiagramme(ex) {
+  const params = litDiagramme(ex);
+  if (!params) return false;
+  const contenu = document.getElementById("modal-content");
+  if (!contenu) return false;
+  let cible = null;
+  contenu.querySelectorAll(".modal-section").forEach(function (sec) {
+    const lab = sec.querySelector(".modal-section-label");
+    if (lab && lab.textContent.trim().toLowerCase().indexOf("nonc") >= 0) cible = sec;
+  });
+  const boite = document.createElement("div");
+  if (cible && !estConstruction(params)) {
+    const lab = cible.querySelector(".modal-section-label");
+    if (lab) lab.textContent = "Diagramme";
+    cible.appendChild(boite);
+  } else {
+    const b = document.createElement("div");
+    b.className = "modal-section";
+    b.innerHTML = '<div class="modal-section-label">Repr\u00e9sentation attendue</div>';
+    b.appendChild(boite);
+    const secs = contenu.querySelectorAll(".modal-section");
+    const apres = cible || secs[secs.length - 1];
+    if (apres && apres.parentNode) apres.parentNode.insertBefore(b, apres.nextSibling);
+    else contenu.appendChild(b);
+  }
+  MB_DIAGRAMME.installerApercu(estConstruction(params)
+    ? Object.assign({}, params, { valeurs: params.reponse.valeurs, type: params.reponse.type })
+    : params, boite);
+  return true;
+}
+
+let plateauDiagramme = null;
+function diagrammeSeance(ex) {
+  const ancien = document.getElementById("mbd-seance");
+  if (ancien) ancien.remove();
+  plateauDiagramme = null;
+  const params = litDiagramme(ex);
+  if (!params) return false;
+  const zone = document.getElementById("page-answer");
+  const ta = document.getElementById("session-answer");
+  const label = document.getElementById("page-answer-label");
+  const boite = document.createElement("div");
+  boite.id = "mbd-seance";
+  if (estConstruction(params)) {
+    if (ta) ta.style.display = "none";
+    if (label) label.textContent = "Construis la repr\u00e9sentation";
+    zone.appendChild(boite);
+    plateauDiagramme = MB_DIAGRAMME.installer(params, boite);
+    const v = boite.querySelector('[data-a="valider"]');
+    if (v) v.style.display = "none";
+  } else {
+    if (ta) ta.style.display = "";
+    boite.style.marginBottom = "0.8rem";
+    zone.insertBefore(boite, zone.firstChild);
+    MB_DIAGRAMME.installerApercu(params, boite);
+  }
+  return true;
+}
+
+function corrigerDiagramme(ex) {
+  const params = litDiagramme(ex);
+  if (!params || !estConstruction(params) || !plateauDiagramme) return null;
+  const inst = plateauDiagramme.instance();
+  const r = MB_DIAGRAMME.verifier(inst.lire(), params.reponse);
+  inst.corriger(params.reponse);
+  const nom = (MB_DIAGRAMME.NOM_TYPE[params.reponse.type] || "la repr\u00e9sentation attendue").toLowerCase();
+  if (!r.bonType) return {
+    verdict: "incorrect",
+    analyse: "La repr\u00e9sentation choisie ne convient pas ici : il fallait construire " + nom + ".",
+    demarche: "Une \u00e9volution dans le temps appelle un graphique ; une r\u00e9partition \u00e0 un instant donn\u00e9 appelle un diagramme.",
+    solution: ex.solution || "", score: 0 };
+  const b = [];
+  if (r.justes) b.push(r.justes + " valeur" + (r.justes > 1 ? "s" : "") + " juste" + (r.justes > 1 ? "s" : ""));
+  if (r.manques) b.push(r.manques + " manquante" + (r.manques > 1 ? "s" : ""));
+  if (r.faux) b.push(r.faux + " incorrecte" + (r.faux > 1 ? "s" : ""));
+  return {
+    verdict: r.ok ? "correct" : (r.score >= 0.6 ? "partial" : "incorrect"),
+    analyse: r.ok ? "Ta repr\u00e9sentation est exacte."
+      : "Sur " + r.attendus + " valeur" + (r.attendus > 1 ? "s" : "") + " attendue" +
+        (r.attendus > 1 ? "s" : "") + " : " + (b.join(", ") || "rien de pos\u00e9") + ".",
+    demarche: "On reporte chaque donn\u00e9e de l'\u00e9nonc\u00e9 sur le rep\u00e8re, en respectant la graduation.",
+    solution: ex.solution || "", score: r.score };
+}
+
 function apercuInteractif(ex) {
+  if (apercuDiagramme(ex)) return;
   if (apercuSolide(ex)) return;
   const params = litInteractif(ex);
   if (!params) return;
@@ -1498,6 +1595,14 @@ function apercuInteractif(ex) {
    Renseigne seanceHistory au même format que le correcteur IA. */
 let plateauSeance = null;
 function plateauInteractif(ex, hist) {
+  if (diagrammeSeance(ex)) {
+    if (hist && hist.result && plateauDiagramme) {
+      const pd = litDiagramme(ex);
+      if (pd && pd.reponse) plateauDiagramme.instance().corriger(pd.reponse);
+    }
+    return;
+  }
+
   /* Solide : on affiche la figure au-dessus du brouillon, sans masquer
      celui-ci — c'est là que l'élève rédige sa réponse. */
   const ancienS = document.getElementById("mbs-seance");
@@ -1918,6 +2023,23 @@ function goTo(target, direction) {
 async function submitAnswer() {
   const ta     = document.getElementById("session-answer");
   if (isTurning) return;
+
+  /* Construction d'un diagramme : correction locale, comme le quadrillage. */
+  const exD = seanceExercises[seanceIndex];
+  const pD = litDiagramme(exD);
+  if (pD && pD.reponse) {
+    const result = corrigerDiagramme(exD);
+    if (!result) return;
+    seanceHistory[seanceIndex] = { answer: "(construction)", result, skipped: false };
+    if (seanceIndex > seanceMax) seanceMax = seanceIndex;
+    document.getElementById("page-answer").classList.add("locked");
+    document.getElementById("page-answer-label").textContent = "Ta repr\u00e9sentation";
+    const bcD = document.getElementById("btn-correct");
+    if (bcD) bcD.disabled = true;
+    showTutor("result", result);
+    paintNav();
+    return;
+  }
 
   /* Exercice interactif : la correction est locale et immédiate. */
   const exI = seanceExercises[seanceIndex];
