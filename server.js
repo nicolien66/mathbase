@@ -894,6 +894,71 @@ function verdictIncoherent(p) {
   return p.verdict !== "correct" && memeValeur(p.valeur_eleve, p.valeur_attendue);
 }
 
+/* ── DIAGNOSTIC DES FIGURES (admin) ───────────────────────────────────────
+   Vérifie, sujet par sujet, si le correcteur peut réellement VOIR les pages
+   du PDF. S'exécute dans le conteneur : c'est le seul endroit où l'état du
+   disque et des modules natifs est observable. Lecture seule. */
+app.get("/admin/diagnostic-figures", auth, requireAdmin, async (req, res) => {
+  try {
+    const moteur = await _loadRenderer();
+    const { rows } = await pool.query(
+      "SELECT id, title, classe, image_url, questions FROM annales ORDER BY id");
+
+    const sujets = [];
+    for (const a of rows) {
+      let questions = [];
+      try {
+        questions = Array.isArray(a.questions) ? a.questions : JSON.parse(a.questions || "[]");
+      } catch { questions = []; }
+
+      const chemin     = _cheminSujet(a.image_url);
+      const pdfPresent = !!(chemin && fs.existsSync(chemin));
+      const avecPages  = questions.filter(q => Array.isArray(q.pages) && q.pages.length).length;
+      const avecFigDesc = questions.filter(q => q.figure_desc).length;
+
+      // Test réel de rendu sur la première page utile.
+      let rendu = null;
+      if (moteur && pdfPresent) {
+        const premiere = (questions.find(q => Array.isArray(q.pages) && q.pages.length) || {}).pages;
+        const n = premiere ? Number(premiere[0]) : 1;
+        const img = await renderPageImage(a.image_url, n);
+        rendu = img ? { ok: true, page: n, ko: Math.round(img.length / 1024) }
+                    : { ok: false, page: n };
+      }
+
+      let cause = null;
+      if (!a.image_url)            cause = "aucun PDF rattaché (image_url vide)";
+      else if (!chemin)            cause = "nom de PDF refusé par le garde-fou : " + a.image_url;
+      else if (!pdfPresent)        cause = "PDF absent du disque (fichier perdu au redéploiement ?)";
+      else if (!moteur)            cause = "moteur de rendu indisponible (@napi-rs/canvas / pdfjs-dist)";
+      else if (!avecPages)         cause = "aucune question ne porte de numéro de page";
+      else if (rendu && !rendu.ok) cause = "le rendu de la page a échoué";
+
+      sujets.push({
+        id: a.id, titre: a.title, classe: a.classe, image_url: a.image_url,
+        pdf_present: pdfPresent, questions: questions.length,
+        questions_avec_pages: avecPages, questions_avec_figure_desc: avecFigDesc,
+        rendu, ok: !cause, cause,
+      });
+    }
+
+    res.json({
+      moteur_rendu: !!moteur,
+      dossier_pdf: path.join(__dirname, "public", "annales-pdf"),
+      pdf_sur_disque: (() => {
+        try { return fs.readdirSync(path.join(__dirname, "public", "annales-pdf")).length; }
+        catch { return 0; }
+      })(),
+      sujets_ok: sujets.filter(s => s.ok).length,
+      sujets_total: sujets.length,
+      sujets,
+    });
+  } catch (err) {
+    console.error("Erreur diagnostic figures:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/exercises/correct", auth, async (req, res) => {
   const { exercise, answer } = req.body;
   const key = process.env.MISTRAL_KEY;
@@ -905,12 +970,26 @@ app.post("/exercises/correct", auth, async (req, res) => {
      On rasterise la ou les pages où figure l'exercice (champ `pages`, posé par
      seed-pages.js). Si le rendu échoue, on retombe sur figure_desc. */
   const images = [];
+  let raisonSansFigure = null;
   const pagesVoulues = Array.isArray(exercise.pages) ? exercise.pages.slice(0, 2) : [];
-  if (exercise.annale_url && pagesVoulues.length) {
+
+  if (!exercise.annale_url) {
+    raisonSansFigure = "cet exercice n'est rattaché à aucun PDF (champ annale_url vide)";
+  } else if (!pagesVoulues.length) {
+    raisonSansFigure = "aucun numéro de page n'est enregistré pour cette question (champ pages vide)";
+  } else if (!_cheminSujet(exercise.annale_url)) {
+    raisonSansFigure = "chemin de PDF refusé : " + exercise.annale_url;
+  } else if (!fs.existsSync(_cheminSujet(exercise.annale_url))) {
+    raisonSansFigure = "le PDF est absent du disque (" + exercise.annale_url +
+      ") — sur un hébergement éphémère, les fichiers déposés disparaissent à chaque redéploiement";
+  } else if (!(await _loadRenderer())) {
+    raisonSansFigure = "moteur de rendu PDF indisponible (@napi-rs/canvas ou pdfjs-dist manquant)";
+  } else {
     for (const n of pagesVoulues) {
       const img = await renderPageImage(exercise.annale_url, Number(n));
       if (img) images.push(img);
     }
+    if (!images.length) raisonSansFigure = "le rendu des pages " + pagesVoulues.join(", ") + " a échoué";
   }
   // Garde-fou : au-delà de ~5 Mo cumulés, on renonce aux images plutôt que de
   // risquer un rejet de l'API ; la correction repart alors en mode texte.
@@ -918,9 +997,12 @@ app.post("/exercises/correct", auth, async (req, res) => {
   if (poids > 5 * 1024 * 1024) {
     console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) + " Ko) — mode texte.");
     images.length = 0;
+    raisonSansFigure = "images des pages trop lourdes (" + Math.round(poids / 1024) + " Ko)";
   }
   const avecImage = images.length > 0;
   if (avecImage) console.log("[pages] " + images.length + " page(s) jointe(s), " + Math.round(poids / 1024) + " Ko");
+  else console.warn("[correction] « " + (exercise.title || "?") +
+                    " » corrigé SANS la figure — raison : " + raisonSansFigure);
 
   const figureCtx = avecImage
     ? (exercise.figure_desc
@@ -933,7 +1015,8 @@ AVERTISSEMENT : incomplète par construction. Ce qui n'est codé que sur le dess
 
   const sourceCtx = avecImage
     ? `\n\nSOURCE PRINCIPALE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux. Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux. FAIS-EN TA RÉFÉRENCE : en cas de désaccord entre l'image et le texte reproduit ci-dessous, l'IMAGE a raison — le texte provient d'une extraction automatique imparfaite. La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`
-    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.`;
+    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.
+RÈGLE ABSOLUE EN L'ABSENCE DE FIGURE : n'invente JAMAIS de configuration géométrique. N'utilise que les noms de points, les longueurs et les parallélismes littéralement présents dans l'énoncé ou dans la solution officielle ci-dessus. Il t'est interdit d'introduire des points (D, E, M…) qui n'y figurent pas, ou de supposer quelle droite est parallèle à quelle autre. Si le rapport à écrire dépend d'un élément que tu ne peux pas lire, dis-le franchement à l'élève, appuie-toi sur la SOLUTION OFFICIELLE pour la démarche, et mets le verdict à "partial" au lieu de deviner.`;
 
   const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
 
@@ -1038,6 +1121,10 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
         " correspond bien au résultat attendu. La démarche ci-dessous te permet de vérifier chaque étape.";
     }
 
+    /* On dit honnêtement à l'élève si la correction a été faite sans la figure. */
+    parsed.figure_vue = avecImage;
+    if (!avecImage) parsed.figure_diagnostic = raisonSansFigure;
+
     res.json(parsed);
   } catch (err) {
     console.error("Erreur correction:", err.message);
@@ -1131,4 +1218,12 @@ app.delete("/exercises/:id", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);
+  /* Diagnostic de démarrage : sans ce moteur de rendu, le correcteur ne voit
+     JAMAIS les figures des sujets et travaille à l'aveugle sur le texte. */
+  _loadRenderer().then(mod => {
+    console.log(mod
+      ? "[pages] moteur de rendu PDF disponible : les figures seront transmises au correcteur."
+      : "[pages] ⚠ MOTEUR DE RENDU INDISPONIBLE — le correcteur ne verra AUCUNE figure. "
+        + "Installez @napi-rs/canvas et pdfjs-dist (npm i @napi-rs/canvas pdfjs-dist).");
+  });
 });

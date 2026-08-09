@@ -64,6 +64,16 @@
     <div class="stat"><div class="n" id="st-admins">—</div><div class="l">administrateurs</div></div>
   </div>
 
+  <div class="panel" style="margin-bottom:1.6rem">
+    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <span>Diagnostic des figures — le correcteur voit-il les sujets ?</span>
+      <button class="act" id="diag-run">Lancer le diagnostic</button>
+    </div>
+    <div id="diag-body" class="empty">
+      Vérifie, sujet par sujet, si les pages du PDF sont bien transmises à l'IA lors de la correction.
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-head">Utilisateurs</div>
     <div style="overflow-x:auto">
@@ -170,6 +180,53 @@
     const d = await res.json().catch(()=>({}));
     if (!res.ok) { showErr(d.error || 'Suppression impossible.'); return; }
     USERS = USERS.filter(x => x.id !== u.id); render();
+  }
+
+  /* ── Diagnostic des figures ─────────────────────────────────────────── */
+  $('diag-run').onclick = async () => {
+    const body = $('diag-body');
+    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur pour un diagnostic réel.</div>`; return; }
+    $('diag-run').disabled = true;
+    body.innerHTML = `<div class="empty">Analyse des sujets en cours…</div>`;
+    try {
+      const res = await MB_AUTH.apiFetch('/admin/diagnostic-figures');
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+      body.innerHTML = renderDiag(d);
+    } catch (e) {
+      body.innerHTML = `<div class="empty" style="color:var(--coral)">Diagnostic impossible : ${escapeHtml(e.message)}</div>`;
+    }
+    $('diag-run').disabled = false;
+  };
+
+  function renderDiag(d){
+    const alerte = !d.moteur_rendu
+      ? `<div style="margin:1rem 1.3rem;padding:.8rem 1rem;border-radius:10px;color:var(--coral);
+           background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);font-size:.86rem;line-height:1.6">
+           <strong>Moteur de rendu PDF indisponible.</strong> Aucun sujet ne peut fournir sa figure au correcteur.
+           Installe les dépendances : <code>npm i @napi-rs/canvas pdfjs-dist</code>, puis redéploie.
+         </div>` : "";
+    const entete = `<div style="padding:1rem 1.3rem;font-size:.86rem;line-height:1.7;color:var(--muted)">
+        Moteur de rendu : <strong style="color:${d.moteur_rendu?'var(--green)':'var(--coral)'}">
+        ${d.moteur_rendu ? 'disponible' : 'INDISPONIBLE'}</strong> ·
+        PDF présents sur le disque : <strong style="color:var(--cream)">${d.pdf_sur_disque}</strong> ·
+        Sujets exploitables : <strong style="color:${d.sujets_ok===d.sujets_total?'var(--green)':'var(--coral)'}">
+        ${d.sujets_ok} / ${d.sujets_total}</strong>
+      </div>`;
+    if (!d.sujets.length) return entete + `<div class="empty">Aucun sujet enregistré.</div>`;
+    const lignes = d.sujets.map(s => `
+      <tr>
+        <td>${escapeHtml(s.titre)}<div class="muted" style="font-size:.75rem">${escapeHtml(s.classe || '—')} · id ${s.id}</div></td>
+        <td class="hide-sm">${s.questions_avec_pages} / ${s.questions}</td>
+        <td class="hide-sm">${s.pdf_present ? 'oui' : '<span style="color:var(--coral)">non</span>'}</td>
+        <td>${s.ok
+          ? '<span style="color:var(--green)">✔ figure transmise</span>'
+          : '<span style="color:var(--coral)">✘ ' + escapeHtml(s.cause) + '</span>'}</td>
+      </tr>`).join('');
+    return alerte + entete + `<div style="overflow-x:auto"><table>
+        <thead><tr><th>Sujet</th><th class="hide-sm">Questions avec pages</th>
+        <th class="hide-sm">PDF</th><th>État</th></tr></thead>
+        <tbody>${lignes}</tbody></table></div>`;
   }
 
   load();
