@@ -216,6 +216,25 @@
         </div>`;
       };
       const col = d.colonne_matiere;
+      const fichiers = (d.fichiers || []);
+      const manquants = fichiers.filter(f => !f.present || !f.a_jour);
+      const blocFichiers = fichiers.length ? `
+        <div style="padding:0 1.3rem 1.2rem">
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Fichiers déployés dans public/</div>
+          ${fichiers.map(f => `<div style="display:flex;justify-content:space-between;gap:1rem;
+              padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem">
+              <span>${escapeHtml(f.nom)}</span>
+              <span style="color:${f.present && f.a_jour ? 'var(--green)' : 'var(--coral)'}">
+                ${!f.present ? 'ABSENT' : (f.a_jour ? (f.modifie + ' · ' + f.ko + ' Ko') : 'version ancienne')}
+              </span></div>`).join('')}
+          ${manquants.length ? `<div style="margin-top:.9rem;padding:.75rem .9rem;border-radius:10px;
+              color:var(--coral);background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);
+              font-size:.85rem;line-height:1.6">
+              <strong>${manquants.length} fichier(s) non déployé(s).</strong> Le serveur est à jour mais pas le dossier
+              public/ : c'est ce qui fait apparaître le contenu de maths dans les autres matières.
+              Vérifie que ces fichiers sont bien commités et poussés.
+            </div>` : ''}
+        </div>` : '';
       body.innerHTML =
         `<div style="padding:1rem 1.3rem;font-size:.86rem;line-height:1.7;color:var(--muted)">
            Version du serveur : <strong style="color:var(--cream)">${escapeHtml(d.version_serveur || '?')}</strong> ·
@@ -223,7 +242,7 @@
            ${col.exercises ? 'oui' : 'NON'}</strong>, annales
            <strong style="color:${col.annales?'var(--green)':'var(--coral)'}">${col.annales ? 'oui' : 'NON'}</strong>
          </div>`
-        + tableau('Exercices', d.exercices) + tableau('Annales', d.annales);
+        + blocFichiers + tableau('Exercices', d.exercices) + tableau('Annales', d.annales);
     } catch (e) {
       body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Vérification impossible : ${escapeHtml(e.message)}</div>`;
     }

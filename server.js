@@ -347,7 +347,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-09-matieres-3";
+const SERVEUR_VERSION = "2026-08-09-matieres-4";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -1223,9 +1223,38 @@ app.get("/admin/diagnostic-matieres", auth, requireAdmin, async (req, res) => {
           WHERE table_name = $1 AND column_name = 'matiere' LIMIT 1`, [table]);
       return rows.length > 0;
     };
+    /* Les fichiers du front sont-ils réellement déployés, et à jour ?
+       Un serveur à jour avec un public/ ancien donne exactement le symptôme
+       « je vois encore les maths partout ». */
+    const pub = path.join(__dirname, "public");
+    const attendus = [
+      { nom: "matiere.js",                 doit_contenir: "MB_MAT" },
+      { nom: "contenu-physique-chimie.js", doit_contenir: "physique-chimie" },
+      { nom: "script.js",                  doit_contenir: "matiereCourante" },
+      { nom: "app.html",                   doit_contenir: "matiere.js" },
+      { nom: "matieres.html",              doit_contenir: "MB_MAT.liste" },
+      { nom: "ui.js",                      doit_contenir: "mb-subject" },
+    ];
+    const fichiers = attendus.map(f => {
+      try {
+        const chemin = path.join(pub, f.nom);
+        const st = fs.statSync(chemin);
+        const contenuFichier = fs.readFileSync(chemin, "utf8");
+        return {
+          nom: f.nom, present: true,
+          a_jour: contenuFichier.includes(f.doit_contenir),
+          ko: Math.round(st.size / 1024),
+          modifie: st.mtime.toISOString().slice(0, 16).replace("T", " "),
+        };
+      } catch {
+        return { nom: f.nom, present: false, a_jour: false };
+      }
+    });
+
     res.json({
       version_serveur: SERVEUR_VERSION,
       colonne_matiere: { exercises: await colonne("exercises"), annales: await colonne("annales") },
+      fichiers,
       exercices: await compter("exercises"),
       annales:   await compter("annales"),
     });
