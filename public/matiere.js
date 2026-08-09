@@ -23,18 +23,27 @@
 
   /* Catalogue unique : matieres.html s'en sert pour ses boutons, et les
      autres pages pour afficher le nom et la couleur de la matière. */
+  /* `accueil` : chaque matière ouvre sur sa propre page. Les matières
+     scientifiques partagent l'interface sombre (app.html) ; le français et
+     l'histoire-géographie ont la leur, sur papier (humanites.html). */
   const MATIERES = [
     { id:"mathematiques",   nom:"Mathématiques",       icone:"📐", couleur:"#7ac8a0", ouverte:true,
+      accueil:"app.html",
       desc:"Arbre des connaissances, cours animés, tutoriels, exercices et annales." },
     { id:"physique-chimie", nom:"Physique-Chimie",     icone:"🧪", couleur:"#7ab4c8", ouverte:true,
+      accueil:"app.html",
       desc:"Matière, mouvements, énergie et signaux : cours, exercices et annales." },
-    { id:"francais",        nom:"Français",            icone:"📖", couleur:"#a07ac8", ouverte:false,
-      desc:"Grammaire, littérature et expression écrite." },
-    { id:"histoire-geo",    nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a", ouverte:false,
+    { id:"francais",        nom:"Français",            icone:"📖", couleur:"#a07ac8", ouverte:true,
+      accueil:"humanites.html",
+      desc:"Langue, littérature et expression écrite." },
+    { id:"histoire-geo",    nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a", ouverte:true,
+      accueil:"humanites.html",
       desc:"Repères historiques, cartes et enjeux du monde actuel." },
     { id:"anglais",         nom:"Anglais",             icone:"🗣️", couleur:"#c8b97a", ouverte:false,
+      accueil:"app.html",
       desc:"Vocabulaire, grammaire et compréhension orale et écrite." },
     { id:"svt",             nom:"SVT",                 icone:"🧬", couleur:"#c87a9a", ouverte:false,
+      accueil:"app.html",
       desc:"Sciences de la vie et de la Terre." },
   ];
 
@@ -92,14 +101,14 @@
            ${texte || ("Cette section n'a pas encore de contenu en " + courante.nom +
                        ". La structure est en place : le contenu viendra s'y ajouter.")}
          </p>
-         <a href="${lien("app.html")}" style="display:inline-block;margin-top:1.4rem;color:${courante.couleur};
+         <a href="${lien(courante.accueil || "app.html")}" style="display:inline-block;margin-top:1.4rem;color:${courante.couleur};
             font-size:.86rem;text-decoration:none">← Retour à l'accueil ${courante.nom}</a>
        </div>`;
   }
 
   window.MB_MAT = {
     id: courante.id, nom: courante.nom, icone: courante.icone,
-    couleur: courante.couleur, defaut: DEFAUT,
+    couleur: courante.couleur, accueil: courante.accueil || "app.html", defaut: DEFAUT,
     est(id) { return courante.id === id; },
     estMaths() { return courante.id === DEFAUT; },
     liste() { return MATIERES.slice(); },

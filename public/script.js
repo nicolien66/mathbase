@@ -2230,6 +2230,14 @@ document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classL
    liens internes suivent celle qui est ouverte. */
 (function appliquerMatiere() {
   if (!window.MB_MAT) return;
+  /* Chaque matière a son accueil. Le français et l'histoire-géographie ont
+     leur propre page, sur papier : si on arrive ici par un lien direct, on
+     les y renvoie plutôt que de leur servir une interface qui n'est pas la
+     leur. */
+  if (MB_MAT.accueil && MB_MAT.accueil !== "app.html") {
+    location.replace(MB_MAT.lien(MB_MAT.accueil));
+    return;
+  }
   const tag = document.getElementById("home-tag");
   const nom = document.getElementById("home-matiere");
   if (tag) tag.textContent = "Polymates · " + MB_MAT.nom;

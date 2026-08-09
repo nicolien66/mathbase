@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════════
+   POLYMATES — parchemin.css
+   Style commun au Français et à l'Histoire-Géographie.
+
+   Parti pris : la page de manuscrit français. Papier vergé, encre
+   ferro-gallique (brun-noir, jamais du noir pur), rubriques à l'encre
+   rouge comme dans les livres d'heures, et un filet doré très fin.
+   Les mathématiques gardent leur interface sombre : ces deux matières
+   ont volontairement un autre monde.
+
+   Typographie : Cormorant Garamond pour les titres — Claude Garamond
+   était graveur de poinçons à Paris au XVIe siècle, c'est la lettre
+   française par excellence — Spectral pour le texte courant, et les
+   petites capitales de Cormorant pour les mentions.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --papier:        #ede0c2;   /* vergé, teinte moyenne */
+  --papier-clair:  #f5ecd8;   /* la feuille elle-même */
+  --papier-ombre:  #ddcca6;   /* creux et bords */
+  --encre:         #2f2820;   /* ferro-gallique, brun-noir */
+  --encre-pale:    #6d6252;   /* mentions, texte secondaire */
+  --rubrique:      #8f2f22;   /* rouge des rubriques */
+  --or:            #a8813a;   /* filet doré */
+  --accent:        var(--rubrique);   /* redéfini par matière */
+
+  --titre: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
+  --texte: 'Spectral', Georgia, 'Times New Roman', serif;
+}
+
+/* Histoire-Géographie : encre bleue des cartes anciennes plutôt que
+   le rouge des rubriques littéraires. */
+body[data-matiere="histoire-geo"] { --accent: #2f4b6e; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  min-height: 100vh;
+  color: var(--encre);
+  font-family: var(--texte);
+  font-weight: 300;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  background-color: var(--papier);
+  /* Le grain du papier : deux nappes de lumière et un bruit fin.
+     Tout est en CSS, aucune image à charger. */
+  background-image:
+    radial-gradient(ellipse 80% 60% at 25% 15%, rgba(255,252,240,.55), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 80% 85%, rgba(180,158,116,.20), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+/* ── En-tête : filet, titre courant, mention de la matière ── */
+.bandeau {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1.5rem; flex-wrap: wrap;
+  max-width: 60rem; margin: 0 auto; padding: 1.6rem 2rem 1.2rem;
+  border-bottom: 1px solid var(--papier-ombre);
+}
+.bandeau-titre {
+  font-family: var(--titre); font-size: 1.3rem; font-weight: 600;
+  letter-spacing: .01em; color: var(--encre); text-decoration: none;
+}
+.bandeau-titre em { font-style: italic; color: var(--accent); }
+.bandeau-droite { display: flex; align-items: baseline; gap: 1.1rem; font-size: .82rem; }
+.bandeau-droite span { color: var(--encre-pale); }
+.bandeau-droite a, .bandeau-droite button {
+  font: inherit; color: var(--encre-pale); background: none; border: none;
+  padding: 0; cursor: pointer; text-decoration: none;
+  border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
+}
+.bandeau-droite a:hover, .bandeau-droite button:hover {
+  color: var(--accent); border-bottom-color: var(--accent);
+}
+
+/* ── La feuille ── */
+.feuille {
+  max-width: 46rem; margin: 2.6rem auto 4rem; padding: 4rem 4.2rem 3.4rem;
+  background: var(--papier-clair);
+  border: 1px solid var(--papier-ombre);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 22px 45px -30px rgba(70,55,30,.55),
+    0 2px 5px rgba(70,55,30,.10);
+  animation: leve .7s ease both;
+}
+@keyframes leve { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── Titre de la page ── */
+.rubrique {
+  font-family: var(--titre); font-variant: small-caps; font-weight: 600;
+  letter-spacing: .22em; font-size: .78rem; color: var(--accent);
+  margin-bottom: .9rem;
+}
+.feuille h1 {
+  font-family: var(--titre); font-weight: 600;
+  font-size: clamp(2.3rem, 6vw, 3.3rem); line-height: 1.08;
+  letter-spacing: -.005em; margin-bottom: 1.4rem;
+}
+.feuille h1 em { font-style: italic; color: var(--accent); }
+
+/* Filet doré à fleuron : sépare le titre du texte. */
+.filet {
+  display: flex; align-items: center; gap: 1rem;
+  color: var(--or); margin: 1.8rem 0 2rem;
+}
+.filet::before, .filet::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--or), transparent);
+}
+.filet span { font-size: .9rem; line-height: 1; }
+
+/* ── Texte d'ouverture, avec lettrine ── */
+.ouverture { font-size: 1.06rem; }
+.ouverture::first-letter {
+  font-family: var(--titre); font-weight: 600; color: var(--accent);
+  float: left; font-size: 4.1rem; line-height: .78;
+  margin: .28rem .55rem 0 0;
+}
+.ouverture + .ouverture { margin-top: 1rem; }
+
+/* ── Sommaire à points de conduite (la signature de la page) ── */
+.sommaire { margin-top: 2.8rem; }
+.sommaire-titre {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .18em;
+  font-size: .8rem; color: var(--encre-pale); margin-bottom: 1rem;
+}
+.entree {
+  display: flex; align-items: baseline; gap: .7rem; width: 100%;
+  padding: .62rem 0; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.16);
+  font: inherit; color: inherit; cursor: pointer;
+  transition: color .2s;
+}
+.entree:last-of-type { border-bottom: none; }
+.entree-nom { font-family: var(--titre); font-size: 1.24rem; white-space: nowrap; }
+.entree-points {
+  flex: 1; height: .85em;
+  border-bottom: 1.5px dotted rgba(120,100,60,.42);
+  transition: border-color .2s;
+}
+.entree-etat {
+  font-variant: small-caps; letter-spacing: .1em; font-size: .74rem;
+  color: var(--encre-pale); white-space: nowrap; transition: color .2s;
+}
+.entree:hover, .entree:focus-visible { color: var(--accent); }
+.entree:hover .entree-points, .entree:focus-visible .entree-points { border-bottom-color: var(--accent); }
+.entree:hover .entree-etat, .entree:focus-visible .entree-etat { color: var(--accent); }
+.entree:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Repli d'une entrée : ce qu'elle contiendra. */
+.entree-detail {
+  display: none; padding: .2rem 0 1.1rem;
+  color: var(--encre-pale); font-size: .95rem;
+}
+.entree-detail.ouvert { display: block; }
+.entree-detail p + p { margin-top: .5rem; }
+
+/* ── Pied de page ── */
+.colophon {
+  max-width: 46rem; margin: 0 auto 3rem; padding: 0 4.2rem;
+  font-variant: small-caps; letter-spacing: .14em;
+  font-size: .74rem; color: var(--encre-pale); text-align: center;
+}
+
+/* ── Petits écrans ── */
+@media (max-width: 640px) {
+  .bandeau { padding: 1.2rem 1.2rem 1rem; }
+  .feuille { margin: 1.4rem .9rem 2.5rem; padding: 2.4rem 1.6rem 2rem; }
+  .colophon { padding: 0 1.6rem; }
+  .entree { flex-wrap: wrap; gap: .4rem; }
+  .entree-points { min-width: 2rem; }
+  .ouverture::first-letter { font-size: 3.3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feuille { animation: none; }
+  * { transition: none !important; }
+}

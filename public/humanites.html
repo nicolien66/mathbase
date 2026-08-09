@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+</head>
+<body>
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<main class="feuille">
+  <p class="rubrique" id="rubrique">Polymates</p>
+  <h1 id="titre">—</h1>
+  <div class="filet"><span>❦</span></div>
+
+  <p class="ouverture" id="ouverture"></p>
+
+  <section class="sommaire">
+    <p class="sommaire-titre" id="sommaire-titre">Sommaire</p>
+    <div id="entrees"></div>
+  </section>
+</main>
+
+<p class="colophon">Polymates — <span id="colophon-matiere"></span></p>
+
+<script>
+(function () {
+  /* Cette page sert le Français et l'Histoire-Géographie : même mise en
+     page, même papier, seuls le texte et l'encre d'accent changent.
+     Les sections sont vides pour l'instant — chacune le dit franchement
+     plutôt que de faire semblant. */
+
+  const PAGES = {
+    "francais": {
+      rubrique: "Français",
+      titre: 'Lire, écrire,<br><em>et dire juste.</em>',
+      ouverture:
+        "Le français ne se révise pas comme une formule : il se pratique. On y apprend à " +
+        "lire un texte de près, à conduire une idée jusqu'au bout, et à choisir le mot exact " +
+        "plutôt que le mot proche.",
+      sommaire: "Ce que contiendra cette matière",
+      sections: [
+        { nom: "Langue et grammaire",
+          detail: "Classes de mots, accords, conjugaison, syntaxe de la phrase complexe." },
+        { nom: "Littérature et textes",
+          detail: "Récits, poésie, théâtre : lecture des œuvres au programme et analyse guidée." },
+        { nom: "Expression écrite",
+          detail: "Rédaction, argumentation, réécriture, et travail sur le brouillon." },
+        { nom: "Méthodes du brevet",
+          detail: "Dictée, questions de compréhension, rédaction : les attendus de l'épreuve." },
+        { nom: "Annales",
+          detail: "Sujets tombés les années précédentes, corrigés pas à pas." },
+      ],
+    },
+    "histoire-geo": {
+      rubrique: "Histoire-Géographie",
+      titre: 'Situer le monde,<br><em>et le comprendre.</em>',
+      ouverture:
+        "L'histoire et la géographie répondent à deux questions jumelles : quand, et où. " +
+        "On y apprend à dater sans réciter, à lire une carte comme un document, et à " +
+        "relier un événement à ce qui l'a rendu possible.",
+      sommaire: "Ce que contiendra cette matière",
+      sections: [
+        { nom: "Histoire",
+          detail: "Des grandes périodes aux événements précis, avec les repères à connaître." },
+        { nom: "Géographie",
+          detail: "Territoires, populations, ressources et aménagement des espaces." },
+        { nom: "Enseignement moral et civique",
+          detail: "Institutions, citoyenneté, droits et devoirs." },
+        { nom: "Repères et cartes",
+          detail: "Les dates et les cartes exigibles, à réviser et à replacer." },
+        { nom: "Annales",
+          detail: "Sujets de brevet : analyse de documents, tâche cartographique, EMC." },
+      ],
+    },
+  };
+
+  const page = PAGES[MB_MAT.id];
+  if (!page) { location.replace("matieres.html"); return; }
+
+  document.body.setAttribute("data-matiere", MB_MAT.id);
+  document.title = "Polymates — " + page.rubrique;
+  document.getElementById("rubrique").textContent = page.rubrique;
+  document.getElementById("titre").innerHTML = page.titre;
+  document.getElementById("ouverture").textContent = page.ouverture;
+  document.getElementById("sommaire-titre").textContent = page.sommaire;
+  document.getElementById("colophon-matiere").textContent = page.rubrique;
+
+  /* Sommaire : chaque entrée s'ouvre pour dire ce qu'elle accueillera. */
+  const hote = document.getElementById("entrees");
+  page.sections.forEach((s, i) => {
+    const bouton = document.createElement("button");
+    bouton.className = "entree";
+    bouton.type = "button";
+    bouton.setAttribute("aria-expanded", "false");
+    bouton.setAttribute("aria-controls", "detail-" + i);
+    bouton.innerHTML =
+      '<span class="entree-nom"></span>' +
+      '<span class="entree-points" aria-hidden="true"></span>' +
+      '<span class="entree-etat">à paraître</span>';
+    bouton.querySelector(".entree-nom").textContent = s.nom;
+
+    const detail = document.createElement("div");
+    detail.className = "entree-detail";
+    detail.id = "detail-" + i;
+    detail.innerHTML = "<p></p>";
+    detail.querySelector("p").textContent = s.detail;
+
+    bouton.onclick = () => {
+      const ouvert = detail.classList.toggle("ouvert");
+      bouton.setAttribute("aria-expanded", ouvert ? "true" : "false");
+    };
+
+    hote.appendChild(bouton);
+    hote.appendChild(detail);
+  });
+
+  /* Bandeau : qui lit, et comment sortir. */
+  const u = MB_AUTH.user();
+  if (u && u.pseudo) document.getElementById("lecteur").textContent = u.pseudo;
+  document.getElementById("sortir").onclick = () => MB_AUTH.logout();
+})();
+</script>
+</body>
+</html>

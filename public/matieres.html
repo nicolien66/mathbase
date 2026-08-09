@@ -96,7 +96,7 @@ h1 em{font-style:italic;color:var(--accent);}
      Pour ouvrir une matière, il suffit d'y passer ouverte:true. */
   const MATIERES = MB_MAT.liste().map(m => ({
     nom: m.nom, icone: m.icone, couleur: m.couleur, desc: m.desc,
-    href: m.ouverte ? ('app.html?matiere=' + encodeURIComponent(m.id)) : null,
+    href: m.ouverte ? (m.accueil + '?matiere=' + encodeURIComponent(m.id)) : null,
   }));
 
   const grid = document.getElementById('grid');

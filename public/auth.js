@@ -9,6 +9,9 @@
   const TOKEN_KEY = "mb_token", USER_KEY = "mb_user";
   const script = document.currentScript;
   const protect = script ? script.getAttribute("data-protect") : null; // null | '' | 'admin'
+  /* data-sans-chip : la page dessine elle-même ses commandes de session.
+     (Les pages sur papier, où une pastille sombre jurerait.) */
+  const sansChip = script ? script.hasAttribute("data-sans-chip") : false;
 
   const MB_AUTH = {
     token() { return localStorage.getItem(TOKEN_KEY); },
@@ -62,6 +65,7 @@
 
   function renderChip() {
     if (PAGE_CONNEXION) return;                       // pas de pastille sur la page de connexion
+    if (sansChip) return;                             // la page gère elle-même
     if (document.getElementById("mb-chip")) return;
     const u = MB_AUTH.user();
     const chip = document.createElement("div");
