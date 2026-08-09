@@ -897,58 +897,80 @@ function verdictIncoherent(p) {
 /* ── DIAGNOSTIC DES FIGURES (admin) ───────────────────────────────────────
    Vérifie, sujet par sujet, si le correcteur peut réellement VOIR les pages
    du PDF. S'exécute dans le conteneur : c'est le seul endroit où l'état du
-   disque et des modules natifs est observable. Lecture seule. */
+   disque et des modules natifs est observable. Lecture seule.
+
+   IMPORTANT : par défaut, AUCUNE page n'est rasterisée. Rendre une page de
+   chaque sujet d'un coup remplit la mémoire (chaque image pèse plusieurs Mo)
+   et fait tomber le conteneur — d'où le test de rendu isolé, un sujet à la
+   fois, via ?rendu=<id>. */
 app.get("/admin/diagnostic-figures", auth, requireAdmin, async (req, res) => {
   try {
-    const moteur = await _loadRenderer();
+    const moteur    = await _loadRenderer();
+    const renduPour = req.query.rendu ? Number(req.query.rendu) : null;
+
     const { rows } = await pool.query(
       "SELECT id, title, classe, image_url, questions FROM annales ORDER BY id");
 
     const sujets = [];
     for (const a of rows) {
-      let questions = [];
+      // Un sujet illisible ne doit jamais interrompre le diagnostic entier.
       try {
-        questions = Array.isArray(a.questions) ? a.questions : JSON.parse(a.questions || "[]");
-      } catch { questions = []; }
+        let questions = [];
+        try {
+          questions = Array.isArray(a.questions) ? a.questions : JSON.parse(a.questions || "[]");
+        } catch { questions = []; }
 
-      const chemin     = _cheminSujet(a.image_url);
-      const pdfPresent = !!(chemin && fs.existsSync(chemin));
-      const avecPages  = questions.filter(q => Array.isArray(q.pages) && q.pages.length).length;
-      const avecFigDesc = questions.filter(q => q.figure_desc).length;
+        const chemin      = _cheminSujet(a.image_url);
+        const pdfPresent  = !!(chemin && fs.existsSync(chemin));
+        const avecPages   = questions.filter(q => Array.isArray(q.pages) && q.pages.length).length;
+        const avecFigDesc = questions.filter(q => q.figure_desc).length;
 
-      // Test réel de rendu sur la première page utile.
-      let rendu = null;
-      if (moteur && pdfPresent) {
-        const premiere = (questions.find(q => Array.isArray(q.pages) && q.pages.length) || {}).pages;
-        const n = premiere ? Number(premiere[0]) : 1;
-        const img = await renderPageImage(a.image_url, n);
-        rendu = img ? { ok: true, page: n, ko: Math.round(img.length / 1024) }
-                    : { ok: false, page: n };
+        let cause = null;
+        if (!a.image_url)     cause = "aucun PDF rattaché (image_url vide)";
+        else if (!chemin)     cause = "nom de PDF refusé par le garde-fou : " + a.image_url;
+        else if (!pdfPresent) cause = "PDF absent du disque (fichier perdu au redéploiement ?)";
+        else if (!moteur)     cause = "moteur de rendu indisponible (@napi-rs/canvas / pdfjs-dist)";
+        else if (!avecPages)  cause = "aucune question ne porte de numéro de page";
+
+        // Test de rendu réel : uniquement sur le sujet demandé.
+        let rendu = null;
+        if (!cause && renduPour === a.id) {
+          const premiere = (questions.find(q => Array.isArray(q.pages) && q.pages.length) || {}).pages;
+          const n = premiere ? Number(premiere[0]) : 1;
+          try {
+            const img = await renderPageImage(a.image_url, n);
+            rendu = img ? { ok: true, page: n, ko: Math.round(img.length / 1024) }
+                        : { ok: false, page: n };
+            if (!img) cause = "le rendu de la page " + n + " a échoué";
+          } catch (e) {
+            rendu = { ok: false, page: n };
+            cause = "erreur au rendu de la page " + n + " : " + e.message;
+          }
+        }
+
+        sujets.push({
+          id: a.id, titre: a.title, classe: a.classe, image_url: a.image_url,
+          pdf_present: pdfPresent, questions: questions.length,
+          questions_avec_pages: avecPages, questions_avec_figure_desc: avecFigDesc,
+          rendu, ok: !cause, cause,
+        });
+      } catch (e) {
+        sujets.push({ id: a.id, titre: a.title || "?", classe: a.classe, image_url: a.image_url,
+                      pdf_present: false, questions: 0, questions_avec_pages: 0,
+                      questions_avec_figure_desc: 0, rendu: null, ok: false,
+                      cause: "sujet illisible : " + e.message });
       }
-
-      let cause = null;
-      if (!a.image_url)            cause = "aucun PDF rattaché (image_url vide)";
-      else if (!chemin)            cause = "nom de PDF refusé par le garde-fou : " + a.image_url;
-      else if (!pdfPresent)        cause = "PDF absent du disque (fichier perdu au redéploiement ?)";
-      else if (!moteur)            cause = "moteur de rendu indisponible (@napi-rs/canvas / pdfjs-dist)";
-      else if (!avecPages)         cause = "aucune question ne porte de numéro de page";
-      else if (rendu && !rendu.ok) cause = "le rendu de la page a échoué";
-
-      sujets.push({
-        id: a.id, titre: a.title, classe: a.classe, image_url: a.image_url,
-        pdf_present: pdfPresent, questions: questions.length,
-        questions_avec_pages: avecPages, questions_avec_figure_desc: avecFigDesc,
-        rendu, ok: !cause, cause,
-      });
     }
+
+    let pdfSurDisque = 0;
+    try { pdfSurDisque = fs.readdirSync(path.join(__dirname, "public", "annales-pdf")).length; }
+    catch { pdfSurDisque = 0; }
 
     res.json({
       moteur_rendu: !!moteur,
       dossier_pdf: path.join(__dirname, "public", "annales-pdf"),
-      pdf_sur_disque: (() => {
-        try { return fs.readdirSync(path.join(__dirname, "public", "annales-pdf")).length; }
-        catch { return 0; }
-      })(),
+      pdf_sur_disque: pdfSurDisque,
+      memoire_mo: Math.round(process.memoryUsage().rss / 1048576),
       sujets_ok: sujets.filter(s => s.ok).length,
       sujets_total: sujets.length,
       sujets,

@@ -183,21 +183,38 @@
   }
 
   /* ── Diagnostic des figures ─────────────────────────────────────────── */
-  $('diag-run').onclick = async () => {
+  let DIAG = null;
+
+  $('diag-run').onclick = () => lancerDiag(null);
+
+  async function lancerDiag(renduPour){
     const body = $('diag-body');
     if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur pour un diagnostic réel.</div>`; return; }
     $('diag-run').disabled = true;
-    body.innerHTML = `<div class="empty">Analyse des sujets en cours…</div>`;
+    body.innerHTML = `<div class="empty">${renduPour ? 'Test de rendu du sujet…' : 'Analyse des sujets en cours…'}</div>`;
     try {
-      const res = await MB_AUTH.apiFetch('/admin/diagnostic-figures');
+      const url = '/admin/diagnostic-figures' + (renduPour ? '?rendu=' + renduPour : '');
+      const res = await MB_AUTH.apiFetch(url);
+      if (res.status === 502 || res.status === 503) {
+        throw new Error("le serveur n'a pas répondu (502) — il a probablement manqué de mémoire "
+          + "pendant le rendu du PDF. Réessaie sur un seul sujet, ou augmente la mémoire du conteneur.");
+      }
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+      DIAG = d;
       body.innerHTML = renderDiag(d);
+      brancherBoutons();
     } catch (e) {
-      body.innerHTML = `<div class="empty" style="color:var(--coral)">Diagnostic impossible : ${escapeHtml(e.message)}</div>`;
+      body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Diagnostic impossible : ${escapeHtml(e.message)}</div>`;
     }
     $('diag-run').disabled = false;
-  };
+  }
+
+  function brancherBoutons(){
+    document.querySelectorAll('[data-rendu]').forEach(b => {
+      b.onclick = () => lancerDiag(Number(b.dataset.rendu));
+    });
+  }
 
   function renderDiag(d){
     const alerte = !d.moteur_rendu
@@ -210,23 +227,34 @@
         Moteur de rendu : <strong style="color:${d.moteur_rendu?'var(--green)':'var(--coral)'}">
         ${d.moteur_rendu ? 'disponible' : 'INDISPONIBLE'}</strong> ·
         PDF présents sur le disque : <strong style="color:var(--cream)">${d.pdf_sur_disque}</strong> ·
+        Mémoire : <strong style="color:var(--cream)">${d.memoire_mo} Mo</strong> ·
         Sujets exploitables : <strong style="color:${d.sujets_ok===d.sujets_total?'var(--green)':'var(--coral)'}">
         ${d.sujets_ok} / ${d.sujets_total}</strong>
       </div>`;
     if (!d.sujets.length) return entete + `<div class="empty">Aucun sujet enregistré.</div>`;
-    const lignes = d.sujets.map(s => `
-      <tr>
+    const lignes = d.sujets.map(s => {
+      const etat = s.ok
+        ? (s.rendu && s.rendu.ok
+            ? `<span style="color:var(--green)">✔ figure rendue (page ${s.rendu.page}, ${s.rendu.ko} Ko)</span>`
+            : `<span style="color:var(--green)">✔ prêt</span>`)
+        : `<span style="color:var(--coral)">✘ ${escapeHtml(s.cause)}</span>`;
+      const bouton = s.ok
+        ? `<button class="act" data-rendu="${s.id}">tester le rendu</button>` : '';
+      return `<tr>
         <td>${escapeHtml(s.titre)}<div class="muted" style="font-size:.75rem">${escapeHtml(s.classe || '—')} · id ${s.id}</div></td>
         <td class="hide-sm">${s.questions_avec_pages} / ${s.questions}</td>
         <td class="hide-sm">${s.pdf_present ? 'oui' : '<span style="color:var(--coral)">non</span>'}</td>
-        <td>${s.ok
-          ? '<span style="color:var(--green)">✔ figure transmise</span>'
-          : '<span style="color:var(--coral)">✘ ' + escapeHtml(s.cause) + '</span>'}</td>
-      </tr>`).join('');
+        <td>${etat}</td>
+        <td>${bouton}</td>
+      </tr>`;
+    }).join('');
     return alerte + entete + `<div style="overflow-x:auto"><table>
         <thead><tr><th>Sujet</th><th class="hide-sm">Questions avec pages</th>
-        <th class="hide-sm">PDF</th><th>État</th></tr></thead>
-        <tbody>${lignes}</tbody></table></div>`;
+        <th class="hide-sm">PDF</th><th>État</th><th></th></tr></thead>
+        <tbody>${lignes}</tbody></table></div>
+      <div style="padding:.9rem 1.3rem;font-size:.78rem;color:var(--muted);line-height:1.6">
+        Le rendu d'une page consomme plusieurs Mo : il se teste un sujet à la fois.
+      </div>`;
   }
 
   load();
