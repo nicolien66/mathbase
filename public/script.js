@@ -43,6 +43,10 @@ function matiereCourante() { return (window.MB_MAT && MB_MAT.id) || "mathematiqu
 function avecMatiere(url) {
   return url + (url.includes("?") ? "&" : "?") + "matiere=" + encodeURIComponent(matiereCourante());
 }
+/* Les banques de démonstration (DEMO_EXERCISES, DEMO_ANNALES) sont des
+   contenus de mathématiques. Hors maths, elles ne doivent rien fournir :
+   mieux vaut un espace vide qu'un espace rempli d'une autre matière. */
+function demoDispo() { return matiereCourante() === "mathematiques"; }
 let currentChapter = null;
 let pendingExercise = null;
 
@@ -522,7 +526,7 @@ async function loadAnnales() {
     DEMO_MODE = false;
   } catch {
     DEMO_MODE = true;
-    LOADED_ANNALES = DEMO_ANNALES.map(a => ({ ...a }));
+    LOADED_ANNALES = demoDispo() ? DEMO_ANNALES.map(a => ({ ...a })) : [];
   }
   renderAnnales();
 }
@@ -1036,9 +1040,13 @@ async function loadExercises() {
   } catch {
     // Serveur injoignable → mode démo local
     DEMO_MODE = true;
-    const data = DEMO_EXERCISES.filter(ex => !currentFilter || ex.level === currentFilter);
+    const data = demoDispo()
+      ? DEMO_EXERCISES.filter(ex => !currentFilter || ex.level === currentFilter)
+      : [];
     renderByChapter(data);
-    showToast("Mode démo : banque locale (serveur non connecté).", "info");
+    showToast(demoDispo()
+      ? "Mode démo : banque locale (serveur non connecté)."
+      : "Mode démo : aucun exercice local en " + MB_MAT.nom + ".", "info");
   }
 }
 
@@ -1812,6 +1820,7 @@ async function startSeance() {
     let url = "/exercises";
     const params = new URLSearchParams();
     params.append("type", seanceMode);
+    params.append("matiere", matiereCourante());
     if (seanceLevel) params.append("level", seanceLevel);
     if (seanceDiff)  params.append("difficulty", seanceDiff);
     if (seanceChapitre) params.append("chapitre", seanceChapitre);
@@ -1825,7 +1834,7 @@ async function startSeance() {
       DEMO_MODE = false;
     } catch {
       DEMO_MODE = true;
-      data = DEMO_EXERCISES.filter(ex =>
+      data = (demoDispo() ? DEMO_EXERCISES : []).filter(ex =>
         (ex.type || "exercice") === seanceMode &&
         (!seanceLevel || ex.level === seanceLevel) &&
         (!seanceChapitre || ex.chapitre === seanceChapitre) &&
