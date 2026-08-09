@@ -33,6 +33,12 @@
     #mb-nav .mb-logo{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;
       color:#f0ece0;text-decoration:none;white-space:nowrap;flex:none;}
     #mb-nav .mb-logo em{font-style:italic;color:#c8b97a;}
+    #mb-nav .mb-subject{flex:none;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.13em;
+      text-transform:uppercase;color:#c8b97a;text-decoration:none;white-space:nowrap;
+      border:1px solid rgba(200,185,122,.32);border-radius:999px;padding:.22rem .6rem;
+      transition:background .2s,border-color .2s;}
+    #mb-nav .mb-subject:hover{background:rgba(200,185,122,.1);border-color:rgba(200,185,122,.6);}
+    @media (max-width:820px){ #mb-nav .mb-subject{display:none;} }
     #mb-nav .mb-tabs{display:flex;gap:.25rem;flex:1;min-width:0;overflow-x:auto;
       scrollbar-width:none;-ms-overflow-style:none;}
     #mb-nav .mb-tabs::-webkit-scrollbar{display:none;}
@@ -60,9 +66,17 @@
 
     const logo = document.createElement("a");
     logo.className = "mb-logo";
-    logo.href = "app.html";
-    logo.innerHTML = "Math<em>Base</em>";
+    logo.href = "matieres.html";
+    logo.title = "Changer de matière";
+    logo.innerHTML = "Poly<em>mates</em>";
     header.appendChild(logo);
+
+    // rappel de la matière en cours (renvoie à l'accueil maths)
+    const subject = document.createElement("a");
+    subject.className = "mb-subject";
+    subject.href = "app.html";
+    subject.textContent = "Mathématiques";
+    header.appendChild(subject);
 
     const tabsEl = document.createElement("div");
     tabsEl.className = "mb-tabs";

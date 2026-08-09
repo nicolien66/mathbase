@@ -15,55 +15,62 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse 70% 45% at 50% -10%, rgba(200,185,122,.07), transparent);}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 70% 45% at 50% -10%, rgba(200,185,122,.08), transparent);}
 
-.wrap{max-width:1100px;margin:0 auto;padding:4.5rem 2rem 5rem;position:relative;}
-.head{text-align:center;margin-bottom:3rem;}
+.wrap{max-width:1100px;margin:0 auto;padding:4.5rem 2rem 5rem;position:relative;z-index:1;}
+
+.head{text-align:center;margin-bottom:3.2rem;}
 .eyebrow{font-family:var(--mono);font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);
-  margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:.8rem;}
+  margin-bottom:1.1rem;display:flex;align-items:center;justify-content:center;gap:.8rem;}
 .eyebrow::before,.eyebrow::after{content:'';display:block;width:2.5rem;height:1px;background:rgba(200,185,122,.4);}
-.logo{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.2rem);font-weight:700;margin-bottom:.9rem;}
-.logo em{font-style:italic;color:var(--accent);}
-.sub{color:var(--muted);font-size:.98rem;line-height:1.7;max-width:520px;margin:0 auto;}
+.eyebrow em{font-style:italic;}
+h1{font-family:var(--serif);font-size:clamp(2rem,4.6vw,3rem);font-weight:700;line-height:1.15;margin-bottom:.9rem;}
+h1 em{font-style:italic;color:var(--accent);}
+.sub{color:var(--muted);font-size:.96rem;line-height:1.7;max-width:520px;margin:0 auto;}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.1rem;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:1.1rem;}
 
 .subject{
   --sc:var(--accent);
-  position:relative;
-  display:flex;flex-direction:column;gap:.7rem;
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-top:2px solid var(--sc);
-  border-radius:16px;
-  padding:1.7rem 1.5rem 1.5rem;
-  text-decoration:none;color:inherit;
-  cursor:pointer;
-  transition:transform .2s ease,border-color .2s ease,background .2s ease;
-  min-height:170px;
+  position:relative;display:flex;flex-direction:column;gap:.65rem;
+  background:var(--surface);border:1px solid var(--border2);border-top:2px solid var(--sc);
+  border-radius:16px;padding:1.7rem 1.5rem 1.4rem;
+  text-decoration:none;color:inherit;text-align:left;font:inherit;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .25s ease;
+  min-height:182px;
+  opacity:0;transform:translateY(14px);
+  animation:cardIn .55s cubic-bezier(.22,1,.36,1) forwards;
 }
-.subject.ready:hover{transform:translateY(-4px);border-color:var(--sc);background:var(--surface2);}
-.subject.soon{opacity:.55;cursor:default;}
+@keyframes cardIn{to{opacity:1;transform:none;}}
+.subject.ready{cursor:pointer;}
+.subject.ready:hover{transform:translateY(-5px);border-color:var(--sc);background:var(--surface2);
+  box-shadow:0 22px 45px -28px var(--sc);}
+.subject.ready:focus-visible{outline:2px solid var(--sc);outline-offset:3px;}
+.subject.soon{cursor:pointer;opacity:.52;}
+.subject.soon:hover{opacity:.7;}
 
 .subject-icon{font-size:1.7rem;}
 .subject-title{font-family:var(--serif);font-size:1.3rem;}
 .subject-desc{font-size:.85rem;line-height:1.55;color:var(--muted);}
-.subject-go{margin-top:auto;font-size:.8rem;color:var(--sc);
-  opacity:0;transform:translateX(-4px);transition:.2s;}
-.subject.ready:hover .subject-go{opacity:1;transform:none;}
+.subject-go{margin-top:auto;font-size:.8rem;color:var(--sc);opacity:0;transform:translateX(-4px);transition:.2s;}
+.subject.ready:hover .subject-go,.subject.ready:focus-visible .subject-go{opacity:1;transform:none;}
+.subject-badge{align-self:flex-start;margin-top:auto;font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:.22rem .6rem;
+  color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border2);}
 
-.subject-badge{
-  align-self:flex-start;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
-  border-radius:999px;padding:.2rem .6rem;margin-top:auto;
-}
-.subject.soon .subject-badge{color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border2);}
-
-.foot-link{display:block;text-align:center;margin-top:3rem;font-size:.85rem;color:var(--muted);}
+.foot-link{text-align:center;margin-top:3.2rem;font-size:.85rem;color:var(--muted);}
 .foot-link a{color:var(--accent);text-decoration:none;}
 .foot-link a:hover{text-decoration:underline;}
 
-@media(max-width:600px){.wrap{padding:3rem 1.2rem 4rem;}}
+#toast{position:fixed;left:50%;bottom:2rem;transform:translate(-50%,140%);
+  background:var(--surface2);border:1px solid var(--border2);border-radius:999px;
+  padding:.7rem 1.3rem;font-size:.86rem;color:var(--text);z-index:200;
+  box-shadow:0 18px 40px -20px rgba(0,0,0,.8);transition:transform .35s cubic-bezier(.22,1,.36,1);}
+#toast.on{transform:translate(-50%,0);}
+
+@media(max-width:600px){.wrap{padding:3.2rem 1.2rem 4rem;}}
+@media (prefers-reduced-motion:reduce){.subject{animation:none;opacity:1;transform:none;}}
 </style>
 <script src="auth.js" data-protect></script>
 </head>
@@ -71,55 +78,78 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;
 <div class="wrap">
   <div class="head">
     <p class="eyebrow">Poly<em>mates</em></p>
-    <h1 class="logo">Quelle matière<br>veux-tu <em>explorer</em> ?</h1>
+    <h1 id="titre">Quelle matière<br>veux-tu <em>explorer</em> ?</h1>
     <p class="sub">Choisis une matière pour accéder à ses cours, tutoriels et exercices.</p>
   </div>
 
-  <div class="grid">
-    <a class="subject ready" href="app.html" style="--sc:#7ac8a0">
-      <div class="subject-icon">📐</div>
-      <div class="subject-title">Mathématiques</div>
-      <div class="subject-desc">Arbre des connaissances, cours animés, tutoriels, exercices et annales.</div>
-      <div class="subject-go">Entrer →</div>
-    </a>
+  <div class="grid" id="grid"></div>
 
-    <div class="subject soon" style="--sc:#a07ac8" title="Bientôt disponible">
-      <div class="subject-icon">📖</div>
-      <div class="subject-title">Français</div>
-      <div class="subject-desc">Grammaire, littérature et expression écrite.</div>
-      <div class="subject-badge">Bientôt disponible</div>
-    </div>
-
-    <div class="subject soon" style="--sc:#7ac8a0" title="Bientôt disponible">
-      <div class="subject-icon">🧪</div>
-      <div class="subject-title">Physique-Chimie</div>
-      <div class="subject-desc">Expériences, formules et notions clés du programme.</div>
-      <div class="subject-badge">Bientôt disponible</div>
-    </div>
-
-    <div class="subject soon" style="--sc:#7ab4c8" title="Bientôt disponible">
-      <div class="subject-icon">🌍</div>
-      <div class="subject-title">Histoire-Géographie</div>
-      <div class="subject-desc">Repères historiques, cartes et enjeux du monde actuel.</div>
-      <div class="subject-badge">Bientôt disponible</div>
-    </div>
-
-    <div class="subject soon" style="--sc:#c8a07a" title="Bientôt disponible">
-      <div class="subject-icon">🇬🇧</div>
-      <div class="subject-title">Anglais</div>
-      <div class="subject-desc">Vocabulaire, grammaire et compréhension.</div>
-      <div class="subject-badge">Bientôt disponible</div>
-    </div>
-
-    <div class="subject soon" style="--sc:#c87a9a" title="Bientôt disponible">
-      <div class="subject-icon">🧬</div>
-      <div class="subject-title">SVT</div>
-      <div class="subject-desc">Sciences de la vie et de la Terre.</div>
-      <div class="subject-badge">Bientôt disponible</div>
-    </div>
-  </div>
-
-  <p class="foot-link">Envie de proposer une matière en priorité ? <a href="mailto:contact@polymates.fr">Écris-nous</a>.</p>
+  <p class="foot-link">Une matière que tu aimerais voir en priorité ? <a href="mailto:contact@polymates.fr">Écris-nous</a>.</p>
 </div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  /* Catalogue des matières — pour en ouvrir une plus tard,
+     il suffit de passer "href" à la page d'accueil correspondante. */
+  const MATIERES = [
+    { nom:"Mathématiques",     icone:"📐", couleur:"#7ac8a0", href:"app.html",
+      desc:"Arbre des connaissances, cours animés, tutoriels, exercices et annales." },
+    { nom:"Français",          icone:"📖", couleur:"#a07ac8",
+      desc:"Grammaire, littérature et expression écrite." },
+    { nom:"Physique-Chimie",   icone:"🧪", couleur:"#7ab4c8",
+      desc:"Expériences, formules et notions clés du programme." },
+    { nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a",
+      desc:"Repères historiques, cartes et enjeux du monde actuel." },
+    { nom:"Anglais",           icone:"🗣️", couleur:"#c8b97a",
+      desc:"Vocabulaire, grammaire et compréhension orale et écrite." },
+    { nom:"SVT",               icone:"🧬", couleur:"#c87a9a",
+      desc:"Sciences de la vie et de la Terre." },
+  ];
+
+  const grid = document.getElementById('grid');
+  MATIERES.forEach((m, i) => {
+    const ouverte = !!m.href;
+    const el = document.createElement(ouverte ? 'a' : 'button');
+    el.className = 'subject ' + (ouverte ? 'ready' : 'soon');
+    el.style.setProperty('--sc', m.couleur);
+    el.style.animationDelay = (i * 60) + 'ms';
+    if (ouverte) el.href = m.href;
+    else el.type = 'button';
+    el.innerHTML =
+      `<div class="subject-icon">${m.icone}</div>` +
+      `<div class="subject-title">${m.nom}</div>` +
+      `<div class="subject-desc">${m.desc}</div>` +
+      (ouverte ? `<div class="subject-go">Entrer →</div>`
+               : `<div class="subject-badge">Bientôt disponible</div>`);
+    if (!ouverte) el.onclick = () => toast(m.nom + " arrive bientôt sur Polymates.");
+    grid.appendChild(el);
+  });
+
+  /* petit message éphémère */
+  let tid;
+  function toast(txt){
+    const t = document.getElementById('toast');
+    t.textContent = txt; t.classList.add('on');
+    clearTimeout(tid); tid = setTimeout(() => t.classList.remove('on'), 2600);
+  }
+
+  /* accueil personnalisé une fois la session connue */
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const u = window.MB_AUTH && MB_AUTH.user();
+      if (u && u.pseudo) {
+        document.getElementById('titre').innerHTML =
+          'Bonjour ' + escapeHtml(u.pseudo) + ',<br>que veux-tu <em>explorer</em> ?';
+      }
+    }, 60);
+  });
+
+  function escapeHtml(t){
+    return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+})();
+</script>
 </body>
 </html>

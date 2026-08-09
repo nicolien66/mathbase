@@ -7,17 +7,42 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0b0b09; --panel:#14130f; --line:rgba(245,242,232,.1); --cream:#f0ece0; --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; }
+  :root{ --bg:#0b0b09; --panel:#14130f; --line:rgba(245,242,232,.1); --cream:#f0ece0;
+         --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;
-    display:flex;align-items:center;justify-content:center;padding:2rem 1rem;}
-  body::before{content:'';position:fixed;inset:0;pointer-events:none;
-    background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.07), transparent);}
-  .box{width:min(430px,100%);position:relative;}
-  .logo{text-align:center;margin-bottom:2rem;}
-  .logo a{color:var(--cream);text-decoration:none;font-family:'Playfair Display',Georgia,serif;font-size:1.6rem;}
-  .logo a span{color:var(--gold);font-style:italic;}
-  .logo p{color:var(--muted);font-size:.85rem;margin-top:.3rem;}
+    display:flex;align-items:center;justify-content:center;padding:2rem 1rem;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.09), transparent);}
+
+  /* ── décor : glyphe géant + halos + particules (identité de l'ancien écran d'ouverture) ── */
+  .decor{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+  .glyph{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);
+    font-family:'Playfair Display',Georgia,serif;font-weight:700;line-height:1;
+    font-size:min(26rem,62vw);color:rgba(200,185,122,.035);user-select:none;
+    transition:opacity .6s ease;}
+  .halo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    border-radius:50%;border:1px solid rgba(200,185,122,.11);
+    width:340px;height:340px;animation:haloPulse 5s ease-in-out infinite;}
+  .halo.h2{width:520px;height:520px;border-color:rgba(200,185,122,.06);animation-delay:-2.5s;}
+  @keyframes haloPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.45;}
+                       50%{transform:translate(-50%,-50%) scale(1.07);opacity:.12;}}
+  .spark{position:absolute;border-radius:50%;background:var(--gold);opacity:0;}
+  @keyframes sparkAnim{0%{opacity:0;transform:translate(0,0) scale(1);}
+                       15%{opacity:.7;}
+                       100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0);}}
+
+  .box{width:min(430px,100%);position:relative;z-index:1;
+    opacity:0;transform:translateY(18px);animation:rise .9s cubic-bezier(.22,1,.36,1) .15s forwards;}
+  @keyframes rise{to{opacity:1;transform:none;}}
+
+  .brand{text-align:center;margin-bottom:2rem;}
+  .brand h1{font-family:'Playfair Display',Georgia,serif;font-size:2.3rem;font-weight:500;letter-spacing:-.02em;}
+  .brand h1 em{font-style:italic;color:var(--gold);}
+  .brand .rule{height:1px;width:190px;margin:.9rem auto 0;
+    background:linear-gradient(to right,transparent,rgba(200,185,122,.55),transparent);}
+  .brand p{color:var(--muted);font-size:.85rem;margin-top:.85rem;line-height:1.6;}
+
   .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:2rem;
     box-shadow:0 30px 80px -30px rgba(0,0,0,.8);}
   .tabs{display:flex;gap:.4rem;background:rgba(245,242,232,.04);border-radius:999px;padding:.3rem;margin-bottom:1.6rem;}
@@ -30,6 +55,12 @@
     color:var(--cream);font:inherit;font-size:.95rem;padding:.7rem .9rem;outline:none;transition:border-color .25s;}
   input:focus,select:focus{border-color:rgba(200,185,122,.55);}
   select option{background:#14130f;}
+  .pw{position:relative;}
+  .pw input{padding-right:3.4rem;}
+  .pw button{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;
+    color:var(--muted);font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;
+    text-transform:uppercase;cursor:pointer;padding:.35rem .5rem;border-radius:6px;transition:color .2s;}
+  .pw button:hover{color:var(--gold);}
   .submit{width:100%;margin-top:1.5rem;background:var(--gold);color:#0b0b09;border:none;border-radius:999px;
     padding:.8rem;font:inherit;font-size:.95rem;font-weight:600;cursor:pointer;transition:.25s;}
   .submit:hover{transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(200,185,122,.5);}
@@ -39,52 +70,98 @@
   .msg.ok{display:block;color:var(--green);background:rgba(130,210,160,.08);border:1px solid rgba(130,210,160,.3);}
   .demo-banner{display:none;margin-bottom:1.4rem;font-size:.8rem;color:var(--coral);
     border:1px dashed rgba(230,130,110,.4);border-radius:10px;padding:.7rem .9rem;line-height:1.5;}
-  .foot{text-align:center;margin-top:1.4rem;font-size:.8rem;color:var(--muted);}
+
+  /* ── panneau « session déjà ouverte » ── */
+  .resume{text-align:center;}
+  .resume .avatar{width:56px;height:56px;border-radius:50%;margin:0 auto 1rem;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(200,185,122,.12);border:1px solid rgba(200,185,122,.4);
+    font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;color:var(--gold);}
+  .resume h2{font-family:'Playfair Display',Georgia,serif;font-weight:500;font-size:1.3rem;}
+  .resume h2 em{font-style:italic;color:var(--gold);}
+  .resume p{color:var(--muted);font-size:.85rem;margin-top:.4rem;line-height:1.6;}
+  .resume .ghost{width:100%;margin-top:.7rem;background:none;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:.7rem;font:inherit;font-size:.88rem;
+    cursor:pointer;transition:.25s;}
+  .resume .ghost:hover{color:var(--cream);border-color:rgba(200,185,122,.45);}
+
+  .foot{text-align:center;margin-top:1.4rem;font-size:.78rem;color:var(--muted);line-height:1.6;}
   .hidden{display:none;}
+  @media (prefers-reduced-motion:reduce){
+    .box{animation:none;opacity:1;transform:none;} .halo{animation:none;} .spark{display:none;}
+  }
 </style>
 </head>
 <body>
+
+<div class="decor" aria-hidden="true">
+  <div class="halo"></div>
+  <div class="halo h2"></div>
+  <div class="glyph" id="glyph">∑</div>
+</div>
+
 <div class="box">
-  <div class="logo">
-    <a href="index.html">Poly<span>mates</span></a>
-    <p>Connectez-vous pour accéder à tes matières, cours, tutoriels et exercices.</p>
+  <div class="brand">
+    <h1>Poly<em>mates</em></h1>
+    <div class="rule"></div>
+    <p id="brand-sub">Toutes tes matières au même endroit — cours, tutoriels et exercices.</p>
   </div>
+
   <div class="card">
-    <div class="demo-banner" id="demo-banner">
-      <strong>Mode démo</strong> — aucun serveur détecté : la connexion est simulée localement.
-      Entrez n'importe quels identifiants (un e-mail commençant par « admin » donne l'accès administrateur).
+    <!-- ÉTAT A : session déjà ouverte -->
+    <div class="resume hidden" id="resume">
+      <div class="avatar" id="resume-initial">P</div>
+      <h2>Content de te revoir, <em id="resume-name">…</em></h2>
+      <p id="resume-note">Ta session est toujours ouverte.</p>
+      <button class="submit" id="resume-go">Continuer →</button>
+      <button class="ghost" id="resume-switch">Changer de compte</button>
     </div>
-    <div class="tabs">
-      <button id="tab-login" class="on">Connexion</button>
-      <button id="tab-register">Inscription</button>
+
+    <!-- ÉTAT B : connexion / inscription -->
+    <div id="auth-pane">
+      <div class="demo-banner" id="demo-banner">
+        <strong>Mode démo</strong> — aucun serveur détecté : la connexion est simulée localement.
+        Entre n'importe quels identifiants (un e-mail commençant par « admin » donne l'accès administrateur).
+      </div>
+      <div class="tabs">
+        <button id="tab-login" class="on" type="button">Connexion</button>
+        <button id="tab-register" type="button">Inscription</button>
+      </div>
+
+      <form id="form-login">
+        <label for="l-email">Adresse e-mail</label>
+        <input type="email" id="l-email" required autocomplete="email" placeholder="vous@exemple.fr">
+        <label for="l-password">Mot de passe</label>
+        <div class="pw">
+          <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••">
+          <button type="button" data-toggle="l-password">Voir</button>
+        </div>
+        <button class="submit" type="submit">Se connecter</button>
+      </form>
+
+      <form id="form-register" class="hidden">
+        <label for="r-pseudo">Pseudo</label>
+        <input type="text" id="r-pseudo" required minlength="2" placeholder="Comment t'appelles-tu ?">
+        <label for="r-email">Adresse e-mail</label>
+        <input type="email" id="r-email" required autocomplete="email" placeholder="vous@exemple.fr">
+        <label for="r-password">Mot de passe (6 caractères min)</label>
+        <div class="pw">
+          <input type="password" id="r-password" required minlength="6" autocomplete="new-password" placeholder="••••••••">
+          <button type="button" data-toggle="r-password">Voir</button>
+        </div>
+        <label for="r-classe">Classe</label>
+        <select id="r-classe">
+          <option value="">— facultatif —</option>
+          <option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option><option>Autre</option>
+        </select>
+        <button class="submit" type="submit">Créer mon compte</button>
+      </form>
+
+      <div class="msg" id="msg"></div>
     </div>
-
-    <form id="form-login">
-      <label>Adresse e-mail</label>
-      <input type="email" id="l-email" required autocomplete="email" placeholder="vous@exemple.fr">
-      <label>Mot de passe</label>
-      <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••">
-      <button class="submit" type="submit">Se connecter</button>
-    </form>
-
-    <form id="form-register" class="hidden">
-      <label>Pseudo</label>
-      <input type="text" id="r-pseudo" required minlength="2" placeholder="Comment t'appelles-tu ?">
-      <label>Adresse e-mail</label>
-      <input type="email" id="r-email" required autocomplete="email" placeholder="vous@exemple.fr">
-      <label>Mot de passe (6 caractères min)</label>
-      <input type="password" id="r-password" required minlength="6" autocomplete="new-password" placeholder="••••••••">
-      <label>Classe</label>
-      <select id="r-classe">
-        <option value="">— facultatif —</option>
-        <option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option><option>Autre</option>
-      </select>
-      <button class="submit" type="submit">Créer mon compte</button>
-    </form>
-
-    <div class="msg" id="msg"></div>
   </div>
-  <div class="foot">Bienvenue sur Polymates — toutes tes matières au même endroit.</div>
+
+  <div class="foot">Polymates — l'école, une matière à la fois.</div>
 </div>
 
 <script src="auth.js"></script>
@@ -94,23 +171,84 @@
   const next = new URLSearchParams(location.search).get('next') || 'matieres.html';
   let demo = false;
 
-  // déjà connecté avec un VRAI jeton ? → direction la suite.
-  // (une session démo résiduelle ne doit pas court-circuiter la vraie connexion en ligne)
+  /* ── décor animé (purement esthétique : isolé pour ne jamais
+        empêcher la connexion en cas d'erreur) ──────────────── */
+  function decorer(){
+  const GLYPHS = ['∑','π','∫','Ω','√','α'];
+  let gi = 0;
+  const glyphEl = $('glyph');
+  setInterval(() => {
+    glyphEl.style.opacity = '0';
+    setTimeout(() => { gi = (gi + 1) % GLYPHS.length; glyphEl.textContent = GLYPHS[gi];
+                       glyphEl.style.opacity = '1'; }, 600);
+  }, 4200);
+
+  const decor = document.querySelector('.decor');
+  const reduce = typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if (!reduce) setInterval(() => {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    const size = .8 + Math.random() * 1.6;
+    s.style.width = s.style.height = size + 'px';
+    s.style.left = (innerWidth / 2 + (Math.random() - .5) * 90) + 'px';
+    s.style.top  = (innerHeight / 2 + (Math.random() - .5) * 70) + 'px';
+    const a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 220, dur = 2 + Math.random() * 2;
+    s.style.setProperty('--tx', Math.cos(a) * d + 'px');
+    s.style.setProperty('--ty', Math.sin(a) * d + 'px');
+    s.style.animation = `sparkAnim ${dur}s ease forwards`;
+    decor.appendChild(s);
+    setTimeout(() => s.remove(), dur * 1000);
+  }, 260);
+  }
+
+  /* ── état de session : on N'AUTO-REDIRIGE JAMAIS ──────────
+     La page d'accueil reste affichée ; si une session est déjà
+     ouverte, on propose simplement de continuer.              */
   MB_AUTH.hasBackend().then(ok => {
     demo = !ok;
-    if (demo) {
-      $('demo-banner').style.display = 'block';
-      if (MB_AUTH.user()) { location.href = next; return; }   // démo assumée : on laisse passer
-    } else {
-      // backend présent : seule une session avec jeton est valable
-      if (MB_AUTH.user() && MB_AUTH.token() && !MB_AUTH.isDemo()) { location.href = next; return; }
-      // sinon on purge toute session démo résiduelle
-      if (MB_AUTH.isDemo()) { localStorage.removeItem('mb_token'); localStorage.removeItem('mb_user'); }
-    }
+    if (demo) $('demo-banner').style.display = 'block';
+
+    const u = MB_AUTH.user();
+    const sessionValable = demo ? !!u : !!(u && MB_AUTH.token() && !MB_AUTH.isDemo());
+
+    if (sessionValable) showResume(u);
+    else if (u) MB_AUTH.clear();   // session démo résiduelle alors qu'un serveur existe
   });
 
-  // onglets
-  $('tab-login').onclick = () => switchTab(true);
+  function showResume(u){
+    const nom = u.pseudo || (u.email || '').split('@')[0] || 'toi';
+    $('resume-name').textContent = nom;
+    $('resume-initial').textContent = nom.charAt(0).toUpperCase();
+    $('resume-note').textContent = u.demo
+      ? 'Session de démonstration ouverte sur cet appareil.'
+      : 'Ta session est toujours ouverte sur cet appareil.';
+    $('brand-sub').textContent = 'Reprends là où tu t\'étais arrêté.';
+    $('auth-pane').classList.add('hidden');
+    $('resume').classList.remove('hidden');
+  }
+
+  $('resume-go').onclick     = () => { location.href = next; };
+  $('resume-switch').onclick = () => {
+    MB_AUTH.clear();
+    $('resume').classList.add('hidden');
+    $('auth-pane').classList.remove('hidden');
+    $('brand-sub').textContent = 'Toutes tes matières au même endroit — cours, tutoriels et exercices.';
+    $('l-email').focus();
+  };
+
+  /* ── afficher / masquer le mot de passe ── */
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.onclick = () => {
+      const inp = $(btn.dataset.toggle);
+      const shown = inp.type === 'text';
+      inp.type = shown ? 'password' : 'text';
+      btn.textContent = shown ? 'Voir' : 'Cacher';
+    };
+  });
+
+  /* ── onglets ── */
+  $('tab-login').onclick    = () => switchTab(true);
   $('tab-register').onclick = () => switchTab(false);
   function switchTab(login){
     $('tab-login').classList.toggle('on', login);
@@ -131,7 +269,7 @@
   async function submit(url, body, btn){
     btn.disabled = true; hideMsg();
     try {
-      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const res  = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { showMsg(data.error || 'Une erreur est survenue.', false); btn.disabled = false; return; }
       MB_AUTH.save(data.token, data.user);
@@ -156,6 +294,9 @@
       password: $('r-password').value, classe: $('r-classe').value || null,
     }, e.submitter);
   };
+
+  // le décor vient en dernier : une erreur ici ne doit rien casser
+  try { decorer(); } catch (e) { /* décor indisponible : sans conséquence */ }
 })();
 </script>
 </body>

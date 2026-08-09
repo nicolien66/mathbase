@@ -19,10 +19,14 @@
       if (token) localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
     },
-    logout() {
+    /* efface la session sans quitter la page */
+    clear() {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
-      location.href = "login.html";
+    },
+    logout() {
+      this.clear();
+      location.href = "index.html";
     },
     headers(extra) {
       const h = Object.assign({ "Content-Type": "application/json" }, extra || {});
@@ -35,7 +39,7 @@
       const res = await fetch(url, Object.assign({}, opts, { headers: this.headers(opts && opts.headers) }));
       if (res.status === 401 && !this.isDemo()) {
         localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY);
-        location.href = "login.html?next=" + encodeURIComponent(location.pathname.split("/").pop() + location.search);
+        location.href = "index.html?next=" + encodeURIComponent(location.pathname.split("/").pop() + location.search);
         throw new Error("Session expirée");
       }
       return res;
@@ -52,7 +56,12 @@
   window.MB_AUTH = MB_AUTH;
 
   /* ── pastille utilisateur (haut droite) ── */
+  /* nom du fichier courant ("" à la racine du site = index.html) */
+  const PAGE = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const PAGE_CONNEXION = PAGE === "index.html" || PAGE === "login.html" || PAGE === "";
+
   function renderChip() {
+    if (PAGE_CONNEXION) return;                       // pas de pastille sur la page de connexion
     if (document.getElementById("mb-chip")) return;
     const u = MB_AUTH.user();
     const chip = document.createElement("div");
@@ -74,13 +83,15 @@
     const pill = document.createElement("div");
     pill.className = "mb-pill";
     if (u) {
+      const onMatieres = (location.pathname.split("/").pop() || "").toLowerCase() === "matieres.html";
       pill.innerHTML = `<span class="mb-dot"></span><span>${escapeHtml(u.pseudo)}</span>` +
         (u.role === "admin" ? `<span class="mb-role">admin</span>` : "") +
         (u.demo ? `<span class="mb-role" style="color:rgba(230,130,110,.9);border-color:rgba(230,130,110,.4)">démo</span>` : "") +
+        (onMatieres ? "" : `<span class="mb-sep">·</span><a href="matieres.html" title="Changer de matière">◧ Matières</a>`) +
         (u.role === "admin" ? `<span class="mb-sep">·</span><a href="admin.html">⚙ Admin</a>` : "") +
         `<span class="mb-sep">·</span><button id="mb-logout">Déconnexion</button>`;
     } else {
-      pill.innerHTML = `<a href="login.html">Se connecter →</a>`;
+      pill.innerHTML = `<a href="index.html">Se connecter →</a>`;
     }
     chip.appendChild(pill);
     document.body.appendChild(chip);
@@ -94,7 +105,7 @@
 
   function toLogin() {
     const next = location.pathname.split("/").pop() + location.search;
-    location.href = "login.html?next=" + encodeURIComponent(next);
+    location.href = "index.html?next=" + encodeURIComponent(next);
   }
 
   /* ── garde d'accès ── */
@@ -111,15 +122,12 @@
       u = null;
     }
 
-    if (!u) {
-      if (backend) { toLogin(); return; }
-      // pas de backend → session invité locale (mode démo)
-      if (protect === "admin") { toLogin(); return; } // l'admin démo passe par login.html
-      MB_AUTH.save(null, { pseudo: "Invité", role: "eleve", demo: true });
-      renderChip(); return;
-    }
+    // Aucune session : on renvoie TOUJOURS vers la page de connexion (index.html),
+    // y compris en mode démo. (Auparavant une session « Invité » était créée en
+    // silence, ce qui court-circuitait la page d'accueil et la refermait aussitôt.)
+    if (!u) { toLogin(); return; }
 
-    if (protect === "admin" && u.role !== "admin") { location.href = "app.html"; return; }
+    if (protect === "admin" && u.role !== "admin") { location.href = "matieres.html"; return; }
     renderChip();
 
     // validation silencieuse du jeton côté serveur (hors démo)
