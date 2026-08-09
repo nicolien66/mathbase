@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+<script src="matiere.js"></script>
 <script src="auth.js" data-protect></script>
 <script src="ui.js" defer></script>
 </head>
@@ -23,8 +24,8 @@
   <div id="view-home" class="view active">
     <div class="home-page">
       <div class="home-hero">
-        <p class="hero-tag">Polymates · Mathématiques</p>
-        <h1>Espace<br><em>Mathématiques.</em></h1>
+        <p class="hero-tag" id="home-tag">Polymates · Mathématiques</p>
+        <h1>Espace<br><em id="home-matiere">Mathématiques.</em></h1>
         <p class="hero-sub">Que veux-tu faire aujourd'hui ?</p>
       </div>
       <div class="home-grid">
@@ -673,6 +674,7 @@
   </div>
 
   <script src="contenu.js"></script>
+  <script src="contenu-physique-chimie.js"></script>
   <!-- pdf.js côté navigateur : permet d'extraire le texte d'un PDF sans dépendre
      d'une bibliothèque installée sur le serveur. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>

@@ -273,9 +273,13 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 </div>
 
 <script src="contenu.js"></script>
+<script src="contenu-physique-chimie.js"></script>
+<script src="matiere.js"></script>
 <script>
 // ─── DATA ───────────────────────────────────────────────
-const TREE_DATA = [
+// Arbre des mathématiques. Les autres matières fournissent le leur via
+// window.CONTENU_PAR_MATIERE (voir contenu-physique-chimie.js).
+const TREE_MATHS = [
   { id:'nombres', label:'Nombres', color:'#7ab4c8',
     subs:[
       { label:'Entiers & décimaux',             notions:['Écriture d\'un nombre décimal','Multiplier par 10, 100, 1000','Diviser par 10, 100, 1000'] },
@@ -338,6 +342,18 @@ const TREE_DATA = [
   },
 ];
 
+/* L'arbre affiché est celui de la matière consultée. Les maths gardent le
+   leur ci-dessus ; toute autre matière fournit le sien dans son fichier de
+   contenu. Une matière sans arbre affiche un état vide plutôt qu'une page
+   cassée. */
+if (window.CONTENU_PAR_MATIERE) {
+  window.CONTENU_PAR_MATIERE.mathematiques = Object.assign(
+    {}, window.CONTENU_PAR_MATIERE.mathematiques, { arbre: TREE_MATHS });
+}
+const TREE_DATA = (window.MB_MAT && !MB_MAT.estMaths())
+  ? (MB_MAT.contenu().arbre || [])
+  : TREE_MATHS;
+
 // ─── STATE ──────────────────────────────────────────────
 let currentTheme = null;   // { label, grandLabel, color, notions }
 let currentSection = null;
@@ -378,6 +394,14 @@ function wrapLabel(t){
 function buildTree(){
   const svg = document.getElementById('skilltree');
   svg.innerHTML = '';
+
+  // Matière sans arbre encore renseigné : on l'annonce au lieu d'afficher du vide.
+  if (!TREE_DATA.length) {
+    if (window.MB_MAT) MB_MAT.etatVide(svg.parentNode,
+      "L'arbre de " + MB_MAT.nom + " arrive bientôt",
+      "Les chapitres de cette matière ne sont pas encore reliés entre eux.");
+    return;
+  }
 
   /* défs : lueurs */
   const defs = svgEl('defs', {}, svg);

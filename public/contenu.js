@@ -5,6 +5,13 @@
    le tutoriel interactif et le cours animé correspondants.
    ════════════════════════════════════════════════════════════════ */
 
+/* Enveloppé dans une fonction : les données ci-dessous ne sont plus des
+   variables globales mais le contenu de la matière « mathematiques » dans
+   window.CONTENU_PAR_MATIERE, ce qui permet à d'autres matières de coexister.
+   C'est matiere.js qui expose ensuite THEME_CONTENT / CHAPTER_STRUCTURE
+   correspondant à la matière consultée. */
+(function () {
+
 const THEME_CONTENT = {
 
 /* ═══════════ NOMBRES ═══════════ */
@@ -1569,4 +1576,13 @@ const CHAPTER_STRUCTURE = [
     ]
   }
 ];
-if (typeof window !== 'undefined') window.CHAPTER_STRUCTURE = CHAPTER_STRUCTURE;
+if (typeof window !== 'undefined') {
+  window.CONTENU_PAR_MATIERE = window.CONTENU_PAR_MATIERE || {};
+  window.CONTENU_PAR_MATIERE.mathematiques =
+    Object.assign({}, window.CONTENU_PAR_MATIERE.mathematiques, {
+      themes: THEME_CONTENT,
+      structure: CHAPTER_STRUCTURE,
+    });
+}
+
+})();

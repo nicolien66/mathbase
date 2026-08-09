@@ -34,6 +34,15 @@ document.addEventListener('mouseout', e => {
 
 let currentFilter = "";
 let LOADED_EXERCISES = [];   // dernier lot chargé (pour la vue chapitre)
+
+/* ── Matière courante ──────────────────────────────────────────────────────
+   Tout le contenu (exercices, problèmes, annales) est cloisonné par matière :
+   on ne veut pas voir des exercices de maths dans l'espace physique-chimie.
+   Ces deux aides ajoutent la matière aux requêtes et aux créations. */
+function matiereCourante() { return (window.MB_MAT && MB_MAT.id) || "mathematiques"; }
+function avecMatiere(url) {
+  return url + (url.includes("?") ? "&" : "?") + "matiere=" + encodeURIComponent(matiereCourante());
+}
 let currentChapter = null;
 let pendingExercise = null;
 
@@ -507,7 +516,7 @@ function annaleQuestions(a) {
 
 async function loadAnnales() {
   try {
-    const res = await MB_AUTH.apiFetch("/annales");
+    const res = await MB_AUTH.apiFetch(avecMatiere("/annales"));
     if (!res.ok) throw new Error();
     LOADED_ANNALES = await res.json();
     DEMO_MODE = false;
@@ -941,7 +950,14 @@ function examFeedbackHTML(r) {
   const v = ["correct", "partial", "incorrect"].includes(r.verdict) ? r.verdict : "partial";
   const lab = v === "correct" ? "✔ Correct" : v === "incorrect" ? "✘ À revoir" : "± Partiellement juste";
   const sol = r.solution || r.demarche;
+  // Correction faite sans la figure du sujet : sur un exercice de géométrie,
+  // l'analyse peut être à côté de la plaque. On le dit plutôt que de le cacher.
+  const sansFigure = r.figure_vue === false
+    ? `<div class="exam-sans-figure">⚠ Le correcteur n'a pas pu voir la figure du sujet : sur un exercice
+       de géométrie, fie-toi au corrigé plutôt qu'à l'analyse de ta démarche.</div>`
+    : "";
   return `<div class="exam-verdict ${v}">${lab}</div>
+    ${sansFigure}
     ${r.analyse ? `<div class="exam-analyse">${nl2br(r.analyse)}</div>` : ""}
     ${sol ? `<details class="annale-q-sol" open><summary>Corrigé</summary><div>${nl2br(sol)}</div></details>` : ""}`;
 }
@@ -1011,6 +1027,7 @@ async function loadExercises() {
   empty.style.display = "none";
   let url = "/exercises";
   if (currentFilter) url += "?level=" + currentFilter;
+  url = avecMatiere(url);
   try {
     const res = await MB_AUTH.apiFetch(url);
     if (!res.ok) throw new Error();
@@ -1090,7 +1107,7 @@ async function envoyerAnnale() {
     const res = await MB_AUTH.apiFetch("/annales/upload", {
       method: "POST",
       body: JSON.stringify({
-        nom: AN_FILE.name, pdf_base64: b64,
+        nom: AN_FILE.name, pdf_base64: b64, matiere: matiereCourante(),
         pages_texte: await extraireTextePdf(AN_FILE).catch(() => null),
         title: document.getElementById("an-title").value.trim() || null,
         year: document.getElementById("an-year").value || null,
@@ -1263,7 +1280,7 @@ async function enregistrerProbleme() {
     const res = await MB_AUTH.apiFetch("/exercises", {
       method: "POST",
       body: JSON.stringify({
-        title: titre, content: enonce, type: "probleme",
+        title: titre, content: enonce, type: "probleme", matiere: matiereCourante(),
         level: "college", classe: d.classe || document.getElementById("pb-classe").value,
         subject: document.getElementById("pb-subject").value,
         difficulty: d.difficulte || "Moyen",
@@ -1372,6 +1389,7 @@ async function forceAdd() {
 
 async function submitExercise(data) {
   try {
+    data = Object.assign({}, data, { matiere: matiereCourante() });
     const res = await MB_AUTH.apiFetch("/exercises", { method:"POST", body:JSON.stringify(data) });
     if (!res.ok) throw new Error();
     pendingExercise = null;
@@ -2182,5 +2200,18 @@ function routeFromHash() {
 }
 // Sécurité au démarrage : aucune surcouche ne doit masquer la page
 document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classList.remove("open"));
+
+/* ── Habillage de l'accueil selon la matière consultée ──
+   Le site sert plusieurs matières : le titre, la couleur d'accent et les
+   liens internes suivent celle qui est ouverte. */
+(function appliquerMatiere() {
+  if (!window.MB_MAT) return;
+  const tag = document.getElementById("home-tag");
+  const nom = document.getElementById("home-matiere");
+  if (tag) tag.textContent = "Polymates · " + MB_MAT.nom;
+  if (nom) nom.textContent = MB_MAT.nom + ".";
+  MB_MAT.propager(document);   // les liens conservent la matière
+})();
+
 routeFromHash();
 window.addEventListener("hashchange", routeFromHash);

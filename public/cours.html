@@ -309,6 +309,7 @@ nav{
 .som-video-desc{color:rgba(240,236,224,.6);font-size:.88rem;line-height:1.55;margin-bottom:.45rem;}
 .som-video-meta{font-family:'DM Mono',monospace;font-size:.74rem;color:rgba(240,236,224,.45);}
 </style>
+<script src="matiere.js"></script>
 <script src="auth.js" data-protect></script>
 <script src="ui.js" defer></script>
 </head>
@@ -324,6 +325,17 @@ nav{
   <div class="filter-bar" id="filter-bar"></div>
   <div id="lesson-host"></div>
 </div>
+<script>
+/* Les cours animés ci-dessous sont ceux des mathématiques. Une autre matière
+   affiche un état vide : la page existe, son contenu reste à produire. */
+if (window.MB_MAT && !MB_MAT.estMaths()) {
+  document.querySelector('.page-eyebrow').textContent = 'Cours animés · ' + MB_MAT.nom;
+  document.getElementById('filter-bar').remove();
+  MB_MAT.etatVide('#lesson-host', 'Les cours animés de ' + MB_MAT.nom + ' arrivent',
+    "Aucune animation n'est encore enregistrée pour cette matière.");
+  window.MB_SANS_COURS = true;
+}
+</script>
 
 <!-- PLAYER -->
 <div id="sommaire">
@@ -4779,6 +4791,7 @@ let activeBranch = 'all';
 
 function buildFilter() {
   const bar = document.getElementById('filter-bar');
+  if (!bar) return;   // barre retirée : matière sans cours animés
   const all = [{ id:'all', label:'Tout', color:'#c8b97a' }, ...BRANCHES];
   bar.innerHTML = '';
   all.forEach(b => {
@@ -4817,6 +4830,8 @@ function chapterCard(g) {
 }
 
 function buildGrid() {
+  // Matière sans cours animés : l'état vide affiché plus haut doit rester.
+  if (window.MB_SANS_COURS) return;
   const host = document.getElementById('lesson-host');
   host.innerHTML = '';
   const branches = activeBranch === 'all' ? BRANCHES.map(b => b.id) : [activeBranch];

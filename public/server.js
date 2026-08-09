@@ -411,10 +411,12 @@ app.delete("/admin/users/:id", auth, requireAdmin, async (req, res) => {
 
 /* ═══════════ ROUTES ANNALES ═══════════ */
 app.get("/annales", auth, async (req, res) => {
-  const { level, exam, year } = req.query;
+  const { level, exam, year, matiere } = req.query;
   let query = "SELECT * FROM annales WHERE 1=1";
   const params = [];
   let i = 1;
+  query += ` AND COALESCE(matiere, 'mathematiques') = $${i++}`;
+  params.push(matiere || "mathematiques");
   if (level) { query += ` AND level = $${i++}`; params.push(level); }
   if (exam)  { query += ` AND exam = $${i++}`;  params.push(exam); }
   if (year)  { query += ` AND year = $${i++}`;  params.push(Number(year)); }
@@ -434,15 +436,15 @@ app.get("/annales/:id", auth, async (req, res) => {
 });
 
 app.post("/annales", auth, async (req, res) => {
-  const { title, exam, year, level, classe, subject, duration, content, image_url, solution, questions } = req.body || {};
+  const { title, exam, year, level, classe, subject, duration, content, image_url, solution, questions, matiere } = req.body || {};
   if (!title || !content) return res.status(400).json({ error: "Titre et énoncé requis." });
   try {
     const result = await pool.query(
-      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, solution, questions)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, solution, questions, matiere)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
       [title, exam || null, year ? Number(year) : null, level || null, classe || null, subject || null,
        duration ? Number(duration) : null, content, image_url || null, solution || null,
-       JSON.stringify(Array.isArray(questions) ? questions : [])]
+       JSON.stringify(Array.isArray(questions) ? questions : []), matiere || "mathematiques"]
     );
     res.json({ id: result.rows[0].id, message: "Annale ajoutée." });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -478,12 +480,13 @@ app.post("/annales/upload", auth, requireAdmin, async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, image_url, questions)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, title`,
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, image_url, questions, matiere)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, title`,
       [title || fichier.replace(/\.pdf$/i, "").replace(/_/g, " "),
        exam || "Brevet", year ? Number(year) : null, "college",
        classe || "3ème", "Mathématiques", duration ? Number(duration) : null,
-       "annales-pdf/" + fichier, JSON.stringify(analyse.questions)]);
+       "annales-pdf/" + fichier, JSON.stringify(analyse.questions),
+       req.body.matiere || "mathematiques"]);
 
     res.json({
       id: rows[0].id, title: rows[0].title, fichier,
@@ -665,6 +668,15 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS classe   TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+
+  /* ── Ouverture du site à plusieurs matières ──
+     `subject` désignait déjà les domaines internes (Arithmétique, Géométrie…) :
+     la matière scolaire a donc sa propre colonne. Tout le contenu existant est
+     rattaché aux mathématiques, ce qui laisse le site identique à l'existant.
+     (La migration des annales suit la création de leur table, plus bas.) */
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS matiere TEXT`);
+  await pool.query(`UPDATE exercises SET matiere = 'mathematiques' WHERE matiere IS NULL`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_exercises_matiere ON exercises (matiere)`);
   /* Fusion du chapitre « Développement et factorisation » dans « Calcul littéral » :
      on rebascule les exercices déjà en base sur le chapitre unique. */
   await pool.query(
@@ -722,6 +734,11 @@ async function initDB() {
       created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  /* Matière des annales : même logique que pour les exercices, une fois la
+     table créée. L'existant bascule en mathématiques. */
+  await pool.query(`ALTER TABLE annales ADD COLUMN IF NOT EXISTS matiere TEXT`);
+  await pool.query(`UPDATE annales SET matiere = 'mathematiques' WHERE matiere IS NULL`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_annales_matiere ON annales (matiere)`);
   console.log("Base de données prête.");
   await seedAdmin();
   await seedDB();
@@ -859,6 +876,128 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication :
 }
 
 /* ── CORRIGER UNE RÉPONSE (séance) ── */
+/* ── FILET DE COHÉRENCE DE LA CORRECTION ──
+   Un petit modèle peut annoncer « incorrect » tout en décrivant la réponse de
+   l'élève comme étant la bonne. On recalcule donc nous-mêmes les deux valeurs
+   qu'il a extraites : si elles sont égales, le verdict négatif est impossible.
+
+   Évaluation volontairement minimaliste et sûre : uniquement des nombres et
+   les opérateurs + - * / ( ) ^ — toute autre écriture est rejetée. */
+function valeurNumerique(expr) {
+  if (typeof expr !== "string") return null;
+  let e = expr.trim()
+    .replace(/\s+/g, "")
+    .replace(/^[a-zA-Z]+=/, "")        // « x=5,75 » → « 5,75 »
+    .replace(/,/g, ".")                // virgule décimale française
+    .replace(/\^/g, "**");
+  if (!e || e.length > 60) return null;
+  if (!/^[0-9.+\-*/()]+$/.test(e.replace(/\*\*/g, ""))) return null;
+  if (!/[0-9]/.test(e)) return null;
+  try {
+    const v = Function('"use strict";return (' + e + ')')();
+    return Number.isFinite(v) ? v : null;
+  } catch { return null; }
+}
+
+function memeValeur(a, b) {
+  const x = valeurNumerique(a), y = valeurNumerique(b);
+  if (x === null || y === null) return false;
+  return Math.abs(x - y) <= 1e-9 * Math.max(1, Math.abs(x), Math.abs(y));
+}
+
+/* Renvoie true si le verdict contredit la comparaison des valeurs. */
+function verdictIncoherent(p) {
+  if (!p || !p.verdict) return false;
+  return p.verdict !== "correct" && memeValeur(p.valeur_eleve, p.valeur_attendue);
+}
+
+/* ── DIAGNOSTIC DES FIGURES (admin) ───────────────────────────────────────
+   Vérifie, sujet par sujet, si le correcteur peut réellement VOIR les pages
+   du PDF. S'exécute dans le conteneur : c'est le seul endroit où l'état du
+   disque et des modules natifs est observable. Lecture seule.
+
+   IMPORTANT : par défaut, AUCUNE page n'est rasterisée. Rendre une page de
+   chaque sujet d'un coup remplit la mémoire (chaque image pèse plusieurs Mo)
+   et fait tomber le conteneur — d'où le test de rendu isolé, un sujet à la
+   fois, via ?rendu=<id>. */
+app.get("/admin/diagnostic-figures", auth, requireAdmin, async (req, res) => {
+  try {
+    const moteur    = await _loadRenderer();
+    const renduPour = req.query.rendu ? Number(req.query.rendu) : null;
+
+    const { rows } = await pool.query(
+      "SELECT id, title, classe, image_url, questions FROM annales ORDER BY id");
+
+    const sujets = [];
+    for (const a of rows) {
+      // Un sujet illisible ne doit jamais interrompre le diagnostic entier.
+      try {
+        let questions = [];
+        try {
+          questions = Array.isArray(a.questions) ? a.questions : JSON.parse(a.questions || "[]");
+        } catch { questions = []; }
+
+        const chemin      = _cheminSujet(a.image_url);
+        const pdfPresent  = !!(chemin && fs.existsSync(chemin));
+        const avecPages   = questions.filter(q => Array.isArray(q.pages) && q.pages.length).length;
+        const avecFigDesc = questions.filter(q => q.figure_desc).length;
+
+        let cause = null;
+        if (!a.image_url)     cause = "aucun PDF rattaché (image_url vide)";
+        else if (!chemin)     cause = "nom de PDF refusé par le garde-fou : " + a.image_url;
+        else if (!pdfPresent) cause = "PDF absent du disque (fichier perdu au redéploiement ?)";
+        else if (!moteur)     cause = "moteur de rendu indisponible (@napi-rs/canvas / pdfjs-dist)";
+        else if (!avecPages)  cause = "aucune question ne porte de numéro de page";
+
+        // Test de rendu réel : uniquement sur le sujet demandé.
+        let rendu = null;
+        if (!cause && renduPour === a.id) {
+          const premiere = (questions.find(q => Array.isArray(q.pages) && q.pages.length) || {}).pages;
+          const n = premiere ? Number(premiere[0]) : 1;
+          try {
+            const img = await renderPageImage(a.image_url, n);
+            rendu = img ? { ok: true, page: n, ko: Math.round(img.length / 1024) }
+                        : { ok: false, page: n };
+            if (!img) cause = "le rendu de la page " + n + " a échoué";
+          } catch (e) {
+            rendu = { ok: false, page: n };
+            cause = "erreur au rendu de la page " + n + " : " + e.message;
+          }
+        }
+
+        sujets.push({
+          id: a.id, titre: a.title, classe: a.classe, image_url: a.image_url,
+          pdf_present: pdfPresent, questions: questions.length,
+          questions_avec_pages: avecPages, questions_avec_figure_desc: avecFigDesc,
+          rendu, ok: !cause, cause,
+        });
+      } catch (e) {
+        sujets.push({ id: a.id, titre: a.title || "?", classe: a.classe, image_url: a.image_url,
+                      pdf_present: false, questions: 0, questions_avec_pages: 0,
+                      questions_avec_figure_desc: 0, rendu: null, ok: false,
+                      cause: "sujet illisible : " + e.message });
+      }
+    }
+
+    let pdfSurDisque = 0;
+    try { pdfSurDisque = fs.readdirSync(path.join(__dirname, "public", "annales-pdf")).length; }
+    catch { pdfSurDisque = 0; }
+
+    res.json({
+      moteur_rendu: !!moteur,
+      dossier_pdf: path.join(__dirname, "public", "annales-pdf"),
+      pdf_sur_disque: pdfSurDisque,
+      memoire_mo: Math.round(process.memoryUsage().rss / 1048576),
+      sujets_ok: sujets.filter(s => s.ok).length,
+      sujets_total: sujets.length,
+      sujets,
+    });
+  } catch (err) {
+    console.error("Erreur diagnostic figures:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/exercises/correct", auth, async (req, res) => {
   const { exercise, answer } = req.body;
   const key = process.env.MISTRAL_KEY;
@@ -870,12 +1009,26 @@ app.post("/exercises/correct", auth, async (req, res) => {
      On rasterise la ou les pages où figure l'exercice (champ `pages`, posé par
      seed-pages.js). Si le rendu échoue, on retombe sur figure_desc. */
   const images = [];
+  let raisonSansFigure = null;
   const pagesVoulues = Array.isArray(exercise.pages) ? exercise.pages.slice(0, 2) : [];
-  if (exercise.annale_url && pagesVoulues.length) {
+
+  if (!exercise.annale_url) {
+    raisonSansFigure = "cet exercice n'est rattaché à aucun PDF (champ annale_url vide)";
+  } else if (!pagesVoulues.length) {
+    raisonSansFigure = "aucun numéro de page n'est enregistré pour cette question (champ pages vide)";
+  } else if (!_cheminSujet(exercise.annale_url)) {
+    raisonSansFigure = "chemin de PDF refusé : " + exercise.annale_url;
+  } else if (!fs.existsSync(_cheminSujet(exercise.annale_url))) {
+    raisonSansFigure = "le PDF est absent du disque (" + exercise.annale_url +
+      ") — sur un hébergement éphémère, les fichiers déposés disparaissent à chaque redéploiement";
+  } else if (!(await _loadRenderer())) {
+    raisonSansFigure = "moteur de rendu PDF indisponible (@napi-rs/canvas ou pdfjs-dist manquant)";
+  } else {
     for (const n of pagesVoulues) {
       const img = await renderPageImage(exercise.annale_url, Number(n));
       if (img) images.push(img);
     }
+    if (!images.length) raisonSansFigure = "le rendu des pages " + pagesVoulues.join(", ") + " a échoué";
   }
   // Garde-fou : au-delà de ~5 Mo cumulés, on renonce aux images plutôt que de
   // risquer un rejet de l'API ; la correction repart alors en mode texte.
@@ -883,9 +1036,12 @@ app.post("/exercises/correct", auth, async (req, res) => {
   if (poids > 5 * 1024 * 1024) {
     console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) + " Ko) — mode texte.");
     images.length = 0;
+    raisonSansFigure = "images des pages trop lourdes (" + Math.round(poids / 1024) + " Ko)";
   }
   const avecImage = images.length > 0;
   if (avecImage) console.log("[pages] " + images.length + " page(s) jointe(s), " + Math.round(poids / 1024) + " Ko");
+  else console.warn("[correction] « " + (exercise.title || "?") +
+                    " » corrigé SANS la figure — raison : " + raisonSansFigure);
 
   const figureCtx = avecImage
     ? (exercise.figure_desc
@@ -898,7 +1054,8 @@ AVERTISSEMENT : incomplète par construction. Ce qui n'est codé que sur le dess
 
   const sourceCtx = avecImage
     ? `\n\nSOURCE PRINCIPALE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux. Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux. FAIS-EN TA RÉFÉRENCE : en cas de désaccord entre l'image et le texte reproduit ci-dessous, l'IMAGE a raison — le texte provient d'une extraction automatique imparfaite. La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`
-    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.`;
+    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.
+RÈGLE ABSOLUE EN L'ABSENCE DE FIGURE : n'invente JAMAIS de configuration géométrique. N'utilise que les noms de points, les longueurs et les parallélismes littéralement présents dans l'énoncé ou dans la solution officielle ci-dessus. Il t'est interdit d'introduire des points (D, E, M…) qui n'y figurent pas, ou de supposer quelle droite est parallèle à quelle autre. Si le rapport à écrire dépend d'un élément que tu ne peux pas lire, dis-le franchement à l'élève, appuie-toi sur la SOLUTION OFFICIELLE pour la démarche, et mets le verdict à "partial" au lieu de deviner.`;
 
   const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
 
@@ -918,14 +1075,24 @@ Ta mission : réagir DIRECTEMENT à ce que l'élève a écrit, pas à une répon
 3 bis. En cas de doute entre « l'élève s'est trompé » et « l'énoncé dont je dispose est incomplet », choisis TOUJOURS la seconde hypothèse et signale-le. Mieux vaut ne pas trancher que sanctionner à tort.
 4. Ensuite seulement, donne la bonne démarche puis la solution finale.
 
+CAS DU QCM : si l'élève répond par une lettre ou un numéro d'option (« réponse D », « c'est la B », « 3 »), retrouve dans l'énoncé le CONTENU de cette option et juge ce contenu, rien d'autre. Un QCM ne demande aucune rédaction : ne reproche JAMAIS à l'élève de ne pas avoir détaillé sa démarche, et ne le compte pas comme une erreur. Si tu n'arrives pas à retrouver les options dans l'énoncé, dis-le franchement et mets le verdict à "partial" plutôt que de deviner.
+
+FORMES ÉQUIVALENTES : un même nombre écrit autrement reste juste. (20 + 3)/4, 23/4, 5,75 et 5.75 sont la MÊME réponse et valent toutes "correct". Idem pour une fraction non simplifiée, un calcul non effectué, ou un ordre de termes différent. Ne sanctionne jamais la forme quand la valeur est bonne.
+
+COHÉRENCE OBLIGATOIRE : ton verdict doit découler de ta propre analyse. S'il est "incorrect" ou "partial", ton analyse doit nommer une erreur réelle et précise. Si, en rédigeant, tu constates que la réponse de l'élève coïncide avec la solution attendue, le verdict est "correct" — il est interdit de décrire la méthode de l'élève comme étant la bonne tout en la déclarant fausse.
+
 Utilise des maths lisibles en texte simple (ex : x^2, sqrt(2), 3/4, x = -b/2a). Pas de LaTeX, pas de markdown.
 
-Réponds UNIQUEMENT en JSON valide, sans markdown :
+Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre où tu dois RÉFLÉCHIR : remplis-les un par un, dans cet ordre exact, et ne conclus qu'à la fin.
 {
-  "verdict": "correct" | "partial" | "incorrect",
+  "lecture_reponse": "Ce que l'élève a réellement répondu, reformulé. Pour un QCM : la lettre choisie ET le contenu de cette option, recopié depuis l'énoncé.",
+  "valeur_eleve": "La valeur finale donnée par l'élève, sous forme d'expression arithmétique brute, par exemple (20+3)/4 ou 5,75. Chaîne vide si sa réponse n'est pas numérique.",
+  "valeur_attendue": "La valeur finale attendue, même format. Chaîne vide si non numérique.",
+  "comparaison": "Calcule les deux valeurs ci-dessus et dis explicitement si elles sont égales ou non.",
   "analyse": "Comment l'élève est arrivé à sa réponse. Si erreur, l'étape exacte qui cloche et la raison profonde de l'erreur. 2 à 4 phrases, adressées à l'élève.",
   "demarche": "La bonne démarche, étape par étape, claire et sobre. Sépare les étapes par des retours à la ligne.",
-  "solution": "Le résultat final attendu, en une ou deux lignes."
+  "solution": "Le résultat final attendu, en une ou deux lignes.",
+  "verdict": "correct" | "partial" | "incorrect"
 }`;
 
   /* Message multimodal : texte + image(s) de la page. */
@@ -934,7 +1101,8 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
         images.map(u => ({ type: "image_url", image_url: u })))
     : prompt;
 
-  try {
+  /* Un seul appel au correcteur, renvoie le JSON analysé (ou null). */
+  async function appelCorrecteur(contenu) {
     const mistralRes = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -942,11 +1110,11 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
         "Authorization": `Bearer ${key}`
       },
       body: JSON.stringify({
-        model: "mistral-small-latest",
-        messages: [{ role: "user", content: userContent }],
+        model: process.env.MISTRAL_MODEL_CORRECTION || "mistral-small-latest",
+        messages: [{ role: "user", content: contenu }],
         response_format: { type: "json_object" },   // garantit un JSON valide
         temperature: 0.1,
-        max_tokens: 1200                            // marge : une réponse tronquée casse le JSON
+        max_tokens: 1400                            // marge : une réponse tronquée casse le JSON
       })
     });
     if (!mistralRes.ok) {
@@ -956,10 +1124,46 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
     const data = await mistralRes.json();
     const brut = (data.choices && data.choices[0] && data.choices[0].message.content) || "";
     const parsed = parseJsonTolerant(brut);
+    if (!parsed) console.error("Réponse non-JSON du modèle :", brut.slice(0, 400));
+    return parsed;
+  }
+
+  try {
+    let parsed = await appelCorrecteur(userContent);
     if (!parsed) {
-      console.error("Réponse non-JSON du modèle :", brut.slice(0, 400));
       return res.status(502).json({ error: "Le correcteur a renvoyé une réponse illisible. Réessaie." });
     }
+
+    /* Le verdict contredit la comparaison des valeurs faite par le modèle
+       lui-même : on lui redonne une chance, en le mettant face à sa
+       contradiction plutôt qu'en corrigeant le verdict en silence. */
+    if (verdictIncoherent(parsed)) {
+      console.warn("[correction] verdict incohérent (" + parsed.verdict + ") : " +
+        parsed.valeur_eleve + " = " + parsed.valeur_attendue + " — relance.");
+      const rappel = prompt +
+        `\n\nATTENTION — ta première réponse était contradictoire : tu as annoncé le verdict "${parsed.verdict}" ` +
+        `alors que la valeur de l'élève (${parsed.valeur_eleve}) et la valeur attendue (${parsed.valeur_attendue}) ` +
+        `sont numériquement ÉGALES. Une réponse juste écrite sous une autre forme reste juste. ` +
+        `Reprends la correction depuis le début et rends un verdict cohérent avec ta propre comparaison.`;
+      const relance = await appelCorrecteur(
+        avecImage ? [{ type: "text", text: rappel }].concat(images.map(u => ({ type: "image_url", image_url: u })))
+                  : rappel);
+      if (relance) parsed = relance;
+    }
+
+    /* Si la contradiction persiste, on tranche : l'élève ne peut pas être
+       pénalisé pour une réponse numériquement exacte. */
+    if (verdictIncoherent(parsed)) {
+      console.warn("[correction] incohérence persistante — verdict forcé à correct.");
+      parsed.verdict = "correct";
+      parsed.analyse = "Ta réponse est exacte : " + (parsed.valeur_eleve || "").trim() +
+        " correspond bien au résultat attendu. La démarche ci-dessous te permet de vérifier chaque étape.";
+    }
+
+    /* On dit honnêtement à l'élève si la correction a été faite sans la figure. */
+    parsed.figure_vue = avecImage;
+    if (!avecImage) parsed.figure_diagnostic = raisonSansFigure;
+
     res.json(parsed);
   } catch (err) {
     console.error("Erreur correction:", err.message);
@@ -987,7 +1191,7 @@ app.post("/exercises/analyse", auth, async (req, res) => {
 /* ── AJOUTER UN EXERCICE ── */
 app.post("/exercises", auth, async (req, res) => {
   const { title, content, level, subject, difficulty, solution, classe, chapitre, type,
-          image_url, figure_desc } = req.body;
+          image_url, figure_desc, matiere } = req.body;
   // Type d'exercice : fourni, sinon déduit du titre (numéro final retiré).
   const famille = (req.body.famille && String(req.body.famille).trim())
     || String(title || "").replace(/\s*(n[°o]\s*)?\d+\s*$/i, "").trim() || null;
@@ -998,9 +1202,9 @@ app.post("/exercises", auth, async (req, res) => {
     // image_url / figure_desc : renseignés pour un problème déposé en PDF, afin que
     // les figures et annexes restent consultables et servent à la correction.
     const result = await pool.query(
-      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc, famille)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
-      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null, famille]
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc, famille, matiere)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null, famille, matiere || "mathematiques"]
     );
     res.json({ id: result.rows[0].id, message: "Exercice ajouté." });
   } catch (err) {
@@ -1010,10 +1214,14 @@ app.post("/exercises", auth, async (req, res) => {
 
 /* ── RÉCUPÉRER LES EXERCICES ── */
 app.get("/exercises", auth, async (req, res) => {
-  const { level, subject, difficulty, type, chapitre } = req.query;
+  const { level, subject, difficulty, type, chapitre, matiere } = req.query;
   let query  = "SELECT * FROM exercises WHERE 1=1";
   let params = [];
   let i      = 1;
+  /* Cloisonnement par matière : sans paramètre, on sert les mathématiques,
+     ce qui garde le comportement d'origine pour tout appel existant. */
+  query += ` AND COALESCE(matiere, 'mathematiques') = $${i++}`;
+  params.push(matiere || "mathematiques");
   if (type)       { query += ` AND COALESCE(type, 'exercice') = $${i++}`; params.push(type); }
   if (level)      { query += ` AND level = $${i++}`;      params.push(level); }
   if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
@@ -1053,4 +1261,12 @@ app.delete("/exercises/:id", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Serveur lancé sur http://localhost:${PORT}`);
+  /* Diagnostic de démarrage : sans ce moteur de rendu, le correcteur ne voit
+     JAMAIS les figures des sujets et travaille à l'aveugle sur le texte. */
+  _loadRenderer().then(mod => {
+    console.log(mod
+      ? "[pages] moteur de rendu PDF disponible : les figures seront transmises au correcteur."
+      : "[pages] ⚠ MOTEUR DE RENDU INDISPONIBLE — le correcteur ne verra AUCUNE figure. "
+        + "Installez @napi-rs/canvas et pdfjs-dist (npm i @napi-rs/canvas pdfjs-dist).");
+  });
 });

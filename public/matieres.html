@@ -72,6 +72,7 @@ h1 em{font-style:italic;color:var(--accent);}
 @media(max-width:600px){.wrap{padding:3.2rem 1.2rem 4rem;}}
 @media (prefers-reduced-motion:reduce){.subject{animation:none;opacity:1;transform:none;}}
 </style>
+<script src="matiere.js"></script>
 <script src="auth.js" data-protect></script>
 </head>
 <body>
@@ -91,22 +92,12 @@ h1 em{font-style:italic;color:var(--accent);}
 
 <script>
 (function(){
-  /* Catalogue des matières — pour en ouvrir une plus tard,
-     il suffit de passer "href" à la page d'accueil correspondante. */
-  const MATIERES = [
-    { nom:"Mathématiques",     icone:"📐", couleur:"#7ac8a0", href:"app.html",
-      desc:"Arbre des connaissances, cours animés, tutoriels, exercices et annales." },
-    { nom:"Français",          icone:"📖", couleur:"#a07ac8",
-      desc:"Grammaire, littérature et expression écrite." },
-    { nom:"Physique-Chimie",   icone:"🧪", couleur:"#7ab4c8",
-      desc:"Expériences, formules et notions clés du programme." },
-    { nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a",
-      desc:"Repères historiques, cartes et enjeux du monde actuel." },
-    { nom:"Anglais",           icone:"🗣️", couleur:"#c8b97a",
-      desc:"Vocabulaire, grammaire et compréhension orale et écrite." },
-    { nom:"SVT",               icone:"🧬", couleur:"#c87a9a",
-      desc:"Sciences de la vie et de la Terre." },
-  ];
+  /* Le catalogue vit dans matiere.js : une seule liste pour tout le site.
+     Pour ouvrir une matière, il suffit d'y passer ouverte:true. */
+  const MATIERES = MB_MAT.liste().map(m => ({
+    nom: m.nom, icone: m.icone, couleur: m.couleur, desc: m.desc,
+    href: m.ouverte ? ('app.html?matiere=' + encodeURIComponent(m.id)) : null,
+  }));
 
   const grid = document.getElementById('grid');
   MATIERES.forEach((m, i) => {

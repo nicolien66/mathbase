@@ -71,11 +71,13 @@
     logo.innerHTML = "Poly<em>mates</em>";
     header.appendChild(logo);
 
-    // rappel de la matière en cours (renvoie à l'accueil maths)
+    // rappel de la matière en cours (renvoie à son accueil)
+    const M = window.MB_MAT;
     const subject = document.createElement("a");
     subject.className = "mb-subject";
-    subject.href = "app.html";
-    subject.textContent = "Mathématiques";
+    subject.href = M ? M.lien("app.html") : "app.html";
+    subject.textContent = M ? M.nom : "Mathématiques";
+    if (M) subject.style.color = M.couleur;
     header.appendChild(subject);
 
     const tabsEl = document.createElement("div");
@@ -83,7 +85,7 @@
     TABS.forEach(t => {
       const a = document.createElement("a");
       a.className = "mb-tab";
-      a.href = t.href;
+      a.href = window.MB_MAT ? MB_MAT.lien(t.href) : t.href;
       a.textContent = t.label;
       a.addEventListener("click", () => {
         if (t.hashes && PAGE === "app.html") {
@@ -101,7 +103,7 @@
 
     const cta = document.createElement("a");
     cta.className = "mb-cta";
-    cta.href = "app.html#entrainement";
+    cta.href = window.MB_MAT ? MB_MAT.lien("app.html#entrainement") : "app.html#entrainement";
     cta.textContent = "Démarrer une séance →";
     header.appendChild(cta);
 
