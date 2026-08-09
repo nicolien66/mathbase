@@ -66,6 +66,16 @@
 
   <div class="panel" style="margin-bottom:1.6rem">
     <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <span>Répartition du contenu par matière</span>
+      <button class="act" id="mat-run">Vérifier</button>
+    </div>
+    <div id="mat-body" class="empty">
+      Montre ce que contient réellement la base : combien d'exercices et d'annales portent quelle matière.
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:1.6rem">
+    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
       <span>Diagnostic des figures — le correcteur voit-il les sujets ?</span>
       <button class="act" id="diag-run">Lancer le diagnostic</button>
     </div>
@@ -181,6 +191,44 @@
     if (!res.ok) { showErr(d.error || 'Suppression impossible.'); return; }
     USERS = USERS.filter(x => x.id !== u.id); render();
   }
+
+  /* ── Répartition par matière ────────────────────────────────────────── */
+  $('mat-run').onclick = async () => {
+    const body = $('mat-body');
+    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
+    $('mat-run').disabled = true;
+    body.innerHTML = `<div class="empty">Lecture de la base…</div>`;
+    try {
+      const res = await MB_AUTH.apiFetch('/admin/diagnostic-matieres');
+      if (res.status === 404) throw new Error(
+        "route inconnue du serveur : la version déployée est antérieure à cette fonctionnalité. "
+        + "Vérifie que le dernier commit est bien déployé.");
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+      const tableau = (titre, lignes) => {
+        if (!lignes.length) return `<div style="padding:0 1.3rem 1rem"><strong>${titre}</strong> — aucun contenu.</div>`;
+        return `<div style="padding:0 1.3rem 1.2rem">
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">${titre}</div>
+          ${lignes.map(l => `<div style="display:flex;justify-content:space-between;gap:1rem;
+              padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.88rem">
+              <span${l.matiere === '(vide)' ? ' style="color:var(--coral)"' : ''}>${escapeHtml(l.matiere)}</span>
+              <strong>${l.n}</strong></div>`).join('')}
+        </div>`;
+      };
+      const col = d.colonne_matiere;
+      body.innerHTML =
+        `<div style="padding:1rem 1.3rem;font-size:.86rem;line-height:1.7;color:var(--muted)">
+           Version du serveur : <strong style="color:var(--cream)">${escapeHtml(d.version_serveur || '?')}</strong> ·
+           Colonne « matiere » : exercices <strong style="color:${col.exercises?'var(--green)':'var(--coral)'}">
+           ${col.exercises ? 'oui' : 'NON'}</strong>, annales
+           <strong style="color:${col.annales?'var(--green)':'var(--coral)'}">${col.annales ? 'oui' : 'NON'}</strong>
+         </div>`
+        + tableau('Exercices', d.exercices) + tableau('Annales', d.annales);
+    } catch (e) {
+      body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Vérification impossible : ${escapeHtml(e.message)}</div>`;
+    }
+    $('mat-run').disabled = false;
+  };
 
   /* ── Diagnostic des figures ─────────────────────────────────────────── */
   let DIAG = null;

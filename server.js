@@ -339,7 +339,23 @@ const pool = new Pool({
 });
 
 app.use(bodyParser.json({ limit: "25mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+/* Fichiers statiques. Sans en-tête de cache explicite, le navigateur applique
+   une fraîcheur « heuristique » et peut resservir un script.js périmé pendant
+   des heures après un déploiement — les corrections semblent alors sans effet.
+   « no-cache » n'interdit pas le cache : il impose de revalider. Avec l'ETag,
+   un fichier inchangé coûte un simple 304. */
+/* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
+   numéro ne correspond pas à la dernière version déployée, c'est que le
+   serveur n'a pas redémarré sur le code attendu. */
+const SERVEUR_VERSION = "2026-08-09-matieres-3";
+
+app.use(express.static(path.join(__dirname, "public"), {
+  etag: true,
+  setHeaders(res, chemin) {
+    if (/\.(html|js|css)$/i.test(chemin)) res.setHeader("Cache-Control", "no-cache");
+    else if (/\.(png|jpe?g|svg|woff2?|pdf)$/i.test(chemin)) res.setHeader("Cache-Control", "public, max-age=86400");
+  },
+}));
 
 /* ═══════════ ROUTES AUTH ═══════════ */
 const pubUser = (u) => ({ id: u.id, email: u.email, pseudo: u.pseudo, role: u.role, classe: u.classe });
@@ -411,10 +427,12 @@ app.delete("/admin/users/:id", auth, requireAdmin, async (req, res) => {
 
 /* ═══════════ ROUTES ANNALES ═══════════ */
 app.get("/annales", auth, async (req, res) => {
-  const { level, exam, year } = req.query;
+  const { level, exam, year, matiere } = req.query;
   let query = "SELECT * FROM annales WHERE 1=1";
   const params = [];
   let i = 1;
+  query += ` AND COALESCE(matiere, 'mathematiques') = $${i++}`;
+  params.push(matiere || "mathematiques");
   if (level) { query += ` AND level = $${i++}`; params.push(level); }
   if (exam)  { query += ` AND exam = $${i++}`;  params.push(exam); }
   if (year)  { query += ` AND year = $${i++}`;  params.push(Number(year)); }
@@ -434,15 +452,15 @@ app.get("/annales/:id", auth, async (req, res) => {
 });
 
 app.post("/annales", auth, async (req, res) => {
-  const { title, exam, year, level, classe, subject, duration, content, image_url, solution, questions } = req.body || {};
+  const { title, exam, year, level, classe, subject, duration, content, image_url, solution, questions, matiere } = req.body || {};
   if (!title || !content) return res.status(400).json({ error: "Titre et énoncé requis." });
   try {
     const result = await pool.query(
-      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, solution, questions)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, solution, questions, matiere)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
       [title, exam || null, year ? Number(year) : null, level || null, classe || null, subject || null,
        duration ? Number(duration) : null, content, image_url || null, solution || null,
-       JSON.stringify(Array.isArray(questions) ? questions : [])]
+       JSON.stringify(Array.isArray(questions) ? questions : []), matiere || "mathematiques"]
     );
     res.json({ id: result.rows[0].id, message: "Annale ajoutée." });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -478,12 +496,13 @@ app.post("/annales/upload", auth, requireAdmin, async (req, res) => {
     }
 
     const { rows } = await pool.query(
-      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, image_url, questions)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, title`,
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, image_url, questions, matiere)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, title`,
       [title || fichier.replace(/\.pdf$/i, "").replace(/_/g, " "),
        exam || "Brevet", year ? Number(year) : null, "college",
        classe || "3ème", "Mathématiques", duration ? Number(duration) : null,
-       "annales-pdf/" + fichier, JSON.stringify(analyse.questions)]);
+       "annales-pdf/" + fichier, JSON.stringify(analyse.questions),
+       req.body.matiere || "mathematiques"]);
 
     res.json({
       id: rows[0].id, title: rows[0].title, fichier,
@@ -665,6 +684,15 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS classe   TEXT`);
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+
+  /* ── Ouverture du site à plusieurs matières ──
+     `subject` désignait déjà les domaines internes (Arithmétique, Géométrie…) :
+     la matière scolaire a donc sa propre colonne. Tout le contenu existant est
+     rattaché aux mathématiques, ce qui laisse le site identique à l'existant.
+     (La migration des annales suit la création de leur table, plus bas.) */
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS matiere TEXT`);
+  await pool.query(`UPDATE exercises SET matiere = 'mathematiques' WHERE matiere IS NULL`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_exercises_matiere ON exercises (matiere)`);
   /* Fusion du chapitre « Développement et factorisation » dans « Calcul littéral » :
      on rebascule les exercices déjà en base sur le chapitre unique. */
   await pool.query(
@@ -722,6 +750,11 @@ async function initDB() {
       created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  /* Matière des annales : même logique que pour les exercices, une fois la
+     table créée. L'existant bascule en mathématiques. */
+  await pool.query(`ALTER TABLE annales ADD COLUMN IF NOT EXISTS matiere TEXT`);
+  await pool.query(`UPDATE annales SET matiere = 'mathematiques' WHERE matiere IS NULL`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_annales_matiere ON annales (matiere)`);
   console.log("Base de données prête.");
   await seedAdmin();
   await seedDB();
@@ -1172,9 +1205,39 @@ app.post("/exercises/analyse", auth, async (req, res) => {
 });
 
 /* ── AJOUTER UN EXERCICE ── */
+/* ── RÉPARTITION DU CONTENU PAR MATIÈRE (admin) ───────────────────────────
+   Dit la vérité de la base : combien d'exercices et d'annales portent quelle
+   matière. Permet de distinguer un problème de données d'un fichier périmé
+   servi par le cache du navigateur. */
+app.get("/admin/diagnostic-matieres", auth, requireAdmin, async (req, res) => {
+  try {
+    const compter = async (table) => {
+      const { rows } = await pool.query(
+        `SELECT COALESCE(matiere, '(vide)') AS matiere, COUNT(*)::int AS n
+           FROM ${table} GROUP BY 1 ORDER BY 2 DESC`);
+      return rows;
+    };
+    const colonne = async (table) => {
+      const { rows } = await pool.query(
+        `SELECT 1 FROM information_schema.columns
+          WHERE table_name = $1 AND column_name = 'matiere' LIMIT 1`, [table]);
+      return rows.length > 0;
+    };
+    res.json({
+      version_serveur: SERVEUR_VERSION,
+      colonne_matiere: { exercises: await colonne("exercises"), annales: await colonne("annales") },
+      exercices: await compter("exercises"),
+      annales:   await compter("annales"),
+    });
+  } catch (err) {
+    console.error("Erreur diagnostic matières:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/exercises", auth, async (req, res) => {
   const { title, content, level, subject, difficulty, solution, classe, chapitre, type,
-          image_url, figure_desc } = req.body;
+          image_url, figure_desc, matiere } = req.body;
   // Type d'exercice : fourni, sinon déduit du titre (numéro final retiré).
   const famille = (req.body.famille && String(req.body.famille).trim())
     || String(title || "").replace(/\s*(n[°o]\s*)?\d+\s*$/i, "").trim() || null;
@@ -1185,9 +1248,9 @@ app.post("/exercises", auth, async (req, res) => {
     // image_url / figure_desc : renseignés pour un problème déposé en PDF, afin que
     // les figures et annexes restent consultables et servent à la correction.
     const result = await pool.query(
-      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc, famille)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
-      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null, famille]
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre, type, image_url, figure_desc, famille, matiere)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+      [title, content, level, subject || null, difficulty || null, solution || null, classe || null, chapitre || null, (type === "probleme" ? "probleme" : "exercice"), image_url || null, figure_desc || null, famille, matiere || "mathematiques"]
     );
     res.json({ id: result.rows[0].id, message: "Exercice ajouté." });
   } catch (err) {
@@ -1197,10 +1260,14 @@ app.post("/exercises", auth, async (req, res) => {
 
 /* ── RÉCUPÉRER LES EXERCICES ── */
 app.get("/exercises", auth, async (req, res) => {
-  const { level, subject, difficulty, type, chapitre } = req.query;
+  const { level, subject, difficulty, type, chapitre, matiere } = req.query;
   let query  = "SELECT * FROM exercises WHERE 1=1";
   let params = [];
   let i      = 1;
+  /* Cloisonnement par matière : sans paramètre, on sert les mathématiques,
+     ce qui garde le comportement d'origine pour tout appel existant. */
+  query += ` AND COALESCE(matiere, 'mathematiques') = $${i++}`;
+  params.push(matiere || "mathematiques");
   if (type)       { query += ` AND COALESCE(type, 'exercice') = $${i++}`; params.push(type); }
   if (level)      { query += ` AND level = $${i++}`;      params.push(level); }
   if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
@@ -1239,7 +1306,7 @@ app.delete("/exercises/:id", async (req, res) => {
 /* ── LANCEMENT ── */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Serveur lancé sur http://localhost:${PORT}`);
+  console.log(`Serveur lancé sur http://localhost:${PORT} — version ${SERVEUR_VERSION}`);
   /* Diagnostic de démarrage : sans ce moteur de rendu, le correcteur ne voit
      JAMAIS les figures des sujets et travaille à l'aveugle sur le texte. */
   _loadRenderer().then(mod => {

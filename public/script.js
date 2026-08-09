@@ -39,7 +39,22 @@ let LOADED_EXERCISES = [];   // dernier lot chargé (pour la vue chapitre)
    Tout le contenu (exercices, problèmes, annales) est cloisonné par matière :
    on ne veut pas voir des exercices de maths dans l'espace physique-chimie.
    Ces deux aides ajoutent la matière aux requêtes et aux créations. */
-function matiereCourante() { return (window.MB_MAT && MB_MAT.id) || "mathematiques"; }
+function matiereCourante() {
+  if (!window.MB_MAT) {
+    /* Sans ce module, tout retomberait silencieusement sur les mathématiques
+       et l'espace d'une autre matière afficherait du contenu de maths. On le
+       signale au lieu de le masquer. */
+    console.error("[Polymates] matiere.js n'est pas chargé : la matière ne peut pas être déterminée.");
+    if (!window._mbAlerteMatiere) {
+      window._mbAlerteMatiere = true;
+      setTimeout(() => { try {
+        showToast("Fichier matiere.js absent : le site retombe sur les mathématiques.", "error");
+      } catch (_) {} }, 800);
+    }
+    return "mathematiques";
+  }
+  return MB_MAT.id;
+}
 function avecMatiere(url) {
   return url + (url.includes("?") ? "&" : "?") + "matiere=" + encodeURIComponent(matiereCourante());
 }
