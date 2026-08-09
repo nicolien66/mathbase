@@ -729,7 +729,7 @@ async function initDB() {
 
 /* ── BOOTSTRAP DU COMPTE ADMINISTRATEUR ── */
 async function seedAdmin() {
-  const email = (process.env.ADMIN_EMAIL || "admin@mathbase.fr").toLowerCase();
+  const email = (process.env.ADMIN_EMAIL || "admin@polymates.fr").toLowerCase();
   const pw    = process.env.ADMIN_PASSWORD || "admin123";
   const { rows } = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
   if (rows.length) return;
@@ -859,6 +859,41 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication :
 }
 
 /* ── CORRIGER UNE RÉPONSE (séance) ── */
+/* ── FILET DE COHÉRENCE DE LA CORRECTION ──
+   Un petit modèle peut annoncer « incorrect » tout en décrivant la réponse de
+   l'élève comme étant la bonne. On recalcule donc nous-mêmes les deux valeurs
+   qu'il a extraites : si elles sont égales, le verdict négatif est impossible.
+
+   Évaluation volontairement minimaliste et sûre : uniquement des nombres et
+   les opérateurs + - * / ( ) ^ — toute autre écriture est rejetée. */
+function valeurNumerique(expr) {
+  if (typeof expr !== "string") return null;
+  let e = expr.trim()
+    .replace(/\s+/g, "")
+    .replace(/^[a-zA-Z]+=/, "")        // « x=5,75 » → « 5,75 »
+    .replace(/,/g, ".")                // virgule décimale française
+    .replace(/\^/g, "**");
+  if (!e || e.length > 60) return null;
+  if (!/^[0-9.+\-*/()]+$/.test(e.replace(/\*\*/g, ""))) return null;
+  if (!/[0-9]/.test(e)) return null;
+  try {
+    const v = Function('"use strict";return (' + e + ')')();
+    return Number.isFinite(v) ? v : null;
+  } catch { return null; }
+}
+
+function memeValeur(a, b) {
+  const x = valeurNumerique(a), y = valeurNumerique(b);
+  if (x === null || y === null) return false;
+  return Math.abs(x - y) <= 1e-9 * Math.max(1, Math.abs(x), Math.abs(y));
+}
+
+/* Renvoie true si le verdict contredit la comparaison des valeurs. */
+function verdictIncoherent(p) {
+  if (!p || !p.verdict) return false;
+  return p.verdict !== "correct" && memeValeur(p.valeur_eleve, p.valeur_attendue);
+}
+
 app.post("/exercises/correct", auth, async (req, res) => {
   const { exercise, answer } = req.body;
   const key = process.env.MISTRAL_KEY;
@@ -918,14 +953,24 @@ Ta mission : réagir DIRECTEMENT à ce que l'élève a écrit, pas à une répon
 3 bis. En cas de doute entre « l'élève s'est trompé » et « l'énoncé dont je dispose est incomplet », choisis TOUJOURS la seconde hypothèse et signale-le. Mieux vaut ne pas trancher que sanctionner à tort.
 4. Ensuite seulement, donne la bonne démarche puis la solution finale.
 
+CAS DU QCM : si l'élève répond par une lettre ou un numéro d'option (« réponse D », « c'est la B », « 3 »), retrouve dans l'énoncé le CONTENU de cette option et juge ce contenu, rien d'autre. Un QCM ne demande aucune rédaction : ne reproche JAMAIS à l'élève de ne pas avoir détaillé sa démarche, et ne le compte pas comme une erreur. Si tu n'arrives pas à retrouver les options dans l'énoncé, dis-le franchement et mets le verdict à "partial" plutôt que de deviner.
+
+FORMES ÉQUIVALENTES : un même nombre écrit autrement reste juste. (20 + 3)/4, 23/4, 5,75 et 5.75 sont la MÊME réponse et valent toutes "correct". Idem pour une fraction non simplifiée, un calcul non effectué, ou un ordre de termes différent. Ne sanctionne jamais la forme quand la valeur est bonne.
+
+COHÉRENCE OBLIGATOIRE : ton verdict doit découler de ta propre analyse. S'il est "incorrect" ou "partial", ton analyse doit nommer une erreur réelle et précise. Si, en rédigeant, tu constates que la réponse de l'élève coïncide avec la solution attendue, le verdict est "correct" — il est interdit de décrire la méthode de l'élève comme étant la bonne tout en la déclarant fausse.
+
 Utilise des maths lisibles en texte simple (ex : x^2, sqrt(2), 3/4, x = -b/2a). Pas de LaTeX, pas de markdown.
 
-Réponds UNIQUEMENT en JSON valide, sans markdown :
+Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre où tu dois RÉFLÉCHIR : remplis-les un par un, dans cet ordre exact, et ne conclus qu'à la fin.
 {
-  "verdict": "correct" | "partial" | "incorrect",
+  "lecture_reponse": "Ce que l'élève a réellement répondu, reformulé. Pour un QCM : la lettre choisie ET le contenu de cette option, recopié depuis l'énoncé.",
+  "valeur_eleve": "La valeur finale donnée par l'élève, sous forme d'expression arithmétique brute, par exemple (20+3)/4 ou 5,75. Chaîne vide si sa réponse n'est pas numérique.",
+  "valeur_attendue": "La valeur finale attendue, même format. Chaîne vide si non numérique.",
+  "comparaison": "Calcule les deux valeurs ci-dessus et dis explicitement si elles sont égales ou non.",
   "analyse": "Comment l'élève est arrivé à sa réponse. Si erreur, l'étape exacte qui cloche et la raison profonde de l'erreur. 2 à 4 phrases, adressées à l'élève.",
   "demarche": "La bonne démarche, étape par étape, claire et sobre. Sépare les étapes par des retours à la ligne.",
-  "solution": "Le résultat final attendu, en une ou deux lignes."
+  "solution": "Le résultat final attendu, en une ou deux lignes.",
+  "verdict": "correct" | "partial" | "incorrect"
 }`;
 
   /* Message multimodal : texte + image(s) de la page. */
@@ -934,7 +979,8 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
         images.map(u => ({ type: "image_url", image_url: u })))
     : prompt;
 
-  try {
+  /* Un seul appel au correcteur, renvoie le JSON analysé (ou null). */
+  async function appelCorrecteur(contenu) {
     const mistralRes = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -942,11 +988,11 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
         "Authorization": `Bearer ${key}`
       },
       body: JSON.stringify({
-        model: "mistral-small-latest",
-        messages: [{ role: "user", content: userContent }],
+        model: process.env.MISTRAL_MODEL_CORRECTION || "mistral-small-latest",
+        messages: [{ role: "user", content: contenu }],
         response_format: { type: "json_object" },   // garantit un JSON valide
         temperature: 0.1,
-        max_tokens: 1200                            // marge : une réponse tronquée casse le JSON
+        max_tokens: 1400                            // marge : une réponse tronquée casse le JSON
       })
     });
     if (!mistralRes.ok) {
@@ -956,10 +1002,42 @@ Réponds UNIQUEMENT en JSON valide, sans markdown :
     const data = await mistralRes.json();
     const brut = (data.choices && data.choices[0] && data.choices[0].message.content) || "";
     const parsed = parseJsonTolerant(brut);
+    if (!parsed) console.error("Réponse non-JSON du modèle :", brut.slice(0, 400));
+    return parsed;
+  }
+
+  try {
+    let parsed = await appelCorrecteur(userContent);
     if (!parsed) {
-      console.error("Réponse non-JSON du modèle :", brut.slice(0, 400));
       return res.status(502).json({ error: "Le correcteur a renvoyé une réponse illisible. Réessaie." });
     }
+
+    /* Le verdict contredit la comparaison des valeurs faite par le modèle
+       lui-même : on lui redonne une chance, en le mettant face à sa
+       contradiction plutôt qu'en corrigeant le verdict en silence. */
+    if (verdictIncoherent(parsed)) {
+      console.warn("[correction] verdict incohérent (" + parsed.verdict + ") : " +
+        parsed.valeur_eleve + " = " + parsed.valeur_attendue + " — relance.");
+      const rappel = prompt +
+        `\n\nATTENTION — ta première réponse était contradictoire : tu as annoncé le verdict "${parsed.verdict}" ` +
+        `alors que la valeur de l'élève (${parsed.valeur_eleve}) et la valeur attendue (${parsed.valeur_attendue}) ` +
+        `sont numériquement ÉGALES. Une réponse juste écrite sous une autre forme reste juste. ` +
+        `Reprends la correction depuis le début et rends un verdict cohérent avec ta propre comparaison.`;
+      const relance = await appelCorrecteur(
+        avecImage ? [{ type: "text", text: rappel }].concat(images.map(u => ({ type: "image_url", image_url: u })))
+                  : rappel);
+      if (relance) parsed = relance;
+    }
+
+    /* Si la contradiction persiste, on tranche : l'élève ne peut pas être
+       pénalisé pour une réponse numériquement exacte. */
+    if (verdictIncoherent(parsed)) {
+      console.warn("[correction] incohérence persistante — verdict forcé à correct.");
+      parsed.verdict = "correct";
+      parsed.analyse = "Ta réponse est exacte : " + (parsed.valeur_eleve || "").trim() +
+        " correspond bien au résultat attendu. La démarche ci-dessous te permet de vérifier chaque étape.";
+    }
+
     res.json(parsed);
   } catch (err) {
     console.error("Erreur correction:", err.message);
