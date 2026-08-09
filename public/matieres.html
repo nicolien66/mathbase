@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Choisir une matière</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0b09; --surface:#111110; --surface2:#181815;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --accent:#c8b97a; --text:#f0ece0; --muted:rgba(240,236,224,0.5);
+  --serif:'Playfair Display',Georgia,serif; --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 45% at 50% -10%, rgba(200,185,122,.07), transparent);}
+
+.wrap{max-width:1100px;margin:0 auto;padding:4.5rem 2rem 5rem;position:relative;}
+.head{text-align:center;margin-bottom:3rem;}
+.eyebrow{font-family:var(--mono);font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:.8rem;}
+.eyebrow::before,.eyebrow::after{content:'';display:block;width:2.5rem;height:1px;background:rgba(200,185,122,.4);}
+.logo{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.2rem);font-weight:700;margin-bottom:.9rem;}
+.logo em{font-style:italic;color:var(--accent);}
+.sub{color:var(--muted);font-size:.98rem;line-height:1.7;max-width:520px;margin:0 auto;}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.1rem;}
+
+.subject{
+  --sc:var(--accent);
+  position:relative;
+  display:flex;flex-direction:column;gap:.7rem;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-top:2px solid var(--sc);
+  border-radius:16px;
+  padding:1.7rem 1.5rem 1.5rem;
+  text-decoration:none;color:inherit;
+  cursor:pointer;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+  min-height:170px;
+}
+.subject.ready:hover{transform:translateY(-4px);border-color:var(--sc);background:var(--surface2);}
+.subject.soon{opacity:.55;cursor:default;}
+
+.subject-icon{font-size:1.7rem;}
+.subject-title{font-family:var(--serif);font-size:1.3rem;}
+.subject-desc{font-size:.85rem;line-height:1.55;color:var(--muted);}
+.subject-go{margin-top:auto;font-size:.8rem;color:var(--sc);
+  opacity:0;transform:translateX(-4px);transition:.2s;}
+.subject.ready:hover .subject-go{opacity:1;transform:none;}
+
+.subject-badge{
+  align-self:flex-start;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:999px;padding:.2rem .6rem;margin-top:auto;
+}
+.subject.soon .subject-badge{color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border2);}
+
+.foot-link{display:block;text-align:center;margin-top:3rem;font-size:.85rem;color:var(--muted);}
+.foot-link a{color:var(--accent);text-decoration:none;}
+.foot-link a:hover{text-decoration:underline;}
+
+@media(max-width:600px){.wrap{padding:3rem 1.2rem 4rem;}}
+</style>
+<script src="auth.js" data-protect></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Poly<em>mates</em></p>
+    <h1 class="logo">Quelle matière<br>veux-tu <em>explorer</em> ?</h1>
+    <p class="sub">Choisis une matière pour accéder à ses cours, tutoriels et exercices.</p>
+  </div>
+
+  <div class="grid">
+    <a class="subject ready" href="app.html" style="--sc:#7ac8a0">
+      <div class="subject-icon">📐</div>
+      <div class="subject-title">Mathématiques</div>
+      <div class="subject-desc">Arbre des connaissances, cours animés, tutoriels, exercices et annales.</div>
+      <div class="subject-go">Entrer →</div>
+    </a>
+
+    <div class="subject soon" style="--sc:#a07ac8" title="Bientôt disponible">
+      <div class="subject-icon">📖</div>
+      <div class="subject-title">Français</div>
+      <div class="subject-desc">Grammaire, littérature et expression écrite.</div>
+      <div class="subject-badge">Bientôt disponible</div>
+    </div>
+
+    <div class="subject soon" style="--sc:#7ac8a0" title="Bientôt disponible">
+      <div class="subject-icon">🧪</div>
+      <div class="subject-title">Physique-Chimie</div>
+      <div class="subject-desc">Expériences, formules et notions clés du programme.</div>
+      <div class="subject-badge">Bientôt disponible</div>
+    </div>
+
+    <div class="subject soon" style="--sc:#7ab4c8" title="Bientôt disponible">
+      <div class="subject-icon">🌍</div>
+      <div class="subject-title">Histoire-Géographie</div>
+      <div class="subject-desc">Repères historiques, cartes et enjeux du monde actuel.</div>
+      <div class="subject-badge">Bientôt disponible</div>
+    </div>
+
+    <div class="subject soon" style="--sc:#c8a07a" title="Bientôt disponible">
+      <div class="subject-icon">🇬🇧</div>
+      <div class="subject-title">Anglais</div>
+      <div class="subject-desc">Vocabulaire, grammaire et compréhension.</div>
+      <div class="subject-badge">Bientôt disponible</div>
+    </div>
+
+    <div class="subject soon" style="--sc:#c87a9a" title="Bientôt disponible">
+      <div class="subject-icon">🧬</div>
+      <div class="subject-title">SVT</div>
+      <div class="subject-desc">Sciences de la vie et de la Terre.</div>
+      <div class="subject-badge">Bientôt disponible</div>
+    </div>
+  </div>
+
+  <p class="foot-link">Envie de proposer une matière en priorité ? <a href="mailto:contact@polymates.fr">Écris-nous</a>.</p>
+</div>
+</body>
+</html>

@@ -202,13 +202,13 @@ function demoCorrect(ex, answer){
   const hit  = (ex.keys||[]).some(k => norm.includes(normalizeAnswer(k)));
   if (hit) return {
     verdict:"correct",
-    analyse:"Ta réponse contient le bon résultat — bien joué. (Correction automatique locale : lance le serveur MathBase pour une analyse détaillée de ton raisonnement par l'IA.)",
+    analyse:"Ta réponse contient le bon résultat — bien joué. (Correction automatique locale : lance le serveur Polymates pour une analyse détaillée de ton raisonnement par l'IA.)",
     demarche: ex.solution || "—",
     solution: ex.solution || "—"
   };
   return {
     verdict:"incorrect",
-    analyse:"Je ne retrouve pas le résultat attendu dans ta copie. Compare ton brouillon avec la démarche ci-dessous pour repérer l'étape qui diffère. (Correction automatique locale : lance le serveur MathBase pour une analyse détaillée par l'IA.)",
+    analyse:"Je ne retrouve pas le résultat attendu dans ta copie. Compare ton brouillon avec la démarche ci-dessous pour repérer l'étape qui diffère. (Correction automatique locale : lance le serveur Polymates pour une analyse détaillée par l'IA.)",
     demarche: ex.solution || "—",
     solution: ex.solution || "—"
   };
@@ -611,7 +611,7 @@ function openAnnale(id) {
       </div>
     </div>
     <div class="annale-sheet">
-      <div class="sheet-band"><span>Coll\u00e8ge MathBase</span><span>\u00c9valuation de math\u00e9matiques</span></div>
+      <div class="sheet-band"><span>Coll\u00e8ge Polymates</span><span>\u00c9valuation de math\u00e9matiques</span></div>
       <div class="sheet-title">${escapeHtml(a.title)}</div>
       <div class="sheet-meta">${meta.join(" \u00b7 ")}</div>
       <div class="sheet-fields">
@@ -917,7 +917,7 @@ async function submitExamAnswer() {
   try {
     if (DEMO_MODE) {
       await new Promise(r => setTimeout(r, 600));
-      result = { verdict: "partial", analyse: "Mode démo : compare ta réponse au corrigé ci-dessous — le serveur MathBase fournira une correction détaillée de ta démarche.", solution: q.solution || "—" };
+      result = { verdict: "partial", analyse: "Mode démo : compare ta réponse au corrigé ci-dessous — le serveur Polymates fournira une correction détaillée de ta démarche.", solution: q.solution || "—" };
     } else {
       const res = await MB_AUTH.apiFetch("/exercises/correct", { method: "POST", body: JSON.stringify({ exercise: pseudoEx, answer }) });
       if (!res.ok) {

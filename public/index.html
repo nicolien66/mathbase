@@ -3,232 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MathBase</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<title>Polymates — Connexion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-  width:100%; height:100%;
-  background:#0b0b09;
-  display:flex; align-items:center; justify-content:center;
-  overflow:hidden;
-  font-family:'Playfair Display', Georgia, serif;
-}
-
-.stage {
-  position:relative;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  width:100%; height:100%;
-}
-
-.glyph {
-  position:absolute;
-  font-size:min(22rem, 60vw);
-  font-weight:700;
-  color:rgba(200,185,122,0);
-  line-height:1;
-  pointer-events:none;
-  top:50%; left:50%;
-  transform:translate(-50%,-55%);
-  transition:color 2s ease;
-  z-index:0;
-  user-select:none;
-}
-
-.center {
-  position:relative; z-index:1;
-  display:flex; flex-direction:column;
-  align-items:center; gap:0;
-}
-
-.line {
-  height:1px;
-  background:linear-gradient(to right, transparent, rgba(200,185,122,.6), transparent);
-  width:0;
-  transition:width 1s cubic-bezier(.77,0,.18,1);
-}
-
-.logo-wrap { overflow:hidden; padding:.9rem 0 .4rem; }
-.logo {
-  font-size:clamp(3rem, 10vw, 5.5rem);
-  font-weight:400; letter-spacing:-.03em;
-  color:#f0ece0;
-  opacity:0; transform:translateY(28px);
-  transition:opacity .9s ease, transform .9s cubic-bezier(.22,1,.36,1);
-}
-.logo em { font-style:italic; color:#c8b97a; }
-
-.tagline {
-  font-family:'DM Mono', monospace;
-  font-size:.58rem; letter-spacing:.26em; text-transform:uppercase;
-  color:rgba(200,185,122,0);
-  margin-top:1.2rem;
-  transition:color 1s ease .3s;
-}
-
-.enter-btn {
-  margin-top:3rem;
-  background:none;
-  border:1px solid rgba(200,185,122,0);
-  color:rgba(200,185,122,0);
-  font-family:'DM Mono', monospace;
-  font-size:.65rem; letter-spacing:.22em; text-transform:uppercase;
-  padding:.75rem 2.2rem;
-  border-radius:4px;
-  cursor:pointer;
-  transition:border-color 1s ease .5s, color 1s ease .5s, background .2s, transform .15s;
-}
-.enter-btn:hover {
-  background:rgba(200,185,122,.08);
-  transform:translateY(-1px);
-}
-.enter-btn:active { transform:scale(.97); }
-
-.sparks {
-  position:absolute; inset:0;
-  pointer-events:none; overflow:hidden; z-index:0;
-}
-.spark {
-  position:absolute;
-  border-radius:50%;
-  background:#c8b97a;
-  opacity:0;
-  animation:sparkAnim var(--d) ease var(--delay) infinite;
-}
-@keyframes sparkAnim {
-  0%   { opacity:0; transform:translate(0,0) scale(1); }
-  15%  { opacity:.85; }
-  100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); }
-}
-
-.halo {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  width:200px; height:200px;
-  border-radius:50%;
-  border:1px solid rgba(200,185,122,0);
-  pointer-events:none; z-index:0;
-  transition:border-color 1.5s ease;
-  animation:haloPulse 4s ease-in-out infinite;
-}
-.halo2 {
-  animation-delay:-2s;
-  width:320px; height:320px;
-}
-@keyframes haloPulse {
-  0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.4; }
-  50%      { transform:translate(-50%,-50%) scale(1.08); opacity:.1; }
-}
-
-body.exiting .stage {
-  animation:exitFade .8s ease forwards;
-}
-@keyframes exitFade {
-  to { opacity:0; transform:scale(1.04); }
-}
+  :root{ --bg:#0b0b09; --panel:#14130f; --line:rgba(245,242,232,.1); --cream:#f0ece0; --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:2rem 1rem;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.07), transparent);}
+  .box{width:min(430px,100%);position:relative;}
+  .logo{text-align:center;margin-bottom:2rem;}
+  .logo a{color:var(--cream);text-decoration:none;font-family:'Playfair Display',Georgia,serif;font-size:1.6rem;}
+  .logo a span{color:var(--gold);font-style:italic;}
+  .logo p{color:var(--muted);font-size:.85rem;margin-top:.3rem;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:2rem;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.8);}
+  .tabs{display:flex;gap:.4rem;background:rgba(245,242,232,.04);border-radius:999px;padding:.3rem;margin-bottom:1.6rem;}
+  .tabs button{flex:1;background:none;border:none;color:var(--muted);font:inherit;font-size:.88rem;
+    padding:.55rem;border-radius:999px;cursor:pointer;transition:.25s;}
+  .tabs button.on{background:var(--gold);color:#0b0b09;font-weight:500;}
+  label{display:block;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);margin:1rem 0 .35rem;}
+  input,select{width:100%;background:rgba(245,242,232,.05);border:1px solid var(--line);border-radius:10px;
+    color:var(--cream);font:inherit;font-size:.95rem;padding:.7rem .9rem;outline:none;transition:border-color .25s;}
+  input:focus,select:focus{border-color:rgba(200,185,122,.55);}
+  select option{background:#14130f;}
+  .submit{width:100%;margin-top:1.5rem;background:var(--gold);color:#0b0b09;border:none;border-radius:999px;
+    padding:.8rem;font:inherit;font-size:.95rem;font-weight:600;cursor:pointer;transition:.25s;}
+  .submit:hover{transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(200,185,122,.5);}
+  .submit:disabled{opacity:.5;cursor:wait;transform:none;}
+  .msg{margin-top:1rem;font-size:.85rem;line-height:1.5;border-radius:10px;padding:.7rem .9rem;display:none;}
+  .msg.err{display:block;color:var(--coral);background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);}
+  .msg.ok{display:block;color:var(--green);background:rgba(130,210,160,.08);border:1px solid rgba(130,210,160,.3);}
+  .demo-banner{display:none;margin-bottom:1.4rem;font-size:.8rem;color:var(--coral);
+    border:1px dashed rgba(230,130,110,.4);border-radius:10px;padding:.7rem .9rem;line-height:1.5;}
+  .foot{text-align:center;margin-top:1.4rem;font-size:.8rem;color:var(--muted);}
+  .hidden{display:none;}
 </style>
-<script src="auth.js"></script>
 </head>
 <body>
-<div class="stage" id="stage">
-  <div class="sparks" id="sparks"></div>
-  <div class="halo"  id="halo1"></div>
-  <div class="halo halo2" id="halo2"></div>
-  <div class="glyph" id="glyph">∑</div>
-
-  <div class="center">
-    <div class="line" id="line-top"></div>
-    <div class="logo-wrap">
-      <div class="logo" id="logo">Math<em>Base</em></div>
-    </div>
-    <div class="line" id="line-bot"></div>
-    <div class="tagline" id="tagline">Exercices · Intelligence artificielle</div>
-    <button class="enter-btn" id="btn" onclick="enter()">Entrer</button>
+<div class="box">
+  <div class="logo">
+    <a href="index.html">Poly<span>mates</span></a>
+    <p>Connectez-vous pour accéder à tes matières, cours, tutoriels et exercices.</p>
   </div>
+  <div class="card">
+    <div class="demo-banner" id="demo-banner">
+      <strong>Mode démo</strong> — aucun serveur détecté : la connexion est simulée localement.
+      Entrez n'importe quels identifiants (un e-mail commençant par « admin » donne l'accès administrateur).
+    </div>
+    <div class="tabs">
+      <button id="tab-login" class="on">Connexion</button>
+      <button id="tab-register">Inscription</button>
+    </div>
+
+    <form id="form-login">
+      <label>Adresse e-mail</label>
+      <input type="email" id="l-email" required autocomplete="email" placeholder="vous@exemple.fr">
+      <label>Mot de passe</label>
+      <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••">
+      <button class="submit" type="submit">Se connecter</button>
+    </form>
+
+    <form id="form-register" class="hidden">
+      <label>Pseudo</label>
+      <input type="text" id="r-pseudo" required minlength="2" placeholder="Comment t'appelles-tu ?">
+      <label>Adresse e-mail</label>
+      <input type="email" id="r-email" required autocomplete="email" placeholder="vous@exemple.fr">
+      <label>Mot de passe (6 caractères min)</label>
+      <input type="password" id="r-password" required minlength="6" autocomplete="new-password" placeholder="••••••••">
+      <label>Classe</label>
+      <select id="r-classe">
+        <option value="">— facultatif —</option>
+        <option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option><option>Autre</option>
+      </select>
+      <button class="submit" type="submit">Créer mon compte</button>
+    </form>
+
+    <div class="msg" id="msg"></div>
+  </div>
+  <div class="foot">Bienvenue sur Polymates — toutes tes matières au même endroit.</div>
 </div>
 
+<script src="auth.js"></script>
 <script>
-function intro() {
-  const lineTop = document.getElementById('line-top');
-  const lineBot = document.getElementById('line-bot');
-  const logo    = document.getElementById('logo');
-  const tagline = document.getElementById('tagline');
-  const btn     = document.getElementById('btn');
-  const glyph   = document.getElementById('glyph');
-  const halo1   = document.getElementById('halo1');
-  const halo2   = document.getElementById('halo2');
+(function(){
+  const $ = id => document.getElementById(id);
+  const next = new URLSearchParams(location.search).get('next') || 'matieres.html';
+  let demo = false;
 
-  // reset
-  lineTop.style.width = '0';
-  lineBot.style.width = '0';
-  logo.style.opacity = '0';
-  logo.style.transform = 'translateY(28px)';
-  tagline.style.color = 'rgba(200,185,122,0)';
-  btn.style.borderColor = 'rgba(200,185,122,0)';
-  btn.style.color = 'rgba(200,185,122,0)';
-  glyph.style.color = 'rgba(200,185,122,0)';
-  halo1.style.borderColor = 'rgba(200,185,122,0)';
-  halo2.style.borderColor = 'rgba(200,185,122,0)';
+  // déjà connecté avec un VRAI jeton ? → direction la suite.
+  // (une session démo résiduelle ne doit pas court-circuiter la vraie connexion en ligne)
+  MB_AUTH.hasBackend().then(ok => {
+    demo = !ok;
+    if (demo) {
+      $('demo-banner').style.display = 'block';
+      if (MB_AUTH.user()) { location.href = next; return; }   // démo assumée : on laisse passer
+    } else {
+      // backend présent : seule une session avec jeton est valable
+      if (MB_AUTH.user() && MB_AUTH.token() && !MB_AUTH.isDemo()) { location.href = next; return; }
+      // sinon on purge toute session démo résiduelle
+      if (MB_AUTH.isDemo()) { localStorage.removeItem('mb_token'); localStorage.removeItem('mb_user'); }
+    }
+  });
 
-  setTimeout(() => {
-    glyph.style.color = 'rgba(200,185,122,.03)';
-    halo1.style.borderColor = 'rgba(200,185,122,.12)';
-    halo2.style.borderColor = 'rgba(200,185,122,.07)';
-    lineTop.style.width = '300px';
-    lineBot.style.width = '300px';
-  }, 400);
+  // onglets
+  $('tab-login').onclick = () => switchTab(true);
+  $('tab-register').onclick = () => switchTab(false);
+  function switchTab(login){
+    $('tab-login').classList.toggle('on', login);
+    $('tab-register').classList.toggle('on', !login);
+    $('form-login').classList.toggle('hidden', !login);
+    $('form-register').classList.toggle('hidden', login);
+    hideMsg();
+  }
+  function showMsg(text, ok){ const m=$('msg'); m.textContent=text; m.className='msg '+(ok?'ok':'err'); }
+  function hideMsg(){ $('msg').className='msg'; }
 
-  setTimeout(() => {
-    logo.style.opacity = '1';
-    logo.style.transform = 'translateY(0)';
-  }, 1100);
+  function demoSession(email, pseudo, classe){
+    const role = /^admin/i.test(email) ? 'admin' : 'eleve';
+    MB_AUTH.save(null, { pseudo: pseudo || email.split('@')[0], email, role, classe: classe || null, demo: true });
+    location.href = next;
+  }
 
-  setTimeout(() => {
-    tagline.style.color = 'rgba(200,185,122,.5)';
-  }, 1900);
+  async function submit(url, body, btn){
+    btn.disabled = true; hideMsg();
+    try {
+      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showMsg(data.error || 'Une erreur est survenue.', false); btn.disabled = false; return; }
+      MB_AUTH.save(data.token, data.user);
+      showMsg('Bienvenue, ' + data.user.pseudo + ' !', true);
+      setTimeout(() => location.href = next, 400);
+    } catch {
+      showMsg('Serveur injoignable.', false); btn.disabled = false;
+    }
+  }
 
-  setTimeout(() => {
-    btn.style.borderColor = 'rgba(200,185,122,.35)';
-    btn.style.color = 'rgba(200,185,122,.7)';
-  }, 2400);
-}
+  $('form-login').onsubmit = (e) => {
+    e.preventDefault();
+    if (demo) return demoSession($('l-email').value.trim());
+    submit('/auth/login', { email: $('l-email').value.trim(), password: $('l-password').value }, e.submitter);
+  };
 
-// Particules continues
-const sparksEl = document.getElementById('sparks');
-
-function spawnSpark() {
-  const s = document.createElement('div');
-  s.className = 'spark';
-  const size = .8 + Math.random() * 1.8;
-  s.style.width  = size + 'px';
-  s.style.height = size + 'px';
-  const cx = window.innerWidth  / 2 + (Math.random() - .5) * 60;
-  const cy = window.innerHeight / 2 + (Math.random() - .5) * 40;
-  s.style.left = cx + 'px';
-  s.style.top  = cy + 'px';
-  const angle = Math.random() * Math.PI * 2;
-  const dist  = 80 + Math.random() * 200;
-  const dur   = 2 + Math.random() * 2;
-  s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
-  s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-  s.style.setProperty('--d', dur + 's');
-  s.style.setProperty('--delay', '0s');
-  sparksEl.appendChild(s);
-  setTimeout(() => s.remove(), dur * 1000);
-}
-
-const sparkInterval = setInterval(spawnSpark, 180);
-
-function enter() {
-  clearInterval(sparkInterval);
-  document.body.classList.add('exiting');
-  setTimeout(() => {
-    window.location.href = 'app.html';
-  }, 800);
-}
-
-intro();
+  $('form-register').onsubmit = (e) => {
+    e.preventDefault();
+    if (demo) return demoSession($('r-email').value.trim(), $('r-pseudo').value.trim(), $('r-classe').value);
+    submit('/auth/register', {
+      pseudo: $('r-pseudo').value.trim(), email: $('r-email').value.trim(),
+      password: $('r-password').value, classe: $('r-classe').value || null,
+    }, e.submitter);
+  };
+})();
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MATHBASE — DIAGRAMMES
+   POLYMATES — DIAGRAMMES
    Affiche et fait construire les trois représentations retenues :
    diagramme en bâtons, graphique (courbe) et diagramme circulaire.
 

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MATHBASE — SOLIDES
+   POLYMATES — SOLIDES
    Dessine un solide en perspective cavalière, à partir de ses seules
    dimensions. Aucun texte n'y figure : le solide n'est jamais nommé sur
    la figure, c'est à l'élève de le reconnaître.

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MATHBASE — ESPACE QUADRILLAGE
+   POLYMATES — ESPACE QUADRILLAGE
    Widget d'exercices interactifs sur quadrillage.
 
    Deux gestes sur le même plateau :

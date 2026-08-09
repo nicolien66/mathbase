@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   MATHBASE — CONTENU DE L'ARBRE DES CONNAISSANCES
+   POLYMATES — CONTENU DE L'ARBRE DES CONNAISSANCES
    Pour chaque thème : cours rédigé, méthodes + erreurs classiques,
    exemple résolu, problèmes avec solutions, et liens croisés vers
    le tutoriel interactif et le cours animé correspondants.

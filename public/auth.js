@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MathBase — auth.js : garde d'accès partagé
+   Polymates — auth.js : garde d'accès partagé
    Usage :  <script src="auth.js" data-protect></script>          → page réservée aux connectés
             <script src="auth.js" data-protect="admin"></script>  → page réservée à l'admin
             <script src="auth.js"></script>                       → pastille seulement (page publique)

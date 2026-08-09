@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MathBase — ui.js : interface partagée entre toutes les pages
+   Polymates — ui.js : interface partagée entre toutes les pages
    1. Barre de navigation universelle (identique partout)
    2. Calculatrice flottante (bouton fixe en bas à droite)
       → deux modes : Standard et Scientifique (DEG/RAD)
