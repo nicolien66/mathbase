@@ -37,7 +37,7 @@
       accueil:"humanites.html",
       desc:"Langue, littérature et expression écrite." },
     { id:"histoire-geo",    nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a", ouverte:true,
-      accueil:"humanites.html",
+      accueil:"histoire.html",
       desc:"Repères historiques, cartes et enjeux du monde actuel." },
     { id:"anglais",         nom:"Anglais",             icone:"🗣️", couleur:"#c8b97a", ouverte:false,
       accueil:"app.html",

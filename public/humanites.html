@@ -66,31 +66,12 @@
           detail: "Sujets tombés les années précédentes, corrigés pas à pas." },
       ],
     },
-    "histoire-geo": {
-      rubrique: "Histoire-Géographie",
-      titre: 'Situer le monde,<br><em>et le comprendre.</em>',
-      ouverture:
-        "L'histoire et la géographie répondent à deux questions jumelles : quand, et où. " +
-        "On y apprend à dater sans réciter, à lire une carte comme un document, et à " +
-        "relier un événement à ce qui l'a rendu possible.",
-      sommaire: "Ce que contiendra cette matière",
-      sections: [
-        { nom: "Histoire",
-          detail: "Des grandes périodes aux événements précis, avec les repères à connaître." },
-        { nom: "Géographie",
-          detail: "Territoires, populations, ressources et aménagement des espaces." },
-        { nom: "Enseignement moral et civique",
-          detail: "Institutions, citoyenneté, droits et devoirs." },
-        { nom: "Repères et cartes",
-          detail: "Les dates et les cartes exigibles, à réviser et à replacer." },
-        { nom: "Annales",
-          detail: "Sujets de brevet : analyse de documents, tâche cartographique, EMC." },
-      ],
-    },
   };
 
+  /* Cette page sert les matières littéraires en sommaire simple. Les autres
+     ont leur propre accueil (l'histoire-géo a sa série de parchemins). */
   const page = PAGES[MB_MAT.id];
-  if (!page) { location.replace("matieres.html"); return; }
+  if (!page) { location.replace(MB_MAT.lien(MB_MAT.accueil) || "matieres.html"); return; }
 
   document.body.setAttribute("data-matiere", MB_MAT.id);
   document.title = "Polymates — " + page.rubrique;

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Histoire-Géographie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<style>
+/* ── Série de parchemins : un par période, feuilletable ───────────────── */
+.serie { position: relative; }
+.parchemin { display: none; }
+.parchemin.actif { display: block; }
+
+/* Le premier parchemin — la frise — occupe presque tout l'écran. */
+.feuille.large { max-width: 96rem; padding-left: 3rem; padding-right: 3rem; }
+
+/* ── Colonne de frises : une par période ── */
+.colonne-frises { margin-top: 2.4rem; }
+.frise-periode { margin-bottom: 2.6rem; }
+.frise-periode:last-child { margin-bottom: .5rem; }
+
+/* Titre de la période : cliquable, il mène à ses chapitres. */
+.frise-tete {
+  display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
+  width: 100%; padding: .5rem 0 .6rem; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.22);
+  font: inherit; color: inherit; cursor: pointer;
+}
+.frise-tete::before {
+  content: ''; width: .55rem; height: .55rem; flex: none;
+  background: var(--teinte); border: 1px solid rgba(47,40,32,.4);
+  transform: translateY(-.1rem);
+}
+.frise-nom {
+  font-family: var(--titre); font-size: 1.5rem; font-weight: 600;
+  transition: color .2s;
+}
+.frise-dates, .frise-compte {
+  font-variant: small-caps; letter-spacing: .12em; font-size: .74rem; color: var(--encre-pale);
+}
+.frise-compte { opacity: .75; }
+.frise-ouvrir {
+  margin-left: auto; font-size: .8rem; color: var(--accent);
+  opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s;
+}
+.frise-tete:hover .frise-nom, .frise-tete:focus-visible .frise-nom { color: var(--accent); }
+.frise-tete:hover .frise-ouvrir, .frise-tete:focus-visible .frise-ouvrir { opacity: 1; transform: none; }
+.frise-tete:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.frise-cadre { position: relative; overflow-x: auto; overflow-y: hidden; padding: 1.6rem 0 .5rem; }
+.frise-cadre svg { display: block; }
+/* Le défilement horizontal est l'usage attendu : on le rend agréable. */
+.frise-cadre { scrollbar-width: thin; scrollbar-color: rgba(120,100,60,.45) transparent; }
+.frise-cadre::-webkit-scrollbar { height: 9px; }
+.frise-cadre::-webkit-scrollbar-track { background: rgba(120,100,60,.10); }
+.frise-cadre::-webkit-scrollbar-thumb { background: rgba(120,100,60,.45); border-radius: 5px; }
+.frise-cadre::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.frise-note {
+  margin-top: .8rem; font-variant: small-caps; letter-spacing: .12em;
+  font-size: .72rem; color: var(--encre-pale); text-align: right;
+}
+.periode-zone { cursor: pointer; }
+
+/* Points d'événement : discrets au repos, francs au survol. */
+.evenement { cursor: pointer; }
+.evenement .point { transition: r .18s ease, fill-opacity .18s ease; }
+.evenement:hover .point, .evenement:focus-visible .point { r: 6; }
+.evenement:focus { outline: none; }
+.evenement:focus-visible .point { stroke: var(--accent); stroke-width: 2; stroke-opacity: 1; }
+
+/* L'infobulle : un billet posé sur le papier. */
+.frise-infobulle {
+  position: absolute; left: 0; top: 0; z-index: 5;
+  transform: translate(-50%, -100%);
+  display: flex; align-items: baseline; gap: .5rem; white-space: nowrap;
+  padding: .3rem .7rem;
+  background: var(--papier-clair);
+  border: 1px solid rgba(120,100,60,.45);
+  box-shadow: 0 6px 16px -8px rgba(70,55,30,.6);
+  opacity: 0; pointer-events: none;
+  transition: opacity .16s ease;
+}
+.frise-infobulle.visible { opacity: 1; }
+.frise-infobulle .bulle-an {
+  font-family: var(--titre); font-weight: 600; font-size: 1rem; color: var(--accent);
+}
+.frise-infobulle .bulle-texte { font-size: .84rem; color: var(--encre); }
+.periode-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.periode-bande { transition: opacity .2s; }
+.periode-zone:hover .periode-bande { opacity: .82; }
+
+/* ── Chapitres d'une période ── */
+.chapitres { margin-top: 2.4rem; }
+.periode-dates {
+  font-variant: small-caps; letter-spacing: .16em; font-size: .78rem;
+  color: var(--encre-pale); margin-top: -.7rem; margin-bottom: 1.2rem;
+}
+.classe-mention {
+  display: inline-block; margin-left: .6rem; padding: .05rem .5rem;
+  border: 1px solid rgba(120,100,60,.35); border-radius: 2px;
+  font-size: .7rem; letter-spacing: .1em; color: var(--encre-pale);
+}
+
+/* ── Feuilletage ── */
+.feuillet {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; max-width: 46rem; margin: 0 auto 2.5rem; padding: 0 1rem;
+}
+.serie[data-large="oui"] .feuillet { max-width: 96rem; }
+.feuillet button {
+  display: flex; align-items: baseline; gap: .55rem;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--titre); font-size: 1rem; color: var(--encre-pale);
+  padding: .4rem .2rem; transition: color .2s;
+  max-width: 42%; text-align: left;
+}
+.feuillet button:hover:not(:disabled) { color: var(--accent); }
+.feuillet button:disabled { opacity: .3; cursor: default; }
+.feuillet button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.feuillet .chevron { font-size: 1.1rem; line-height: 1; }
+.feuillet .suivant { text-align: right; justify-content: flex-end; }
+.feuillet-nom { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.jalons { display: flex; gap: .45rem; align-items: center; }
+.jalon {
+  width: .55rem; height: .55rem; border-radius: 50%; padding: 0;
+  background: none; border: 1px solid rgba(120,100,60,.5); cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.jalon:hover { border-color: var(--accent); }
+.jalon.actif { background: var(--accent); border-color: var(--accent); }
+.jalon.frise { border-radius: 1px; width: 1.1rem; }
+
+@media (max-width: 900px) {
+  .feuille.large { padding-left: 1.6rem; padding-right: 1.6rem; }
+  .feuillet .feuillet-nom { display: none; }
+  .jalons { gap: .35rem; }
+}
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+</head>
+<body data-matiere="histoire-geo">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div class="serie" id="serie"></div>
+
+<nav class="feuillet" id="feuillet" aria-label="Navigation entre les périodes">
+  <button type="button" id="precedent">
+    <span class="chevron" aria-hidden="true">←</span><span class="feuillet-nom"></span>
+  </button>
+  <div class="jalons" id="jalons" role="tablist" aria-label="Périodes"></div>
+  <button type="button" id="suivant" class="suivant">
+    <span class="feuillet-nom"></span><span class="chevron" aria-hidden="true">→</span>
+  </button>
+</nav>
+
+<p class="colophon">Polymates — Histoire-Géographie</p>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ══════════════════════════════════════════════════════════════
+     Les périodes du programme. `part` fixe la largeur de la période
+     sur la frise : l'échelle ne peut pas être proportionnelle (la
+     Préhistoire écraserait tout le reste), on l'assume et on le dit.
+     `debut`/`fin` servent à placer les événements dans leur bande.
+     ══════════════════════════════════════════════════════════════ */
+  const PERIODES = [
+    {
+      nom: "Préhistoire", titre: 'Aux origines,<br><em>avant l\'écriture.</em>',
+      dates: "des origines à −3300", classe: "6ᵉ",
+      debut: -300000, fin: -3300, part: 11, teinte: "#8a7c5e",
+      ouverture: "La plus longue période de l'histoire humaine est aussi celle qui n'a laissé " +
+        "aucun texte. On la lit dans les outils, les sépultures et les peintures.",
+      evenements: [
+        { an: -3000000, texte: "Premiers outils taillés" },
+        { an: -1800000, texte: "Homo erectus" },
+        { an: -400000, texte: "Maîtrise du feu" },
+        { an: -300000, texte: "Premiers Homo sapiens" },
+        { an: -40000, texte: "Sapiens en Europe" },
+        { an: -36000, texte: "Grotte Chauvet" },
+        { an: -17000, texte: "Lascaux" },
+        { an: -10000, texte: "Révolution néolithique : agriculture" },
+        { an: -6000, texte: "Premiers villages, élevage" },
+        { an: -4000, texte: "Métallurgie du cuivre" },
+      ],
+      chapitres: [
+        "La longue histoire de l'humanité et des migrations",
+        "La révolution néolithique",
+        "Sédentarisation et premiers villages",
+      ],
+    },
+    {
+      nom: "Antiquité", titre: 'Premières cités,<br><em>premiers empires.</em>',
+      dates: "−3300 à 476", classe: "6ᵉ",
+      debut: -3300, fin: 476, part: 20, teinte: "#9a6b3f",
+      ouverture: "L'écriture ouvre l'Antiquité. Naissent alors les États, les cités, les premiers " +
+        "empires, et deux religions qui traverseront les siècles.",
+      evenements: [
+        { an: -3300, texte: "Naissance de l'écriture, à Sumer" },
+        { an: -3000, texte: "Hiéroglyphes et premiers pharaons" },
+        { an: -2600, texte: "Pyramides de Gizeh" },
+        { an: -1792, texte: "Code de Hammurabi" },
+        { an: -1250, texte: "Ramsès II" },
+        { an: -1200, texte: "Alphabet phénicien" },
+        { an: -776, texte: "Premiers Jeux olympiques" },
+        { an: -753, texte: "Fondation légendaire de Rome" },
+        { an: -587, texte: "Destruction du Temple, exil à Babylone" },
+        { an: -509, texte: "Naissance de la République romaine" },
+        { an: -508, texte: "Clisthène : démocratie à Athènes" },
+        { an: -490, texte: "Marathon" },
+        { an: -480, texte: "Salamine" },
+        { an: -443, texte: "Siècle de Périclès" },
+        { an: -336, texte: "Alexandre le Grand" },
+        { an: -264, texte: "Début des guerres puniques" },
+        { an: -146, texte: "Destruction de Carthage" },
+        { an: -52, texte: "Alésia : Vercingétorix se rend" },
+        { an: -44, texte: "Assassinat de César" },
+        { an: -27, texte: "Auguste fonde l'Empire romain" },
+        { an: 30, texte: "Mort de Jésus de Nazareth" },
+        { an: 70, texte: "Destruction du Second Temple" },
+        { an: 79, texte: "Éruption du Vésuve, Pompéi" },
+        { an: 212, texte: "Édit de Caracalla : citoyenneté à tous" },
+        { an: 313, texte: "Édit de Milan : liberté du culte chrétien" },
+        { an: 380, texte: "Le christianisme, religion d'État" },
+        { an: 395, texte: "Partage de l'Empire romain" },
+        { an: 476, texte: "Chute de l'Empire romain d'Occident" },
+      ],
+      chapitres: [
+        "Premiers États, premières écritures",
+        "Le monde des cités grecques",
+        "Rome : du mythe à l'histoire",
+        "La naissance du judaïsme et du christianisme",
+        "Conquêtes romaines, paix romaine et romanisation",
+        "Les empires chinois et indien",
+      ],
+    },
+    {
+      nom: "Moyen Âge", titre: 'Mille ans<br><em>de chrétientés et d\'islam.</em>',
+      dates: "476 à 1492", classe: "5ᵉ",
+      debut: 476, fin: 1492, part: 20, teinte: "#7d4a4a",
+      ouverture: "Trois civilisations se partagent le pourtour méditerranéen, s'affrontent et " +
+        "commercent. En Occident, la seigneurie organise la terre et les hommes.",
+      evenements: [
+        { an: 496, texte: "Baptême de Clovis" },
+        { an: 622, texte: "Hégire : début du calendrier musulman" },
+        { an: 732, texte: "Poitiers" },
+        { an: 751, texte: "Pépin le Bref, roi des Francs" },
+        { an: 800, texte: "Charlemagne empereur" },
+        { an: 843, texte: "Traité de Verdun : partage de l'empire" },
+        { an: 987, texte: "Hugues Capet, roi de France" },
+        { an: 1054, texte: "Schisme entre Rome et Constantinople" },
+        { an: 1066, texte: "Conquête de l'Angleterre par Guillaume" },
+        { an: 1095, texte: "Appel à la première croisade" },
+        { an: 1163, texte: "Chantier de Notre-Dame de Paris" },
+        { an: 1204, texte: "Sac de Constantinople par les croisés" },
+        { an: 1214, texte: "Bouvines" },
+        { an: 1226, texte: "Louis IX, dit Saint Louis" },
+        { an: 1258, texte: "Bagdad prise par les Mongols" },
+        { an: 1291, texte: "Fin des États latins d'Orient" },
+        { an: 1337, texte: "Début de la guerre de Cent Ans" },
+        { an: 1347, texte: "La peste noire atteint l'Europe" },
+        { an: 1429, texte: "Jeanne d'Arc délivre Orléans" },
+        { an: 1453, texte: "Chute de Constantinople" },
+        { an: 1455, texte: "Imprimerie de Gutenberg" },
+        { an: 1492, texte: "Colomb atteint l'Amérique" },
+      ],
+      chapitres: [
+        "Byzance et l'Europe carolingienne",
+        "De la naissance de l'islam à la prise de Bagdad",
+        "L'ordre seigneurial : la domination des campagnes",
+        "L'émergence d'une nouvelle société urbaine",
+        "L'affirmation de l'État monarchique en France",
+        "Chrétiens et musulmans : croisades et Reconquista",
+      ],
+    },
+    {
+      nom: "Temps modernes", titre: 'Le monde s\'élargit,<br><em>l\'État se resserre.</em>',
+      dates: "1492 à 1715", classe: "5ᵉ",
+      debut: 1492, fin: 1715, part: 18, teinte: "#4f6b52",
+      ouverture: "L'Europe découvre d'autres continents et les soumet. Les humanistes rouvrent " +
+        "les textes anciens, la chrétienté se déchire, et le roi devient absolu.",
+      evenements: [
+        { an: 1494, texte: "Traité de Tordesillas" },
+        { an: 1515, texte: "Marignan : victoire de François Ier" },
+        { an: 1517, texte: "Les 95 thèses de Luther" },
+        { an: 1519, texte: "Charles Quint empereur" },
+        { an: 1522, texte: "Premier tour du monde, Magellan" },
+        { an: 1534, texte: "Affaire des Placards" },
+        { an: 1539, texte: "Ordonnance de Villers-Cotterêts" },
+        { an: 1543, texte: "Copernic : la Terre tourne" },
+        { an: 1572, texte: "Massacre de la Saint-Barthélemy" },
+        { an: 1598, texte: "Édit de Nantes" },
+        { an: 1610, texte: "Assassinat d'Henri IV" },
+        { an: 1635, texte: "Académie française" },
+        { an: 1643, texte: "Louis XIV, roi à cinq ans" },
+        { an: 1661, texte: "Début du règne personnel de Louis XIV" },
+        { an: 1682, texte: "La cour s'installe à Versailles" },
+        { an: 1685, texte: "Code noir et révocation de l'édit de Nantes" },
+      ],
+      chapitres: [
+        "Le monde au temps de Charles Quint et Soliman",
+        "Humanisme, réformes et conflits religieux",
+        "Du prince de la Renaissance au roi absolu",
+        "Grandes découvertes et premiers empires coloniaux",
+        "Commerce triangulaire et traite atlantique",
+      ],
+    },
+    {
+      nom: "Révolutions", titre: 'La nation naît,<br><em>l\'ancien monde tombe.</em>',
+      dates: "1715 à 1815", classe: "4ᵉ",
+      debut: 1715, fin: 1815, part: 12, teinte: "#8f2f22",
+      ouverture: "Les Lumières mettent la raison au centre. En dix ans, la France change de " +
+        "régime, de société et de calendrier — puis se donne un empereur.",
+      evenements: [
+        { an: 1715, texte: "Mort de Louis XIV, la Régence" },
+        { an: 1748, texte: "Montesquieu, De l'esprit des lois" },
+        { an: 1751, texte: "Premier volume de l'Encyclopédie" },
+        { an: 1763, texte: "Traité de Paris : la France perd le Canada" },
+        { an: 1776, texte: "Indépendance des États-Unis" },
+        { an: 1789, texte: "États généraux, 14 juillet, Déclaration" },
+        { an: 1791, texte: "Première Constitution française" },
+        { an: 1792, texte: "Valmy, proclamation de la République" },
+        { an: 1793, texte: "Exécution de Louis XVI, la Terreur" },
+        { an: 1794, texte: "Première abolition de l'esclavage" },
+        { an: 1799, texte: "18 Brumaire : Bonaparte prend le pouvoir" },
+        { an: 1802, texte: "Rétablissement de l'esclavage" },
+        { an: 1804, texte: "Code civil, Empire de Napoléon Ier" },
+        { an: 1805, texte: "Austerlitz" },
+        { an: 1812, texte: "Campagne de Russie" },
+        { an: 1815, texte: "Waterloo, congrès de Vienne" },
+      ],
+      chapitres: [
+        "Bourgeoisies marchandes, négoce international et traite",
+        "L'Europe des Lumières",
+        "La Révolution française, 1789-1799",
+        "Le Consulat et l'Empire",
+      ],
+    },
+    {
+      nom: "XIXᵉ siècle", titre: 'L\'industrie, l\'empire,<br><em>et la République.</em>',
+      dates: "1815 à 1914", classe: "4ᵉ",
+      debut: 1815, fin: 1914, part: 9, teinte: "#5c5a7a",
+      ouverture: "L'usine transforme le travail et la ville. L'Europe se partage le monde, " +
+        "pendant qu'en France le droit de vote s'arrache par étapes.",
+      evenements: [
+        { an: 1815, texte: "Restauration de la monarchie" },
+        { an: 1830, texte: "Trois Glorieuses, prise d'Alger" },
+        { an: 1848, texte: "IIᵉ République, suffrage universel masculin" },
+        { an: 1848, texte: "Abolition définitive de l'esclavage" },
+        { an: 1852, texte: "Second Empire, Napoléon III" },
+        { an: 1863, texte: "Manet, la peinture moderne" },
+        { an: 1870, texte: "Sedan, proclamation de la IIIᵉ République" },
+        { an: 1871, texte: "Commune de Paris" },
+        { an: 1881, texte: "Lois Ferry : école gratuite et laïque" },
+        { an: 1884, texte: "Liberté syndicale" },
+        { an: 1885, texte: "Conférence de Berlin : partage de l'Afrique" },
+        { an: 1889, texte: "Exposition universelle, tour Eiffel" },
+        { an: 1894, texte: "Début de l'affaire Dreyfus" },
+        { an: 1898, texte: "Zola, J'accuse…!" },
+        { an: 1905, texte: "Séparation des Églises et de l'État" },
+        { an: 1913, texte: "Première chaîne de montage" },
+      ],
+      chapitres: [
+        "L'Europe de la révolution industrielle",
+        "Conquêtes et sociétés coloniales",
+        "Une difficile conquête : voter de 1815 à 1870",
+        "La Troisième République",
+        "Conditions féminines dans une société en mutation",
+      ],
+    },
+    {
+      nom: "Guerres mondiales", titre: 'Deux guerres,<br><em>et l\'Europe brisée.</em>',
+      dates: "1914 à 1945", classe: "3ᵉ",
+      debut: 1914, fin: 1945, part: 5, teinte: "#3f4a52",
+      ouverture: "Trente et un ans séparent deux conflits d'un genre nouveau, où les civils " +
+        "deviennent des cibles et où des régimes entreprennent d'anéantir des peuples.",
+      evenements: [
+        { an: 1914, texte: "Attentat de Sarajevo, entrée en guerre" },
+        { an: 1916, texte: "Verdun et la Somme" },
+        { an: 1917, texte: "Révolutions russes, entrée des États-Unis" },
+        { an: 1918, texte: "Armistice du 11 novembre" },
+        { an: 1919, texte: "Traité de Versailles" },
+        { an: 1922, texte: "Mussolini au pouvoir" },
+        { an: 1929, texte: "Krach de Wall Street" },
+        { an: 1933, texte: "Hitler chancelier" },
+        { an: 1936, texte: "Front populaire, congés payés" },
+        { an: 1938, texte: "Nuit de Cristal" },
+        { an: 1939, texte: "Invasion de la Pologne" },
+        { an: 1940, texte: "Défaite, appel du 18 Juin, régime de Vichy" },
+        { an: 1942, texte: "Rafle du Vél d'Hiv, Stalingrad" },
+        { an: 1944, texte: "Débarquement, droit de vote des femmes" },
+        { an: 1945, texte: "Capitulation, Hiroshima, découverte des camps" },
+      ],
+      chapitres: [
+        "Civils et militaires dans la Première Guerre mondiale",
+        "Démocraties fragilisées et expériences totalitaires",
+        "La Seconde Guerre mondiale, une guerre d'anéantissement",
+        "La France défaite et occupée : Vichy, collaboration, Résistance",
+      ],
+    },
+    {
+      nom: "Depuis 1945", titre: 'Le monde d\'aujourd\'hui,<br><em>et comment on y est arrivé.</em>',
+      dates: "1945 à nos jours", classe: "3ᵉ",
+      debut: 1945, fin: 2026, part: 5, teinte: "#2f4b6e",
+      ouverture: "Les empires coloniaux s'effondrent, le monde se coupe en deux, puis le Mur " +
+        "tombe. La France se dote d'une Ve République et l'Europe se construit.",
+      evenements: [
+        { an: 1945, texte: "Création de l'ONU, Sécurité sociale" },
+        { an: 1946, texte: "IVᵉ République" },
+        { an: 1947, texte: "Début de la guerre froide, plan Marshall" },
+        { an: 1948, texte: "Déclaration universelle des droits de l'homme" },
+        { an: 1949, texte: "OTAN, division de l'Allemagne" },
+        { an: 1954, texte: "Fin de l'Indochine, début de la guerre d'Algérie" },
+        { an: 1957, texte: "Traité de Rome" },
+        { an: 1958, texte: "Vᵉ République" },
+        { an: 1961, texte: "Construction du mur de Berlin" },
+        { an: 1962, texte: "Indépendance de l'Algérie, crise de Cuba" },
+        { an: 1968, texte: "Mai 68" },
+        { an: 1969, texte: "Premiers pas sur la Lune" },
+        { an: 1975, texte: "Loi Veil" },
+        { an: 1981, texte: "Abolition de la peine de mort" },
+        { an: 1989, texte: "Chute du mur de Berlin" },
+        { an: 1991, texte: "Disparition de l'URSS" },
+        { an: 1992, texte: "Traité de Maastricht" },
+        { an: 2001, texte: "Attentats du 11 septembre" },
+        { an: 2002, texte: "Mise en circulation de l'euro" },
+        { an: 2015, texte: "Accord de Paris sur le climat" },
+        { an: 2020, texte: "Pandémie de Covid-19" },
+      ],
+      chapitres: [
+        "Indépendances et construction de nouveaux États",
+        "Un monde bipolaire au temps de la guerre froide",
+        "Affirmation et mise en œuvre du projet européen",
+        "Enjeux et conflits dans le monde après 1989",
+        "1944-1947 : refonder la République",
+        "La Ve République, de la République gaullienne à l'alternance",
+        "Femmes et hommes dans la société, des années 1950 aux années 1980",
+      ],
+    },
+  ];
+
+  /* ── Construction de la frise ─────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     Géométrie de la frise.
+
+     La largeur n'est plus contrainte par l'écran : la frise se déroule
+     et se fait défiler. Chaque période reçoit donc la place que ses
+     repères réclament — PAS pixels par événement — ce qui garantit
+     l'espacement quel qu'en soit le nombre.
+
+     Au sein d'une période, les repères sont espacés régulièrement
+     plutôt que placés à la date exacte : sinon les trois millions
+     d'années de la Préhistoire écraseraient tout le reste, et les
+     événements d'une même décennie se superposeraient. L'ordre est
+     rigoureux, l'échelle ne l'est pas — et la frise le dit.
+     ══════════════════════════════════════════════════════════════ */
+  const PAS = 150, MARGE = 60, BANDE_H = 44;
+  const H = 250, BANDE_Y = 168;
+
+  PERIODES.forEach(p => { p._l = Math.max(260, p.evenements.length * PAS); });
+  const LARGEUR = PERIODES.reduce((n, p) => n + p._l, 0);
+  const L = LARGEUR + MARGE * 2;
+  const NB_REPERES = PERIODES.reduce((n, p) => n + p.evenements.length, 0);
+
+  function ns(nom, attrs, parent) {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", nom);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+
+  /* Une frise par période : chacune se déroule sur sa propre ligne, dans son
+     propre cadre. Empilées en colonne, elles se comparent d'un coup d'œil —
+     l'Antiquité tient sur quatre écrans, la Préhistoire sur un seul — alors
+     qu'une frise unique de vingt mille pixels obligeait à tout parcourir. */
+  function construireFrisePeriode(p, i) {
+    const l = p._l;
+    const L = l + MARGE * 2;
+
+    const svg = ns("svg", { viewBox: "0 0 " + L + " " + H, width: L, height: H, role: "img",
+      "aria-label": "Frise de la période " + p.nom + ", " + p.dates
+        + ", " + p.evenements.length + " repères" });
+
+    /* La bande : cliquable, elle ouvre le parchemin de la période. */
+    const zone = ns("g", { class: "periode-zone", tabindex: "0", role: "button",
+      "aria-label": "Ouvrir les chapitres de " + p.nom }, svg);
+    zone.addEventListener("click", () => aller(i + 1));
+    zone.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); aller(i + 1); }
+    });
+
+    ns("rect", { class: "periode-bande", x: MARGE, y: BANDE_Y, width: l, height: BANDE_H,
+      fill: p.teinte, "fill-opacity": ".78" }, zone);
+    ns("rect", { x: MARGE, y: BANDE_Y, width: l, height: BANDE_H,
+      fill: "none", stroke: "#2f2820", "stroke-opacity": ".35", "stroke-width": "1" }, zone);
+
+    /* Bornes de la période, à chaque extrémité de la bande. */
+    const borne = (x, texte, ancre) => {
+      ns("line", { x1: x, y1: BANDE_Y + BANDE_H, x2: x, y2: BANDE_Y + BANDE_H + 10,
+        stroke: "#2f2820", "stroke-opacity": ".45" }, svg);
+      const t = ns("text", { x: x, y: BANDE_Y + BANDE_H + 27, "text-anchor": ancre,
+        fill: "#6d6252", "font-family": "'Spectral', Georgia, serif", "font-size": "13" }, svg);
+      t.textContent = texte;
+    };
+    const annee = a => a <= -300000 ? "origines"
+      : (a < 0 ? "−" + Math.abs(a).toLocaleString("fr-FR") : String(a));
+    borne(MARGE, annee(p.debut), "start");
+    borne(MARGE + l, p.fin >= 2020 ? "nos jours" : annee(p.fin), "end");
+
+    /* Repères : une tige et un point, sans rien d'écrit. La date et le nom
+       n'apparaissent qu'au survol — l'élève peut essayer de retrouver
+       l'événement avant de le dévoiler. Trois hauteurs alternées pour que
+       les points restent distincts. */
+    const HAUTEURS = [48, 88, 128];
+    const pas = l / p.evenements.length;
+    p.evenements.forEach((ev, n) => {
+      const px = MARGE + (n + 0.5) * pas;
+      const haut = HAUTEURS[n % HAUTEURS.length];
+
+      const an = ev.an < 0 ? "−" + Math.abs(ev.an).toLocaleString("fr-FR") : String(ev.an);
+      const g = ns("g", { class: "evenement", tabindex: "0", role: "button",
+        "aria-label": an + " : " + ev.texte }, svg);
+
+      ns("line", { x1: px, y1: BANDE_Y, x2: px, y2: BANDE_Y - haut,
+        stroke: "#2f2820", "stroke-opacity": ".3", "stroke-width": "1" }, g);
+      ns("circle", { class: "point", cx: px, cy: BANDE_Y - haut, r: "4",
+        fill: p.teinte, stroke: "#2f2820", "stroke-opacity": ".55" }, g);
+      /* Cible large et invisible : le point se vise sans précision. */
+      ns("circle", { cx: px, cy: BANDE_Y - haut, r: "13", fill: "transparent" }, g);
+
+      g._infos = { an: an, texte: ev.texte };
+    });
+
+    /* Le bloc complet : titre de la période, puis sa frise. */
+    const bloc = document.createElement("section");
+    bloc.className = "frise-periode";
+    bloc.style.setProperty("--teinte", p.teinte);
+
+    const tete = document.createElement("button");
+    tete.type = "button";
+    tete.className = "frise-tete";
+    tete.innerHTML =
+      '<span class="frise-nom"></span>' +
+      '<span class="frise-dates"></span>' +
+      '<span class="frise-compte"></span>' +
+      '<span class="frise-ouvrir">Voir les chapitres →</span>';
+    tete.querySelector(".frise-nom").textContent = p.nom;
+    tete.querySelector(".frise-dates").textContent = p.dates;
+    tete.querySelector(".frise-compte").textContent =
+      p.evenements.length + " repères · classe de " + p.classe;
+    tete.onclick = () => aller(i + 1);
+
+    const cadre = document.createElement("div");
+    cadre.className = "frise-cadre";
+    cadre.appendChild(svg);
+
+    bloc.append(tete, cadre);
+    brancherInfobulle(cadre, svg);
+    return bloc;
+  }
+
+  /* ── Infobulle : révélée au survol ou au focus d'un point ──────── */
+  function brancherInfobulle(cadre, svg) {
+    const bulle = document.createElement("div");
+    bulle.className = "frise-infobulle";
+    bulle.setAttribute("aria-hidden", "true");
+    bulle.innerHTML = '<span class="bulle-an"></span><span class="bulle-texte"></span>';
+    cadre.appendChild(bulle);
+
+    let visible = null;
+
+    function montrer(g) {
+      const point = g.querySelector(".point");
+      const rp = point.getBoundingClientRect();
+      const rc = cadre.getBoundingClientRect();
+      bulle.querySelector(".bulle-an").textContent = g._infos.an;
+      bulle.querySelector(".bulle-texte").textContent = g._infos.texte;
+      bulle.classList.add("visible");
+
+      /* Positionnement au-dessus du point, sans déborder du cadre. */
+      const centre = rp.left - rc.left + cadre.scrollLeft + rp.width / 2;
+      const demi = bulle.offsetWidth / 2;
+      const min = demi + 6, max = cadre.scrollWidth - demi - 6;
+      bulle.style.left = Math.min(Math.max(centre, min), Math.max(min, max)) + "px";
+      bulle.style.top  = (rp.top - rc.top + cadre.scrollTop - 10) + "px";
+      visible = g;
+    }
+    function cacher() { bulle.classList.remove("visible"); visible = null; }
+
+    svg.querySelectorAll(".evenement").forEach(g => {
+      g.addEventListener("mouseenter", () => montrer(g));
+      g.addEventListener("mouseleave", cacher);
+      g.addEventListener("focus", () => montrer(g));
+      g.addEventListener("blur", cacher);
+      /* Sur écran tactile, où le survol n'existe pas : une tape suffit. */
+      g.addEventListener("click", e => {
+        e.stopPropagation();
+        visible === g ? cacher() : montrer(g);
+      });
+    });
+    cadre.addEventListener("click", cacher);
+    return cacher;
+  }
+
+  /* ── Construction des parchemins ──────────────────────────────── */
+  const serie = document.getElementById("serie");
+
+  function feuilleFrise() {
+    const f = document.createElement("main");
+    f.className = "feuille large parchemin";
+    f.innerHTML =
+      '<p class="rubrique">Histoire-Géographie</p>' +
+      '<h1>Toute l\'histoire,<br><em>période par période.</em></h1>' +
+      '<div class="filet"><span>❦</span></div>' +
+      '<p class="ouverture">Chaque période du programme a sa frise, des origines à nos jours. ' +
+      'Les points marquent les événements : survolez-en un pour le découvrir. ' +
+      'Cliquez une bande pour ouvrir les chapitres de sa période — les flèches, en bas ' +
+      'de page, permettent ensuite de les parcourir dans l\'ordre.</p>' +
+      '<div class="colonne-frises" id="colonne-frises"></div>' +
+      '<p class="frise-note">Repères ordonnés, échelle non proportionnelle</p>' +
+      '<p class="ouverture" style="margin-top:2rem;font-size:.95rem;color:var(--encre-pale)">' +
+      'Géographie et enseignement moral et civique : sections à paraître.</p>';
+    const colonne = f.querySelector("#colonne-frises");
+    PERIODES.forEach((p, i) => colonne.appendChild(construireFrisePeriode(p, i)));
+    return f;
+  }
+
+  function feuillePeriode(p) {
+    const f = document.createElement("main");
+    f.className = "feuille parchemin";
+    const rubrique = document.createElement("p");
+    rubrique.className = "rubrique";
+    rubrique.textContent = p.nom;
+
+    const h1 = document.createElement("h1");
+    h1.innerHTML = p.titre;
+
+    const dates = document.createElement("p");
+    dates.className = "periode-dates";
+    dates.textContent = p.dates;
+    const cl = document.createElement("span");
+    cl.className = "classe-mention";
+    cl.textContent = "classe de " + p.classe;
+    dates.appendChild(cl);
+
+    const filet = document.createElement("div");
+    filet.className = "filet";
+    filet.innerHTML = "<span>❦</span>";
+
+    const ouv = document.createElement("p");
+    ouv.className = "ouverture";
+    ouv.textContent = p.ouverture;
+
+    const sec = document.createElement("section");
+    sec.className = "sommaire chapitres";
+    const st = document.createElement("p");
+    st.className = "sommaire-titre";
+    st.textContent = "Ce qu'il faut savoir sur cette période";
+    sec.appendChild(st);
+
+    p.chapitres.forEach(nom => {
+      const ligne = document.createElement("div");
+      ligne.className = "entree";
+      ligne.style.cursor = "default";
+      ligne.innerHTML =
+        '<span class="entree-nom"></span>' +
+        '<span class="entree-points" aria-hidden="true"></span>' +
+        '<span class="entree-etat">à paraître</span>';
+      ligne.querySelector(".entree-nom").textContent = nom;
+      sec.appendChild(ligne);
+    });
+
+    f.append(rubrique, h1, dates, filet, ouv, sec);
+    return f;
+  }
+
+  const feuilles = [feuilleFrise()].concat(PERIODES.map(feuillePeriode));
+  feuilles.forEach(f => serie.appendChild(f));
+
+  /* ── Feuilletage ──────────────────────────────────────────────── */
+  const NOMS = ["Frise"].concat(PERIODES.map(p => p.nom));
+  const precedent = document.getElementById("precedent");
+  const suivant   = document.getElementById("suivant");
+  const jalons    = document.getElementById("jalons");
+  let index = 0;
+
+  NOMS.forEach((nom, i) => {
+    const j = document.createElement("button");
+    j.type = "button";
+    j.className = "jalon" + (i === 0 ? " frise" : "");
+    j.title = nom;
+    j.setAttribute("aria-label", nom);
+    j.onclick = () => aller(i);
+    jalons.appendChild(j);
+  });
+
+  function aller(i) {
+    index = Math.min(Math.max(i, 0), feuilles.length - 1);
+    feuilles.forEach((f, n) => f.classList.toggle("actif", n === index));
+    serie.setAttribute("data-large", index === 0 ? "oui" : "non");
+
+    precedent.disabled = index === 0;
+    suivant.disabled   = index === feuilles.length - 1;
+    precedent.querySelector(".feuillet-nom").textContent = index > 0 ? NOMS[index - 1] : "";
+    suivant.querySelector(".feuillet-nom").textContent =
+      index < NOMS.length - 1 ? NOMS[index + 1] : "";
+
+    [...jalons.children].forEach((j, n) => {
+      j.classList.toggle("actif", n === index);
+      j.setAttribute("aria-selected", n === index ? "true" : "false");
+    });
+
+    document.title = "Polymates — " + (index === 0 ? "Histoire-Géographie" : NOMS[index]);
+    if (location.hash !== "#" + index) history.replaceState(null, "", "#" + index);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  precedent.onclick = () => aller(index - 1);
+  suivant.onclick   = () => aller(index + 1);
+
+  /* Les flèches du clavier feuillettent aussi, sauf si l'on saisit du texte. */
+  document.addEventListener("keydown", e => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    /* Dans la frise, les flèches servent à la parcourir, pas à changer de
+       parchemin : on laisse le navigateur faire défiler. */
+    if (document.activeElement.closest && document.activeElement.closest(".frise-cadre")) return;
+    if (e.key === "ArrowLeft")  { e.preventDefault(); aller(index - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); aller(index + 1); }
+  });
+
+  const depart = Number((location.hash || "").replace("#", ""));
+  aller(Number.isInteger(depart) && depart > 0 ? depart : 0);
+
+  /* ── Bandeau ── */
+  const u = MB_AUTH.user();
+  if (u && u.pseudo) document.getElementById("lecteur").textContent = u.pseudo;
+  document.getElementById("sortir").onclick = () => MB_AUTH.logout();
+})();
+</script>
+</body>
+</html>
