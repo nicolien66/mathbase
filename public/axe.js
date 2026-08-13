@@ -20,6 +20,10 @@
      min: -10, max: 10,        bornes de l'axe (entiers)
      pas: 1,                   écart entre deux graduations
      etiquettes: 1,            une étiquette toutes les N graduations
+     reperes: [-10, 0, 10],    OU la liste exacte des valeurs étiquetées
+                               (prioritaire sur `etiquettes` ; les traits de
+                               graduation restent tous tracés, seuls les
+                               nombres écrits se raréfient)
      fixes: [{nom:"O", x:0}],  points déjà tracés, non modifiables
      placer: ["A", "B"],       noms à poser, dans l'ordre
      reponse: { points: [{nom:"A", x:-3}, {nom:"B", x:4}] }
@@ -56,6 +60,16 @@
              score: A.size ? Math.max(0, (justes - faux) / A.size) : 0 };
   }
 
+  /* Une valeur porte-t-elle un nombre écrit ? `reperes` donne la liste exacte,
+     sinon on étiquette une graduation sur N. Les traits, eux, sont toujours
+     tous tracés : l'élève compte les graduations pour se repérer. */
+  function estRepere(p, v, rang) {
+    if (Array.isArray(p.reperes) && p.reperes.length)
+      return p.reperes.some(x => arr(x) === arr(v));
+    const e = Number(p.etiquettes) || 1;
+    return rang % e === 0;
+  }
+
   /* ── géométrie ── */
   function repere(p) {
     const min = Number(p.min), max = Number(p.max), pas = Number(p.pas) || 1;
@@ -84,6 +98,7 @@
     const fixes = params.fixes || [];
     const aPlacer = params.placer || [];
 
+    const marque = (v, n) => estRepere(params, v, n);
     svg.setAttribute("viewBox", "0 0 " + g.L + " " + g.H);
     svg.setAttribute("class", "mba-axe");
     svg.innerHTML = "";
@@ -102,7 +117,7 @@
     let n = 0;
     for (let v = g.min; v <= g.max + 1e-9; v = arr(v + g.pas), n++) {
       const x = g.versX(v);
-      const grand = n % etiq === 0;
+      const grand = marque(v, n);
       gFond.appendChild(el("line", { x1: x, y1: g.Y - (grand ? 8 : 4), x2: x, y2: g.Y + (grand ? 8 : 4),
         stroke: "currentColor", "stroke-width": grand ? "1.4" : "1",
         "stroke-opacity": grand ? ".85" : ".45" }));
@@ -202,7 +217,7 @@
          '" y2="' + g.Y + '" stroke="currentColor" stroke-width="1.6"/>';
     let n = 0;
     for (let v = g.min; v <= g.max + 1e-9; v = arr(v + g.pas), n++) {
-      const x = g.versX(v), grand = n % etiq === 0;
+      const x = g.versX(v), grand = estRepere(params, v, n);
       s += '<line x1="' + x + '" y1="' + (g.Y - (grand ? 8 : 4)) + '" x2="' + x +
            '" y2="' + (g.Y + (grand ? 8 : 4)) + '" stroke="currentColor" stroke-width="' +
            (grand ? 1.4 : 1) + '" stroke-opacity="' + (grand ? .85 : .45) + '"/>';

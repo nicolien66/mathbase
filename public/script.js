@@ -1737,8 +1737,9 @@ function plateauInteractif(ex, hist) {
     return;
   }
 
-  /* Axe gradué : le plateau REMPLACE le brouillon, comme le quadrillage,
-     puisque la réponse se construit entièrement sur l'axe. */
+  /* Axe gradué : le plateau s'ajoute AU-DESSUS du brouillon, sans le masquer.
+     Placer les points ne suffit pas — l'énoncé demande aussi une distance, une
+     abscisse ou une comparaison, que l'élève doit pouvoir rédiger. */
   const ancienA = document.getElementById("mba-seance");
   if (ancienA) ancienA.remove();
   plateauAxe = null;
@@ -1747,11 +1748,12 @@ function plateauInteractif(ex, hist) {
     const zone = document.getElementById("page-answer");
     const ta = document.getElementById("session-answer");
     const label = document.getElementById("page-answer-label");
-    if (ta) ta.style.display = "none";
-    if (label) label.textContent = "Place les points sur l'axe";
+    if (ta) ta.style.display = "";                       // le brouillon reste
+    if (label) label.textContent = "Place les points, puis rédige ta réponse";
     const boite = document.createElement("div");
     boite.id = "mba-seance";
-    zone.appendChild(boite);
+    boite.style.marginBottom = "1rem";
+    zone.insertBefore(boite, ta || zone.firstChild);
     plateauAxe = MB_AXE.installer(pa, boite);
     if (hist && hist.result) plateauAxe.instance().corriger(pa.reponse);
     return;
@@ -1836,16 +1838,37 @@ function corrigerInteractif(ex) {
     if (r.justes) m.push(r.justes + " bien placé" + (r.justes > 1 ? "s" : ""));
     if (r.manques) m.push(r.manques + " oubli" + (r.manques > 1 ? "s" : ""));
     if (r.faux) m.push(r.faux + " mal placé" + (r.faux > 1 ? "s" : ""));
+
+    /* La réponse rédigée compte aussi : placer les points ne répond pas à la
+       question posée (une distance, une abscisse, une comparaison). Quand la
+       valeur attendue est connue, on la cherche dans le brouillon. */
+    let ecrit = null;
+    if (pa.attendu && typeof pa.attendu.valeur === "number") {
+      const ta = document.getElementById("session-answer");
+      const txt = (ta && ta.value) || "";
+      const nums = (txt.match(/-?−?\d+(?:[.,]\d+)?/g) || [])
+        .map(x => Number(x.replace("−", "-").replace(",", ".")));
+      ecrit = nums.some(n => Math.abs(n - pa.attendu.valeur) < 1e-6);
+      if (!txt.trim()) ecrit = null;                    // rien d'écrit
+    }
+
+    const parts = 1 + (ecrit === null ? 0 : 1);
+    const score = (r.score + (ecrit === true ? 1 : 0)) / parts;
+    const ok = r.ok && ecrit !== false;
+
     return {
-      verdict: r.ok ? "correct" : (r.score >= 0.6 ? "partial" : "incorrect"),
-      analyse: r.ok
+      verdict: ok ? "correct" : (score >= 0.6 ? "partial" : "incorrect"),
+      analyse: (r.ok
         ? "Chaque point est sur la bonne graduation."
         : "Sur " + r.attendus + " point" + (r.attendus > 1 ? "s" : "") + " attendu" +
-          (r.attendus > 1 ? "s" : "") + " : " + (m.join(", ") || "rien de placé") + ".",
+          (r.attendus > 1 ? "s" : "") + " : " + (m.join(", ") || "rien de placé") + ".") +
+        (ecrit === true ? " Ta réponse rédigée est juste."
+         : ecrit === false ? " En revanche, la valeur que tu as écrite ne correspond pas."
+         : pa.attendu ? " Pense à écrire ta réponse dans le brouillon : elle fait partie de la note." : ""),
       demarche: "Sur une droite graduée, l'abscisse se lit en comptant les graduations " +
         "depuis l'origine : vers la droite pour les positifs, vers la gauche pour les négatifs.",
       solution: ex.solution || "",
-      score: r.score
+      score: score
     };
   }
 
