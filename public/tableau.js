@@ -241,12 +241,19 @@
     });
     return s + "</tbody></table></div></div>";
   }
-  function installerApercu(params, hote) { injecterStyles(); hote.innerHTML = apercu(params); }
+  function installerApercu(params, hote, opts) {
+    injecterStyles();
+    hote.innerHTML = '<div class="' + (opts && opts.papier ? "mbt-sur-papier" : "") + '">' +
+      apercu(params) + '</div>';
+  }
 
   /* ── montage clé en main ── */
-  function installer(params, hote) {
+  function installer(params, hote, opts) {
     injecterStyles();
-    hote.innerHTML = '<div class="mbt-wrap"><div class="mbt-board"></div>' +
+    /* Fond clair (papier de la séance) : encre sombre plutôt que claire. */
+    const papier = !!(opts && opts.papier);
+    hote.innerHTML = '<div class="mbt-wrap' + (papier ? " mbt-sur-papier" : "") +
+      '"><div class="mbt-board"></div>' +
       '<div class="mbt-foot">' +
         '<button type="button" class="btn-primary" data-a="valider">Valider</button>' +
         '<button type="button" class="mbt-tool" data-a="rejouer">Recommencer</button>' +
@@ -326,6 +333,34 @@
       .mbt-bon { color: var(--accent2, #82d2a0); }
       .mbt-moyen { color: var(--accent, #c8b97a); }
       .mbt-mauvais { color: var(--danger, #e6826e); }
+
+      /* ── Sur le papier de la séance ── (voir axe.js : même raison) */
+      .mbt-sur-papier { color: #17120c; }
+      .mbt-sur-papier .mbt-titre { color: #6b5d40; }
+      .mbt-sur-papier .mbt-table th, .mbt-sur-papier .mbt-table td {
+        border-color: rgba(31,26,19,.30); }
+      .mbt-sur-papier .mbt-table th { color: #5b4f36; background: rgba(31,26,19,.04); }
+      .mbt-sur-papier .mbt-donnee { background: rgba(31,26,19,.02); }
+      .mbt-sur-papier .mbt-case { color: #17120c; }
+      .mbt-sur-papier .mbt-case:focus { background: rgba(154,131,63,.14); }
+      .mbt-sur-papier .mbt-case.mbt-juste { color: #1f7a4d; }
+      .mbt-sur-papier .mbt-case.mbt-faux { color: #b03a26; }
+      .mbt-sur-papier .mbt-trou { color: #9a833f; }
+      .mbt-sur-papier .mbt-attendu { color: #1f7a4d; }
+      .mbt-sur-papier .mbt-opt { color: #5b4f36; border-color: rgba(31,26,19,.28); }
+      .mbt-sur-papier .mbt-opt:hover { color: #17120c; border-color: #9a833f; }
+      .mbt-sur-papier .mbt-opt.on { background: #9a833f; color: #f7f2e4; border-color: transparent; }
+      .mbt-sur-papier .mbt-opt.mbt-bonne { border-color: #1f7a4d; color: #1f7a4d; }
+      .mbt-sur-papier .mbt-calcul label { color: #6b5d40; }
+      .mbt-sur-papier .mbt-calc { color: #17120c; background: rgba(31,26,19,.03);
+        border-color: rgba(31,26,19,.28); }
+      .mbt-sur-papier .mbt-calc:focus { border-color: #9a833f; }
+      .mbt-sur-papier .mbt-calc.mbt-juste { border-color: #1f7a4d; }
+      .mbt-sur-papier .mbt-calc.mbt-faux { border-color: #b03a26; }
+      .mbt-sur-papier .mbt-tool { color: #5b4f36; border-color: rgba(31,26,19,.28); }
+      .mbt-sur-papier .mbt-bon { color: #1f7a4d; }
+      .mbt-sur-papier .mbt-moyen { color: #9a833f; }
+      .mbt-sur-papier .mbt-mauvais { color: #b03a26; }
     `;
     document.head.appendChild(s);
   }

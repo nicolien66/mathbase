@@ -233,17 +233,21 @@
     return s + "</svg>";
   }
 
-  function installerApercu(params, conteneur) {
+  function installerApercu(params, conteneur, opts) {
     injecterStyles();
-    conteneur.innerHTML = '<div class="mba-wrap">' + apercu(params) + '</div>';
+    conteneur.innerHTML = '<div class="mba-wrap' +
+      (opts && opts.papier ? " mba-sur-papier" : "") + '">' + apercu(params) + '</div>';
   }
 
   /* ── montage clé en main : plateau + outils + validation ── */
-  function installer(params, conteneur) {
+  function installer(params, conteneur, opts) {
     injecterStyles();
     const noms = params.placer || [];
+    /* Fond clair (papier de la séance) : on bascule toute la palette en encre
+       sombre plutôt que de laisser du blanc sur du beige. */
+    const papier = !!(opts && opts.papier);
     conteneur.innerHTML =
-      '<div class="mba-wrap">' +
+      '<div class="mba-wrap' + (papier ? " mba-sur-papier" : "") + '">' +
         '<div class="mba-tools">' +
           '<span class="mba-consigne">Point à placer : <strong class="mba-suivant">—</strong></span>' +
           '<span class="mbq-spacer" style="flex:1"></span>' +
@@ -344,6 +348,37 @@
       .mba-moyen { color: var(--accent, #c8b97a); }
       .mba-mauvais { color: var(--danger, #e6826e); }
       .mba-hint { font-size: .78rem; color: var(--muted, rgba(240,236,224,.45)); margin: .5rem 0 0; }
+
+      /* ── Sur le papier de la séance ──
+         Le plateau est posé sur une page beige : l'encre claire y serait
+         illisible. On repasse donc à l'encre sombre du brouillon (#17120c),
+         en gardant les mêmes repères de couleur pour la correction. */
+      .mba-sur-papier { color: #17120c; }
+      .mba-sur-papier .mba-board { background: rgba(31,26,19,.03);
+        border-color: rgba(31,26,19,.20); }
+      .mba-sur-papier .mba-grad { fill: #5b4f36; }
+      .mba-sur-papier .mba-fixe { fill: #6b5d40; }
+      .mba-sur-papier .mba-nom-fixe { fill: #6b5d40; }
+      .mba-sur-papier .mba-point { fill: #17120c; }
+      .mba-sur-papier .mba-tige { stroke: #17120c; stroke-opacity: .45; }
+      .mba-sur-papier .mba-nom { fill: #17120c; }
+      .mba-sur-papier .mba-juste { stroke: #1f7a4d; }
+      .mba-sur-papier .mba-faux { stroke: #b03a26; }
+      .mba-sur-papier .mba-manque { stroke: #9a833f; }
+      .mba-sur-papier .mba-attendu { fill: #1f7a4d; }
+      .mba-sur-papier .mba-consigne { color: #6b5d40; }
+      .mba-sur-papier .mba-consigne strong { color: #17120c; }
+      .mba-sur-papier .mba-tool { color: #5b4f36; border-color: rgba(31,26,19,.28); }
+      .mba-sur-papier .mba-tool:hover { color: #17120c; border-color: #9a833f;
+        background: rgba(31,26,19,.05); }
+      .mba-sur-papier .mba-legend { color: #6b5d40; }
+      .mba-sur-papier .mba-i-juste { border-color: #1f7a4d; }
+      .mba-sur-papier .mba-i-manque { border-color: #9a833f; }
+      .mba-sur-papier .mba-i-faux { border-color: #b03a26; }
+      .mba-sur-papier .mba-hint { color: #6b5d40; }
+      .mba-sur-papier .mba-bon { color: #1f7a4d; }
+      .mba-sur-papier .mba-moyen { color: #9a833f; }
+      .mba-sur-papier .mba-mauvais { color: #b03a26; }
     `;
     document.head.appendChild(s);
   }

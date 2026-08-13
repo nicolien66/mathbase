@@ -1732,7 +1732,7 @@ function plateauInteractif(ex, hist) {
     boite.id = "mbt-seance";
     boite.style.marginBottom = "1rem";
     zone.insertBefore(boite, zone.firstChild);
-    plateauTableau = MB_TABLEAU.installer(pt, boite);
+    plateauTableau = MB_TABLEAU.installer(pt, boite, { papier: true });   // page de séance
     if (hist && hist.result) plateauTableau.instance().corriger(pt.reponse);
     return;
   }
@@ -1754,7 +1754,7 @@ function plateauInteractif(ex, hist) {
     boite.id = "mba-seance";
     boite.style.marginBottom = "1rem";
     zone.insertBefore(boite, ta || zone.firstChild);
-    plateauAxe = MB_AXE.installer(pa, boite);
+    plateauAxe = MB_AXE.installer(pa, boite, { papier: true });   // page de séance : fond beige
     if (hist && hist.result) plateauAxe.instance().corriger(pa.reponse);
     return;
   }
