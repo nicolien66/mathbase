@@ -1459,6 +1459,76 @@ function litInteractif(ex) {
   return (p && p.widget === "quadrillage" && window.MB_QUADRILLAGE) ? p : null;
 }
 
+/* TABLEAU : plateau à compléter, corrigé localement (les valeurs attendues
+   sont connues, la comparaison est exacte à 10⁻⁶ près). */
+function litTableau(ex) {
+  let p = ex && ex.interactif;
+  if (!p) return null;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { return null; } }
+  return (p && p.widget === "tableau" && window.MB_TABLEAU) ? p : null;
+}
+
+function apercuTableau(ex) {
+  const params = litTableau(ex);
+  if (!params) return false;
+  const contenu = document.getElementById("modal-content");
+  if (!contenu) return false;
+  const boite = document.createElement("div");
+  let cible = null;
+  contenu.querySelectorAll(".modal-section").forEach(sec => {
+    const lab = sec.querySelector(".modal-section-label");
+    if (lab && lab.textContent.trim().toLowerCase().indexOf("nonc") >= 0) cible = sec;
+  });
+  if (cible) cible.appendChild(boite);
+  else {
+    const b = document.createElement("div");
+    b.className = "modal-section";
+    b.innerHTML = '<div class="modal-section-label">Tableau</div>';
+    b.appendChild(boite);
+    contenu.appendChild(b);
+  }
+  MB_TABLEAU.installerApercu(params, boite);
+  return true;
+}
+
+/* AXE GRADUÉ : plateau de placement de points, corrigé localement comme le
+   quadrillage — la réponse attendue est connue, la comparaison est exacte. */
+function litAxe(ex) {
+  let p = ex && ex.interactif;
+  if (!p) return null;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { return null; } }
+  return (p && p.widget === "axe" && window.MB_AXE) ? p : null;
+}
+
+/* place l'axe dans la modale, à la place de l'énoncé */
+function apercuAxe(ex) {
+  const params = litAxe(ex);
+  if (!params) return false;
+  const contenu = document.getElementById("modal-content");
+  if (!contenu) return false;
+  let cible = null;
+  contenu.querySelectorAll(".modal-section").forEach(sec => {
+    const lab = sec.querySelector(".modal-section-label");
+    if (lab && lab.textContent.trim().toLowerCase().indexOf("nonc") >= 0) cible = sec;
+  });
+  const boite = document.createElement("div");
+  if (cible) {
+    const lab = cible.querySelector(".modal-section-label");
+    if (lab) lab.textContent = "Axe gradué";
+    const txt = cible.querySelector(".modal-section-text");
+    if (txt) txt.remove();
+    cible.appendChild(boite);
+  } else {
+    const b = document.createElement("div");
+    b.className = "modal-section";
+    b.innerHTML = '<div class="modal-section-label">Axe gradué</div>';
+    b.appendChild(boite);
+    contenu.appendChild(b);
+  }
+  MB_AXE.installerApercu(params, boite);
+  return true;
+}
+
 /* Figures de SOLIDES : une image, pas un plateau. L'élève répond dans son
    brouillon et la correction reste celle de l'IA. */
 function litSolide(ex) {
@@ -1595,6 +1665,8 @@ function corrigerDiagramme(ex) {
 
 function apercuInteractif(ex) {
   if (apercuDiagramme(ex)) return;
+  if (apercuTableau(ex)) return;
+  if (apercuAxe(ex)) return;
   if (apercuSolide(ex)) return;
   const params = litInteractif(ex);
   if (!params) return;
@@ -1635,12 +1707,53 @@ function apercuInteractif(ex) {
 /* Plateau de séance : monté dans la zone de brouillon, qui est masquée.
    Renseigne seanceHistory au même format que le correcteur IA. */
 let plateauSeance = null;
+let plateauAxe = null;
+let plateauTableau = null;
 function plateauInteractif(ex, hist) {
   if (diagrammeSeance(ex)) {
     if (hist && hist.result && plateauDiagramme) {
       const pd = litDiagramme(ex);
       if (pd && pd.reponse) plateauDiagramme.instance().corriger(pd.reponse);
     }
+    return;
+  }
+
+  /* Tableau : le plateau s'ajoute AU-DESSUS du brouillon. L'élève complète
+     les cases, et peut encore rédiger une justification en dessous. */
+  const ancienT = document.getElementById("mbt-seance");
+  if (ancienT) ancienT.remove();
+  plateauTableau = null;
+  const pt = litTableau(ex);
+  if (pt) {
+    const zone = document.getElementById("page-answer");
+    const label = document.getElementById("page-answer-label");
+    if (label) label.textContent = "Complète le tableau";
+    const boite = document.createElement("div");
+    boite.id = "mbt-seance";
+    boite.style.marginBottom = "1rem";
+    zone.insertBefore(boite, zone.firstChild);
+    plateauTableau = MB_TABLEAU.installer(pt, boite);
+    if (hist && hist.result) plateauTableau.instance().corriger(pt.reponse);
+    return;
+  }
+
+  /* Axe gradué : le plateau REMPLACE le brouillon, comme le quadrillage,
+     puisque la réponse se construit entièrement sur l'axe. */
+  const ancienA = document.getElementById("mba-seance");
+  if (ancienA) ancienA.remove();
+  plateauAxe = null;
+  const pa = litAxe(ex);
+  if (pa) {
+    const zone = document.getElementById("page-answer");
+    const ta = document.getElementById("session-answer");
+    const label = document.getElementById("page-answer-label");
+    if (ta) ta.style.display = "none";
+    if (label) label.textContent = "Place les points sur l'axe";
+    const boite = document.createElement("div");
+    boite.id = "mba-seance";
+    zone.appendChild(boite);
+    plateauAxe = MB_AXE.installer(pa, boite);
+    if (hist && hist.result) plateauAxe.instance().corriger(pa.reponse);
     return;
   }
 
@@ -1688,6 +1801,54 @@ function plateauInteractif(ex, hist) {
 /* Correction locale d'un exercice interactif : renvoie le même objet que
    la route /exercises/correct, pour que la page de droite ne change pas. */
 function corrigerInteractif(ex) {
+  /* Tableau : correction locale, sans appel au correcteur IA. */
+  const pt = litTableau(ex);
+  if (pt && plateauTableau) {
+    const inst = plateauTableau.instance();
+    const r = MB_TABLEAU.verifier(inst.lire(), pt.reponse);
+    inst.corriger(pt.reponse);
+    const m = [];
+    if (r.justes) m.push(r.justes + " case" + (r.justes > 1 ? "s" : "") + " juste" + (r.justes > 1 ? "s" : ""));
+    if (r.faux) m.push(r.faux + " erreur" + (r.faux > 1 ? "s" : ""));
+    if (r.vides) m.push(r.vides + " case" + (r.vides > 1 ? "s" : "") + " laissée" + (r.vides > 1 ? "s" : "") + " vide" + (r.vides > 1 ? "s" : ""));
+    if (r.choixOk === false) m.push("la réponse à la question est fausse");
+    if (r.calcul && !r.calcul.ok) m.push("le calcul écrit : " + r.calcul.raison);
+    return {
+      verdict: r.ok ? "correct" : (r.score >= 0.6 ? "partial" : "incorrect"),
+      analyse: r.ok
+        ? "Tableau complété correctement" + (r.calcul ? ", et le calcul est bien posé." : ".")
+        : "Résultat : " + (m.join(", ") || "rien de rempli") + ".",
+      demarche: pt.calcul
+        ? "Dans un tableau de proportionnalité, on passe d'une colonne à l'autre en multipliant par le coefficient, ou on utilise le produit en croix : le produit des diagonales est le même."
+        : "On complète le tableau colonne par colonne, en gardant le même rapport entre les deux lignes.",
+      solution: ex.solution || "",
+      score: r.score
+    };
+  }
+
+  /* Axe gradué : correction locale, sans appel au correcteur IA. */
+  const pa = litAxe(ex);
+  if (pa && plateauAxe) {
+    const inst = plateauAxe.instance();
+    const r = MB_AXE.verifier(inst.lire(), pa.reponse);
+    inst.corriger(pa.reponse);
+    const m = [];
+    if (r.justes) m.push(r.justes + " bien placé" + (r.justes > 1 ? "s" : ""));
+    if (r.manques) m.push(r.manques + " oubli" + (r.manques > 1 ? "s" : ""));
+    if (r.faux) m.push(r.faux + " mal placé" + (r.faux > 1 ? "s" : ""));
+    return {
+      verdict: r.ok ? "correct" : (r.score >= 0.6 ? "partial" : "incorrect"),
+      analyse: r.ok
+        ? "Chaque point est sur la bonne graduation."
+        : "Sur " + r.attendus + " point" + (r.attendus > 1 ? "s" : "") + " attendu" +
+          (r.attendus > 1 ? "s" : "") + " : " + (m.join(", ") || "rien de placé") + ".",
+      demarche: "Sur une droite graduée, l'abscisse se lit en comptant les graduations " +
+        "depuis l'origine : vers la droite pour les positifs, vers la gauche pour les négatifs.",
+      solution: ex.solution || "",
+      score: r.score
+    };
+  }
+
   const params = litInteractif(ex);
   if (!params || !plateauSeance) return null;
   const inst = plateauSeance.instance();
