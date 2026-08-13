@@ -347,7 +347,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-09-matieres-4";
+const SERVEUR_VERSION = "2026-08-13-widgets-2";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -1217,10 +1217,10 @@ app.get("/admin/diagnostic-matieres", auth, requireAdmin, async (req, res) => {
            FROM ${table} GROUP BY 1 ORDER BY 2 DESC`);
       return rows;
     };
-    const colonne = async (table) => {
+    const colonne = async (table, nom) => {
       const { rows } = await pool.query(
         `SELECT 1 FROM information_schema.columns
-          WHERE table_name = $1 AND column_name = 'matiere' LIMIT 1`, [table]);
+          WHERE table_name = $1 AND column_name = $2 LIMIT 1`, [table, nom || "matiere"]);
       return rows.length > 0;
     };
     /* Les fichiers du front sont-ils réellement déployés, et à jour ?
@@ -1234,6 +1234,8 @@ app.get("/admin/diagnostic-matieres", auth, requireAdmin, async (req, res) => {
       { nom: "app.html",                   doit_contenir: "matiere.js" },
       { nom: "matieres.html",              doit_contenir: "MB_MAT.liste" },
       { nom: "ui.js",                      doit_contenir: "mb-subject" },
+      { nom: "axe.js",                     doit_contenir: "MB_AXE" },
+      { nom: "tableau.js",                 doit_contenir: "MB_TABLEAU" },
     ];
     const fichiers = attendus.map(f => {
       try {
@@ -1251,9 +1253,35 @@ app.get("/admin/diagnostic-matieres", auth, requireAdmin, async (req, res) => {
       }
     });
 
+    /* Combien d'exercices portent un plateau interactif, et lequel ?
+       C'est ce qui distingue « le widget n'est pas déployé » de
+       « les exercices n'ont pas été enregistrés avec leur plateau ». */
+    let interactifs = [];
+    if (await colonne("exercises", "interactif")) {
+      /* Le regroupement se fait en JavaScript plutôt qu'en SQL : un GROUP BY
+         portant sur une extraction JSON est correct en PostgreSQL, mais rien
+         ne garantit qu'il le reste selon la version ou le type réel de la
+         colonne. La requête ci-dessous n'utilise que des constructions
+         élémentaires, donc elle ne peut pas échouer. */
+      const { rows: ia } = await pool.query(
+        `SELECT chapitre, interactif ->> 'widget' AS widget
+           FROM exercises
+          WHERE interactif IS NOT NULL AND interactif::text NOT IN ('null', '', '{}')`);
+      const compte = new Map();
+      ia.forEach(r => {
+        const k = (r.chapitre || "—") + "\u0000" + (r.widget || "(illisible)");
+        compte.set(k, (compte.get(k) || 0) + 1);
+      });
+      interactifs = [...compte.entries()]
+        .map(([k, n]) => ({ chapitre: k.split("\u0000")[0], widget: k.split("\u0000")[1], n }))
+        .sort((a, b) => b.n - a.n);
+    }
+
     res.json({
       version_serveur: SERVEUR_VERSION,
       colonne_matiere: { exercises: await colonne("exercises"), annales: await colonne("annales") },
+      colonne_interactif: await colonne("exercises", "interactif"),
+      interactifs,
       fichiers,
       exercices: await compter("exercises"),
       annales:   await compter("annales"),
