@@ -80,14 +80,23 @@ function optionsAngle(bon, candidats) {
    On part des TROIS ANGLES (dont la somme vaut 180° par construction) et on
    place les sommets par la loi des sinus : la figure dessinée correspond donc
    exactement aux mesures de l'énoncé. */
-function triangleDepuisAngles(A, B, noms) {
+function triangleDepuisAngles(A, B, noms, rot) {
   const C = 180 - A - B;
   /* Côtés proportionnels aux sinus des angles opposés. */
   const c = Math.sin(rad(C));          // AB
   const b = Math.sin(rad(B));          // AC
-  const PA = [0, 0];
-  const PB = [c, 0];
-  const PC = [b * Math.cos(rad(A)), -b * Math.sin(rad(A))];
+  let PA = [0, 0];
+  let PB = [c, 0];
+  let PC = [b * Math.cos(rad(A)), -b * Math.sin(rad(A))];
+  /* Rotation d'ensemble : deux triangles de mêmes angles mais d'orientations
+     différentes sont deux figures distinctes. Sans cela, l'équilatéral
+     (60-60-60) serait toujours dessiné à l'identique et la déduplication
+     n'en conserverait qu'un seul exemplaire sur cent. */
+  if (rot) {
+    const co = Math.cos(rad(rot)), si = Math.sin(rad(rot));
+    const R = p => [p[0] * co - p[1] * si, p[0] * si + p[1] * co];
+    PA = R(PA); PB = R(PB); PC = R(PC);
+  }
   /* Mise à l'échelle et centrage dans le cadre. */
   const xs = [PA[0], PB[0], PC[0]], ys = [PA[1], PB[1], PC[1]];
   const minx = Math.min(...xs), maxx = Math.max(...xs);
@@ -301,7 +310,7 @@ const M_ISOCELE = [
   /* Cas particulier : l'équilatéral (difficile). */
   function (d) {
     if (d !== "D") return null;
-    const T = triangleDepuisAngles(60, 60, ["A", "B", "C"]);
+    const T = triangleDepuisAngles(60, 60, ["A", "B", "C"], ri(-40, 40));
     const el = figureTriangle(T, {});
     /* Les trois côtés portent le même codage. */
     el.push({ t: "segment", a: T.pts[0], b: T.pts[1], marques: 1 });
@@ -364,7 +373,7 @@ const M_RECTANGLE = [
   /* Rectangle isocèle. */
   function (d) {
     if (d === "F") return null;
-    const T = triangleDepuisAngles(90, 45, ["A", "B", "C"]);
+    const T = triangleDepuisAngles(90, 45, ["A", "B", "C"], ri(-35, 35));
     const el = figureTriangle(T, { angleDroit: 0 });
     el.push({ t: "segment", a: T.pts[0], b: T.pts[1], marques: 1 });
     el.push({ t: "segment", a: T.pts[0], b: T.pts[2], marques: 1 });
@@ -441,7 +450,7 @@ const M_TYPES = [
                A === 90 || B === 90 || 180 - A - B === 90) return null; }
     const C = 180 - A - B;
     if (C < 18) return null;
-    const T = triangleDepuisAngles(A, B, ["A", "B", "C"]);
+    const T = triangleDepuisAngles(A, B, ["A", "B", "C"], ri(-30, 30));
     const el = figureTriangle(T, { angleDroit: (type === "rectangle" ||
       type === "rectangle-isocele") ? 0 : undefined });
     /* Codage des côtés égaux — c'est lui qui porte l'information. */
@@ -473,18 +482,40 @@ const M_TYPES = [
           "portent le même trait : le triangle est RECTANGLE ISOCÈLE."
       : "Aucun angle droit n'est codé, et aucun côté ne porte de trait d'égalité : " +
         "le triangle est QUELCONQUE.";
+    /* Pour l'équilatéral et le rectangle isocèle, les angles sont entièrement
+       déterminés par la nature du triangle : on les demande TOUJOURS, car
+       c'est là tout l'intérêt de reconnaître ces deux cas. */
+    const questions = [
+      { question: "Quelle est la nature de ce triangle ?",
+        options: melange(["Équilatéral", "Isocèle", "Rectangle",
+                          "Rectangle isocèle", "Quelconque"]),
+        reponse: { choix: nom } },
+    ];
+    let complement = "";
+    if (type === "equilateral") {
+      questions.push({
+        question: "Quelle est alors la mesure de chacun de ses angles ?",
+        options: melange(["60°", "45°", "90°", "30°"]),
+        reponse: { choix: "60°" } });
+      complement = "\nSes trois angles sont égaux, et leur somme vaut 180° : " +
+        "chacun mesure 180° ÷ 3 = 60°.";
+    } else if (type === "rectangle-isocele") {
+      questions.push({
+        question: "Quelle est alors la mesure de chacun de ses deux angles aigus ?",
+        options: melange(["45°", "60°", "30°", "90°"]),
+        reponse: { choix: "45°" } });
+      complement = "\nL'angle droit occupe 90°, il reste 90° pour les deux autres angles, " +
+        "qui sont égaux : chacun mesure 90° ÷ 2 = 45°.";
+    }
     return {
-      content: "Observe le codage de la figure : quelle est la nature de ce triangle ?",
-      solution: dit,
+      content: "Observe le codage de la figure : quelle est la nature de ce triangle ?" +
+        (type === "equilateral" || type === "rectangle-isocele"
+          ? "\nDonne ensuite la mesure de ses angles." : ""),
+      solution: dit + complement,
       interactif: {
         widget: "figure",
         figure: { largeur: L, hauteur: H, elements: el },
-        questions: [
-          { question: "Quelle est la nature de ce triangle ?",
-            options: melange(["Équilatéral", "Isocèle", "Rectangle",
-                              "Rectangle isocèle", "Quelconque"]),
-            reponse: { choix: nom } },
-        ],
+        questions: questions,
         description: "un triangle avec son codage",
       },
     };
@@ -492,10 +523,12 @@ const M_TYPES = [
   /* Nature déduite des angles, avec la propriété à nommer. */
   function (d) {
     if (d === "F") return null;
-    const type = pick(["equilateral", "isocele", "rectangle", "quelconque"]);
+    /* Pas d'équilatéral ici : ses trois angles seraient écrits sur la figure,
+       la question perdrait son intérêt. Il est traité par le modèle précédent,
+       où seul le codage des côtés renseigne. */
+    const type = pick(["isocele", "rectangle", "quelconque"]);
     let A, B;
-    if (type === "equilateral")   { A = 60; B = 60; }
-    else if (type === "isocele")  { A = ri(30, 75); B = A; if (A === 60) return null; }
+    if (type === "isocele")       { A = ri(30, 75); B = A; if (A === 60) return null; }
     else if (type === "rectangle"){ A = 90; B = ri(25, 64); if (B === 45) return null; }
     else { A = ri(40, 78); B = ri(45, 82);
            if (A === B || 180 - A - B === A || 180 - A - B === B ||
