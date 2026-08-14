@@ -1459,6 +1459,42 @@ function litInteractif(ex) {
   return (p && p.widget === "quadrillage" && window.MB_QUADRILLAGE) ? p : null;
 }
 
+/* FIGURE : reconnaissance sur une figure géométrique, corrigée localement. */
+function litFigure(ex) {
+  let p = ex && ex.interactif;
+  if (!p) return null;
+  if (typeof p === "string") { try { p = JSON.parse(p); } catch (e) { return null; } }
+  return (p && p.widget === "figure" && window.MB_FIGURE) ? p : null;
+}
+
+function apercuFigure(ex) {
+  const params = litFigure(ex);
+  if (!params) return false;
+  const contenu = document.getElementById("modal-content");
+  if (!contenu) return false;
+  let cible = null;
+  contenu.querySelectorAll(".modal-section").forEach(sec => {
+    const lab = sec.querySelector(".modal-section-label");
+    if (lab && lab.textContent.trim().toLowerCase().indexOf("nonc") >= 0) cible = sec;
+  });
+  const boite = document.createElement("div");
+  if (cible) {
+    const lab = cible.querySelector(".modal-section-label");
+    if (lab) lab.textContent = "Figure";
+    const txt = cible.querySelector(".modal-section-text");
+    if (txt) txt.remove();
+    cible.appendChild(boite);
+  } else {
+    const b = document.createElement("div");
+    b.className = "modal-section";
+    b.innerHTML = '<div class="modal-section-label">Figure</div>';
+    b.appendChild(boite);
+    contenu.appendChild(b);
+  }
+  MB_FIGURE.installerApercu(params, boite);
+  return true;
+}
+
 /* TABLEAU : plateau à compléter, corrigé localement (les valeurs attendues
    sont connues, la comparaison est exacte à 10⁻⁶ près). */
 function litTableau(ex) {
@@ -1665,6 +1701,7 @@ function corrigerDiagramme(ex) {
 
 function apercuInteractif(ex) {
   if (apercuDiagramme(ex)) return;
+  if (apercuFigure(ex)) return;
   if (apercuTableau(ex)) return;
   if (apercuAxe(ex)) return;
   if (apercuSolide(ex)) return;
@@ -1709,12 +1746,34 @@ function apercuInteractif(ex) {
 let plateauSeance = null;
 let plateauAxe = null;
 let plateauTableau = null;
+let plateauFigure = null;
 function plateauInteractif(ex, hist) {
   if (diagrammeSeance(ex)) {
     if (hist && hist.result && plateauDiagramme) {
       const pd = litDiagramme(ex);
       if (pd && pd.reponse) plateauDiagramme.instance().corriger(pd.reponse);
     }
+    return;
+  }
+
+  /* Figure : le plateau s'ajoute au-dessus du brouillon, que l'élève garde
+     pour justifier sa réponse (le codage qui l'a mis sur la voie). */
+  const ancienF = document.getElementById("mbf-seance");
+  if (ancienF) ancienF.remove();
+  plateauFigure = null;
+  const pfig = litFigure(ex);
+  if (pfig) {
+    const zone = document.getElementById("page-answer");
+    const ta = document.getElementById("session-answer");
+    const label = document.getElementById("page-answer-label");
+    if (ta) ta.style.display = "";
+    if (label) label.textContent = "Réponds, puis justifie si tu le souhaites";
+    const boite = document.createElement("div");
+    boite.id = "mbf-seance";
+    boite.style.marginBottom = "1rem";
+    zone.insertBefore(boite, ta || zone.firstChild);
+    plateauFigure = MB_FIGURE.installer(pfig, boite, { papier: true });
+    if (hist && hist.result) plateauFigure.instance().corriger(pfig.reponse);
     return;
   }
 
@@ -1803,6 +1862,27 @@ function plateauInteractif(ex, hist) {
 /* Correction locale d'un exercice interactif : renvoie le même objet que
    la route /exercises/correct, pour que la page de droite ne change pas. */
 function corrigerInteractif(ex) {
+  /* Figure : correction locale, sans appel au correcteur IA. */
+  const pfig = litFigure(ex);
+  if (pfig && plateauFigure) {
+    const inst = plateauFigure.instance();
+    const r = MB_FIGURE.verifier(inst.lire(), pfig.reponse);
+    inst.corriger(pfig.reponse);
+    return {
+      verdict: r.ok ? "correct" : (r.score >= 0.5 ? "partial" : "incorrect"),
+      analyse: r.ok ? "Bonne lecture de la figure."
+        : (r.oublis ? r.oublis + " réponse" + (r.oublis > 1 ? "s" : "") + " oubliée" +
+            (r.oublis > 1 ? "s" : "") + ". " : "") +
+          (r.faux ? r.faux + " réponse" + (r.faux > 1 ? "s" : "") + " incorrecte" +
+            (r.faux > 1 ? "s" : "") + ". " : "") +
+          "Regarde attentivement le codage de la figure.",
+      demarche: "Le codage d'une figure se lit avant tout calcul : le petit carré signale " +
+        "un angle droit, les traits identiques des longueurs égales, les chevrons des droites parallèles.",
+      solution: ex.solution || "",
+      score: r.score
+    };
+  }
+
   /* Tableau : correction locale, sans appel au correcteur IA. */
   const pt = litTableau(ex);
   if (pt && plateauTableau) {
