@@ -390,10 +390,334 @@ const M_CONTRAPOSEE = [
   },
 ];
 
+
+/* ═══════════════ CALCULER UN CÔTÉ DE L'ANGLE DROIT ═══════════════
+   L'angle droit est une DONNÉE : il est codé, et la figure est à l'échelle. */
+const M_COTE = [
+  function (d) {
+    const [a, b, c] = triplet(d);
+    const T = triangleRectangle(a, b, ["A", "B", "C"]);
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: a + " cm" });
+    T.el.push({ t: "texte", x: p.bc.x, y: p.bc.y, s: c + " cm" });
+    return {
+      content: "Le triangle ABC est rectangle en A. On donne AB = " + a +
+        " cm et BC = " + c + " cm.\nCalcule la longueur du côté [AC].",
+      solution: "Le côté cherché n'est PAS l'hypoténuse : [BC] l'est, car elle est " +
+        "opposée à l'angle droit.\n" +
+        "D'après le théorème de Pythagore : BC² = AB² + AC²\n" +
+        "Donc AC² = BC² − AB² = " + (c * c) + " − " + (a * a) + " = " + (b * b) + "\n" +
+        "AC = √" + (b * b) + " = " + b + " cm.\n" +
+        "On SOUSTRAIT : c'est la marque d'un côté de l'angle droit.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la longueur AC ?",
+            options: optionsNum(b, [c - a, c + a - b, 3, -3], " cm"),
+            reponse: { choix: b + " cm" } },
+          { question: "Quelle opération le théorème impose-t-il ici ?",
+            options: melange(["Une soustraction de carrés", "Une addition de carrés",
+                              "Une multiplication", "Une division"]),
+            reponse: { choix: "Une soustraction de carrés" } },
+        ],
+        description: "un triangle rectangle en A, hypoténuse et un côté donnés",
+      },
+    };
+  },
+  /* L'angle droit n'est pas en A : il faut repérer l'hypoténuse. */
+  function (d) {
+    if (d === "F") return null;
+    const [a, b, c] = triplet(d);
+    const T = triangleRectangle(a, b, ["R", "S", "T"]);
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ac.x, y: p.ac.y, s: b + " cm" });
+    T.el.push({ t: "texte", x: p.bc.x, y: p.bc.y, s: c + " cm" });
+    return {
+      content: "Le triangle RST est rectangle en R. On donne RT = " + b +
+        " cm et ST = " + c + " cm.\nCalcule RS.",
+      solution: "L'angle droit est en R : l'hypoténuse est [ST], le côté opposé.\n" +
+        "D'après le théorème de Pythagore : ST² = RS² + RT²\n" +
+        "RS² = ST² − RT² = " + (c * c) + " − " + (b * b) + " = " + (a * a) + "\n" +
+        "RS = √" + (a * a) + " = " + a + " cm.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la longueur RS ?",
+            options: optionsNum(a, [c - b, b, 2, -2], " cm"),
+            reponse: { choix: a + " cm" } },
+          { question: "Quel côté est l'hypoténuse ?",
+            options: melange(["[ST]", "[RS]", "[RT]"]),
+            reponse: { choix: "[ST]" } },
+        ],
+        description: "un triangle rectangle en R, deux longueurs données",
+      },
+    };
+  },
+  /* Deux étapes : hypoténuse puis côté (difficile). */
+  function (d) {
+    if (d !== "D") return null;
+    const [a, b, c] = triplet(d);
+    const k = pick([2, 3]);
+    const T = triangleRectangle(a, b, ["A", "B", "C"]);
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: (a * k) + " cm" });
+    T.el.push({ t: "texte", x: p.bc.x, y: p.bc.y, s: (c * k) + " cm" });
+    return {
+      content: "Le triangle ABC est rectangle en A, avec AB = " + (a * k) +
+        " cm et BC = " + (c * k) + " cm.\nCalcule AC, puis le périmètre du triangle.",
+      solution: "AC² = BC² − AB² = " + (c * k) * (c * k) + " − " + (a * k) * (a * k) +
+        " = " + (b * k) * (b * k) + "\n" +
+        "AC = √" + (b * k) * (b * k) + " = " + (b * k) + " cm\n" +
+        "Périmètre = " + (a * k) + " + " + (b * k) + " + " + (c * k) + " = " +
+        ((a + b + c) * k) + " cm.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la longueur AC ?",
+            options: optionsNum(b * k, [(c - a) * k, a * k, 4, -4], " cm"),
+            reponse: { choix: (b * k) + " cm" } },
+          { question: "Quel est le périmètre du triangle ?",
+            options: optionsNum((a + b + c) * k, [-(b * k), c * k, 5, -5], " cm"),
+            reponse: { choix: ((a + b + c) * k) + " cm" } },
+        ],
+        description: "un triangle rectangle en A, hypoténuse et un côté donnés",
+      },
+    };
+  },
+];
+
+/* ═══════════════ LE FIL DU MÂT ═══════════════
+   Un mât vertical, un fil tendu depuis le sol : l'angle droit est au pied du
+   mât, il est donc codé sur la figure. */
+const M_MAT = [
+  function (d) {
+    const [a, b, c] = triplet(d);
+    /* a = distance au sol, b = hauteur du mât, c = fil. */
+    const T = triangleRectangle(a, b, ["P", "S", "M"]);
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: a + " m" });
+    T.el.push({ t: "texte", x: p.ac.x, y: p.ac.y, s: b + " m" });
+    T.el.push({ t: "texte", x: L / 2 + 40, y: 26, s: "M : sommet du mât" });
+    return {
+      content: "Un mât vertical [PM] mesure " + b + " m de haut. Un fil est tendu de son " +
+        "sommet M jusqu'à un piquet S planté au sol, à " + a + " m du pied P.\n" +
+        "Quelle est la longueur du fil ?",
+      solution: "Le mât est vertical et le sol horizontal : le triangle PSM est rectangle en P " +
+        "(l'angle droit est codé sur la figure).\n" +
+        "D'après le théorème de Pythagore : SM² = PS² + PM²\n" +
+        "SM² = " + a + "² + " + b + "² = " + (a * a) + " + " + (b * b) + " = " + (c * c) + "\n" +
+        "SM = √" + (c * c) + " = " + c + " m.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la longueur du fil ?",
+            options: optionsNum(c, [a + b, a + b - c, 2, -2], " m"),
+            reponse: { choix: c + " m" } },
+          { question: "Où se trouve l'angle droit ?",
+            options: melange(["Au pied du mât, en P", "Au sommet du mât, en M",
+                              "Au piquet, en S"]),
+            reponse: { choix: "Au pied du mât, en P" } },
+        ],
+        description: "un mât vertical, un fil tendu vers le sol, angle droit codé",
+      },
+    };
+  },
+  /* On connaît le fil, on cherche la hauteur ou la distance. */
+  function (d) {
+    if (d === "F") return null;
+    const [a, b, c] = triplet(d);
+    const chercheHauteur = alea() < 0.5;
+    const T = triangleRectangle(a, b, ["P", "S", "M"]);
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.bc.x, y: p.bc.y, s: c + " m" });
+    T.el.push({ t: "texte", x: chercheHauteur ? p.ab.x : p.ac.x,
+                y: chercheHauteur ? p.ab.y : p.ac.y,
+                s: (chercheHauteur ? a : b) + " m" });
+    return {
+      content: "Un fil de " + c + " m relie le sommet M d'un mât vertical à un piquet S " +
+        "planté au sol.\n" + (chercheHauteur
+          ? "Le piquet est à " + a + " m du pied P du mât. Quelle est la hauteur du mât ?"
+          : "Le mât mesure " + b + " m. À quelle distance du pied se trouve le piquet ?"),
+      solution: "Le triangle PSM est rectangle en P.\n" +
+        "SM² = PS² + PM², donc le côté cherché s'obtient par une SOUSTRACTION.\n" +
+        (chercheHauteur
+          ? "PM² = " + (c * c) + " − " + (a * a) + " = " + (b * b) + "\nPM = " + b + " m."
+          : "PS² = " + (c * c) + " − " + (b * b) + " = " + (a * a) + "\nPS = " + a + " m."),
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: chercheHauteur ? "Quelle est la hauteur du mât ?"
+                                     : "À quelle distance se trouve le piquet ?",
+            options: optionsNum(chercheHauteur ? b : a,
+              [c - (chercheHauteur ? a : b), c, 3, -3], " m"),
+            reponse: { choix: (chercheHauteur ? b : a) + " m" } },
+          { question: "Quelle opération faut-il faire ?",
+            options: melange(["Une soustraction de carrés", "Une addition de carrés",
+                              "Une multiplication", "Une division"]),
+            reponse: { choix: "Une soustraction de carrés" } },
+        ],
+        description: "un mât, un fil de longueur connue, angle droit codé",
+      },
+    };
+  },
+  /* Deux fils, ou un fil qui dépasse (difficile). */
+  function (d) {
+    if (d !== "D") return null;
+    const [a, b, c] = triplet(d);
+    const rab = pick([1, 2, 3]);
+    const T = triangleRectangle(a, b, ["P", "S", "M"]);
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: a + " m" });
+    T.el.push({ t: "texte", x: p.ac.x, y: p.ac.y, s: b + " m" });
+    return {
+      content: "Un mât vertical de " + b + " m est haubané par un fil allant de son sommet " +
+        "à un piquet situé à " + a + " m du pied.\n" +
+        "On prévoit " + rab + " m de fil supplémentaire pour les attaches. " +
+        "Quelle longueur de fil faut-il commander ?",
+      solution: "Longueur tendue : SM² = " + a + "² + " + b + "² = " + (c * c) + ", " +
+        "donc SM = " + c + " m.\n" +
+        "Avec les attaches : " + c + " + " + rab + " = " + (c + rab) + " m.\n" +
+        "Il faut commander " + (c + rab) + " m de fil.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle longueur de fil faut-il commander ?",
+            options: optionsNum(c + rab, [-rab, a + b, 2, -2], " m"),
+            reponse: { choix: (c + rab) + " m" } },
+          { question: "Quelle est la longueur du fil tendu, sans les attaches ?",
+            options: optionsNum(c, [rab, a + b, 3, -3], " m"),
+            reponse: { choix: c + " m" } },
+        ],
+        description: "un mât haubané, angle droit codé au pied",
+      },
+    };
+  },
+];
+
+/* ═══════════════ LA DIAGONALE DE L'ÉCRAN ═══════════════
+   Un écran rectangulaire : la diagonale le partage en deux triangles
+   rectangles. L'angle droit est celui du rectangle, il est codé. */
+const M_ECRAN = [
+  function (d) {
+    const [a, b, c] = triplet(d);
+    const T = triangleRectangle(a, b, ["A", "B", "C"]);
+    /* Le rectangle complet, avec sa diagonale. */
+    const D = [T.B[0], T.C[1]];
+    T.el.splice(1, 0, { t: "segment", a: T.B, b: D, style: "pointille" },
+                       { t: "segment", a: T.C, b: D, style: "pointille" });
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: a + " cm" });
+    T.el.push({ t: "texte", x: p.ac.x, y: p.ac.y, s: b + " cm" });
+    const objet = pick(["un écran de télévision", "un écran d'ordinateur",
+                        "une tablette", "un cadre photo", "un panneau"]);
+    return {
+      content: objet.charAt(0).toUpperCase() + objet.slice(1) + " rectangulaire mesure " +
+        a + " cm de large et " + b + " cm de haut.\nQuelle est la longueur de sa diagonale ?",
+      solution: "La diagonale partage le rectangle en deux triangles rectangles.\n" +
+        "D'après le théorème de Pythagore : diagonale² = " + a + "² + " + b + "²\n" +
+        "= " + (a * a) + " + " + (b * b) + " = " + (c * c) + "\n" +
+        "diagonale = √" + (c * c) + " = " + c + " cm.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la longueur de la diagonale ?",
+            options: optionsNum(c, [a + b, a + b - c, 2, -2], " cm"),
+            reponse: { choix: c + " cm" } },
+          { question: "Pourquoi peut-on appliquer le théorème de Pythagore ?",
+            options: melange(["Parce que les angles du rectangle sont droits",
+                              "Parce que les côtés sont égaux",
+                              "Parce que la diagonale est la plus longue",
+                              "Parce que le rectangle est un carré"]),
+            reponse: { choix: "Parce que les angles du rectangle sont droits" } },
+        ],
+        description: "un rectangle et sa diagonale, angle droit codé",
+      },
+    };
+  },
+  /* La diagonale est connue, on cherche un côté. */
+  function (d) {
+    if (d === "F") return null;
+    const [a, b, c] = triplet(d);
+    const T = triangleRectangle(a, b, ["A", "B", "C"]);
+    const D = [T.B[0], T.C[1]];
+    T.el.splice(1, 0, { t: "segment", a: T.B, b: D, style: "pointille" },
+                       { t: "segment", a: T.C, b: D, style: "pointille" });
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: a + " cm" });
+    T.el.push({ t: "texte", x: p.bc.x, y: p.bc.y, s: c + " cm" });
+    return {
+      content: "Un écran rectangulaire a une diagonale de " + c + " cm et une largeur de " +
+        a + " cm.\nQuelle est sa hauteur ?",
+      solution: "La diagonale est l'hypoténuse du triangle rectangle formé par la largeur " +
+        "et la hauteur.\n" +
+        "hauteur² = diagonale² − largeur² = " + (c * c) + " − " + (a * a) + " = " + (b * b) + "\n" +
+        "hauteur = √" + (b * b) + " = " + b + " cm.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la hauteur de l'écran ?",
+            options: optionsNum(b, [c - a, c, 3, -3], " cm"),
+            reponse: { choix: b + " cm" } },
+          { question: "Que représente la diagonale dans le triangle rectangle ?",
+            options: melange(["L'hypoténuse", "Un côté de l'angle droit",
+                              "La hauteur", "La base"]),
+            reponse: { choix: "L'hypoténuse" } },
+        ],
+        description: "un rectangle, diagonale et largeur données",
+      },
+    };
+  },
+  /* Aire et diagonale (difficile). */
+  function (d) {
+    if (d !== "D") return null;
+    const [a, b, c] = triplet(d);
+    const T = triangleRectangle(a, b, ["A", "B", "C"]);
+    const D = [T.B[0], T.C[1]];
+    T.el.splice(1, 0, { t: "segment", a: T.B, b: D, style: "pointille" },
+                       { t: "segment", a: T.C, b: D, style: "pointille" });
+    const p = positionsRectangle(T.A, T.B, T.C);
+    T.el.push({ t: "texte", x: p.ab.x, y: p.ab.y, s: a + " cm" });
+    T.el.push({ t: "texte", x: p.ac.x, y: p.ac.y, s: b + " cm" });
+    return {
+      content: "Un écran rectangulaire mesure " + a + " cm sur " + b + " cm.\n" +
+        "Calcule la longueur de sa diagonale, puis son aire.",
+      solution: "Diagonale² = " + a + "² + " + b + "² = " + (a * a) + " + " + (b * b) +
+        " = " + (c * c) + "\nDiagonale = " + c + " cm.\n" +
+        "Aire = " + a + " × " + b + " = " + (a * b) + " cm².\n" +
+        "Attention à ne pas confondre : la diagonale s'obtient par Pythagore, " +
+        "l'aire par un simple produit.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: T.el },
+        questions: [
+          { question: "Quelle est la longueur de la diagonale ?",
+            options: optionsNum(c, [a + b, a * b > 200 ? 7 : a + 1, 2, -2], " cm"),
+            reponse: { choix: c + " cm" } },
+          { question: "Quelle est l'aire de l'écran ?",
+            options: optionsNum(a * b, [a + b, c * c - a * b, 10, -10], " cm²"),
+            reponse: { choix: (a * b) + " cm²" } },
+        ],
+        description: "un rectangle et sa diagonale, angle droit codé",
+      },
+    };
+  },
+];
+
 /* ═══════════════ TABLE DES FAMILLES ═══════════════ */
 const FAMILLES = {
   "Calculer une longueur":         M_LONGUEUR,
   "Démontrer avec la contraposée": M_CONTRAPOSEE,
+  "Calculer un côté de l'angle droit": M_COTE,
+  "Le fil du mât":                 M_MAT,
+  "La diagonale de l'écran":       M_ECRAN,
 };
 
 const cle = t => String(t || "")
@@ -406,6 +730,9 @@ Object.keys(FAMILLES).forEach(f => { ALIAS[cle(f)] = f; });
  ["Calculer une distance", "Calculer une longueur"],
  ["La contraposée", "Démontrer avec la contraposée"],
  ["Démontrer avec la contraposee", "Démontrer avec la contraposée"],
+ ["Calculer un coté de l'angle droit", "Calculer un côté de l'angle droit"],
+ ["Le fil du mat", "Le fil du mât"],
+ ["La diagonale de l'ecran", "La diagonale de l'écran"],
 ].forEach(([a, c]) => { ALIAS[cle(a)] = c; });
 /* Pas de comparaison souple ici : « contraposée » et « réciproque » se
    ressemblent trop pour qu'on puisse approximer sans risque. */
