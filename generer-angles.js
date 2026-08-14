@@ -33,6 +33,11 @@ const EXECUTE = ARGS.includes("--execute");
 const APERCU  = ARGS.includes("--apercu");
 const opt = (n, d) => { const i = ARGS.indexOf(n); return i >= 0 && ARGS[i + 1] ? +ARGS[i + 1] : d; };
 const CIBLE  = opt("--cible", 100);
+/* Le chapitre visé. « %angle% » attrapait aussi « Géométrie du TRIANGLE » et
+   « TRIANGLEs semblables » : on cible désormais le libellé complet. */
+const iCh = ARGS.indexOf("--chapitre");
+const FILTRE = (iCh >= 0 && ARGS[iCh + 1] && !ARGS[iCh + 1].startsWith("--"))
+  ? "%" + ARGS[iCh + 1] + "%" : "%angles et parall%";
 const GRAINE = opt("--graine", 20260817);
 const REPARTITION = { F: 0.20, M: 0.30, D: 0.50 };
 const LIBELLE = { F: "Facile", M: "Moyen", D: "Difficile" };
@@ -482,12 +487,252 @@ const M_PROUVER = [
   },
 ];
 
+
+/* ═══════════════ COMPLÉMENTAIRES ET SUPPLÉMENTAIRES ═══════════════ */
+const M_COMPSUPP = [
+  /* Deux angles adjacents formant un angle droit ou un angle plat. */
+  function (d) {
+    const droit = alea() < 0.5;
+    const m = droit ? ri(10, 80) : ri(20, 160);
+    const autre = (droit ? 90 : 180) - m;
+    const O = [L / 2, H / 2 + 40];
+    const base = [1, 0];
+    /* Le côté commun sépare les deux angles. */
+    const total = droit ? 90 : 180;
+    const a1 = rad(0), a2 = rad(m), a3 = rad(total);
+    const R = 105;
+    const P = a => [O[0] + R * Math.cos(a), O[1] - R * Math.sin(a)];
+    const el = [
+      { t: "segment", a: O, b: P(a1) },
+      { t: "segment", a: O, b: P(a2) },
+      { t: "segment", a: O, b: P(a3) },
+      { t: "point", x: O[0], y: O[1], nom: "O", pos: "bas" },
+      { t: "point", x: P(a1)[0], y: P(a1)[1], nom: "A", pos: "droite" },
+      { t: "point", x: P(a2)[0], y: P(a2)[1], nom: "B", pos: "haut" },
+      { t: "point", x: P(a3)[0], y: P(a3)[1], nom: "C", pos: "gauche" },
+    ];
+    marqueAngle(el, O, [Math.cos(a2 / 2), -Math.sin(a2 / 2)], "x̂", 34);
+    marqueAngle(el, O, [Math.cos((a2 + a3) / 2), -Math.sin((a2 + a3) / 2)], "ŷ", 34);
+    if (droit) el.push({ t: "angledroit", s: O, a: P(a1), b: P(a3) });
+    el.push({ t: "texte", x: 62, y: 26, s: "x̂ = " + m + "°" });
+    return {
+      content: "Sur la figure, les angles x̂ et ŷ sont adjacents et " +
+        (droit ? "forment ensemble un angle droit" : "forment ensemble un angle plat") +
+        ".\nx̂ mesure " + m + "°. Quelle est la mesure de ŷ ?",
+      solution: (droit
+        ? "Deux angles dont la somme vaut 90° sont COMPLÉMENTAIRES.\n" +
+          "ŷ = 90° − " + m + "° = " + autre + "°."
+        : "Deux angles dont la somme vaut 180° sont SUPPLÉMENTAIRES.\n" +
+          "ŷ = 180° − " + m + "° = " + autre + "°."),
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: el },
+        questions: [
+          { question: "Quelle est la mesure de ŷ ?",
+            options: optionsAngle(autre, [m, droit ? 180 - m : 90 - m > 0 ? 90 - m : 90, 90]),
+            reponse: { choix: autre + "°" } },
+          { question: "Comment s'appellent ces deux angles ?",
+            options: melange(["Complémentaires", "Supplémentaires",
+                              "Opposés par le sommet", "Correspondants"]),
+            reponse: { choix: droit ? "Complémentaires" : "Supplémentaires" } },
+        ],
+        description: droit ? "deux angles adjacents formant un angle droit"
+                           : "deux angles adjacents formant un angle plat",
+      },
+    };
+  },
+  /* Reconnaître la relation à partir de deux mesures données. */
+  function (d) {
+    if (d === "F") return null;
+    const type = pick(["comp", "supp", "ni"]);
+    const m1 = ri(15, 80);
+    const m2 = type === "comp" ? 90 - m1 : type === "supp" ? 180 - m1 : m1 + pick([15, 25, 35]);
+    if (m2 <= 0 || m2 >= 180) return null;
+    const O1 = [L / 4 + 10, H / 2 + 40], O2 = [3 * L / 4 - 10, H / 2 + 40];
+    const el = [];
+    [[O1, m1, "x̂"], [O2, m2, "ŷ"]].forEach(([O, m, nom]) => {
+      const R = 78;
+      const A = [O[0] + R, O[1]];
+      const B = [O[0] + R * Math.cos(rad(m)), O[1] - R * Math.sin(rad(m))];
+      el.push({ t: "segment", a: O, b: A }, { t: "segment", a: O, b: B },
+               { t: "point", x: O[0], y: O[1], nom: "", pos: "bas" });
+      marqueAngle(el, O, [Math.cos(rad(m / 2)), -Math.sin(rad(m / 2))], nom, 30);
+      el.push({ t: "texte", x: O[0], y: O[1] + 28, s: m + "°" });
+    });
+    const somme = m1 + m2;
+    return {
+      content: "Deux angles sont représentés : x̂ = " + m1 + "° et ŷ = " + m2 + "°.\n" +
+        "Quelle relation lie ces deux angles ?",
+      solution: "On calcule leur somme : " + m1 + "° + " + m2 + "° = " + somme + "°.\n" +
+        (somme === 90 ? "La somme vaut 90° : les angles sont COMPLÉMENTAIRES."
+         : somme === 180 ? "La somme vaut 180° : les angles sont SUPPLÉMENTAIRES."
+         : "La somme ne vaut ni 90° ni 180° : les angles ne sont ni complémentaires " +
+           "ni supplémentaires."),
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: el },
+        questions: [
+          { question: "Quelle relation lie ces deux angles ?",
+            options: melange(["Complémentaires", "Supplémentaires", "Aucune des deux"]),
+            reponse: { choix: somme === 90 ? "Complémentaires"
+                            : somme === 180 ? "Supplémentaires" : "Aucune des deux" } },
+          { question: "Combien vaut la somme des deux angles ?",
+            options: optionsAngle(somme > 179 ? 180 : somme, [90, 180, somme + 10, somme - 10])
+                       .concat(somme === 180 ? [] : []),
+            reponse: { choix: (somme > 179 ? 180 : somme) + "°" } },
+        ],
+        description: "deux angles mesurés séparément",
+      },
+    };
+  },
+  /* Le complémentaire ou le supplémentaire à trouver (difficile). */
+  function (d) {
+    if (d !== "D") return null;
+    const comp = alea() < 0.5;
+    const m = comp ? ri(10, 80) : ri(15, 165);
+    const r = (comp ? 90 : 180) - m;
+    const O = [L / 2, H / 2 + 40], R = 105;
+    const A = [O[0] + R, O[1]];
+    const B = [O[0] + R * Math.cos(rad(m)), O[1] - R * Math.sin(rad(m))];
+    const el = [{ t: "segment", a: O, b: A }, { t: "segment", a: O, b: B },
+                { t: "point", x: O[0], y: O[1], nom: "O", pos: "bas" }];
+    marqueAngle(el, O, [Math.cos(rad(m / 2)), -Math.sin(rad(m / 2))], "x̂", 36);
+    el.push({ t: "texte", x: 62, y: 26, s: "x̂ = " + m + "°" });
+    return {
+      content: "L'angle x̂ mesure " + m + "°.\nQuelle est la mesure de son angle " +
+        (comp ? "complémentaire" : "supplémentaire") + " ?",
+      solution: "Deux angles " + (comp ? "COMPLÉMENTAIRES ont pour somme 90°"
+                                       : "SUPPLÉMENTAIRES ont pour somme 180°") + ".\n" +
+        (comp ? "90" : "180") + "° − " + m + "° = " + r + "°.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: el },
+        questions: [
+          { question: "Quelle est la mesure de cet angle ?",
+            options: optionsAngle(r, [m, comp ? 180 - m : 90 - m > 0 ? 90 - m : 90, 90]),
+            reponse: { choix: r + "°" } },
+          { question: "Que vaut la somme de deux angles " +
+              (comp ? "complémentaires" : "supplémentaires") + " ?",
+            options: melange(["90°", "180°", "360°", "45°"]),
+            reponse: { choix: comp ? "90°" : "180°" } },
+        ],
+        description: "un angle de " + m + " degrés",
+      },
+    };
+  },
+];
+
+/* ═══════════════ DÉDUIRE UN ANGLE ═══════════════
+   Enchaîner deux propriétés pour atteindre un angle non marqué. */
+const M_DEDUIRE = [
+  function (d) {
+    const angD = ri(-16, 16), angS = angD + ri(58, 108);
+    const m = ri(30, 150);
+    const f = figureSecante({ angD, angS, parallele: true });
+    const el = f.el;
+    marqueAngle(el, f.I, dir(f.u, f.w, +1, +1), "x̂");
+    /* L'angle cherché est opposé par le sommet à l'angle correspondant. */
+    marqueAngle(el, f.J, dir(f.u, f.w, -1, -1), "ẑ");
+    el.push({ t: "texte", x: 62, y: 26, s: "x̂ = " + m + "°" });
+    return {
+      content: "Sur la figure, (d₁) et (d₂) sont parallèles et x̂ = " + m + "°.\n" +
+        "Déduis-en la mesure de ẑ.",
+      solution: "x̂ et ẑ sont ALTERNES-INTERNES : ils sont de part et d'autre de la " +
+        "sécante et entre les deux droites.\n" +
+        "Les droites étant parallèles, ces angles sont égaux.\n" +
+        "ẑ = " + m + "°.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: el },
+        questions: [
+          { question: "Quelle est la mesure de ẑ ?",
+            options: optionsAngle(m, [180 - m, 90, m > 90 ? m - 25 : m + 25]),
+            reponse: { choix: m + "°" } },
+          { question: "Sur quelle paire d'angles s'appuie le raisonnement ?",
+            options: melange(TOUTES_OPTIONS),
+            reponse: { choix: "Angles alternes-internes" } },
+        ],
+        description: "deux parallèles coupées par une sécante, angles x et z",
+      },
+    };
+  },
+  /* Deux étapes : correspondants puis supplémentaires. */
+  function (d) {
+    if (d === "F") return null;
+    const angD = ri(-16, 16), angS = angD + ri(58, 108);
+    const m = ri(30, 150);
+    const f = figureSecante({ angD, angS, parallele: true });
+    const el = f.el;
+    marqueAngle(el, f.I, dir(f.u, f.w, +1, +1), "x̂");
+    marqueAngle(el, f.J, dir(f.u, f.w, -1, +1), "t̂");
+    el.push({ t: "texte", x: 62, y: 26, s: "x̂ = " + m + "°" });
+    return {
+      content: "Sur la figure, (d₁) et (d₂) sont parallèles et x̂ = " + m + "°.\n" +
+        "Déduis-en la mesure de t̂, en expliquant les deux étapes.",
+      solution: "Étape 1 : l'angle correspondant à x̂ en J mesure aussi " + m + "° " +
+        "(les droites sont parallèles).\n" +
+        "Étape 2 : t̂ et cet angle sont adjacents et forment un angle plat, " +
+        "ils sont donc SUPPLÉMENTAIRES.\n" +
+        "t̂ = 180° − " + m + "° = " + (180 - m) + "°.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: el },
+        questions: [
+          { question: "Quelle est la mesure de t̂ ?",
+            options: optionsAngle(180 - m, [m, 90, m > 90 ? m - 25 : m + 25]),
+            reponse: { choix: (180 - m) + "°" } },
+          { question: "Quelle propriété intervient à la seconde étape ?",
+            options: melange(["Angles supplémentaires", "Angles correspondants",
+                              "Angles opposés par le sommet", "Angles complémentaires"]),
+            reponse: { choix: "Angles supplémentaires" } },
+        ],
+        description: "deux parallèles coupées par une sécante, angles x et t",
+      },
+    };
+  },
+  /* Trois angles enchaînés (difficile). */
+  function (d) {
+    if (d !== "D") return null;
+    const angD = ri(-14, 14), angS = angD + ri(60, 105);
+    const m = ri(35, 145);
+    const f = figureSecante({ angD, angS, parallele: true });
+    const el = f.el;
+    marqueAngle(el, f.I, dir(f.u, f.w, +1, +1), "x̂");
+    marqueAngle(el, f.I, dir(f.u, f.w, -1, -1), "ŷ", 40);
+    marqueAngle(el, f.J, dir(f.u, f.w, -1, +1), "ẑ");
+    el.push({ t: "texte", x: 62, y: 26, s: "x̂ = " + m + "°" });
+    return {
+      content: "Sur la figure, (d₁) et (d₂) sont parallèles et x̂ = " + m + "°.\n" +
+        "Détermine successivement ŷ puis ẑ.",
+      solution: "ŷ est OPPOSÉ PAR LE SOMMET à x̂ : ŷ = " + m + "°.\n" +
+        "ẑ et x̂ sont du même côté de la sécante, l'un au-dessus de (d₁), " +
+        "l'autre en dessous de (d₂) : ils sont supplémentaires.\n" +
+        "ẑ = 180° − " + m + "° = " + (180 - m) + "°.",
+      interactif: {
+        widget: "figure",
+        figure: { largeur: L, hauteur: H, elements: el },
+        questions: [
+          { question: "Quelle est la mesure de ŷ ?",
+            options: optionsAngle(m, [180 - m, 90, m > 90 ? m - 30 : m + 30]),
+            reponse: { choix: m + "°" } },
+          { question: "Quelle est la mesure de ẑ ?",
+            options: optionsAngle(180 - m, [m, 90, m > 90 ? m - 30 : m + 30]),
+            reponse: { choix: (180 - m) + "°" } },
+        ],
+        description: "deux parallèles coupées par une sécante, trois angles marqués",
+      },
+    };
+  },
+];
+
 /* ═══════════════ TABLE DES FAMILLES ═══════════════ */
 const FAMILLES = {
   "Angles correspondants":        M_CORRESPONDANTS,
   "Angles alternes-internes":     M_ALTERNES,
   "Angles opposés par le sommet": M_OPPOSES,
   "Prouver un parallélisme":      M_PROUVER,
+  "Complémentaires et supplémentaires": M_COMPSUPP,
+  "Déduire un angle":             M_DEDUIRE,
 };
 
 const cle = t => String(t || "")
@@ -513,6 +758,10 @@ Object.keys(FAMILLES).forEach(f => { ALIAS[cle(f)] = f; });
  ["Prouver le parallélisme", "Prouver un parallélisme"],
  ["Démontrer un parallélisme", "Prouver un parallélisme"],
  ["Prouver un parallélisme par angles correspondants", "Prouver un parallélisme"],
+ ["Angles complémentaires et supplémentaires", "Complémentaires et supplémentaires"],
+ ["Complémentaires supplémentaires", "Complémentaires et supplémentaires"],
+ ["Déduire une mesure d'angle", "Déduire un angle"],
+ ["Calculer un angle", "Déduire un angle"],
 ].forEach(([a, c]) => { ALIAS[cle(a)] = c; });
 
 function canonique(f) {
@@ -594,8 +843,15 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
   const { rows: brut } = await pool.query(
     `SELECT id, title, content, solution, level, subject, difficulty, classe, chapitre, type, famille
-       FROM exercises WHERE chapitre ILIKE '%angle%' OR chapitre ILIKE '%parall%' ORDER BY id`);
-  if (!brut.length) { console.log("Chapitre « Angles et parallélisme » introuvable."); await pool.end(); return; }
+       FROM exercises WHERE chapitre ILIKE $1 ORDER BY id`, [FILTRE]);
+  if (!brut.length) {
+    console.log("Aucun chapitre ne correspond à « " + FILTRE + " ».");
+    const { rows: dispo } = await pool.query(
+      "SELECT DISTINCT chapitre FROM exercises WHERE chapitre IS NOT NULL ORDER BY 1");
+    console.log("Chapitres existants :");
+    dispo.forEach(r => console.log("   " + JSON.stringify(r.chapitre)));
+    await pool.end(); return;
+  }
 
   const maj = (t, ch, def) => { const c = new Map();
     t.forEach(l => { const v = l[ch]; if (v != null && String(v).trim() !== "") c.set(v, (c.get(v) || 0) + 1); });
