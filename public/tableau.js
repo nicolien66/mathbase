@@ -335,7 +335,9 @@
       .mbt-mauvais { color: var(--danger, #e6826e); }
 
       /* ── Sur le papier de la séance ── (voir axe.js : même raison) */
-      .mbt-sur-papier { color: #17120c; }
+      .mbt-sur-papier,
+      .mbt-sur-papier .mbt-wrap,
+      .mbt-sur-papier .mbt-plateau { color: #17120c; }
       .mbt-sur-papier .mbt-titre { color: #6b5d40; }
       .mbt-sur-papier .mbt-table th, .mbt-sur-papier .mbt-table td {
         border-color: rgba(31,26,19,.30); }

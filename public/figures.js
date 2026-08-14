@@ -385,7 +385,19 @@
       .mbf-mauvais { color: var(--danger, #e6826e); }
 
       /* ── Sur le papier de la séance : encre sombre ── */
-      .mbf-sur-papier { color: #17120c; }
+      /* Le conteneur seul ne suffit pas : .mbf-plateau redéfinit la couleur
+         plus haut dans la feuille, et le SVG, qui hérite de currentColor,
+         repassait en crème — donc invisible sur le papier. On impose donc la
+         couleur au conteneur ET à ses descendants. */
+      .mbf-sur-papier,
+      .mbf-sur-papier .mbf-wrap,
+      .mbf-sur-papier .mbf-plateau,
+      .mbf-sur-papier .mbf-svg { color: #17120c; }
+      .mbf-sur-papier .mbf-fleche, .mbf-sur-papier .mbf-point { fill: #17120c; }
+      .mbf-sur-papier .mbf-trait, .mbf-sur-papier .mbf-cercle,
+      .mbf-sur-papier .mbf-arc, .mbf-sur-papier .mbf-polygone { stroke: #17120c; }
+      .mbf-sur-papier .mbf-pointille { stroke: #4a3f2c; }
+      .mbf-sur-papier .mbf-nom { fill: #17120c; }
       .mbf-sur-papier .mbf-cadre { background: rgba(31,26,19,.03); border-color: rgba(31,26,19,.20); }
       .mbf-sur-papier .mbf-marque, .mbf-sur-papier .mbf-chevron,
       .mbf-sur-papier .mbf-angledroit { stroke: #9a6b1f; }
