@@ -1767,13 +1767,15 @@ function plateauInteractif(ex, hist) {
     const ta = document.getElementById("session-answer");
     const label = document.getElementById("page-answer-label");
     if (ta) ta.style.display = "";
-    if (label) label.textContent = "Réponds, puis justifie si tu le souhaites";
+    if (label) label.textContent = "Lis la figure, puis rédige ta réponse";
     const boite = document.createElement("div");
     boite.id = "mbf-seance";
     boite.style.marginBottom = "1rem";
     zone.insertBefore(boite, ta || zone.firstChild);
-    plateauFigure = MB_FIGURE.installer(pfig, boite, { papier: true });
-    if (hist && hist.result) plateauFigure.instance().corriger();
+    /* La figure est affichée SEULE : plus de questions à choix sous le dessin.
+       L'élève lit la figure et rédige sa réponse dans le brouillon, comme sur
+       une copie. La correction revient donc au correcteur habituel. */
+    MB_FIGURE.installerApercu(pfig, boite, { papier: true });
     return;
   }
 
@@ -1831,7 +1833,7 @@ function plateauInteractif(ex, hist) {
     boite.id = "mbs-seance";
     boite.style.marginBottom = "0.8rem";
     zone.insertBefore(boite, zone.firstChild);
-    MB_SOLIDES.installer(ps, boite);
+    MB_SOLIDES.installer(ps, boite, { papier: true });   // page de séance : fond beige
     return;
   }
 
@@ -1850,7 +1852,7 @@ function plateauInteractif(ex, hist) {
   const boite = document.createElement("div");
   boite.id = "mbq-seance";
   zone.appendChild(boite);
-  plateauSeance = MB_QUADRILLAGE.installer(params, boite);
+  plateauSeance = MB_QUADRILLAGE.installer(params, boite, { papier: true });
 
   /* le bouton « Valider » du plateau fait double emploi avec « Corriger » */
   const v = boite.querySelector('[data-a="valider"]');
@@ -1862,27 +1864,6 @@ function plateauInteractif(ex, hist) {
 /* Correction locale d'un exercice interactif : renvoie le même objet que
    la route /exercises/correct, pour que la page de droite ne change pas. */
 function corrigerInteractif(ex) {
-  /* Figure : correction locale, sans appel au correcteur IA. */
-  const pfig = litFigure(ex);
-  if (pfig && plateauFigure) {
-    const inst = plateauFigure.instance();
-    const r = MB_FIGURE.verifierTout(inst.lire(), pfig);
-    inst.corriger();
-    return {
-      verdict: r.ok ? "correct" : (r.score >= 0.5 ? "partial" : "incorrect"),
-      analyse: r.ok ? "Bonne lecture de la figure."
-        : (r.oublis ? r.oublis + " réponse" + (r.oublis > 1 ? "s" : "") + " oubliée" +
-            (r.oublis > 1 ? "s" : "") + ". " : "") +
-          (r.faux ? r.faux + " réponse" + (r.faux > 1 ? "s" : "") + " incorrecte" +
-            (r.faux > 1 ? "s" : "") + ". " : "") +
-          "Regarde attentivement le codage de la figure.",
-      demarche: "Le codage d'une figure se lit avant tout calcul : le petit carré signale " +
-        "un angle droit, les traits identiques des longueurs égales, les chevrons des droites parallèles.",
-      solution: ex.solution || "",
-      score: r.score
-    };
-  }
-
   /* Tableau : correction locale, sans appel au correcteur IA. */
   const pt = litTableau(ex);
   if (pt && plateauTableau) {

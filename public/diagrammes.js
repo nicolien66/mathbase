@@ -278,6 +278,19 @@
 .mbd-point{fill:var(--accent)}
 .mbd-attendu{fill:none;stroke:var(--accent2);stroke-width:2;stroke-dasharray:5 4}
 circle.mbd-attendu{fill:var(--accent2);stroke:none}
+/* ── Sur le papier de la séance : encre sombre ── */
+.mbd-sur-papier{color:#17120c}
+.mbd-sur-papier .mbd-cadre{background:rgba(31,26,19,.03);border-color:rgba(31,26,19,.20)}
+.mbd-sur-papier .mbd-grille{stroke:rgba(31,26,19,.16)}
+.mbd-sur-papier .mbd-sep{stroke:rgba(31,26,19,.10)}
+.mbd-sur-papier .mbd-sous-grille{stroke:rgba(31,26,19,.08)}
+.mbd-sur-papier .mbd-axe{stroke:rgba(31,26,19,.60)}
+.mbd-sur-papier .mbd-lab,.mbd-sur-papier .mbd-axe-lab{fill:#5b4f36}
+.mbd-sur-papier .mbd-barre{fill:#9a833f;fill-opacity:.75;stroke:#7a663012}
+.mbd-sur-papier .mbd-courbe{stroke:#17120c}
+.mbd-sur-papier .mbd-point{fill:#17120c}
+.mbd-sur-papier .mbd-attendu{stroke:#1f7a4d}
+.mbd-sur-papier circle.mbd-attendu{fill:#1f7a4d}
 .mbd-secteur{fill:var(--surface2);stroke:var(--border2);stroke-width:1;cursor:pointer}
 .mbd-secteur:hover{stroke:var(--accent)}
 .mbd-rempli{fill-opacity:.85}

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   MATHBASE — SOLIDES
+   POLYMATES — SOLIDES
    Dessine un solide en perspective cavalière, à partir de ses seules
    dimensions. Aucun texte n'y figure : le solide n'est jamais nommé sur
    la figure, c'est à l'élève de le reconnaître.
@@ -295,11 +295,20 @@
 .mbs-arete{stroke:var(--text);stroke-width:1.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
 .mbs-cache{stroke:var(--muted);stroke-width:1.3;stroke-dasharray:5 4;stroke-opacity:.75}
 .mbs-face{fill:var(--accent);fill-opacity:.10;stroke:none}
-.mbs-codage{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}`;
+.mbs-codage{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    /* ── Sur le papier de la séance : encre sombre ── */
+    .mbs-sur-papier{color:#17120c}
+    .mbs-sur-papier .mbs-cadre{background:rgba(31,26,19,.03);border-color:rgba(31,26,19,.20)}
+    .mbs-sur-papier .mbs-arete{stroke:#17120c}
+    .mbs-sur-papier .mbs-cache{stroke:#6b5d40;stroke-opacity:.85}
+    .mbs-sur-papier .mbs-face{fill:#9a833f;fill-opacity:.12}
+    .mbs-sur-papier .mbs-codage{stroke:#9a6b1f}
+    .mbs-sur-papier text{fill:#5b4f36}`;
     document.head.appendChild(s);
   }
 
-  function installer(params, conteneur) {
+  function installer(params, conteneur, opts) {
+    if (opts && opts.papier) conteneur.classList.add("mbs-sur-papier");
     injecterStyles();
     conteneur.innerHTML = '<div class="mbs-cadre"><svg class="mbs-svg"></svg></div>';
     dessiner(params, conteneur.querySelector(".mbs-svg"));

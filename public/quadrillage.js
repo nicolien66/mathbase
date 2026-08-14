@@ -264,7 +264,10 @@
   }
 
   /* montage d'un aperçu dans un conteneur quelconque */
-  function installerApercu(params, conteneur) {
+  function installerApercu(params, conteneur, opts) {
+    /* Sur le papier de la séance, l'encre claire est illisible : on bascule
+       toute la palette en sombre. */
+    if (opts && opts.papier) conteneur.classList.add("mbq-sur-papier");
     injecterStyles();
     conteneur.innerHTML = '<div class="mbq-board mbq-board-apercu"><svg class="mbq-apercu"></svg></div>';
     apercu(params, conteneur.querySelector(".mbq-apercu"));
@@ -318,12 +321,28 @@
 .mbq-hint{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-top:.6rem;line-height:1.6}
 .mbq-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:.6rem}
 .mbq-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:.35rem;vertical-align:-1px}
-@media (prefers-reduced-motion:reduce){.mbq-tool{transition:none}}`;
+@media (prefers-reduced-motion:reduce){.mbq-tool{transition:none}}
+    /* ── Sur le papier de la séance : encre sombre ── */
+    .mbq-sur-papier{color:#17120c}
+    .mbq-sur-papier .mbq-board{background:rgba(31,26,19,.03);border-color:rgba(31,26,19,.20)}
+    .mbq-sur-papier .mbq-grille{stroke:rgba(31,26,19,.22)}
+    .mbq-sur-papier .mbq-axe{stroke:rgba(31,26,19,.55)}
+    .mbq-sur-papier .mbq-grad,.mbq-sur-papier .mbq-label{fill:#5b4f36}
+    .mbq-sur-papier .mbq-on{fill:#9a833f}
+    .mbq-sur-papier .mbq-fixe{fill:#6b5d40}
+    .mbq-sur-papier .mbq-ok{fill:#1f7a4d}
+    .mbq-sur-papier .mbq-manque{stroke:#9a833f}
+    .mbq-sur-papier .mbq-faux{fill:#b03a26}
+    .mbq-sur-papier .mbq-near{fill:#9a833f}
+    .mbq-sur-papier .mbq-tool{color:#5b4f36;border-color:rgba(31,26,19,.28)}
+`;
     document.head.appendChild(s);
   }
 
   /* ── montage clé en main dans un conteneur : plateau + outils + validation ── */
-  function installer(params, conteneur) {
+  function installer(params, conteneur, opts) {
+    /* Fond clair (papier de la séance) : encre sombre. */
+    if (opts && opts.papier) conteneur.classList.add("mbq-sur-papier");
     injecterStyles();
     const cases = params.geste !== "segments";
     conteneur.innerHTML =
