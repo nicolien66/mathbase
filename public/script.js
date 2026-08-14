@@ -1773,7 +1773,7 @@ function plateauInteractif(ex, hist) {
     boite.style.marginBottom = "1rem";
     zone.insertBefore(boite, ta || zone.firstChild);
     plateauFigure = MB_FIGURE.installer(pfig, boite, { papier: true });
-    if (hist && hist.result) plateauFigure.instance().corriger(pfig.reponse);
+    if (hist && hist.result) plateauFigure.instance().corriger();
     return;
   }
 
@@ -1866,8 +1866,8 @@ function corrigerInteractif(ex) {
   const pfig = litFigure(ex);
   if (pfig && plateauFigure) {
     const inst = plateauFigure.instance();
-    const r = MB_FIGURE.verifier(inst.lire(), pfig.reponse);
-    inst.corriger(pfig.reponse);
+    const r = MB_FIGURE.verifierTout(inst.lire(), pfig);
+    inst.corriger();
     return {
       verdict: r.ok ? "correct" : (r.score >= 0.5 ? "partial" : "incorrect"),
       analyse: r.ok ? "Bonne lecture de la figure."

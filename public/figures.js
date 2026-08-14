@@ -25,6 +25,12 @@
      options: ["Segment", "Demi-droite", "Droite"],
      multiple: false,                     // cases à cocher si true
      reponse: { choix: "Demi-droite" }    // ou { choix: ["…", "…"] }
+
+   Une figure peut porter PLUSIEURS questions — on lit alors la même image
+   sous deux angles, par exemple « que peut-on conclure ? » puis « comment
+   s'appellent les angles codés ? » :
+     questions: [ { question, options, multiple?, reponse:{choix} }, … ]
+   Chaque question est notée séparément ; la note globale en est la moyenne.
    }
 
    Éléments possibles :
@@ -184,9 +190,31 @@
            esc(params.description || "figure géométrique") + '">' + el.join("") + "</svg>";
   }
 
+  /* Ramène les deux écritures possibles (une question, ou plusieurs) à une
+     seule forme interne : un tableau de questions. */
+  function questionsDe(params) {
+    if (Array.isArray(params.questions) && params.questions.length) return params.questions;
+    return [{ question: params.question, options: params.options || [],
+              multiple: !!params.multiple, reponse: params.reponse || {} }];
+  }
+
   /* ── correction (pure) ── */
   const normal = t => String(t == null ? "" : t).trim().toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  /* Correction d'ensemble : chaque question compte pour une part égale. */
+  function verifierTout(etat, params) {
+    const qs = questionsDe(params);
+    const rep = (etat && Array.isArray(etat.reponses)) ? etat.reponses : [etat];
+    const parts = qs.map((q, i) => verifier(rep[i] || {}, q.reponse));
+    const ok = parts.every(p => p.ok);
+    const score = parts.reduce((s, p) => s + p.score, 0) / (parts.length || 1);
+    return { ok, score, parts,
+             attendus: parts.reduce((s, p) => s + p.attendus, 0),
+             justes:   parts.reduce((s, p) => s + p.justes, 0),
+             faux:     parts.reduce((s, p) => s + p.faux, 0),
+             oublis:   parts.reduce((s, p) => s + p.oublis, 0) };
+  }
+
   function verifier(etat, reponse) {
     const att = (reponse && reponse.choix);
     const attendus = Array.isArray(att) ? att : (att == null ? [] : [att]);
@@ -203,52 +231,68 @@
 
   /* ── plateau ── */
   function monter(params, hote) {
-    const multiple = !!params.multiple;
+    const qs = questionsDe(params);
+    const esc = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
     hote.innerHTML =
       '<div class="mbf-plateau">' +
         '<div class="mbf-cadre">' + dessiner(params) + "</div>" +
-        (params.question ? '<p class="mbf-question">' +
-          String(params.question).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])) +
-          (multiple ? ' <span class="mbf-hint">(plusieurs réponses possibles)</span>' : "") +
-          "</p>" : "") +
-        '<div class="mbf-options">' +
-          (params.options || []).map(o =>
-            '<button type="button" class="mbf-opt" data-o="' +
-            String(o).replace(/"/g, "&quot;") + '">' +
-            String(o).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])) +
-            "</button>").join("") +
-        "</div></div>";
+        qs.map((q, i) =>
+          '<div class="mbf-bloc" data-q="' + i + '">' +
+            (q.question ? '<p class="mbf-question">' +
+              (qs.length > 1 ? '<span class="mbf-num">' + (i + 1) + ".</span> " : "") +
+              esc(q.question) +
+              (q.multiple ? ' <span class="mbf-hint">(plusieurs réponses possibles)</span>' : "") +
+              "</p>" : "") +
+            '<div class="mbf-options">' +
+              (q.options || []).map(o =>
+                '<button type="button" class="mbf-opt" data-o="' +
+                String(o).replace(/"/g, "&quot;") + '">' + esc(o) + "</button>").join("") +
+            "</div></div>").join("") +
+      "</div>";
 
-    let choisis = [];
+    const choisis = qs.map(() => []);
     let fige = false;
-    hote.querySelectorAll(".mbf-opt").forEach(b => {
-      b.onclick = () => {
-        if (fige) return;
-        const o = b.dataset.o;
-        if (multiple) {
-          const i = choisis.indexOf(o);
-          if (i >= 0) choisis.splice(i, 1); else choisis.push(o);
-        } else choisis = [o];
-        hote.querySelectorAll(".mbf-opt").forEach(x =>
-          x.classList.toggle("on", choisis.indexOf(x.dataset.o) >= 0));
-      };
+
+    hote.querySelectorAll(".mbf-bloc").forEach((bloc, i) => {
+      const multiple = !!qs[i].multiple;
+      bloc.querySelectorAll(".mbf-opt").forEach(b => {
+        b.onclick = () => {
+          if (fige) return;
+          const o = b.dataset.o;
+          if (multiple) {
+            const k = choisis[i].indexOf(o);
+            if (k >= 0) choisis[i].splice(k, 1); else choisis[i].push(o);
+          } else choisis[i] = [o];
+          bloc.querySelectorAll(".mbf-opt").forEach(x =>
+            x.classList.toggle("on", choisis[i].indexOf(x.dataset.o) >= 0));
+        };
+      });
     });
 
     return {
-      lire() { return { choix: multiple ? choisis.slice() : (choisis[0] || null) }; },
+      lire() {
+        const reponses = qs.map((q, i) => ({
+          choix: q.multiple ? choisis[i].slice() : (choisis[i][0] || null) }));
+        /* On expose aussi `choix` pour rester compatible avec une figure
+           ne portant qu'une seule question. */
+        return { reponses, choix: reponses[0].choix };
+      },
       estFige() { return fige; },
-      corriger(reponse) {
+      corriger() {
         fige = true;
-        const att = reponse && reponse.choix;
-        const attendus = (Array.isArray(att) ? att : [att]).map(normal);
-        hote.querySelectorAll(".mbf-opt").forEach(b => {
-          b.disabled = true;
-          const est = attendus.includes(normal(b.dataset.o));
-          const pris = choisis.indexOf(b.dataset.o) >= 0;
-          if (est) b.classList.add("mbf-bonne");
-          if (pris && !est) b.classList.add("mbf-mauvaise");
+        hote.querySelectorAll(".mbf-bloc").forEach((bloc, i) => {
+          const att = qs[i].reponse && qs[i].reponse.choix;
+          const attendus = (Array.isArray(att) ? att : [att]).map(normal);
+          bloc.querySelectorAll(".mbf-opt").forEach(b => {
+            b.disabled = true;
+            const est = attendus.includes(normal(b.dataset.o));
+            const pris = choisis[i].indexOf(b.dataset.o) >= 0;
+            if (est) b.classList.add("mbf-bonne");
+            if (pris && !est) b.classList.add("mbf-mauvaise");
+          });
         });
-        return verifier(this.lire(), reponse);
+        return verifierTout(this.lire(), params);
       },
     };
   }
@@ -283,8 +327,8 @@
     };
     hote.querySelector('[data-a="valider"]').onclick = () => {
       if (inst.estFige()) return;
-      const r = inst.corriger(params.reponse);
-      verdict.textContent = r.ok ? "Bonne réponse."
+      const r = inst.corriger();
+      verdict.textContent = r.ok ? (questionsDe(params).length > 1 ? "Tout est juste." : "Bonne réponse.")
         : (r.oublis ? r.oublis + " oubli" + (r.oublis > 1 ? "s" : "") + " · " : "") +
           (r.faux ? r.faux + " erreur" + (r.faux > 1 ? "s" : "") + " · " : "") +
           "score " + Math.round(r.score * 100) + " %";
@@ -317,6 +361,9 @@
       .mbf-nom { font-family: Georgia, serif; font-style: italic; font-size: 15px; fill: currentColor; }
       .mbf-texte { font-family: 'DM Sans', sans-serif; font-size: 13px;
         fill: var(--muted, rgba(240,236,224,.6)); }
+      .mbf-bloc + .mbf-bloc { margin-top: .9rem; padding-top: .8rem;
+        border-top: 1px solid var(--border, rgba(255,255,255,.1)); }
+      .mbf-num { color: var(--accent, #c8b97a); font-weight: 500; }
       .mbf-question { font-size: .95rem; margin: 0 0 .6rem; }
       .mbf-hint { font-size: .8rem; color: var(--muted, rgba(240,236,224,.55)); }
       .mbf-options { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .6rem; }
@@ -344,6 +391,8 @@
       .mbf-sur-papier .mbf-angledroit { stroke: #9a6b1f; }
       .mbf-sur-papier .mbf-polygone { fill: rgba(154,131,63,.10); }
       .mbf-sur-papier .mbf-texte { fill: #6b5d40; }
+      .mbf-sur-papier .mbf-bloc + .mbf-bloc { border-top-color: rgba(31,26,19,.18); }
+      .mbf-sur-papier .mbf-num { color: #9a833f; }
       .mbf-sur-papier .mbf-opt { color: #5b4f36; border-color: rgba(31,26,19,.28); }
       .mbf-sur-papier .mbf-opt:hover:not(:disabled) { color: #17120c; border-color: #9a833f; }
       .mbf-sur-papier .mbf-opt.on { background: #9a833f; color: #f7f2e4; border-color: transparent; }
@@ -358,7 +407,7 @@
   }
 
   if (typeof window !== "undefined")
-    window.MB_FIGURE = { dessiner, verifier, monter, installer, apercu, installerApercu, injecterStyles };
+    window.MB_FIGURE = { dessiner, verifier, verifierTout, questionsDe, monter, installer, apercu, installerApercu, injecterStyles };
   if (typeof module !== "undefined" && module.exports)
-    module.exports = { verifier, dessiner };
+    module.exports = { verifier, verifierTout, questionsDe, dessiner };
 })();
