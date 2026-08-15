@@ -198,6 +198,16 @@ function figurePapillon(k, etiq, parallele) {
   return el;
 }
 
+/* Les figures ne sont PAS transmises au correcteur : l'énoncé doit donc
+   porter lui-même toutes les mesures. Cette fonction fabrique la phrase de
+   données à partir des ÉTIQUETTES de la figure — texte et dessin ne peuvent
+   ainsi pas diverger. */
+function donnees(paires) {
+  const dits = paires.filter(([, v]) => v !== null && v !== undefined && v !== "?" && v !== "");
+  if (!dits.length) return "";
+  return "On donne : " + dits.map(([n, v]) => n + " = " + v).join(", ") + ".";
+}
+
 /* ═══════════════ TRIANGLES SEMBLABLES ═══════════════ */
 const M_SEMBLABLES = [
   /* (a) Le second triangle est un agrandissement : mesures à compléter. */
@@ -216,6 +226,9 @@ const M_SEMBLABLES = [
     return {
       content: "Le triangle DEF est un agrandissement du triangle ABC : chaque longueur " +
         "y est multipliée par " + facteur + ".\n" +
+        "Dans ABC : AB = " + t1[0] + " cm, BC = " + t1[1] + " cm, CA = " + t1[2] + " cm.\n" +
+        "Dans DEF : " + ["DE", "EF", "FD"].map((n, i) =>
+          n + " = " + (cache.includes(i) ? "?" : t2[i] + " cm")).join(", ") + ".\n" +
         "Que peut-on dire de ces deux triangles ? Calcule ensuite les longueurs manquantes.",
       solution: "Les longueurs de DEF s'obtiennent en multipliant celles de ABC par un même " +
         "nombre (" + facteur + ") : les deux triangles sont SEMBLABLES.\n" +
@@ -263,7 +276,10 @@ const M_SEMBLABLES = [
     const rapports = t2.map((x, i) => x + "/" + t1[i]);
     const facteur = fraction(p, q);
     return {
-      content: "Toutes les longueurs des triangles ABC et DEF sont données.\n" +
+      content: "Dans le triangle ABC : AB = " + t1[0] + " cm, BC = " + t1[1] +
+        " cm, CA = " + t1[2] + " cm.\n" +
+        "Dans le triangle DEF : DE = " + t2[0] + " cm, EF = " + t2[1] + " cm, FD = " +
+        t2[2] + " cm.\n" +
         "Ces deux triangles sont-ils semblables ? Justifie en comparant les rapports.",
       solution: "Deux triangles sont semblables si leurs côtés sont proportionnels, " +
         "c'est-à-dire si les trois rapports sont ÉGAUX.\n" +
@@ -310,7 +326,8 @@ const M_IMBRIQUES = [
     const el = figureImbriquee(k, etiq, true);
     const rep = cherche === "AN" ? AN : MN;
     return {
-      content: "Sur cette figure, les droites (MN) et (BC) sont parallèles (codage sur la figure).\n" +
+      content: "Le point M appartient à [AB], le point N à [AC], et les droites (MN) et " +
+        "(BC) sont parallèles (le codage l'indique sur la figure).\n" +
         (cherche === "AN"
           ? "On donne AM = " + AM + " cm, MB = " + (AB - AM) + " cm et NC = " + (AC - AN) +
             " cm.\nCalcule AN."
@@ -482,10 +499,14 @@ const M_RECIPROQUE = [
     const r1 = AM / AB, r2 = AN / AC;
     return {
       content: (papillon
-        ? "Les points B, A, M sont alignés, ainsi que C, A, N.\n"
-        : "Le point M appartient à [AB] et le point N à [AC].\n") +
-        "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC + " cm et AN = " +
-        AN + " cm.\nLes droites (BC) et (MN) sont-elles parallèles ?",
+        ? "Les points B, A, M sont alignés, ainsi que C, A, N.\n" +
+          "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC + " cm et AN = " +
+          AN + " cm."
+        : "Le point M appartient à [AB] et le point N à [AC].\n" +
+          "On donne AM = " + AM + " cm, MB = " + (AB - AM) + " cm, AN = " + AN +
+          " cm et NC = " + (AC - AN) + " cm,\nd'où AB = " + AB + " cm et AC = " +
+          AC + " cm.") +
+        "\nLes droites (BC) et (MN) sont-elles parallèles ?",
       solution: "On compare les deux rapports :\n" +
         "AM/AB = " + AM + "/" + AB + " = " + fraction(AM, AB) + "\n" +
         "AN/AC = " + AN + "/" + AC + " = " + fraction(AN, AC) + "\n" +
@@ -531,8 +552,14 @@ const M_RECIPROQUE = [
       : { AM: "AM = " + AM, MB: "MB = " + (AB - AM), AN: "AN = " + AN, NC: "NC = " + (AC - AN) };
     const el = papillon ? figurePapillon(k, etiq, false) : figureImbriquee(k, etiq, false);
     return {
-      content: "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC +
-        " cm et AN = " + AN + " cm.\n" +
+      content: (papillon
+        ? "Les points B, A, M sont alignés, ainsi que C, A, N.\n" +
+          "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC +
+          " cm et AN = " + AN + " cm."
+        : "Le point M appartient à [AB] et le point N à [AC].\n" +
+          "On donne AM = " + AM + " cm, MB = " + (AB - AM) + " cm, AN = " + AN +
+          " cm et NC = " + (AC - AN) + " cm,\nd'où AB = " + AB + " cm et AC = " +
+          AC + " cm.") + "\n" +
         "Démontre que les triangles AMN et ABC sont semblables, et qu'ils vérifient " +
         "la relation de Thalès.",
       solution: "AM/AB = " + AM + "/" + AB + " = " + fraction(AM, AB) + "\n" +

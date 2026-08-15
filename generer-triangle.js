@@ -182,7 +182,7 @@ const M_QUELCONQUE = [
     const nom = type === "rectangle" ? "Rectangle" : type === "isocele" ? "Isocèle"
               : type === "equilateral" ? "Équilatéral" : "Quelconque";
     return {
-      content: "Les trois angles du triangle ABC sont donnés sur la figure.\n" +
+      content: "Dans le triangle ABC : Â = " + A + "°, B̂ = " + B + "° et Ĉ = " + C + "°.\n" +
         "Quelle est la nature de ce triangle ?",
       solution: "Vérification : " + A + "° + " + B + "° + " + C + "° = 180°.\n" +
         (type === "rectangle" ? "Un angle mesure 90° : le triangle est RECTANGLE."
@@ -317,7 +317,8 @@ const M_ISOCELE = [
     el.push({ t: "segment", a: T.pts[1], b: T.pts[2], marques: 1 });
     el.push({ t: "segment", a: T.pts[2], b: T.pts[0], marques: 1 });
     return {
-      content: "Sur cette figure, les trois côtés portent le même codage.\n" +
+      content: "Sur la figure, les trois côtés du triangle ABC portent le même trait " +
+        "de codage : ils ont donc la même longueur.\n" +
         "Quelle est la mesure de chaque angle ?",
       solution: "Les trois côtés sont de même longueur : le triangle est ÉQUILATÉRAL.\n" +
         "Il est donc isocèle « des trois côtés » : ses trois angles sont égaux.\n" +
@@ -378,8 +379,9 @@ const M_RECTANGLE = [
     el.push({ t: "segment", a: T.pts[0], b: T.pts[1], marques: 1 });
     el.push({ t: "segment", a: T.pts[0], b: T.pts[2], marques: 1 });
     return {
-      content: "Le triangle ABC est rectangle en A, et les deux côtés de l'angle droit " +
-        "portent le même codage.\nQuelles sont les mesures des angles B̂ et Ĉ ?",
+      content: "Le triangle ABC est rectangle en A, et les deux côtés de l'angle droit, " +
+        "[AB] et [AC], portent le même trait de codage : ils sont de même longueur.\n" +
+        "Quelles sont les mesures des angles B̂ et Ĉ ?",
       solution: "Le triangle est rectangle ET isocèle en A.\n" +
         "Les angles B̂ et Ĉ sont donc égaux, et leur somme vaut 180° − 90° = 90°.\n" +
         "Chacun mesure 90° ÷ 2 = 45°.",
@@ -508,7 +510,16 @@ const M_TYPES = [
         "qui sont égaux : chacun mesure 90° ÷ 2 = 45°.";
     }
     return {
-      content: "Observe le codage de la figure : quelle est la nature de ce triangle ?" +
+      /* Le codage doit être DÉCRIT : la figure n'est pas transmise au
+         correcteur, qui ne peut donc pas la lire. */
+      content: "Sur la figure, " + (
+          type === "equilateral" ? "les trois côtés portent le même trait de codage"
+        : type === "isocele" ? "les côtés [CA] et [CB] portent le même trait de codage"
+        : type === "rectangle" ? "un angle droit est codé au sommet A"
+        : type === "rectangle-isocele" ? "un angle droit est codé au sommet A, et les deux " +
+            "côtés de cet angle portent le même trait"
+        : "aucun angle droit n'est codé et aucun côté ne porte de trait d'égalité") +
+        ".\nQuelle est la nature de ce triangle ?" +
         (type === "equilateral" || type === "rectangle-isocele"
           ? "\nDonne ensuite la mesure de ses angles." : ""),
       solution: dit + complement,
@@ -541,7 +552,7 @@ const M_TYPES = [
     const nom = type === "equilateral" ? "Équilatéral" : type === "isocele" ? "Isocèle"
               : type === "rectangle" ? "Rectangle" : "Quelconque";
     return {
-      content: "Les trois angles du triangle sont donnés sur la figure.\n" +
+      content: "Dans le triangle ABC : Â = " + A + "°, B̂ = " + B + "° et Ĉ = " + C + "°.\n" +
         "Quelle est sa nature, et sur quoi te fondes-tu ?",
       solution: "Somme : " + A + "° + " + B + "° + " + C + "° = 180° (c'est toujours le cas).\n" +
         (type === "equilateral" ? "Les trois angles sont égaux à 60° : ÉQUILATÉRAL."
