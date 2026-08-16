@@ -349,7 +349,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-16-annales-image-seule";
+const SERVEUR_VERSION = "2026-08-16-annales-image-seule-admin2";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -762,19 +762,78 @@ async function initDB() {
   await seedDB();
 }
 
-/* ── BOOTSTRAP DU COMPTE ADMINISTRATEUR ── */
+/* ── BOOTSTRAP DU COMPTE ADMINISTRATEUR ──
+   L'ancienne version ne créait le compte QUE si aucun admin n'existait : une
+   fois le premier créé, modifier ADMIN_PASSWORD n'avait plus aucun effet, et
+   l'on restait bloqué sur le mot de passe du tout premier démarrage.
+   Désormais, quand ADMIN_PASSWORD est défini, le compte correspondant est
+   créé OU remis à jour à chaque démarrage : la variable fait foi. */
 async function seedAdmin() {
   const email = (process.env.ADMIN_EMAIL || "admin@polymates.fr").toLowerCase();
-  const pw    = process.env.ADMIN_PASSWORD || "admin123";
-  const { rows } = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
-  if (rows.length) return;
+  const pwVar = process.env.ADMIN_PASSWORD;
+  const pw    = pwVar || "admin123";
+
+  const { rows: existants } = await pool.query(
+    "SELECT id, email FROM users WHERE role = 'admin' ORDER BY id");
+
+  if (pwVar) {
+    /* La variable est définie : elle commande. On crée le compte, ou l'on
+       réaligne son mot de passe et son rôle. */
+    await pool.query(
+      `INSERT INTO users (email, pseudo, password_hash, role)
+       VALUES ($1, $2, $3, 'admin')
+       ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash,
+                                         role = 'admin'`,
+      [email, "Administrateur", hashPassword(pw)]);
+    console.log(`Compte admin aligné sur les variables d'environnement : ${email}`);
+    if (existants.length && !existants.some(u => u.email === email))
+      console.log("  ⚠ D'autres comptes admin existent : " +
+        existants.map(u => u.email).join(", "));
+    return;
+  }
+
+  /* Aucune variable : on ne crée le compte par défaut que s'il n'y a aucun
+     administrateur, pour ne pas écraser un mot de passe choisi à la main. */
+  if (existants.length) {
+    console.log("Compte(s) admin existant(s) : " + existants.map(u => u.email).join(", "));
+    console.log("  ⚠ ADMIN_PASSWORD n'est pas défini : impossible de réinitialiser " +
+      "le mot de passe automatiquement. Définissez-le puis redémarrez.");
+    return;
+  }
   await pool.query(
-    "INSERT INTO users (email, pseudo, password_hash, role) VALUES ($1, $2, $3, 'admin') ON CONFLICT (email) DO UPDATE SET role = 'admin'",
-    [email, "Administrateur", hashPassword(pw)]
-  );
+    `INSERT INTO users (email, pseudo, password_hash, role)
+     VALUES ($1, $2, $3, 'admin')
+     ON CONFLICT (email) DO UPDATE SET role = 'admin'`,
+    [email, "Administrateur", hashPassword(pw)]);
   console.log(`Compte admin créé : ${email}` +
-    (process.env.ADMIN_PASSWORD ? "" : "  ⚠ mot de passe par défaut « admin123 » — définissez ADMIN_PASSWORD !"));
+    "  ⚠ mot de passe par défaut « admin123 » — définissez ADMIN_PASSWORD !");
 }
+
+/* ── DIAGNOSTIC DU COMPTE ADMINISTRATEUR ──
+   Route PUBLIQUE mais volontairement avare : elle ne révèle aucun mot de
+   passe ni aucun jeton. Elle sert seulement à répondre à la question
+   « pourquoi ne puis-je pas me connecter ? » — quelles adresses existent,
+   et si les variables d'environnement sont bien lues. */
+app.get("/admin/diagnostic-connexion", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT email, pseudo, role FROM users WHERE role = 'admin' ORDER BY id");
+    const attendu = (process.env.ADMIN_EMAIL || "admin@polymates.fr").toLowerCase();
+    res.json({
+      version_serveur: SERVEUR_VERSION,
+      ADMIN_EMAIL_definie: !!process.env.ADMIN_EMAIL,
+      ADMIN_PASSWORD_definie: !!process.env.ADMIN_PASSWORD,
+      adresse_attendue: attendu,
+      comptes_admin: rows.map(r => r.email),
+      concordance: rows.some(r => r.email === attendu),
+      conseil: !process.env.ADMIN_PASSWORD
+        ? "ADMIN_PASSWORD n'est pas définie : définissez-la puis REDÉMARREZ le service. Le mot de passe sera alors réappliqué au démarrage."
+        : (rows.some(r => r.email === attendu)
+            ? "Tout est cohérent. Connectez-vous avec l'adresse ci-dessus et la valeur d'ADMIN_PASSWORD. Attention aux espaces en fin de variable."
+            : "ADMIN_PASSWORD est définie mais aucun compte ne porte l'adresse attendue : redémarrez le service pour que le compte soit créé.")
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 /* ── SEED : banque de départ (insérée uniquement si la table est vide) ── */
 const SEED = [
