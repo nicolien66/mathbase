@@ -347,6 +347,25 @@
     document.querySelectorAll('[data-rendu]').forEach(b => {
       b.onclick = () => lancerDiag(Number(b.dataset.rendu));
     });
+    document.querySelectorAll('[data-suppr]').forEach(b => {
+      b.onclick = async () => {
+        const id = Number(b.dataset.suppr), titre = b.dataset.titre;
+        if (!confirm(`Supprimer définitivement le sujet « ${titre} » (id ${id}) ?\n\n`
+          + `Ses questions et les résultats associés seront perdus. `
+          + `Le fichier PDF, lui, reste sur le serveur.`)) return;
+        b.disabled = true; b.textContent = 'suppression…';
+        try {
+          const res = await MB_AUTH.apiFetch('/annales/' + id, { method: 'DELETE' });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+          b.closest('tr').style.opacity = '.35';
+          b.textContent = 'supprimé';
+        } catch (e) {
+          b.disabled = false; b.textContent = 'supprimer';
+          alert('Suppression impossible : ' + e.message);
+        }
+      };
+    });
   }
 
   function renderDiag(d){
@@ -371,8 +390,13 @@
             ? `<span style="color:var(--green)">✔ figure rendue (page ${s.rendu.page}, ${s.rendu.ko} Ko)</span>`
             : `<span style="color:var(--green)">✔ prêt</span>`)
         : `<span style="color:var(--coral)">✘ ${escapeHtml(s.cause)}</span>`;
-      const bouton = s.ok
-        ? `<button class="act" data-rendu="${s.id}">tester le rendu</button>` : '';
+      /* La route DELETE /annales/:id existait déjà côté serveur, mais aucune
+         interface ne l'appelait : les sujets « supprimés » ne l'étaient donc
+         jamais. On expose ici un bouton, avec confirmation. */
+      const bouton = (s.ok
+        ? `<button class="act" data-rendu="${s.id}">tester le rendu</button> ` : '')
+        + `<button class="act" data-suppr="${s.id}" data-titre="${escapeHtml(s.titre)}"
+             style="border-color:rgba(230,130,110,.45);color:var(--coral)">supprimer</button>`;
       return `<tr>
         <td>${escapeHtml(s.titre)}<div class="muted" style="font-size:.75rem">${escapeHtml(s.classe || '—')} · id ${s.id}</div></td>
         <td class="hide-sm">${s.questions_avec_pages} / ${s.questions}</td>

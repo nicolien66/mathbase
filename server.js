@@ -658,8 +658,14 @@ Réponds UNIQUEMENT en JSON :
 
 app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
   try {
-    await pool.query("DELETE FROM annales WHERE id = $1", [Number(req.params.id)]);
-    res.json({ ok: true });
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: "Identifiant invalide." });
+    /* On répond franchement quand rien n'a été supprimé : un « ok » silencieux
+       sur zéro ligne laisse croire à une suppression qui n'a pas eu lieu. */
+    const r = await pool.query("DELETE FROM annales WHERE id = $1", [id]);
+    if (!r.rowCount) return res.status(404).json({ error: "Aucun sujet ne porte l'identifiant " + id + "." });
+    console.log("[annales] sujet " + id + " supprimé par " + (req.user && req.user.email || "?"));
+    res.json({ ok: true, supprimes: r.rowCount });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
