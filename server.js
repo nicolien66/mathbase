@@ -43,7 +43,9 @@ function parseJsonTolerant(raw) {
    Le correcteur doit VOIR la figure, pas seulement en lire une description.
    On convertit la page du PDF en PNG et on la joint à l'appel Mistral.
    En cas d'échec (dépendance absente, fichier manquant), on renvoie null :
-   la correction se poursuit alors en mode texte avec figure_desc en repli. */
+   la correction est alors REFUSÉE pour les annales : sans la page, le
+   correcteur inventerait la configuration. Le champ figure_desc subsiste
+   pour l'import et le diagnostic, mais n'est plus jamais transmis à l'IA. */
 let _pdfjs = null, _canvas = null, _renderKO = false;
 const _pageCache = new Map();               // clé "fichier#page" -> data URL
 const PAGE_CACHE_MAX = 60;
@@ -347,7 +349,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-13-widgets-2";
+const SERVEUR_VERSION = "2026-08-16-annales-image-seule";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -1050,7 +1052,8 @@ app.post("/exercises/correct", auth, async (req, res) => {
   // risquer un rejet de l'API ; la correction repart alors en mode texte.
   const poids = images.reduce((n, u) => n + u.length, 0);
   if (poids > 5 * 1024 * 1024) {
-    console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) + " Ko) — mode texte.");
+    console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) +
+      " Ko) — l'annale ne sera pas corrigée plutôt que corrigée à l'aveugle.");
     images.length = 0;
     raisonSansFigure = "images des pages trop lourdes (" + Math.round(poids / 1024) + " Ko)";
   }
@@ -1059,27 +1062,54 @@ app.post("/exercises/correct", auth, async (req, res) => {
   else console.warn("[correction] « " + (exercise.title || "?") +
                     " » corrigé SANS la figure — raison : " + raisonSansFigure);
 
-  const figureCtx = avecImage
-    ? (exercise.figure_desc
-        ? `\nNOTE DE SECOURS (description textuelle approximative, reconstituée automatiquement — n'y recours QUE si l'image est illisible, et ne la fais jamais primer sur ce que tu vois) : ${exercise.figure_desc}`
-        : "")
-    : (exercise.figure_desc
-        ? `\nDESCRIPTION PARTIELLE DE LA FIGURE (reconstituée automatiquement à partir du TEXTE de l'énoncé, jamais du dessin) : ${exercise.figure_desc}
-AVERTISSEMENT : incomplète par construction. Ce qui n'est codé que sur le dessin (angle droit marqué, côtés de même longueur, position des points, mesure portée sur la figure) n'y figure PAS. L'élève, lui, a la vraie figure sous les yeux. Ne le contredis jamais sur une donnée que cette description ne permet pas de vérifier : dis-lui que tu ne peux pas la vérifier, et corrige son raisonnement plutôt que ses données.`
-        : "");
+  /* Cette route sert DEUX sortes d'exercices, qu'il faut traiter autrement :
+       · les ANNALES, rattachées à un PDF (champ annale_url) : leur énoncé
+         n'existe qu'en image, et l'extraction textuelle est trompeuse ;
+       · les exercices GÉNÉRÉS, dont l'énoncé est complet dans `content` et
+         qui n'ont aucun PDF — ceux-là se corrigent très bien en texte. */
+  const estAnnale = !!exercise.annale_url;
 
-  const sourceCtx = avecImage
-    ? `\n\nSOURCE PRINCIPALE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux. Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux. FAIS-EN TA RÉFÉRENCE : en cas de désaccord entre l'image et le texte reproduit ci-dessous, l'IMAGE a raison — le texte provient d'une extraction automatique imparfaite. La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`
-    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.
-RÈGLE ABSOLUE EN L'ABSENCE DE FIGURE : n'invente JAMAIS de configuration géométrique. N'utilise que les noms de points, les longueurs et les parallélismes littéralement présents dans l'énoncé ou dans la solution officielle ci-dessus. Il t'est interdit d'introduire des points (D, E, M…) qui n'y figurent pas, ou de supposer quelle droite est parallèle à quelle autre. Si le rapport à écrire dépend d'un élément que tu ne peux pas lire, dis-le franchement à l'élève, appuie-toi sur la SOLUTION OFFICIELLE pour la démarche, et mets le verdict à "partial" au lieu de deviner.`;
+  /* ── RÈGLE ABSOLUE POUR LES ANNALES ──
+     Sans l'image de la page, le correcteur ne dispose que d'une extraction
+     textuelle et d'une description reconstituée : il complète alors les
+     manques par des configurations inventées. On préfère ne pas corriger et
+     le dire franchement à l'élève. */
+  if (estAnnale && !avecImage) {
+    console.warn("[correction] « " + (exercise.title || "?") +
+      " » NON corrigé faute d'image — raison : " + raisonSansFigure);
+    return res.json({
+      verdict: "partial",
+      analyse: "Je ne peux pas corriger cet exercice pour l'instant : la page du sujet " +
+        "n'a pas pu être chargée, et je refuse de juger ton travail sans avoir " +
+        "exactement la même chose que toi sous les yeux.",
+      demarche: "Ta réponse a bien été enregistrée. Reprends l'exercice plus tard, " +
+        "ou compare-la à la correction officielle si tu l'as.",
+      solution: exercise.solution || "",
+      score: null,
+      non_corrige: true,
+      raison_technique: raisonSansFigure
+    });
+  }
+
+  /* Aucune description de figure n'est transmise : elles étaient reconstituées
+     à partir du texte, donc muettes sur tout ce qui n'est codé que sur le
+     dessin — et c'est précisément ce qui poussait le correcteur à inventer. */
+  const figureCtx = "";   // aucune description reconstituée, jamais
+
+  const sourceCtx = !avecImage
+    ? ""                                   // exercice généré : l'énoncé suffit
+    : `\n\nSOURCE UNIQUE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux, et c'est ta SEULE source pour l'énoncé et la figure.
+Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux.
+INTERDICTION : aucun texte d'énoncé ne t'est fourni à côté. Ne suppose donc RIEN qui ne se lise sur l'image — pas de point supplémentaire, pas de parallélisme deviné, pas de mesure reconstituée. Si un élément nécessaire est illisible ou hors cadre, dis-le franchement à l'élève et mets le verdict à "partial" plutôt que de deviner.
+La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`;
 
   const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
 
 EXERCICE : ${exercise.title}${sourceCtx}
 
-ÉNONCÉ (extraction automatique du PDF, à titre indicatif) : ${exercise.content}${figureCtx}${solutionCtx}
-
-REMARQUE SUR L'ÉNONCÉ : il provient d'une extraction automatique du sujet PDF. La mise en forme mathématique peut être dégradée (fractions, exposants, racines) et des fragments d'en-tête de page ont pu s'y glisser. S'il te paraît tronqué ou ambigu, appuie-toi sur l'image si tu en as une ; sinon dis-le explicitement et ne pénalise pas l'élève pour une ambiguïté venant du sujet.
+${avecImage
+  ? "L'énoncé est à lire SUR L'IMAGE : aucune transcription ne t'en est donnée."
+  : `ÉNONCÉ : ${exercise.content}`}${figureCtx}${solutionCtx}
 
 CE QUE L'ÉLÈVE A ÉCRIT (son brouillon, mot pour mot) :
 ${answer}
