@@ -198,15 +198,6 @@ function figurePapillon(k, etiq, parallele) {
   return el;
 }
 
-/* Les figures ne sont PAS transmises au correcteur : l'énoncé doit donc
-   porter lui-même toutes les mesures. Cette fonction fabrique la phrase de
-   données à partir des ÉTIQUETTES de la figure — texte et dessin ne peuvent
-   ainsi pas diverger. */
-function donnees(paires) {
-  const dits = paires.filter(([, v]) => v !== null && v !== undefined && v !== "?" && v !== "");
-  if (!dits.length) return "";
-  return "On donne : " + dits.map(([n, v]) => n + " = " + v).join(", ") + ".";
-}
 
 /* ═══════════════ TRIANGLES SEMBLABLES ═══════════════ */
 const M_SEMBLABLES = [
@@ -226,9 +217,6 @@ const M_SEMBLABLES = [
     return {
       content: "Le triangle DEF est un agrandissement du triangle ABC : chaque longueur " +
         "y est multipliée par " + facteur + ".\n" +
-        "Dans ABC : AB = " + t1[0] + " cm, BC = " + t1[1] + " cm, CA = " + t1[2] + " cm.\n" +
-        "Dans DEF : " + ["DE", "EF", "FD"].map((n, i) =>
-          n + " = " + (cache.includes(i) ? "?" : t2[i] + " cm")).join(", ") + ".\n" +
         "Que peut-on dire de ces deux triangles ? Calcule ensuite les longueurs manquantes.",
       solution: "Les longueurs de DEF s'obtiennent en multipliant celles de ABC par un même " +
         "nombre (" + facteur + ") : les deux triangles sont SEMBLABLES.\n" +
@@ -276,10 +264,7 @@ const M_SEMBLABLES = [
     const rapports = t2.map((x, i) => x + "/" + t1[i]);
     const facteur = fraction(p, q);
     return {
-      content: "Dans le triangle ABC : AB = " + t1[0] + " cm, BC = " + t1[1] +
-        " cm, CA = " + t1[2] + " cm.\n" +
-        "Dans le triangle DEF : DE = " + t2[0] + " cm, EF = " + t2[1] + " cm, FD = " +
-        t2[2] + " cm.\n" +
+      content: "Toutes les longueurs des triangles ABC et DEF sont données.\n" +
         "Ces deux triangles sont-ils semblables ? Justifie en comparant les rapports.",
       solution: "Deux triangles sont semblables si leurs côtés sont proportionnels, " +
         "c'est-à-dire si les trois rapports sont ÉGAUX.\n" +
@@ -326,8 +311,7 @@ const M_IMBRIQUES = [
     const el = figureImbriquee(k, etiq, true);
     const rep = cherche === "AN" ? AN : MN;
     return {
-      content: "Le point M appartient à [AB], le point N à [AC], et les droites (MN) et " +
-        "(BC) sont parallèles (le codage l'indique sur la figure).\n" +
+      content: "Sur cette figure, les droites (MN) et (BC) sont parallèles (codage sur la figure).\n" +
         (cherche === "AN"
           ? "On donne AM = " + AM + " cm, MB = " + (AB - AM) + " cm et NC = " + (AC - AN) +
             " cm.\nCalcule AN."
@@ -499,14 +483,10 @@ const M_RECIPROQUE = [
     const r1 = AM / AB, r2 = AN / AC;
     return {
       content: (papillon
-        ? "Les points B, A, M sont alignés, ainsi que C, A, N.\n" +
-          "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC + " cm et AN = " +
-          AN + " cm."
-        : "Le point M appartient à [AB] et le point N à [AC].\n" +
-          "On donne AM = " + AM + " cm, MB = " + (AB - AM) + " cm, AN = " + AN +
-          " cm et NC = " + (AC - AN) + " cm,\nd'où AB = " + AB + " cm et AC = " +
-          AC + " cm.") +
-        "\nLes droites (BC) et (MN) sont-elles parallèles ?",
+        ? "Les points B, A, M sont alignés, ainsi que C, A, N.\n"
+        : "Le point M appartient à [AB] et le point N à [AC].\n") +
+        "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC + " cm et AN = " +
+        AN + " cm.\nLes droites (BC) et (MN) sont-elles parallèles ?",
       solution: "On compare les deux rapports :\n" +
         "AM/AB = " + AM + "/" + AB + " = " + fraction(AM, AB) + "\n" +
         "AN/AC = " + AN + "/" + AC + " = " + fraction(AN, AC) + "\n" +
@@ -552,14 +532,8 @@ const M_RECIPROQUE = [
       : { AM: "AM = " + AM, MB: "MB = " + (AB - AM), AN: "AN = " + AN, NC: "NC = " + (AC - AN) };
     const el = papillon ? figurePapillon(k, etiq, false) : figureImbriquee(k, etiq, false);
     return {
-      content: (papillon
-        ? "Les points B, A, M sont alignés, ainsi que C, A, N.\n" +
-          "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC +
-          " cm et AN = " + AN + " cm."
-        : "Le point M appartient à [AB] et le point N à [AC].\n" +
-          "On donne AM = " + AM + " cm, MB = " + (AB - AM) + " cm, AN = " + AN +
-          " cm et NC = " + (AC - AN) + " cm,\nd'où AB = " + AB + " cm et AC = " +
-          AC + " cm.") + "\n" +
+      content: "On donne AB = " + AB + " cm, AM = " + AM + " cm, AC = " + AC +
+        " cm et AN = " + AN + " cm.\n" +
         "Démontre que les triangles AMN et ABC sont semblables, et qu'ils vérifient " +
         "la relation de Thalès.",
       solution: "AM/AB = " + AM + "/" + AB + " = " + fraction(AM, AB) + "\n" +
@@ -612,6 +586,67 @@ Object.keys(FAMILLES).forEach(f => { ALIAS[cle(f)] = f; });
 ].forEach(([a, c]) => { ALIAS[cle(a)] = c; });
 function canonique(f) { return ALIAS[cle(f)] || null; }
 
+/* ── REPORT DES QUESTIONS DU WIDGET DANS L'ÉNONCÉ ──
+   Les questions à choix ne sont plus affichées sous la figure : celles qui
+   n'existaient que dans le widget devenaient invisibles pour l'élève comme
+   pour le correcteur. On les recopie donc dans l'énoncé lorsqu'elles n'y
+   figurent pas déjà. Poser la question ne donne pas la réponse : les
+   exercices de reconnaissance gardent tout leur objet. */
+function _motsCles(t) {
+  return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(m => m.length > 4);
+}
+/* Les OBJETS d'une question : [BC], AN, ŷ, Ĉ, (d₁)… C'est sur eux que se
+   joue la comparaison, bien plus sûrement que sur les mots. « Calcule AN »
+   pose déjà « Quelle est la longueur AN ? », tandis que « x̂ mesure 52° » ne
+   pose pas « Quelle est la mesure de ŷ ? » — seul l'objet les distingue. */
+function _objets(t) {
+  const s = String(t);
+  const out = new Set();
+  (s.match(/\[[A-Z]+\]|\([A-Za-z][\u2080-\u2089]?\)|\b[A-Z]{2,3}\b/g) || [])
+    .forEach(x => out.add(x));
+  /* Lettres surmontées d'un accent circonflexe, mais ISOLÉES : x̂, ŷ, Ĉ.
+     Sans cette précaution, le « ô » de « côté » passerait pour un nom
+     d'angle et fausserait toute la comparaison. */
+  (s.normalize("NFD").match(/(?<![A-Za-z])[A-Za-z]\u0302(?![A-Za-z])/g) || [])
+    .forEach(x => out.add(x.normalize("NFC")));
+  return [...out];
+}
+/* Mots interrogatifs : ils ne disent rien du contenu de la question. */
+const _VIDES_Q = new Set(["quelle", "quels", "quelles", "combien", "comment",
+  "pourquoi", "chaque", "cette", "alors", "ensuite", "donne"]);
+
+/* Questions CONCEPTUELLES : elles portent sur une notion, non sur une valeur.
+   « Quelle relation lie ẑ et x̂ ? » nomme des objets déjà cités, mais ne
+   demande pas leur mesure : le raccourci par les objets ne s'y applique pas. */
+const _CONCEPT = /relation|appelle|nature|théorème|propriété|configuration|énoncé|opération|indice|somme des angles|permet de conclure|te fondes|s'agit-il|intervient|existe|raisonnement/i;
+
+function _dejaPosee(question, contenu) {
+  const txt = String(contenu);
+  const obj = _CONCEPT.test(question) ? [] : _objets(question);
+  if (obj.length) {
+    /* La question porte sur des objets nommés : elle est déjà posée si
+       l'énoncé les mentionne tous. */
+    return obj.every(o => txt.includes(o));
+  }
+  const mots = _motsCles(question).filter(m => !_VIDES_Q.has(m));
+  if (!mots.length) return true;
+  const t = txt.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return mots.every(m => new RegExp("\\b" + m).test(t));
+}
+function enrichirEnonce(e) {
+  if (!e || !e.interactif) return e;
+  const qs = Array.isArray(e.interactif.questions) ? e.interactif.questions
+           : (e.interactif.question ? [{ question: e.interactif.question }] : []);
+  const manquantes = qs.map(q => q && q.question).filter(Boolean)
+                       .filter(q => !_dejaPosee(q, e.content));
+  if (!manquantes.length) return e;
+  e.content = e.content.replace(/\s+$/, "") + "\n" +
+    (manquantes.length === 1 ? manquantes[0]
+      : manquantes.map((q, i) => (i + 1) + ". " + q).join("\n"));
+  return e;
+}
+
 /* ═══════════════ GÉNÉRATION ═══════════════ */
 function besoinsDepuis(dej) {
   const v = { F: Math.round(CIBLE * REPARTITION.F), M: Math.round(CIBLE * REPARTITION.M) };
@@ -628,7 +663,7 @@ function genererFamille(nom, besoins, vus) {
     let reste = besoins[d], essais = 0;
     while (reste > 0 && essais < reste * 600 + 6000) {
       essais++;
-      const e = pick(modeles)(d);
+      const e = enrichirEnonce(pick(modeles)(d));
       if (!e) continue;
       const k = cleEx(e);
       if (vus.has(k)) continue;
