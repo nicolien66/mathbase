@@ -656,6 +656,34 @@ Réponds UNIQUEMENT en JSON :
   }
 });
 
+/* ── PAGE D'ANNALE EN IMAGE, POUR LE CLIENT ──
+   Les exercices de CONSTRUCTION (« compléter la figure de l'annexe »,
+   « tracer », « construire ») demandent que l'élève dessine SUR le document
+   du sujet. Le client a donc besoin de la page en image ; jusqu'ici, seul le
+   serveur y avait accès pour la correction.
+
+   La réponse est mise en cache par renderPageImage : demander deux fois la
+   même page ne coûte qu'un rendu. */
+app.get("/annales/:id/page/:n", auth, async (req, res) => {
+  try {
+    const id = Number(req.params.id), n = Number(req.params.n);
+    if (!Number.isInteger(id) || !Number.isInteger(n) || n < 1)
+      return res.status(400).json({ error: "Paramètres invalides." });
+
+    const { rows } = await pool.query("SELECT image_url FROM annales WHERE id = $1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Sujet introuvable." });
+    const url = rows[0].image_url;
+    if (!url) return res.status(404).json({ error: "Ce sujet n'a pas de PDF rattaché." });
+
+    /* Échelle modérée : l'élève dessine par-dessus, une image trop lourde
+       ralentirait le navigateur sans rien apporter. */
+    const img = await renderPageImage(url, n, 1.5);
+    if (!img) return res.status(404).json({
+      error: "Page indisponible (PDF absent du serveur, ou numéro hors limites)." });
+    res.json({ image: img, page: n });
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
 app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -1135,6 +1163,53 @@ app.post("/admin/reparer-pages", auth, requireAdmin, async (req, res) => {
       methodes,
       detail,
       memoire_mo: Math.round(process.memoryUsage().rss / 1048576)
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: e.message }); }
+});
+
+/* ── QUELLES QUESTIONS DEMANDENT UN TRACÉ ? ──
+   Avant d'outiller la construction, il faut savoir combien de questions sont
+   concernées et de quelle nature elles sont. Cette route parcourt les
+   annales et les classe. */
+app.get("/admin/diagnostic-constructions", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, title, classe, image_url, questions FROM annales ORDER BY id");
+    let questionsTotal = 0;
+    const totaux = { geometrie: 0, repere: 0, diagramme: 0 };
+    let avecAnnexe = 0, sujetsConcernes = 0;
+    const sujets = [];
+
+    rows.forEach(a => {
+      let qs = a.questions;
+      if (typeof qs === "string") { try { qs = JSON.parse(qs); } catch { qs = null; } }
+      if (!Array.isArray(qs) || !qs.length) return;
+      questionsTotal += qs.length;
+      const r = analyserSujet(qs);
+      if (!r.total) return;
+      sujetsConcernes++;
+      totaux.geometrie += r.parType.geometrie;
+      totaux.repere    += r.parType.repere;
+      totaux.diagramme += r.parType.diagramme;
+      avecAnnexe += r.avecAnnexe;
+      sujets.push({ id: a.id, titre: a.title, classe: a.classe,
+        pdf: !!a.image_url, total: r.total, ...r.parType,
+        annexe: r.avecAnnexe,
+        /* les questions sans page ne pourront pas afficher leur annexe */
+        sans_page: r.detail.filter(d => !d.pages.length).length,
+        exemples: r.detail.slice(0, 3).map(d => d.titre) });
+    });
+
+    sujets.sort((a, b) => b.total - a.total);
+    res.json({
+      version_serveur: SERVEUR_VERSION,
+      questions_analysees: questionsTotal,
+      sujets_concernes: sujetsConcernes,
+      questions_a_tracer: totaux.geometrie + totaux.repere + totaux.diagramme,
+      par_type: totaux,
+      renvoyant_a_une_annexe: avecAnnexe,
+      sujets: sujets.slice(0, 60),
+      sujets_total: sujets.length
     });
   } catch (e) { console.error(e); res.status(500).json({ error: e.message }); }
 });

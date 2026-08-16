@@ -80,6 +80,7 @@
       <button class="act" id="diag-run">Lancer le diagnostic</button>
       <button class="act" id="rep-sim">Réparer les pages — simulation</button>
       <button class="act" id="rep-go">Réparer les pages — appliquer</button>
+      <button class="act" id="constr-run">Questions à tracer</button>
     </div>
     <div id="diag-body" class="empty">
       Vérifie, sujet par sujet, si les pages du PDF sont bien transmises à l'IA lors de la correction.
@@ -340,6 +341,49 @@
     }
     ['rep-sim','rep-go','diag-run'].forEach(id => $(id).disabled = false);
   }
+  /* ── Recensement des questions demandant un tracé ──
+     On regarde AVANT d'outiller : combien de questions, de quelle nature, et
+     combien renvoient à une annexe qu'il faudra afficher. */
+  $('constr-run').onclick = async () => {
+    const body = $('diag-body');
+    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
+    $('constr-run').disabled = true;
+    body.innerHTML = `<div class="empty">Recensement des questions de construction…</div>`;
+    try {
+      const res = await MB_AUTH.apiFetch('/admin/diagnostic-constructions');
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+      const t = d.par_type || {};
+      const lignes = (d.sujets || []).map(s2 => `<tr>
+        <td>${escapeHtml(s2.titre)}<div class="muted" style="font-size:.75rem">id ${s2.id}</div></td>
+        <td class="hide-sm">${s2.geometrie || ''}</td>
+        <td class="hide-sm">${s2.repere || ''}</td>
+        <td class="hide-sm">${s2.diagramme || ''}</td>
+        <td>${s2.annexe ? `<span style="color:var(--accent)">${s2.annexe} annexe(s)</span>` : ''}</td>
+        <td>${s2.sans_page ? `<span style="color:var(--coral)">${s2.sans_page} sans page</span>`
+                           : '<span style="color:var(--green)">pages connues</span>'}</td>
+      </tr>`).join('');
+      body.innerHTML = `<div style="padding:1rem 1.3rem;font-size:.88rem;line-height:1.8">
+          <strong style="color:var(--cream)">${d.questions_a_tracer}</strong> question(s) demandent un tracé,
+          réparties dans <strong style="color:var(--cream)">${d.sujets_concernes}</strong> sujets
+          (sur ${d.questions_analysees} questions analysées).<br>
+          Construction géométrique : <strong>${t.geometrie || 0}</strong> ·
+          Repère : <strong>${t.repere || 0}</strong> ·
+          Diagramme : <strong>${t.diagramme || 0}</strong><br>
+          <span style="color:var(--accent)">${d.renvoyant_a_une_annexe} renvoient à une annexe</span>
+          — leur page doit être connue pour être affichée à l'élève.
+        </div>
+        <table><thead><tr><th>Sujet</th><th class="hide-sm">géom.</th><th class="hide-sm">repère</th>
+          <th class="hide-sm">diagr.</th><th>annexe</th><th>pages</th></tr></thead>
+          <tbody>${lignes}</tbody></table>
+        ${d.sujets_total > 60 ? `<div class="muted" style="padding:.6rem 1.3rem">
+          … et ${d.sujets_total - 60} autre(s) sujet(s).</div>` : ''}`;
+    } catch (e) {
+      body.innerHTML = `<div class="empty" style="color:var(--coral)">Recensement impossible : ${escapeHtml(e.message)}</div>`;
+    }
+    $('constr-run').disabled = false;
+  };
+
   $('rep-sim').onclick = () => reparerPages(false);
   $('rep-go').onclick  = () => reparerPages(true);
 
