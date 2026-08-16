@@ -349,7 +349,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-16-annales-image-seule-admin2";
+const SERVEUR_VERSION = "2026-08-16-reparation-pages";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -997,6 +997,142 @@ function verdictIncoherent(p) {
    chaque sujet d'un coup remplit la mémoire (chaque image pèse plusieurs Mo)
    et fait tomber le conteneur — d'où le test de rendu isolé, un sujet à la
    fois, via ?rendu=<id>. */
+/* ── RÉPARATION DES NUMÉROS DE PAGE ──
+   Une centaine de sujets ont été importés par une version antérieure qui ne
+   stockait pas la page de chaque question. Or la correction se fait
+   désormais sur l'image de la page : sans numéro, l'exercice n'est plus
+   corrigé du tout.
+
+   Cette route relit les PDF — qui sont sur le serveur, pas sur le poste de
+   l'administrateur — et retrouve la page de chaque question en trois passes,
+   de la plus sûre à la plus tolérante :
+     1. le TITRE de la question, tel qu'il apparaît en tête de page ;
+     2. une empreinte de son énoncé : ses mots rares ;
+     3. à défaut, la page de la question précédente.
+   Une question dont la page reste indéterminée est laissée en l'état : mieux
+   vaut ne pas corriger que pointer la mauvaise page.
+
+   Le traitement se fait par LOTS (?lot=25 par défaut) pour ne pas saturer la
+   mémoire : on relance jusqu'à ce que « restants » tombe à zéro. */
+const _BANALS_PAGE = new Set(["pour","dans","avec","cette","donc","alors","plus","moins",
+  "entre","chaque","tous","toutes","leur","elle","nous","vous","est","sont","une","des",
+  "les","que","qui","par","sur","aux","son","ses","exercice","points","point","suivant",
+  "suivante","calculer","determiner","justifier","reponse"]);
+
+const _normPage = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/\s+/g, " ").trim();
+const _compactPage = t => _normPage(t).replace(/[^a-z0-9]/g, "");
+
+function _empreinte(texte, n) {
+  const mots = _normPage(texte).replace(/[^a-z0-9 ]/g, " ").split(/\s+/)
+    .filter(m => m.length >= 5 && !_BANALS_PAGE.has(m));
+  return [...new Set(mots)].slice(0, n || 14);
+}
+
+function _trouverPage(q, pagesTxt, precedente) {
+  const pagesNorm = pagesTxt.map(_normPage);
+  const pagesComp = pagesTxt.map(_compactPage);
+
+  const titre = String(q.enonce || "").split(" — ")[0].trim();
+  if (titre) {
+    const t = _compactPage(titre);
+    if (t.length >= 6) {
+      const i = pagesComp.findIndex(p => p.includes(t));
+      if (i >= 0) return { page: i + 1, methode: "titre" };
+    }
+  }
+  const mots = _empreinte(q.enonce_correction || q.enonce || "", 14);
+  if (mots.length >= 3) {
+    let best = -1, score = 0;
+    pagesNorm.forEach((p, i) => {
+      const s2 = mots.filter(m => p.includes(m)).length / mots.length;
+      if (s2 > score) { score = s2; best = i; }
+    });
+    if (best >= 0 && score >= 0.45) return { page: best + 1, methode: "empreinte" };
+  }
+  if (precedente) return { page: precedente, methode: "suite de la précédente" };
+  return null;
+}
+
+app.post("/admin/reparer-pages", auth, requireAdmin, async (req, res) => {
+  try {
+    const seul = req.query.id ? Number(req.query.id) : null;
+    const lot  = Math.max(1, Math.min(60, Number(req.query.lot) || 25));
+    const appliquer = req.query.execute === "1";
+
+    const { rows } = await pool.query(
+      `SELECT id, title, image_url, questions FROM annales
+        WHERE image_url IS NOT NULL AND btrim(image_url) <> ''
+        ${seul ? "AND id = $1" : ""} ORDER BY id`, seul ? [seul] : []);
+
+    /* On ne retient que les sujets dont au moins une question manque de page. */
+    const aTraiter = [];
+    for (const a of rows) {
+      let qs = a.questions;
+      if (typeof qs === "string") { try { qs = JSON.parse(qs); } catch { qs = null; } }
+      if (!Array.isArray(qs) || !qs.length) continue;
+      if (qs.some(q => !Array.isArray(q.pages) || !q.pages.length)) aTraiter.push({ a, qs });
+    }
+    const paquet = aTraiter.slice(0, lot);
+
+    const detail = [];
+    let repares = 0, echecs = 0, questionsTrouvees = 0;
+    const methodes = {};
+
+    for (const { a, qs } of paquet) {
+      const chemin = _cheminSujet(a.image_url);
+      if (!chemin || !fs.existsSync(chemin)) {
+        echecs++;
+        detail.push({ id: a.id, titre: a.title, resultat: "PDF absent du disque du serveur" });
+        continue;
+      }
+      let pagesTxt;
+      try { pagesTxt = await texteParPage(fs.readFileSync(chemin)); }
+      catch (e) {
+        echecs++;
+        detail.push({ id: a.id, titre: a.title, resultat: "lecture impossible : " + e.message });
+        continue;
+      }
+
+      let trouvees = 0, prec = null, sansPage = 0;
+      qs.forEach(q => {
+        if (Array.isArray(q.pages) && q.pages.length) { prec = q.pages[0]; return; }
+        sansPage++;
+        const r = _trouverPage(q, pagesTxt, prec);
+        if (r) {
+          q.pages = [r.page];
+          q.pages_total = pagesTxt.length;
+          prec = r.page;
+          trouvees++;
+          methodes[r.methode] = (methodes[r.methode] || 0) + 1;
+        }
+      });
+      questionsTrouvees += trouvees;
+      if (trouvees) repares++;
+      detail.push({ id: a.id, titre: a.title, sans_page: sansPage, retrouvees: trouvees,
+        resultat: trouvees === sansPage ? "complet"
+                : trouvees ? "partiel" : "aucune page trouvée" });
+
+      if (appliquer && trouvees)
+        await pool.query("UPDATE annales SET questions = $1 WHERE id = $2",
+          [JSON.stringify(qs), a.id]);
+    }
+
+    res.json({
+      mode: appliquer ? "appliqué" : "simulation",
+      sujets_a_reparer: aTraiter.length,
+      traites: paquet.length,
+      restants: Math.max(0, aTraiter.length - paquet.length),
+      sujets_repares: repares,
+      questions_retrouvees: questionsTrouvees,
+      echecs,
+      methodes,
+      detail,
+      memoire_mo: Math.round(process.memoryUsage().rss / 1048576)
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: e.message }); }
+});
+
 app.get("/admin/diagnostic-figures", auth, requireAdmin, async (req, res) => {
   try {
     const moteur    = await _loadRenderer();

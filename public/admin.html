@@ -78,6 +78,8 @@
     <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
       <span>Diagnostic des figures — le correcteur voit-il les sujets ?</span>
       <button class="act" id="diag-run">Lancer le diagnostic</button>
+      <button class="act" id="rep-sim">Réparer les pages — simulation</button>
+      <button class="act" id="rep-go">Réparer les pages — appliquer</button>
     </div>
     <div id="diag-body" class="empty">
       Vérifie, sujet par sujet, si les pages du PDF sont bien transmises à l'IA lors de la correction.
@@ -235,6 +237,21 @@
               Vérifie que ces fichiers sont bien commités et poussés.
             </div>` : ''}
         </div>` : '';
+      const ia = d.interactifs || [];
+      const blocIA = `
+        <div style="padding:0 1.3rem 1.2rem">
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Exercices interactifs (plateaux)</div>
+          ${d.colonne_interactif === false
+            ? `<div style="color:var(--coral);font-size:.86rem">La colonne « interactif » n'existe pas :
+               le serveur déployé est antérieur aux plateaux.</div>`
+            : (ia.length
+              ? ia.map(x => `<div style="display:flex;justify-content:space-between;gap:1rem;
+                  padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem">
+                  <span>${escapeHtml(x.chapitre || '—')} · <em style="color:var(--accent)">${escapeHtml(x.widget)}</em></span>
+                  <strong>${x.n}</strong></div>`).join('')
+              : `<div style="color:var(--coral);font-size:.86rem">Aucun exercice ne porte de plateau interactif :
+                 les générateurs n'ont pas enregistré le champ, ou n'ont pas encore été lancés.</div>`)}
+        </div>`;
       body.innerHTML =
         `<div style="padding:1rem 1.3rem;font-size:.86rem;line-height:1.7;color:var(--muted)">
            Version du serveur : <strong style="color:var(--cream)">${escapeHtml(d.version_serveur || '?')}</strong> ·
@@ -242,7 +259,7 @@
            ${col.exercises ? 'oui' : 'NON'}</strong>, annales
            <strong style="color:${col.annales?'var(--green)':'var(--coral)'}">${col.annales ? 'oui' : 'NON'}</strong>
          </div>`
-        + blocFichiers + tableau('Exercices', d.exercices) + tableau('Annales', d.annales);
+        + blocFichiers + blocIA + tableau('Exercices', d.exercices) + tableau('Annales', d.annales);
     } catch (e) {
       body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Vérification impossible : ${escapeHtml(e.message)}</div>`;
     }
@@ -276,6 +293,55 @@
     }
     $('diag-run').disabled = false;
   }
+
+  /* ── Réparation des numéros de page ──
+     Elle s'exécute SUR LE SERVEUR, là où sont les PDF : lancée depuis un
+     poste, elle ne trouverait aucun fichier. Le traitement se fait par lots ;
+     on relance tant qu'il reste des sujets. */
+  async function reparerPages(appliquer){
+    const body = $('diag-body');
+    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
+    ['rep-sim','rep-go','diag-run'].forEach(id => $(id).disabled = true);
+    let total = 0, questions = 0, tours = 0, methodes = {}, echecs = 0;
+    try {
+      let restants = 1;
+      while (restants > 0 && tours < 12) {
+        tours++;
+        body.innerHTML = `<div class="empty">Réparation en cours — lot ${tours}…<br>`
+          + `${total} sujet(s) traité(s), ${questions} question(s) rattachée(s).</div>`;
+        const res = await MB_AUTH.apiFetch('/admin/reparer-pages?lot=20'
+          + (appliquer ? '&execute=1' : ''), { method: 'POST' });
+        if (res.status === 502 || res.status === 503)
+          throw new Error("le serveur n'a pas répondu — réessaie, le traitement reprend là où il s'est arrêté.");
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+        total += d.sujets_repares; questions += d.questions_retrouvees; echecs += d.echecs;
+        Object.entries(d.methodes || {}).forEach(([m,n]) => methodes[m] = (methodes[m]||0)+n);
+        restants = appliquer ? d.restants : 0;   // en simulation, un seul lot suffit
+      }
+      const lignes = Object.entries(methodes)
+        .map(([m,n]) => `<div style="display:flex;justify-content:space-between;padding:.3rem 0;
+          border-bottom:1px solid rgba(255,255,255,.06)"><span>${escapeHtml(m)}</span><strong>${n}</strong></div>`)
+        .join('');
+      body.innerHTML = `<div style="padding:1rem 1.3rem;font-size:.88rem;line-height:1.8">
+        <strong style="color:var(--cream)">${appliquer ? 'Réparation appliquée' : 'Simulation'}</strong><br>
+        ${total} sujet(s) réparé(s) · ${questions} question(s) rattachée(s) à leur page
+        ${echecs ? ` · <span style="color:var(--coral)">${echecs} en échec (PDF absent du serveur)</span>` : ''}
+        <div style="margin-top:.8rem;color:var(--muted)">Comment les pages ont été retrouvées :</div>
+        ${lignes || '<div style="color:var(--muted)">aucune</div>'}
+        ${methodes['suite de la précédente'] ? `<div style="margin-top:.7rem;color:var(--accent)">
+          « suite de la précédente » est un repli : vérifiez quelques sujets avec « tester le rendu ».</div>` : ''}
+        <div style="margin-top:.9rem">${appliquer
+          ? 'Relancez le diagnostic pour confirmer.'
+          : 'Aucune écriture n\'a eu lieu. Utilisez « appliquer » pour enregistrer.'}</div>
+      </div>`;
+    } catch (e) {
+      body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Réparation impossible : ${escapeHtml(e.message)}</div>`;
+    }
+    ['rep-sim','rep-go','diag-run'].forEach(id => $(id).disabled = false);
+  }
+  $('rep-sim').onclick = () => reparerPages(false);
+  $('rep-go').onclick  = () => reparerPages(true);
 
   function brancherBoutons(){
     document.querySelectorAll('[data-rendu]').forEach(b => {
