@@ -1133,7 +1133,12 @@ app.post("/exercises/correct", auth, async (req, res) => {
      textuelle et d'une description reconstituée : il complète alors les
      manques par des configurations inventées. On préfère ne pas corriger et
      le dire franchement à l'élève. */
-  if (estAnnale && !avecImage) {
+  /* Un énoncé qui RENVOIE au PDF sans qu'aucune image ne soit disponible est
+     tout aussi incorrigible qu'une annale sans page : le correcteur n'aurait
+     qu'une phrase creuse. On refuse dans les deux cas. */
+  const renvoieAuPdf = /reporte-toi au sujet|voir le sujet|ci-dessus/i.test(exercise.content || "");
+
+  if ((estAnnale || renvoieAuPdf) && !avecImage) {
     console.warn("[correction] « " + (exercise.title || "?") +
       " » NON corrigé faute d'image — raison : " + raisonSansFigure);
     return res.json({
