@@ -1420,6 +1420,11 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 .exam-verdict.partial   { color: var(--moyen);     border-color: rgba(200,185,122,0.5); }
 .exam-verdict.incorrect { color: var(--difficile); border-color: rgba(200,122,122,0.5); }
 .exam-analyse { font-size: 0.92rem; line-height: 1.75; color: var(--text); margin-bottom: 0.8rem; }
+.exam-sans-figure {
+  font-size: 0.84rem; line-height: 1.6; color: #e6c07a;
+  background: rgba(230, 192, 122, 0.07); border: 1px solid rgba(230, 192, 122, 0.3);
+  border-radius: 10px; padding: 0.6rem 0.85rem; margin-bottom: 0.8rem;
+}
 .exam-score {
   font-family: var(--serif); font-size: 1.25rem; color: var(--accent);
   margin: 1.2rem 0 1.4rem;
@@ -1700,3 +1705,67 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   .chapx-go { max-height: 1.4rem; }
 }
 /* ═══ fin du bloc colonnes ═══ */
+
+
+/* ═══════════ EXAMEN : navigation, notes et bilan ═══════════ */
+
+/* Bandeau des questions : l'élève voit d'un coup d'œil ce qu'il lui reste. */
+.exam-nav { margin-bottom: 1rem; }
+.exam-nav-cases { display: flex; flex-wrap: wrap; gap: .35rem; }
+.exam-nav-case {
+  min-width: 34px; height: 34px; padding: 0 .4rem;
+  border: 1px solid rgba(31,26,19,.22); border-radius: 8px;
+  background: transparent; color: #6b5d40;
+  font: inherit; font-size: .85rem; cursor: pointer; transition: .18s;
+}
+.exam-nav-case:hover { border-color: #9a833f; color: #17120c; }
+.exam-nav-case.faite  { background: rgba(31,122,77,.14); border-color: rgba(31,122,77,.45); color: #1f7a4d; }
+.exam-nav-case.passee { background: rgba(176,58,38,.10); border-color: rgba(176,58,38,.40); color: #b03a26; }
+.exam-nav-case.ici    { outline: 2px solid #9a833f; outline-offset: 1px; font-weight: 600; }
+.exam-nav-info { font-size: .8rem; color: #9a6b1f; margin-top: .5rem; }
+
+/* Barème annoncé sous l'énoncé. */
+.exam-bareme { font-size: .86rem; color: #6b5d40; margin: .6rem 0 0; }
+.exam-bareme strong { color: #17120c; }
+
+/* La note d'une question, à côté du verdict. */
+.exam-verdict-ligne { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+.exam-note {
+  font-family: var(--mono, 'DM Mono', monospace); font-size: 1.05rem; font-weight: 600;
+  padding: .18rem .6rem; border-radius: 6px; border: 1px solid;
+}
+.exam-note.correct   { color: #1f7a4d; border-color: rgba(31,122,77,.45);  background: rgba(31,122,77,.10); }
+.exam-note.partial   { color: #9a6b1f; border-color: rgba(154,107,31,.45); background: rgba(154,107,31,.10); }
+.exam-note.incorrect { color: #b03a26; border-color: rgba(176,58,38,.45);  background: rgba(176,58,38,.10); }
+.exam-note-sur { font-size: .68rem; font-weight: 400; opacity: .75; }
+
+.exam-redaction {
+  margin-top: .6rem; font-size: .9rem; line-height: 1.6; color: #4a3f2c;
+  border-left: 2px solid rgba(154,107,31,.45); padding-left: .8rem;
+}
+
+/* Bilan final. */
+.exam-bilan-note-globale { text-align: center; margin: 1.4rem 0 1rem; }
+.exam-bilan-chiffre {
+  font-family: 'Playfair Display', Georgia, serif; font-size: 3rem; line-height: 1;
+  color: #17120c;
+}
+.exam-bilan-chiffre span { font-size: 1.5rem; color: #6b5d40; }
+.exam-bilan-sur20 { font-size: 1rem; color: #9a6b1f; margin-top: .35rem; }
+
+.exam-bilan-liste { margin: 1.2rem 0; }
+.exam-bilan-ligne {
+  border-top: 1px solid rgba(31,26,19,.14); padding: .7rem 0;
+}
+.exam-bilan-tete { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.exam-bilan-q { font-size: .95rem; color: #17120c; }
+.exam-bilan-note { font-family: var(--mono, 'DM Mono', monospace); font-size: .88rem; }
+.exam-bilan-note.correct   { color: #1f7a4d; }
+.exam-bilan-note.partial   { color: #9a6b1f; }
+.exam-bilan-note.incorrect { color: #b03a26; }
+.exam-bilan-note.skip      { color: #8a7d63; }
+.exam-bilan-detail { margin-top: .5rem; }
+.exam-bilan-detail summary { cursor: pointer; font-size: .84rem; color: #9a6b1f; }
+.exam-bilan-copie { margin: .6rem 0; font-size: .9rem; line-height: 1.6; color: #4a3f2c; }
+.exam-bilan-copie strong { display: block; font-size: .78rem; color: #9a833f;
+  text-transform: uppercase; letter-spacing: .1em; margin-bottom: .3rem; }

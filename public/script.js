@@ -890,6 +890,43 @@ function paintExamPdf() {
   next.textContent = "Terminer l\u2019\u00e9preuve \u2192";
 }
 
+/* Le barème est écrit dans le sujet lui-même : « Exercice 3 (5 points) ».
+   On le lit une fois par question ; à défaut, le serveur notera sur 4. */
+function baremeQuestion(q) {
+  const txt = (q.enonce_correction || "") + " " + (q.enonce || "");
+  const m = txt.match(/\((\s*\d+(?:[.,]\d+)?)\s*points?\s*\)/i);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(",", "."));
+  return Number.isFinite(n) && n > 0 && n <= 20 ? n : null;
+}
+
+/* ── Navigation : bandeau des questions ──
+   L'élève doit pouvoir revenir sur une question passée. Chaque pastille
+   montre l'état, et l'on peut cliquer n'importe laquelle. */
+function examNavHTML() {
+  const cases = EXAM.qs.map((q, i) => {
+    const a = EXAM.answers[i];
+    const etat = !a ? "vierge" : a.skipped ? "passee" : "faite";
+    const titre = !a ? "pas encore traitée" : a.skipped ? "passée — à reprendre" : "déjà validée";
+    const ici = i === EXAM.index ? " ici" : "";
+    return `<button type="button" class="exam-nav-case ${etat}${ici}" data-go="${i}"
+      title="Question ${i + 1} — ${titre}">${i + 1}</button>`;
+  }).join("");
+  const restantes = EXAM.answers.filter(a => !a || a.skipped).length;
+  return `<div class="exam-nav">
+      <div class="exam-nav-cases">${cases}</div>
+      ${restantes ? `<div class="exam-nav-info">${restantes} question${restantes > 1 ? "s" : ""}
+        encore à traiter — clique un numéro pour y revenir.</div>` : ""}
+    </div>`;
+}
+
+function allerQuestion(i) {
+  if (!EXAM || i < 0 || i >= EXAM.qs.length) return;
+  EXAM.index = i;
+  paintExamQuestion();
+  window.scrollTo(0, 0);
+}
+
 function paintExamQuestion() {
   const q = EXAM.qs[EXAM.index];
   const saved = EXAM.answers[EXAM.index];
@@ -905,18 +942,33 @@ function paintExamQuestion() {
   const titreQ = `<div class="exam-q-title" style="font-family:'Playfair Display',Georgia,serif;`
     + `font-size:1.35rem;margin:.9rem 0 .3rem">${escapeHtml(label)}</div>`
     + `<div class="exam-notice" style="margin-top:0">Traite <strong>uniquement</strong> cette question dans le sujet ci-dessus, puis r\u00e9dige ta r\u00e9ponse.</div>`;
-  document.getElementById("exam-enonce").innerHTML = EXAM.pdf
-    ? pdfBar + titreQ
-    : pdfBar + nl2br(q.enonce) + annaleFigure(q.figure);
+  const bar = baremeQuestion(q);
+  const baremeHTML = bar
+    ? `<div class="exam-bareme">Cette question vaut <strong>${String(bar).replace(".", ",")} point${bar > 1 ? "s" : ""}</strong> au barème du sujet.</div>`
+    : "";
+  document.getElementById("exam-enonce").innerHTML = examNavHTML() + (EXAM.pdf
+    ? pdfBar + titreQ + baremeHTML
+    : pdfBar + nl2br(q.enonce) + annaleFigure(q.figure) + baremeHTML);
+  document.querySelectorAll("[data-go]").forEach(b => {
+    b.onclick = () => allerQuestion(Number(b.dataset.go));
+  });
   const ta = document.getElementById("exam-answer");
+  /* Une question PASSÉE reste ouverte : c'est tout l'intérêt d'y revenir.
+     Une question déjà validée, elle, est figée — on ne se corrige pas après
+     avoir vu le corrigé. */
+  const figee = !!(saved && !saved.skipped);
   ta.value = saved ? saved.answer : "";
-  ta.readOnly = !!saved;
+  ta.readOnly = figee;
   ta.placeholder = "R\u00e9ponse \u00e0 la question " + (q._label || "").replace(/^.*\u00b7 question /, "") + " \u2026";
   document.getElementById("exam-feedback").innerHTML = (saved && saved.result) ? examFeedbackHTML(saved.result) : "";
-  document.getElementById("exam-actions").style.display = saved ? "none" : "";
+  document.getElementById("exam-actions").style.display = figee ? "none" : "";
   const next = document.getElementById("exam-next");
-  next.style.display = saved ? "" : "none";
-  next.textContent = (EXAM.index >= EXAM.qs.length - 1) ? "Terminer l'épreuve →" : "Question suivante →";
+  next.style.display = figee ? "" : "none";
+  const restantes = EXAM.answers.filter(a => !a || a.skipped).length;
+  const derniere = EXAM.index >= EXAM.qs.length - 1;
+  next.textContent = derniere
+    ? (restantes ? "Terminer malgré " + restantes + " question(s) non traitée(s) →" : "Terminer l'épreuve →")
+    : "Question suivante →";
 }
 
 async function submitExamAnswer() {
@@ -937,6 +989,9 @@ async function submitExamAnswer() {
     // l'appel, pour que le correcteur voie réellement la figure.
     pages: Array.isArray(q.pages) ? q.pages : null,
     annale_url: EXAM.annale.image_url || null,
+    /* Le barème du sujet : le correcteur note dessus plutôt que d'inventer
+       une échelle. */
+    bareme: baremeQuestion(q),
   };
   const btn = document.getElementById("exam-validate");
   btn.disabled = true;
@@ -965,9 +1020,23 @@ async function submitExamAnswer() {
   paintExamQuestion();
 }
 
+function noteTexte(r) {
+  if (!r || r.note === null || r.note === undefined) return "";
+  const n = String(r.note).replace(".", ",");
+  const b = String(r.bareme).replace(".", ",");
+  return n + " / " + b;
+}
+
 function examFeedbackHTML(r) {
   const v = ["correct", "partial", "incorrect"].includes(r.verdict) ? r.verdict : "partial";
   const lab = v === "correct" ? "✔ Correct" : v === "incorrect" ? "✘ À revoir" : "± Partiellement juste";
+  const note = noteTexte(r);
+  const noteHTML = note
+    ? `<div class="exam-note ${v}">${note}${r.bareme_du_sujet === false
+        ? ` <span class="exam-note-sur">barème estimé</span>` : ""}</div>`
+    : "";
+  const redac = r.redaction
+    ? `<div class="exam-redaction"><strong>Rédaction —</strong> ${escapeHtml(r.redaction)}</div>` : "";
   const sol = r.solution || r.demarche;
   // Correction faite sans la figure du sujet : sur un exercice de géométrie,
   // l'analyse peut être à côté de la plaque. On le dit plutôt que de le cacher.
@@ -975,9 +1044,10 @@ function examFeedbackHTML(r) {
     ? `<div class="exam-sans-figure">⚠ Le correcteur n'a pas pu voir la figure du sujet : sur un exercice
        de géométrie, fie-toi au corrigé plutôt qu'à l'analyse de ta démarche.</div>`
     : "";
-  return `<div class="exam-verdict ${v}">${lab}</div>
+  return `<div class="exam-verdict-ligne"><span class="exam-verdict ${v}">${lab}</span>${noteHTML}</div>
     ${sansFigure}
     ${r.analyse ? `<div class="exam-analyse">${nl2br(r.analyse)}</div>` : ""}
+    ${redac}
     ${sol ? `<details class="annale-q-sol" open><summary>Corrigé</summary><div>${nl2br(sol)}</div></details>` : ""}`;
 }
 
@@ -998,7 +1068,10 @@ function nextExamQuestion() {
 function finishExam() {
   clearInterval(examTimer);
   examPhase("done");
-  if (EXAM.pdf) {
+  /* Bilan « copie unique » : réservé aux sujets PDF dont les questions n'ont
+     PAS été découpées. Dès qu'il y a des questions, on passe au bilan noté —
+     sans cette précaution, la quasi-totalité des annales y échappait. */
+  if (EXAM.pdf && !EXAM.qs.length) {
     const copie = (document.getElementById("exam-answer").value || "").trim();
     const elapsedP = EXAM.start ? Math.round((Date.now() - EXAM.start) / 60000) : 0;
     document.getElementById("examen-done-body").innerHTML = `
@@ -1015,24 +1088,54 @@ function finishExam() {
       </div>`;
     return;
   }
-  const ok      = EXAM.answers.filter(x => x && x.result && x.result.verdict === "correct").length;
-  const partial = EXAM.answers.filter(x => x && x.result && x.result.verdict === "partial").length;
-  const elapsed = EXAM.start ? Math.round((Date.now() - EXAM.start) / 60000) : 0;
-  const rows = EXAM.qs.map((q, i) => {
+  /* ── Bilan noté ──
+     On additionne les notes obtenues et les barèmes correspondants. Une
+     question passée compte 0 sur son barème : c'est ce que ferait un
+     correcteur devant une copie où elle manque. */
+  let obtenu = 0, total = 0, notees = 0;
+  const lignes = EXAM.qs.map((q, i) => {
     const a = EXAM.answers[i];
-    const st = !a || a.skipped ? "— passée" :
-      a.result.verdict === "correct" ? "✔ correcte" :
-      a.result.verdict === "incorrect" ? "✘ à revoir" : "± partielle";
-    const cls = !a || a.skipped ? "skip" : a.result.verdict;
-    return `<div class="exam-recap-row"><span class="exam-recap-q">Question ${i + 1}</span><span class="exam-recap-st ${cls}">${st}</span></div>`;
+    const bar = (a && a.result && a.result.bareme) || baremeQuestion(q) || 4;
+    const note = (a && a.result && typeof a.result.note === "number") ? a.result.note : null;
+    total += bar;
+    if (note !== null) { obtenu += note; notees++; }
+    const traitee = a && !a.skipped;
+    const cls = !traitee ? "skip"
+      : note === null ? "partial"
+      : note / bar >= 0.8 ? "correct" : note / bar >= 0.35 ? "partial" : "incorrect";
+    const etat = !traitee ? "non traitée — 0 / " + String(bar).replace(".", ",")
+      : note === null ? "corrigée sans note"
+      : String(note).replace(".", ",") + " / " + String(bar).replace(".", ",");
+    const detail = traitee ? `
+      <details class="exam-bilan-detail">
+        <summary>Revoir ma réponse et la correction</summary>
+        <div class="exam-bilan-copie"><strong>Ta réponse</strong><div>${nl2br(escapeHtml(a.answer || "—"))}</div></div>
+        ${a.result ? examFeedbackHTML(a.result) : ""}
+      </details>` : "";
+    return `<div class="exam-bilan-ligne ${cls}">
+        <div class="exam-bilan-tete">
+          <span class="exam-bilan-q">${escapeHtml(qLabel(q, i))}</span>
+          <span class="exam-bilan-note ${cls}">${etat}</span>
+        </div>${detail}
+      </div>`;
   }).join("");
+
+  const elapsed = EXAM.start ? Math.round((Date.now() - EXAM.start) / 60000) : 0;
+  const sur20 = total ? Math.round(obtenu / total * 20 * 2) / 2 : null;
+  const nonTraitees = EXAM.answers.filter(a => !a || a.skipped).length;
+
   document.getElementById("examen-done-body").innerHTML = `
     <div class="annale-paper-head">
-      <h2>Épreuve terminée !</h2>
+      <h2>Épreuve terminée</h2>
       <div class="annale-meta">${escapeHtml(EXAM.annale.title)} · ${elapsed} min au chrono${EXAM.annale.duration ? ` (épreuve officielle : ${EXAM.annale.duration} min)` : ""}</div>
     </div>
-    <div class="exam-score">✔ ${ok} correcte${ok > 1 ? "s" : ""} · ± ${partial} partielle${partial > 1 ? "s" : ""} · sur ${EXAM.qs.length} questions</div>
-    ${rows}
+    <div class="exam-bilan-note-globale">
+      <div class="exam-bilan-chiffre">${String(obtenu).replace(".", ",")} <span>/ ${String(total).replace(".", ",")}</span></div>
+      ${sur20 !== null ? `<div class="exam-bilan-sur20">soit ${String(sur20).replace(".", ",")} / 20</div>` : ""}
+    </div>
+    ${nonTraitees ? `<div class="exam-notice">${nonTraitees} question${nonTraitees > 1 ? "s n'ont" : " n'a"} pas été traitée${nonTraitees > 1 ? "s" : ""} : elle${nonTraitees > 1 ? "s comptent" : " compte"} pour zéro, comme sur une vraie copie.</div>` : ""}
+    ${notees < EXAM.qs.length - nonTraitees ? `<div class="exam-notice">Certaines questions n'ont pas pu être notées : la note globale ne porte que sur celles qui l'ont été.</div>` : ""}
+    <div class="exam-bilan-liste">${lignes}</div>
     <div class="exam-start-row">
       <button class="annale-btn" onclick="startExamen(${EXAM.annale.id})">↻ Recommencer ce sujet</button>
       <button class="annale-btn primary" onclick="showView('annales')">Retour aux annales →</button>
