@@ -349,7 +349,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-16-reparation-pages";
+const SERVEUR_VERSION = "2026-08-17-signalements";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -697,6 +697,78 @@ app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ── SIGNALEMENTS : dépôt par l'élève ── */
+app.post("/signalements", auth, async (req, res) => {
+  try {
+    const { annale_id, annale_titre, question, type, message } = req.body || {};
+    const texte = String(message || "").trim();
+    if (texte.length < 5)
+      return res.status(400).json({ error: "Décris le problème en quelques mots." });
+    if (texte.length > 2000)
+      return res.status(400).json({ error: "Message trop long (2000 caractères au plus)." });
+    const types = ["enonce", "correction", "figure", "note", "autre"];
+    await pool.query(
+      `INSERT INTO signalements (annale_id, annale_titre, question, type, message, user_id, pseudo)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [Number(annale_id) || null, String(annale_titre || "").slice(0, 200) || null,
+       String(question || "").slice(0, 120) || null,
+       types.includes(type) ? type : "autre", texte,
+       req.user && req.user.id, (req.user && req.user.pseudo) || null]);
+    res.json({ ok: true });
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
+/* ── SIGNALEMENTS : consultation par l'administrateur ── */
+app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
+  try {
+    const statut = req.query.statut;
+    const cond = statut === "nouveau" || statut === "traite" ? "WHERE statut = $1" : "";
+    const { rows } = await pool.query(
+      `SELECT * FROM signalements ${cond} ORDER BY created_at DESC LIMIT 400`,
+      cond ? [statut] : []);
+
+    /* Regroupé par sujet : c'est ainsi qu'on repère un sujet qui pose
+       vraiment problème, plutôt qu'un signalement isolé. */
+    const parSujet = new Map();
+    rows.forEach(r => {
+      const k = r.annale_id || 0;
+      if (!parSujet.has(k)) parSujet.set(k, {
+        annale_id: r.annale_id, titre: r.annale_titre || "(sujet supprimé)",
+        total: 0, nouveaux: 0, types: {} });
+      const e = parSujet.get(k);
+      e.total++;
+      if (r.statut === "nouveau") e.nouveaux++;
+      e.types[r.type] = (e.types[r.type] || 0) + 1;
+    });
+
+    res.json({
+      total: rows.length,
+      nouveaux: rows.filter(r => r.statut === "nouveau").length,
+      par_sujet: [...parSujet.values()].sort((a, b) => b.total - a.total),
+      signalements: rows
+    });
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
+/* ── SIGNALEMENTS : marquer traité, ou supprimer ── */
+app.patch("/admin/signalements/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    const statut = req.body && req.body.statut === "nouveau" ? "nouveau" : "traite";
+    const r = await pool.query("UPDATE signalements SET statut = $1 WHERE id = $2",
+      [statut, Number(req.params.id)]);
+    if (!r.rowCount) return res.status(404).json({ error: "Signalement introuvable." });
+    res.json({ ok: true, statut });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/admin/signalements/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query("DELETE FROM signalements WHERE id = $1", [Number(req.params.id)]);
+    if (!r.rowCount) return res.status(404).json({ error: "Signalement introuvable." });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ── CONFIG CLIENT (clé Mistral pour la séance) — réservé aux connectés ── */
 app.get("/config", auth, (req, res) => {
   res.json({ mistralKey: process.env.MISTRAL_KEY || "" });
@@ -791,6 +863,28 @@ async function initDB() {
   await pool.query(`ALTER TABLE annales ADD COLUMN IF NOT EXISTS matiere TEXT`);
   await pool.query(`UPDATE annales SET matiere = 'mathematiques' WHERE matiere IS NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_annales_matiere ON annales (matiere)`);
+  /* ── SIGNALEMENTS ──
+     Ce que l'élève remonte après une épreuve : un énoncé illisible, une
+     correction qui lui paraît fausse, une figure absente. C'est la seule
+     source d'information sur ce qui cloche réellement dans les sujets —
+     un diagnostic automatique ne voit pas qu'une question est incompréhensible. */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS signalements (
+      id          SERIAL PRIMARY KEY,
+      annale_id   INTEGER,                    -- le sujet concerné
+      annale_titre TEXT,                      -- conservé même si le sujet est supprimé
+      question    TEXT,                       -- libellé de la question, ou null pour le sujet entier
+      type        TEXT,                       -- enonce | correction | figure | autre
+      message     TEXT NOT NULL,
+      user_id     INTEGER,
+      pseudo      TEXT,
+      statut      TEXT DEFAULT 'nouveau',     -- nouveau | traite
+      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_statut ON signalements (statut)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_annale ON signalements (annale_id)`);
+
   console.log("Base de données prête.");
   await seedAdmin();
   await seedDB();
@@ -1297,6 +1391,15 @@ app.post("/exercises/correct", auth, async (req, res) => {
   const key = process.env.MISTRAL_KEY;
   if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
 
+  /* Le barème vient du sujet lui-même : « Exercice 3 (5 points) ». À défaut,
+     on note sur 4, valeur courante d'une question de brevet — et on le dit,
+     pour que le correcteur ne s'imagine pas une précision qu'il n'a pas. */
+  const baremeSujet = Number(exercise.bareme) > 0 ? Number(exercise.bareme) : null;
+  const bareme = baremeSujet || 4;
+  const baremeCtx = baremeSujet
+    ? `\nBARÈME : cette question vaut ${baremeSujet} points, d'après le sujet officiel. Note sur ${baremeSujet}.`
+    : `\nBARÈME : le sujet n'indique pas de barème pour cette question. Note sur 4.`;
+
   const solutionCtx = exercise.solution ? `\nSOLUTION OFFICIELLE : ${exercise.solution}` : "";
 
   /* ── Source principale : l'IMAGE de la page du sujet ──
@@ -1402,6 +1505,16 @@ Ta mission : réagir DIRECTEMENT à ce que l'élève a écrit, pas à une répon
 3 bis. En cas de doute entre « l'élève s'est trompé » et « l'énoncé dont je dispose est incomplet », choisis TOUJOURS la seconde hypothèse et signale-le. Mieux vaut ne pas trancher que sanctionner à tort.
 4. Ensuite seulement, donne la bonne démarche puis la solution finale.
 
+${baremeCtx}
+
+NOTATION — tu attribues une note, pas seulement un verdict.
+· La note va de 0 au barème indiqué, par demi-points.
+· Un résultat juste SANS justification ne vaut pas tous les points : au brevet, la démarche compte. Compte environ deux tiers des points pour le raisonnement et le résultat, un tiers pour la rédaction (étapes visibles, théorème cité quand il est nécessaire, unités, phrase de réponse).
+· Un résultat faux mais une démarche correcte mérite une part substantielle des points : ne mets pas 0 pour une erreur de calcul isolée.
+· Une réponse vide, hors sujet ou recopiée de l'énoncé vaut 0.
+· Sois exigeant mais juste, comme un correcteur de brevet : la moyenne d'une copie honnête doit rester atteignable.
+· La note doit être COHÉRENTE avec le verdict : "correct" ne descend pas sous 80 % du barème, "incorrect" ne dépasse pas 35 %.
+
 CAS DU QCM : si l'élève répond par une lettre ou un numéro d'option (« réponse D », « c'est la B », « 3 »), retrouve dans l'énoncé le CONTENU de cette option et juge ce contenu, rien d'autre. Un QCM ne demande aucune rédaction : ne reproche JAMAIS à l'élève de ne pas avoir détaillé sa démarche, et ne le compte pas comme une erreur. Si tu n'arrives pas à retrouver les options dans l'énoncé, dis-le franchement et mets le verdict à "partial" plutôt que de deviner.
 
 FORMES ÉQUIVALENTES : un même nombre écrit autrement reste juste. (20 + 3)/4, 23/4, 5,75 et 5.75 sont la MÊME réponse et valent toutes "correct". Idem pour une fraction non simplifiée, un calcul non effectué, ou un ordre de termes différent. Ne sanctionne jamais la forme quand la valeur est bonne.
@@ -1419,6 +1532,8 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
   "analyse": "Comment l'élève est arrivé à sa réponse. Si erreur, l'étape exacte qui cloche et la raison profonde de l'erreur. 2 à 4 phrases, adressées à l'élève.",
   "demarche": "La bonne démarche, étape par étape, claire et sobre. Sépare les étapes par des retours à la ligne.",
   "solution": "Le résultat final attendu, en une ou deux lignes.",
+  "redaction": "Ce que vaut la RÉDACTION de l'élève : justifications, étapes apparentes, théorème cité quand il le faut, unités, phrase de conclusion. Dis ce qui manque, en une ou deux phrases.",
+  "note": nombre — la note attribuée, entre 0 et le barème indiqué. Utilise les demi-points. Voir les règles de notation ci-dessus.,
   "verdict": "correct" | "partial" | "incorrect"
 }`;
 
@@ -1490,6 +1605,23 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
     /* On dit honnêtement à l'élève si la correction a été faite sans la figure. */
     parsed.figure_vue = avecImage;
     if (!avecImage) parsed.figure_diagnostic = raisonSansFigure;
+
+    /* La note est bornée au barème : un correcteur généreux ne doit pas
+       inventer des points qui n'existent pas, ni en retirer sous zéro.
+       On arrondit au demi-point, comme au brevet. */
+    const brute = Number(parsed.note);
+    parsed.note = Number.isFinite(brute)
+      ? Math.max(0, Math.min(bareme, Math.round(brute * 2) / 2))
+      : null;
+    parsed.bareme = bareme;
+    parsed.bareme_du_sujet = !!baremeSujet;
+
+    /* Cohérence note / verdict : un « correct » noté 1/5 laisserait l'élève
+       perplexe. On aligne le verdict sur la note, qui est plus fine. */
+    if (parsed.note !== null) {
+      const part = parsed.note / bareme;
+      parsed.verdict = part >= 0.8 ? "correct" : part >= 0.35 ? "partial" : "incorrect";
+    }
 
     res.json(parsed);
   } catch (err) {

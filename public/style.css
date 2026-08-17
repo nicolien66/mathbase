@@ -1769,3 +1769,35 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 .exam-bilan-copie { margin: .6rem 0; font-size: .9rem; line-height: 1.6; color: #4a3f2c; }
 .exam-bilan-copie strong { display: block; font-size: .78rem; color: #9a833f;
   text-transform: uppercase; letter-spacing: .1em; margin-bottom: .3rem; }
+
+
+/* ═══════════ SIGNALEMENT D'UN PROBLÈME (après le bilan) ═══════════ */
+.sig-bloc {
+  margin-top: 1.6rem; border-top: 1px solid rgba(31,26,19,.16); padding-top: 1rem;
+}
+.sig-bloc summary {
+  cursor: pointer; font-size: .92rem; color: #9a6b1f; list-style: none;
+}
+.sig-bloc summary::-webkit-details-marker { display: none; }
+.sig-bloc summary::before { content: "✎ "; }
+.sig-intro { font-size: .86rem; line-height: 1.6; color: #5b4f36; margin: .7rem 0 1rem; }
+.sig-champ { margin-bottom: .8rem; }
+.sig-champ label {
+  display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .1em;
+  color: #9a833f; margin-bottom: .3rem;
+}
+.sig-champ select, .sig-champ textarea {
+  width: 100%; max-width: 560px; font: inherit; font-size: .92rem;
+  color: #17120c; background: rgba(31,26,19,.03);
+  border: 1px solid rgba(31,26,19,.22); border-radius: 8px; padding: .5rem .7rem;
+}
+.sig-champ textarea { resize: vertical; line-height: 1.55; }
+.sig-champ select:focus, .sig-champ textarea:focus { outline: none; border-color: #9a833f; }
+.sig-actions { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.sig-etat { font-size: .85rem; color: #6b5d40; }
+.sig-etat.erreur { color: #b03a26; }
+.sig-merci {
+  font-size: .92rem; line-height: 1.6; color: #1f7a4d;
+  background: rgba(31,122,77,.08); border: 1px solid rgba(31,122,77,.3);
+  border-radius: 8px; padding: .8rem 1rem;
+}

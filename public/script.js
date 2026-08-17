@@ -900,6 +900,39 @@ function baremeQuestion(q) {
   return Number.isFinite(n) && n > 0 && n <= 20 ? n : null;
 }
 
+/* ── Les deux parties d'un sujet ──
+   Beaucoup de sujets s'organisent en une partie « questions » (exercices
+   courts, QCM, calculs) et une partie « problèmes » (situations longues).
+   Quand AUCUN barème n'est lisible, on ne peut pas deviner le poids de
+   chaque exercice — mais on sait que ces deux parties comptent chacune pour
+   la moitié de l'épreuve. C'est plus juste qu'une pondération uniforme, qui
+   ferait peser un problème long autant qu'une question de deux lignes. */
+function partieDe(q) {
+  const txt = ((q._label || "") + " " + (q.enonce || "") + " " +
+               (q.enonce_correction || "")).slice(0, 400)
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  /* Le mot doit TITRER la section, pas apparaître au fil du texte :
+     « ce problème se résout par une équation » n'annonce aucune partie.
+     On exige donc « problème » en tête, éventuellement précédé de
+     « partie », et suivi d'un numéro, d'un tiret ou d'un deux-points. */
+  const tete = txt.replace(/^[\s\u2014\-:.]+/, "").slice(0, 60);
+  if (/^(partie\s*[a-z0-9]*\s*[:\-\u2014]?\s*)?probleme\b/.test(tete)) return "probleme";
+  return "question";
+}
+
+/* Répartit les questions en deux parties, et donne le poids de chacune.
+   Renvoie null si le sujet n'a pas deux parties distinctes : on retombe
+   alors sur la pondération uniforme. */
+function poidsParParties(qs) {
+  const parts = qs.map(partieDe);
+  const nbProb = parts.filter(p => p === "probleme").length;
+  const nbQues = parts.length - nbProb;
+  if (!nbProb || !nbQues) return null;
+  /* Chaque partie vaut 10 points sur 20, répartis également entre ses
+     questions. */
+  return qs.map((q, i) => parts[i] === "probleme" ? 10 / nbProb : 10 / nbQues);
+}
+
 /* ── Navigation : bandeau des questions ──
    L'élève doit pouvoir revenir sur une question passée. Chaque pastille
    montre l'état, et l'on peut cliquer n'importe laquelle. */
@@ -1091,21 +1124,51 @@ function finishExam() {
   /* ── Bilan noté ──
      On additionne les notes obtenues et les barèmes correspondants. Une
      question passée compte 0 sur son barème : c'est ce que ferait un
-     correcteur devant une copie où elle manque. */
+     correcteur devant une copie où elle manque.
+
+     LE BARÈME MANQUANT — attention à la pondération. Quand le sujet indique
+     « (20 points) » pour certains exercices et rien pour d'autres, leur
+     donner 4 par défaut fausse tout : un exercice de 20 points pèserait
+     autant qu'un de 4. On estime donc les manquants par la MOYENNE des
+     barèmes réellement lus. Si aucun n'est lisible, tous valent 4 : la
+     pondération est alors uniforme, ce qui est neutre et honnête. */
+  const barsLus = EXAM.qs.map(baremeQuestion).filter(b => b !== null);
+  const barDefaut = barsLus.length
+    ? Math.round(barsLus.reduce((x, y) => x + y, 0) / barsLus.length * 2) / 2
+    : 4;
+  const barEstimes = EXAM.qs.length - barsLus.length;
+
+  /* Aucun barème lisible : si le sujet se divise en questions et problèmes,
+     chaque partie pèse 10 points sur 20. Sinon, pondération uniforme. */
+  const poidsParties = barsLus.length ? null : poidsParParties(EXAM.qs);
+  const nbProblemes = poidsParties
+    ? EXAM.qs.filter(q => partieDe(q) === "probleme").length : 0;
+
   let obtenu = 0, total = 0, notees = 0;
   const lignes = EXAM.qs.map((q, i) => {
     const a = EXAM.answers[i];
-    const bar = (a && a.result && a.result.bareme) || baremeQuestion(q) || 4;
-    const note = (a && a.result && typeof a.result.note === "number") ? a.result.note : null;
+    const bar = baremeQuestion(q)
+      || (poidsParties ? poidsParties[i]
+          : (a && a.result && a.result.bareme_du_sujet ? a.result.bareme : barDefaut));
+    /* Le correcteur a noté sur SON barème (celui du sujet, ou 4 à défaut).
+       Le poids retenu ici peut être différent — 2,5 pour une question, 5 pour
+       un problème. On convertit donc la note en PART DE RÉUSSITE, qu'on
+       applique au poids : sans cela, un 4/4 compterait 4 points sur un poids
+       de 2,5, et la note dépasserait 20. */
+    const noteBrute = (a && a.result && typeof a.result.note === "number") ? a.result.note : null;
+    const barCorrecteur = (a && a.result && a.result.bareme) || bar;
+    const note = noteBrute === null ? null
+      : Math.round(noteBrute / barCorrecteur * bar * 100) / 100;
     total += bar;
     if (note !== null) { obtenu += note; notees++; }
     const traitee = a && !a.skipped;
     const cls = !traitee ? "skip"
       : note === null ? "partial"
       : note / bar >= 0.8 ? "correct" : note / bar >= 0.35 ? "partial" : "incorrect";
-    const etat = !traitee ? "non traitée — 0 / " + String(bar).replace(".", ",")
+    const arr = x => String(Math.round(x * 10) / 10).replace(".", ",");
+    const etat = !traitee ? "non traitée — 0 / " + arr(bar)
       : note === null ? "corrigée sans note"
-      : String(note).replace(".", ",") + " / " + String(bar).replace(".", ",");
+      : arr(note) + " / " + arr(bar);
     const detail = traitee ? `
       <details class="exam-bilan-detail">
         <summary>Revoir ma réponse et la correction</summary>
@@ -1130,16 +1193,104 @@ function finishExam() {
       <div class="annale-meta">${escapeHtml(EXAM.annale.title)} · ${elapsed} min au chrono${EXAM.annale.duration ? ` (épreuve officielle : ${EXAM.annale.duration} min)` : ""}</div>
     </div>
     <div class="exam-bilan-note-globale">
-      <div class="exam-bilan-chiffre">${String(obtenu).replace(".", ",")} <span>/ ${String(total).replace(".", ",")}</span></div>
+      <div class="exam-bilan-chiffre">${String(Math.round(obtenu * 10) / 10).replace(".", ",")} <span>/ ${String(Math.round(total * 10) / 10).replace(".", ",")}</span></div>
       ${sur20 !== null ? `<div class="exam-bilan-sur20">soit ${String(sur20).replace(".", ",")} / 20</div>` : ""}
     </div>
     ${nonTraitees ? `<div class="exam-notice">${nonTraitees} question${nonTraitees > 1 ? "s n'ont" : " n'a"} pas été traitée${nonTraitees > 1 ? "s" : ""} : elle${nonTraitees > 1 ? "s comptent" : " compte"} pour zéro, comme sur une vraie copie.</div>` : ""}
     ${notees < EXAM.qs.length - nonTraitees ? `<div class="exam-notice">Certaines questions n'ont pas pu être notées : la note globale ne porte que sur celles qui l'ont été.</div>` : ""}
+    ${poidsParties
+      ? `<div class="exam-notice">Le sujet n'indique pas de barème. Il a été découpé en deux parties comptant chacune pour 10 points sur 20 : ${EXAM.qs.length - nbProblemes} question${EXAM.qs.length - nbProblemes > 1 ? "s" : ""} d'un côté, ${nbProblemes} problème${nbProblemes > 1 ? "s" : ""} de l'autre.</div>`
+      : barEstimes ? `<div class="exam-notice">Le sujet n'indique pas de barème pour ${barEstimes} question${barEstimes > 1 ? "s" : ""} : ${barEstimes > 1 ? "elles ont été comptées" : "elle a été comptée"} sur ${String(barDefaut).replace(".", ",")} point${barDefaut > 1 ? "s" : ""}${barsLus.length ? ", la moyenne des barèmes du sujet" : ""}. La note sur 20 en dépend.</div>` : ""}
     <div class="exam-bilan-liste">${lignes}</div>
     <div class="exam-start-row">
       <button class="annale-btn" onclick="startExamen(${EXAM.annale.id})">↻ Recommencer ce sujet</button>
       <button class="annale-btn primary" onclick="showView('annales')">Retour aux annales →</button>
-    </div>`;
+    </div>
+    ${blocSignalement()}`;
+  brancherSignalement();
+}
+
+/* ── SIGNALER UN PROBLÈME ──
+   Après la note, l'élève est le mieux placé pour dire ce qui cloche : un
+   énoncé illisible, une figure absente, une correction qui lui paraît fausse.
+   Aucun diagnostic automatique ne repère qu'une question est
+   incompréhensible ; lui, si. */
+function blocSignalement() {
+  const questions = EXAM.qs.map((q, i) =>
+    `<option value="${escapeHtml(qLabel(q, i))}">${escapeHtml(qLabel(q, i))}</option>`).join("");
+  return `
+    <details class="sig-bloc" id="sig-bloc">
+      <summary>Un problème sur ce sujet ? Signale-le</summary>
+      <p class="sig-intro">Énoncé coupé, figure absente, correction qui te paraît fausse,
+        note incompréhensible… Dis-le ici : c'est ainsi que le sujet sera corrigé.</p>
+      <div class="sig-champ">
+        <label for="sig-question">Où ?</label>
+        <select id="sig-question">
+          <option value="">Le sujet en général</option>
+          ${questions}
+        </select>
+      </div>
+      <div class="sig-champ">
+        <label for="sig-type">De quoi s'agit-il ?</label>
+        <select id="sig-type">
+          <option value="enonce">L'énoncé est illisible, coupé ou incompréhensible</option>
+          <option value="figure">Une figure ou une annexe manque</option>
+          <option value="correction">La correction me paraît fausse</option>
+          <option value="note">La note ne me paraît pas juste</option>
+          <option value="autre">Autre chose</option>
+        </select>
+      </div>
+      <div class="sig-champ">
+        <label for="sig-message">Explique en quelques mots</label>
+        <textarea id="sig-message" rows="4"
+          placeholder="Par exemple : « à l'exercice 3, la figure du triangle n'apparaît pas »"></textarea>
+      </div>
+      <div class="sig-actions">
+        <button class="annale-btn primary" id="sig-envoyer">Envoyer</button>
+        <span class="sig-etat" id="sig-etat"></span>
+      </div>
+    </details>`;
+}
+
+function brancherSignalement() {
+  const btn = document.getElementById("sig-envoyer");
+  if (!btn) return;
+  btn.onclick = async () => {
+    const message = (document.getElementById("sig-message").value || "").trim();
+    const etat = document.getElementById("sig-etat");
+    if (message.length < 5) {
+      etat.textContent = "Décris le problème en quelques mots.";
+      etat.className = "sig-etat erreur";
+      return;
+    }
+    btn.disabled = true;
+    etat.textContent = "Envoi…"; etat.className = "sig-etat";
+    try {
+      if (DEMO_MODE) {
+        await new Promise(r => setTimeout(r, 400));
+      } else {
+        const res = await MB_AUTH.apiFetch("/signalements", {
+          method: "POST",
+          body: JSON.stringify({
+            annale_id: EXAM.annale.id,
+            annale_titre: EXAM.annale.title,
+            question: document.getElementById("sig-question").value || null,
+            type: document.getElementById("sig-type").value,
+            message
+          })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
+      }
+      document.getElementById("sig-bloc").innerHTML =
+        `<div class="sig-merci">Merci — ton signalement a bien été transmis.
+         Il sera examiné, et le sujet corrigé si besoin.</div>`;
+    } catch (e) {
+      btn.disabled = false;
+      etat.textContent = "Envoi impossible : " + ((e && e.message) || "erreur inconnue");
+      etat.className = "sig-etat erreur";
+    }
+  };
 }
 
 async function loadExercises() {

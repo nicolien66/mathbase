@@ -76,6 +76,18 @@
 
   <div class="panel" style="margin-bottom:1.6rem">
     <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <span>Signalements des élèves <span id="sig-badge"></span></span>
+      <button class="act" id="sig-load">Voir les signalements</button>
+      <button class="act" id="sig-load-new">Seulement les nouveaux</button>
+    </div>
+    <div id="sig-body" class="empty">
+      Ce que les élèves remontent après une épreuve : énoncé illisible, figure absente,
+      correction douteuse. C'est la seule source qui dise ce qui cloche vraiment.
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:1.6rem">
+    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
       <span>Diagnostic des figures — le correcteur voit-il les sujets ?</span>
       <button class="act" id="diag-run">Lancer le diagnostic</button>
       <button class="act" id="rep-sim">Réparer les pages — simulation</button>
@@ -344,6 +356,100 @@
   /* ── Recensement des questions demandant un tracé ──
      On regarde AVANT d'outiller : combien de questions, de quelle nature, et
      combien renvoient à une annexe qu'il faudra afficher. */
+  /* ── Signalements ──
+     Regroupés par sujet : un signalement isolé peut être une méprise, cinq
+     sur le même sujet désignent un vrai défaut. */
+  const TYPES_SIG = { enonce: "énoncé", figure: "figure", correction: "correction",
+                      note: "note", autre: "autre" };
+
+  async function chargerSignalements(seulementNouveaux) {
+    const body = $('sig-body');
+    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
+    body.innerHTML = `<div class="empty">Chargement…</div>`;
+    try {
+      const res = await MB_AUTH.apiFetch('/admin/signalements'
+        + (seulementNouveaux ? '?statut=nouveau' : ''));
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+
+      $('sig-badge').innerHTML = d.nouveaux
+        ? `<span style="color:var(--coral)">${d.nouveaux} nouveau${d.nouveaux > 1 ? 'x' : ''}</span>` : '';
+
+      if (!d.total) {
+        body.innerHTML = `<div class="empty">Aucun signalement${seulementNouveaux ? ' nouveau' : ''}.</div>`;
+        return;
+      }
+
+      const parSujet = (d.par_sujet || []).slice(0, 12).map(s2 => {
+        const types = Object.entries(s2.types)
+          .map(([t, n]) => `${TYPES_SIG[t] || t} : ${n}`).join(' · ');
+        return `<tr>
+          <td>${escapeHtml(s2.titre)}<div class="muted" style="font-size:.75rem">id ${s2.annale_id || '—'}</div></td>
+          <td><strong>${s2.total}</strong></td>
+          <td>${s2.nouveaux ? `<span style="color:var(--coral)">${s2.nouveaux}</span>` : ''}</td>
+          <td class="hide-sm">${escapeHtml(types)}</td>
+        </tr>`; }).join('');
+
+      const liste = d.signalements.map(x => {
+        const date = new Date(x.created_at).toLocaleDateString('fr-FR',
+          { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const neuf = x.statut === 'nouveau';
+        return `<div class="sig-item" style="border-bottom:1px solid rgba(255,255,255,.07);padding:.8rem 0"
+                     data-sig="${x.id}">
+          <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+            <div style="font-size:.86rem">
+              <strong style="color:var(--cream)">${escapeHtml(x.annale_titre || '(sujet supprimé)')}</strong>
+              ${x.question ? ` · ${escapeHtml(x.question)}` : ''}
+              <span style="color:var(--accent)"> · ${escapeHtml(TYPES_SIG[x.type] || x.type)}</span>
+            </div>
+            <div class="muted" style="font-size:.75rem">${escapeHtml(x.pseudo || '—')} · ${date}</div>
+          </div>
+          <div style="font-size:.9rem;line-height:1.6;margin:.4rem 0 .5rem;color:var(--muted)">
+            ${escapeHtml(x.message)}</div>
+          <div style="display:flex;gap:.5rem">
+            <button class="act" data-traiter="${x.id}" data-statut="${neuf ? 'traite' : 'nouveau'}">
+              ${neuf ? 'marquer traité' : 'rouvrir'}</button>
+            <button class="act" data-suppr-sig="${x.id}"
+              style="border-color:rgba(230,130,110,.45);color:var(--coral)">supprimer</button>
+          </div>
+        </div>`; }).join('');
+
+      body.innerHTML = `
+        <div style="padding:.9rem 1.3rem;font-size:.88rem;color:var(--muted)">
+          <strong style="color:var(--cream)">${d.total}</strong> signalement(s),
+          dont <strong style="color:var(--coral)">${d.nouveaux}</strong> non traité(s).
+        </div>
+        <table><thead><tr><th>Sujet le plus signalé</th><th>total</th><th>nouveaux</th>
+          <th class="hide-sm">nature</th></tr></thead><tbody>${parSujet}</tbody></table>
+        <div style="padding:0 1.3rem 1rem">${liste}</div>`;
+
+      body.querySelectorAll('[data-traiter]').forEach(b => {
+        b.onclick = async () => {
+          b.disabled = true;
+          try {
+            await MB_AUTH.apiFetch('/admin/signalements/' + b.dataset.traiter,
+              { method: 'PATCH', body: JSON.stringify({ statut: b.dataset.statut }) });
+            chargerSignalements(seulementNouveaux);
+          } catch { b.disabled = false; }
+        };
+      });
+      body.querySelectorAll('[data-suppr-sig]').forEach(b => {
+        b.onclick = async () => {
+          if (!confirm('Supprimer définitivement ce signalement ?')) return;
+          b.disabled = true;
+          try {
+            await MB_AUTH.apiFetch('/admin/signalements/' + b.dataset.supprSig, { method: 'DELETE' });
+            chargerSignalements(seulementNouveaux);
+          } catch { b.disabled = false; }
+        };
+      });
+    } catch (e) {
+      body.innerHTML = `<div class="empty" style="color:var(--coral)">Chargement impossible : ${escapeHtml(e.message)}</div>`;
+    }
+  }
+  $('sig-load').onclick     = () => chargerSignalements(false);
+  $('sig-load-new').onclick = () => chargerSignalements(true);
+
   $('constr-run').onclick = async () => {
     const body = $('diag-body');
     if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
