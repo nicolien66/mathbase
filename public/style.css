@@ -1801,3 +1801,32 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   background: rgba(31,122,77,.08); border: 1px solid rgba(31,122,77,.3);
   border-radius: 8px; padding: .8rem 1rem;
 }
+
+
+/* ── Bouton discret de signalement, en pied de copie ── */
+.page-signaler {
+  position: relative; z-index: 1;
+  display: block; margin: 1.2rem auto 0;
+  background: none; border: none;
+  font: inherit; font-size: .78rem; color: #a8987a;
+  cursor: pointer; padding: .3rem .5rem; border-radius: 6px;
+  transition: color .18s, background .18s;
+}
+.page-signaler:hover { color: #9a6b1f; background: rgba(154,107,31,.08); }
+
+/* Le formulaire de signalement dans la modale (fond sombre). */
+.sig-modal .sig-intro { color: var(--muted, rgba(240,236,224,.6)); }
+.sig-modal .sig-champ label { color: var(--accent, #c8b97a); }
+.sig-modal .sig-champ select, .sig-modal .sig-champ textarea {
+  color: var(--text, #f0ece0); background: rgba(255,255,255,.04);
+  border-color: var(--border2, rgba(255,255,255,.16));
+}
+.sig-modal .sig-champ select:focus, .sig-modal .sig-champ textarea:focus {
+  border-color: var(--accent, #c8b97a);
+}
+.sig-modal .sig-etat { color: var(--muted, rgba(240,236,224,.55)); }
+.sig-modal .sig-etat.erreur { color: var(--danger, #e6826e); }
+.sig-modal .sig-merci {
+  color: var(--accent2, #82d2a0); background: rgba(130,210,160,.08);
+  border-color: rgba(130,210,160,.3);
+}

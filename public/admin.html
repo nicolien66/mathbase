@@ -79,6 +79,8 @@
       <span>Signalements des élèves <span id="sig-badge"></span></span>
       <button class="act" id="sig-load">Voir les signalements</button>
       <button class="act" id="sig-load-new">Seulement les nouveaux</button>
+      <button class="act" id="sig-load-ex">Entraînement</button>
+      <button class="act" id="sig-load-an">Annales</button>
     </div>
     <div id="sig-body" class="empty">
       Ce que les élèves remontent après une épreuve : énoncé illisible, figure absente,
@@ -362,13 +364,16 @@
   const TYPES_SIG = { enonce: "énoncé", figure: "figure", correction: "correction",
                       note: "note", autre: "autre" };
 
-  async function chargerSignalements(seulementNouveaux) {
+  async function chargerSignalements(seulementNouveaux, source) {
     const body = $('sig-body');
     if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
     body.innerHTML = `<div class="empty">Chargement…</div>`;
     try {
+      const q = [];
+      if (seulementNouveaux) q.push('statut=nouveau');
+      if (source) q.push('source=' + source);
       const res = await MB_AUTH.apiFetch('/admin/signalements'
-        + (seulementNouveaux ? '?statut=nouveau' : ''));
+        + (q.length ? '?' + q.join('&') : ''));
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
 
@@ -384,7 +389,10 @@
         const types = Object.entries(s2.types)
           .map(([t, n]) => `${TYPES_SIG[t] || t} : ${n}`).join(' · ');
         return `<tr>
-          <td>${escapeHtml(s2.titre)}<div class="muted" style="font-size:.75rem">id ${s2.annale_id || '—'}</div></td>
+          <td>${escapeHtml(s2.titre)}<div class="muted" style="font-size:.75rem">${
+            s2.source === 'exercice'
+              ? 'entraînement' + (s2.chapitre ? ' · ' + escapeHtml(s2.chapitre) : '')
+              : 'annale · id ' + (s2.annale_id || '—')}</div></td>
           <td><strong>${s2.total}</strong></td>
           <td>${s2.nouveaux ? `<span style="color:var(--coral)">${s2.nouveaux}</span>` : ''}</td>
           <td class="hide-sm">${escapeHtml(types)}</td>
@@ -398,7 +406,10 @@
                      data-sig="${x.id}">
           <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
             <div style="font-size:.86rem">
-              <strong style="color:var(--cream)">${escapeHtml(x.annale_titre || '(sujet supprimé)')}</strong>
+              <strong style="color:var(--cream)">${escapeHtml(x.annale_titre || '(supprimé)')}</strong>
+              ${x.source === 'exercice'
+                ? `<span class="muted" style="font-size:.75rem"> · entraînement${x.famille ? ' · ' + escapeHtml(x.famille) : ''}</span>`
+                : ''}
               ${x.question ? ` · ${escapeHtml(x.question)}` : ''}
               <span style="color:var(--accent)"> · ${escapeHtml(TYPES_SIG[x.type] || x.type)}</span>
             </div>
@@ -418,8 +429,10 @@
         <div style="padding:.9rem 1.3rem;font-size:.88rem;color:var(--muted)">
           <strong style="color:var(--cream)">${d.total}</strong> signalement(s),
           dont <strong style="color:var(--coral)">${d.nouveaux}</strong> non traité(s).
+          ${d.par_source ? ` · entraînement : <strong>${d.par_source.exercice}</strong>
+            · annales : <strong>${d.par_source.annale}</strong>` : ''}
         </div>
-        <table><thead><tr><th>Sujet le plus signalé</th><th>total</th><th>nouveaux</th>
+        <table><thead><tr><th>Sujet ou famille le plus signalé</th><th>total</th><th>nouveaux</th>
           <th class="hide-sm">nature</th></tr></thead><tbody>${parSujet}</tbody></table>
         <div style="padding:0 1.3rem 1rem">${liste}</div>`;
 
@@ -429,7 +442,7 @@
           try {
             await MB_AUTH.apiFetch('/admin/signalements/' + b.dataset.traiter,
               { method: 'PATCH', body: JSON.stringify({ statut: b.dataset.statut }) });
-            chargerSignalements(seulementNouveaux);
+            chargerSignalements(seulementNouveaux, source);
           } catch { b.disabled = false; }
         };
       });
@@ -439,7 +452,7 @@
           b.disabled = true;
           try {
             await MB_AUTH.apiFetch('/admin/signalements/' + b.dataset.supprSig, { method: 'DELETE' });
-            chargerSignalements(seulementNouveaux);
+            chargerSignalements(seulementNouveaux, source);
           } catch { b.disabled = false; }
         };
       });
@@ -449,6 +462,8 @@
   }
   $('sig-load').onclick     = () => chargerSignalements(false);
   $('sig-load-new').onclick = () => chargerSignalements(true);
+  $('sig-load-ex').onclick  = () => chargerSignalements(false, 'exercice');
+  $('sig-load-an').onclick  = () => chargerSignalements(false, 'annale');
 
   $('constr-run').onclick = async () => {
     const body = $('diag-body');

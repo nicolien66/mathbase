@@ -1210,6 +1210,92 @@ function finishExam() {
   brancherSignalement();
 }
 
+/* ── SIGNALER UN PROBLÈME SUR UN EXERCICE D'ENTRAÎNEMENT ──
+   Même dispositif que pour les annales, mais rattaché à l'exercice courant :
+   l'élève est le seul à voir qu'un énoncé est ambigu ou qu'un corrigé se
+   trompe. Le formulaire s'ouvre dans la modale, sans quitter la séance. */
+function ouvrirSignalementExercice() {
+  /* L'exercice courant de la séance : ces variables sont déclarées plus bas
+     dans le fichier, mais les déclarations `let` de haut niveau sont visibles
+     partout dans le module. */
+  const ex = (typeof seanceExercises !== "undefined" && Array.isArray(seanceExercises))
+    ? seanceExercises[seanceIndex] : null;
+  if (!ex) { showToast("Aucun exercice en cours.", "error"); return; }
+
+  /* La modale de la séance s'ouvre par « modal-overlay » — c'est ce que fait
+     openModal(). Viser un élément « modal » inexistant ne produisait rien. */
+  const contenu = document.getElementById("modal-content");
+  const overlay = document.getElementById("modal-overlay");
+  if (!contenu || !overlay) return;
+  contenu.innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-label">Signaler une erreur</div>
+      <div class="sig-modal">
+        <p class="sig-intro">« ${escapeHtml(ex.title || "cet exercice")} »<br>
+          Énoncé ambigu, corrigé faux, figure absente, calcul qui ne tombe pas juste…
+          Dis-le : c'est ainsi que l'exercice sera corrigé.</p>
+        <div class="sig-champ">
+          <label for="sigx-type">De quoi s'agit-il ?</label>
+          <select id="sigx-type">
+            <option value="enonce">L'énoncé est ambigu ou incomplet</option>
+            <option value="solution">Le corrigé me paraît faux</option>
+            <option value="correction">La correction de ma réponse est injuste</option>
+            <option value="figure">La figure est absente ou fausse</option>
+            <option value="plateau">Le plateau interactif ne fonctionne pas</option>
+            <option value="autre">Autre chose</option>
+          </select>
+        </div>
+        <div class="sig-champ">
+          <label for="sigx-message">Explique en quelques mots</label>
+          <textarea id="sigx-message" rows="4"
+            placeholder="Par exemple : « le corrigé annonce 12 mais je trouve 14 »"></textarea>
+        </div>
+        <div class="sig-actions">
+          <button class="btn-primary" id="sigx-envoyer">Envoyer</button>
+          <span class="sig-etat" id="sigx-etat"></span>
+        </div>
+      </div>
+    </div>`;
+  overlay.classList.add("open");
+
+  document.getElementById("sigx-envoyer").onclick = async () => {
+    const message = (document.getElementById("sigx-message").value || "").trim();
+    const etat = document.getElementById("sigx-etat");
+    if (message.length < 5) {
+      etat.textContent = "Décris le problème en quelques mots.";
+      etat.className = "sig-etat erreur";
+      return;
+    }
+    const btn = document.getElementById("sigx-envoyer");
+    btn.disabled = true;
+    etat.textContent = "Envoi…"; etat.className = "sig-etat";
+    try {
+      if (DEMO_MODE) { await new Promise(r => setTimeout(r, 400)); }
+      else {
+        const res = await MB_AUTH.apiFetch("/signalements", {
+          method: "POST",
+          body: JSON.stringify({
+            exercise_id: ex.id,
+            exercise_titre: ex.title,
+            chapitre: ex.chapitre || null,
+            famille: ex.famille || null,
+            type: document.getElementById("sigx-type").value,
+            message
+          })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
+      }
+      document.querySelector(".sig-modal").innerHTML =
+        `<div class="sig-merci">Merci — ton signalement a bien été transmis.</div>`;
+    } catch (e) {
+      btn.disabled = false;
+      etat.textContent = "Envoi impossible : " + ((e && e.message) || "erreur inconnue");
+      etat.className = "sig-etat erreur";
+    }
+  };
+}
+
 /* ── SIGNALER UN PROBLÈME ──
    Après la note, l'élève est le mieux placé pour dire ce qui cloche : un
    énoncé illisible, une figure absente, une correction qui lui paraît fausse.

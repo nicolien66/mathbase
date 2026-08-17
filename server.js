@@ -700,20 +700,31 @@ app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
 /* ── SIGNALEMENTS : dépôt par l'élève ── */
 app.post("/signalements", auth, async (req, res) => {
   try {
-    const { annale_id, annale_titre, question, type, message } = req.body || {};
+    const { annale_id, annale_titre, question, type, message,
+            exercise_id, exercise_titre, chapitre, famille } = req.body || {};
     const texte = String(message || "").trim();
     if (texte.length < 5)
       return res.status(400).json({ error: "Décris le problème en quelques mots." });
     if (texte.length > 2000)
       return res.status(400).json({ error: "Message trop long (2000 caractères au plus)." });
-    const types = ["enonce", "correction", "figure", "note", "autre"];
+    const types = ["enonce", "correction", "figure", "note", "solution", "plateau", "autre"];
+    /* La source se déduit de ce qui est fourni : un exercice d'entraînement
+       ou une question d'annale. Le titre est conservé dans le même champ, ce
+       qui évite de dupliquer l'affichage côté administration. */
+    const estExercice = !!Number(exercise_id);
     await pool.query(
-      `INSERT INTO signalements (annale_id, annale_titre, question, type, message, user_id, pseudo)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [Number(annale_id) || null, String(annale_titre || "").slice(0, 200) || null,
+      `INSERT INTO signalements (annale_id, annale_titre, question, type, message,
+                                 user_id, pseudo, exercise_id, source, chapitre, famille)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [estExercice ? null : (Number(annale_id) || null),
+       String(estExercice ? (exercise_titre || "") : (annale_titre || "")).slice(0, 200) || null,
        String(question || "").slice(0, 120) || null,
        types.includes(type) ? type : "autre", texte,
-       req.user && req.user.id, (req.user && req.user.pseudo) || null]);
+       req.user && req.user.id, (req.user && req.user.pseudo) || null,
+       estExercice ? Number(exercise_id) : null,
+       estExercice ? "exercice" : "annale",
+       String(chapitre || "").slice(0, 120) || null,
+       String(famille || "").slice(0, 120) || null]);
     res.json({ ok: true });
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
@@ -722,18 +733,28 @@ app.post("/signalements", auth, async (req, res) => {
 app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
   try {
     const statut = req.query.statut;
-    const cond = statut === "nouveau" || statut === "traite" ? "WHERE statut = $1" : "";
+    const source = req.query.source;               // annale | exercice
+    const conds = [], params = [];
+    if (statut === "nouveau" || statut === "traite") { params.push(statut); conds.push("statut = $" + params.length); }
+    if (source === "annale" || source === "exercice") { params.push(source); conds.push("COALESCE(source,'annale') = $" + params.length); }
     const { rows } = await pool.query(
-      `SELECT * FROM signalements ${cond} ORDER BY created_at DESC LIMIT 400`,
-      cond ? [statut] : []);
+      `SELECT * FROM signalements ${conds.length ? "WHERE " + conds.join(" AND ") : ""}
+        ORDER BY created_at DESC LIMIT 400`, params);
 
     /* Regroupé par sujet : c'est ainsi qu'on repère un sujet qui pose
        vraiment problème, plutôt qu'un signalement isolé. */
     const parSujet = new Map();
     rows.forEach(r => {
-      const k = r.annale_id || 0;
+      /* On regroupe par SUJET pour les annales, par FAMILLE pour les
+         exercices : c'est l'unité qui a du sens de chaque côté. */
+      const estEx = (r.source || "annale") === "exercice";
+      const k = estEx ? "f:" + (r.famille || r.chapitre || "?") : "a:" + (r.annale_id || 0);
       if (!parSujet.has(k)) parSujet.set(k, {
-        annale_id: r.annale_id, titre: r.annale_titre || "(sujet supprimé)",
+        source: estEx ? "exercice" : "annale",
+        annale_id: r.annale_id, exercise_id: r.exercise_id,
+        titre: estEx ? (r.famille || r.chapitre || "(sans famille)")
+                     : (r.annale_titre || "(sujet supprimé)"),
+        chapitre: r.chapitre || null,
         total: 0, nouveaux: 0, types: {} });
       const e = parSujet.get(k);
       e.total++;
@@ -744,6 +765,9 @@ app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
     res.json({
       total: rows.length,
       nouveaux: rows.filter(r => r.statut === "nouveau").length,
+      par_source: {
+        annale: rows.filter(r => (r.source || "annale") === "annale").length,
+        exercice: rows.filter(r => r.source === "exercice").length },
       par_sujet: [...parSujet.values()].sort((a, b) => b.total - a.total),
       signalements: rows
     });
@@ -882,7 +906,16 @@ async function initDB() {
       created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  /* Les signalements viennent de DEUX endroits : les annales (examen) et les
+     exercices d'entraînement. On ajoute donc de quoi désigner un exercice,
+     et un champ « source » pour les distinguer d'un coup d'œil. */
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS exercise_id INTEGER`);
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS source TEXT`);
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS chapitre TEXT`);
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS famille TEXT`);
+  await pool.query(`UPDATE signalements SET source = 'annale' WHERE source IS NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_statut ON signalements (statut)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_exercice ON signalements (exercise_id)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_annale ON signalements (annale_id)`);
 
   console.log("Base de données prête.");
