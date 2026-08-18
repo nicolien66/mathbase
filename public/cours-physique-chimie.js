@@ -22,6 +22,13 @@
      4. Poids et masse
      5. Gravitation
 
+   THÈME « SIGNAUX » :
+
+     1. Lumière et vision
+     2. Signaux lumineux
+     3. Signaux sonores
+     4. Signaux et communication
+
    THÈME « ÉNERGIE » :
 
      1. Formes et sources d'énergie
@@ -4852,9 +4859,872 @@ LECONS.push(lecon({
 
 ]}));
 
+/* ══════════════════════════════════════════════════════════════════════
+   THÈME « SIGNAUX » — outils de schéma
+   ══════════════════════════════════════════════════════════════════════ */
+
+THEME_COURANT = { id: 'signaux', label: 'Signaux' };
+
+/* Rayon lumineux : un trait droit, porteur d'une flèche de sens à mi-course.
+   C'est le modèle du collège — la lumière se propage en ligne droite. */
+function rayon(ctx, x1, y1, x2, y2, p, c, opts) {
+  opts = opts || {};
+  const col = c || C.jaune;
+  seg(ctx, x1, y1, x2, y2, cl(p), col, opts.ep || 1.8);
+  if (p > 0.5 && opts.sens !== false) {
+    const t = opts.t === undefined ? 0.55 : opts.t;
+    const mx = lp(x1, x2, t), my = lp(y1, y2, t);
+    const ang = Math.atan2(y2 - y1, x2 - x1);
+    const q = cl((p - 0.5) / 0.3);
+    ctx.save();
+    ctx.strokeStyle = col; ctx.lineWidth = opts.ep || 1.8; ctx.globalAlpha = q * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(mx, my);
+    ctx.lineTo(mx - 11 * Math.cos(ang - 0.42), my - 11 * Math.sin(ang - 0.42));
+    ctx.moveTo(mx, my);
+    ctx.lineTo(mx - 11 * Math.cos(ang + 0.42), my - 11 * Math.sin(ang + 0.42));
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+/* Source lumineuse : un disque et sa couronne de rayons. */
+function source(ctx, cx, cy, r, p, c, nom) {
+  const col = c || C.jaune;
+  bille(ctx, cx, cy, r, et(0, 0.3, p), col);
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI * 2) / 8;
+    const q = et(0.2 + i * 0.03, 0.25, p);
+    seg(ctx, cx + Math.cos(a) * (r + 6), cy + Math.sin(a) * (r + 6),
+             cx + Math.cos(a) * (r + 20), cy + Math.sin(a) * (r + 20), q, col, 1.8);
+  }
+  if (nom) txt(ctx, nom, cx, cy + r + 40, et(0.45, 0.25, p), col, 15, SANS);
+}
+
+/* Œil vu de profil : une amande, l'iris et la rétine au fond. */
+function oeil(ctx, cx, cy, r, p, c) {
+  const col = c || C.blanc;
+  cercle(ctx, cx, cy, r, et(0, 0.35, p), col, 2);
+  bille(ctx, cx - r * 0.62, cy, r * 0.26, et(0.25, 0.3, p), C.bleu);
+  const q = et(0.4, 0.3, p);
+  /* La rétine, au fond de l'œil. */
+  ctx.save();
+  ctx.strokeStyle = C.rouge; ctx.lineWidth = 2.4; ctx.globalAlpha = ease(q) * 0.9;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.86, -Math.PI * 0.42, Math.PI * 0.42); ctx.stroke();
+  ctx.restore();
+}
+
+/* Prisme et spectre : la lumière blanche se décompose. */
+function prisme(ctx, cx, cy, taille, p, c) {
+  const col = c || C.blanc;
+  const A = { x: cx, y: cy - taille }, B = { x: cx - taille * 0.9, y: cy + taille * 0.7 }, D = { x: cx + taille * 0.9, y: cy + taille * 0.7 };
+  seg(ctx, A.x, A.y, B.x, B.y, et(0, 0.3, p), col, 2.2);
+  seg(ctx, B.x, B.y, D.x, D.y, et(0.1, 0.3, p), col, 2.2);
+  seg(ctx, D.x, D.y, A.x, A.y, et(0.2, 0.3, p), col, 2.2);
+  return { A, B, D };
+}
+
+/* Bande spectrale : du rouge au violet, comme après dispersion. */
+function spectre(ctx, x, y, w, h, p, opts) {
+  opts = opts || {};
+  const q = ease(cl(p));
+  if (q <= 0) return;
+  ctx.save();
+  const grd = ctx.createLinearGradient(x, 0, x + w, 0);
+  grd.addColorStop(0.00, 'rgba(230,130,110,0.75)');
+  grd.addColorStop(0.20, 'rgba(235,170,110,0.75)');
+  grd.addColorStop(0.38, 'rgba(230,210,120,0.75)');
+  grd.addColorStop(0.56, 'rgba(130,210,160,0.75)');
+  grd.addColorStop(0.76, 'rgba(130,200,230,0.75)');
+  grd.addColorStop(1.00, 'rgba(185,150,225,0.75)');
+  ctx.globalAlpha = q; ctx.fillStyle = grd;
+  ctx.fillRect(x, y, w * q, h);
+  ctx.restore();
+  if (opts.legende !== false) {
+    txt(ctx, 'rouge', x + w * 0.06, y + h + 20, cl(q * 1.2), C.rouge, 13, SANS);
+    txt(ctx, 'vert', x + w * 0.52, y + h + 20, cl(q * 1.2), C.vert, 13, SANS);
+    txt(ctx, 'violet', x + w * 0.94, y + h + 20, cl(q * 1.2), C.violet, 13, SANS);
+  }
+}
+
+/* Sinusoïde : la représentation d'un son pur sur un oscillogramme. */
+function sinusoide(ctx, ox, oy, larg, amp, nPeriodes, p, c, opts) {
+  opts = opts || {};
+  const pts = [];
+  const n = 140;
+  for (let i = 0; i <= n; i++) {
+    const u = i / n;
+    pts.push({ x: ox + larg * u, y: oy - Math.sin(u * Math.PI * 2 * nPeriodes + (opts.phase || 0)) * amp });
+  }
+  courbe(ctx, pts, cl(p), c || C.jaune, opts.ep || 2.4);
+  return pts;
+}
+
+/* Le son se propage par zones comprimées et dilatées : on le montre par
+   des tranches de particules plus ou moins serrées. */
+function ondeSonore(ctx, x, y, w, h, p, opts) {
+  opts = opts || {};
+  const bandes = opts.bandes || 8;
+  const rnd = graine(opts.seed || 3);
+  for (let b = 0; b < bandes; b++) {
+    const dense = b % 2 === 0;
+    const n = dense ? 14 : 5;
+    const bx = x + (w * b) / bandes;
+    const bw = w / bandes;
+    for (let i = 0; i < n; i++) {
+      const q = et(0.05 + b * 0.08, 0.3, p);
+      if (q <= 0) continue;
+      bille(ctx, bx + rnd() * bw, y + rnd() * h, 3.4, q, dense ? C.jaune : 'rgba(240,236,224,0.35)');
+    }
+  }
+}
+
+/* Haut-parleur : le carré et son pavillon. */
+function hautParleur(ctx, cx, cy, taille, p, c) {
+  const col = c || C.blanc;
+  cadre(ctx, cx - taille * 0.5, cy - taille * 0.4, taille * 0.5, taille * 0.8, et(0, 0.3, p), col, 2);
+  seg(ctx, cx, cy - taille * 0.4, cx + taille * 0.5, cy - taille * 0.8, et(0.15, 0.3, p), col, 2);
+  seg(ctx, cx, cy + taille * 0.4, cx + taille * 0.5, cy + taille * 0.8, et(0.2, 0.3, p), col, 2);
+  seg(ctx, cx + taille * 0.5, cy - taille * 0.8, cx + taille * 0.5, cy + taille * 0.8, et(0.25, 0.3, p), col, 2);
+}
+
+/* Signal carré : la forme d'un signal numérique, bit à bit. */
+function signalBinaire(ctx, ox, oy, larg, haut, bits, p, c) {
+  const col = c || C.vert;
+  const pas = larg / bits.length;
+  let prev = null;
+  bits.forEach((b, i) => {
+    const y = b ? oy - haut : oy;
+    const x1 = ox + i * pas, x2 = x1 + pas;
+    const q = et(0.05 + i * (0.7 / bits.length), 0.25, p);
+    if (q <= 0) return;
+    if (prev !== null && prev !== y) seg(ctx, x1, prev, x1, y, q, col, 2.2);
+    seg(ctx, x1, y, x2, y, q, col, 2.4);
+    txt(ctx, String(b), x1 + pas / 2, oy + 28, q, col, 16, MONO);
+    prev = y;
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIGNAUX, CHAPITRE 1 — LUMIÈRE ET VISION
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CS1 = 'Lumière et vision';
+
+LECONS.push(lecon({
+  id: 'pc_lum_1', chapitre: CS1, niveau: '5ème',
+  titre: 'Sources, rayons et ombres',
+  desc: "D'où vient la lumière, comment elle se propage, et pourquoi les ombres ont la forme qu'elles ont.",
+  steps: [
+
+  { caption: "Deux familles d'objets : ceux qui produisent leur lumière, et ceux qui ne font que la renvoyer.",
+    label: 'Les sources',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'ORIGINE', 'Sources primaires et objets diffusants', p, C.jaune);
+      const y = H * 0.48;
+      source(ctx, W * 0.22, y, 26, et(0.05, 0.35, p), C.jaune);
+      txt(ctx, 'SOURCE PRIMAIRE', W * 0.22, y + 84, et(0.25, 0.25, p), C.jaune, 17, MONO);
+      txt(ctx, 'elle produit sa lumière', W * 0.22, y + 108, et(0.3, 0.25, p), C.doux, 14, SANS);
+      txt(ctx, 'Soleil, flamme, lampe, écran', W * 0.22, y + 130, et(0.34, 0.25, p), C.doux, 13, SANS);
+
+      /* L'objet diffusant renvoie la lumière qu'il reçoit. */
+      const ox = W * 0.68;
+      cadre(ctx, ox - 30, y - 30, 60, 60, et(0.4, 0.3, p), C.bleu, 2);
+      rayon(ctx, W * 0.42, y - 40, ox - 34, y - 12, et(0.45, 0.3, p), C.jaune);
+      for (let i = 0; i < 5; i++) {
+        const a = -1.1 + i * 0.55;
+        rayon(ctx, ox, y, ox + Math.cos(a) * 88, y + Math.sin(a) * 88, et(0.58 + i * 0.04, 0.3, p), C.bleu);
+      }
+      txt(ctx, 'OBJET DIFFUSANT', ox, y + 116, et(0.72, 0.25, p), C.bleu, 17, MONO);
+      txt(ctx, 'il renvoie la lumière reçue', ox, y + 140, et(0.76, 0.24, p), C.doux, 14, SANS);
+
+      txt(ctx, "La Lune n'est pas une source primaire : elle diffuse la lumière du Soleil.",
+          W * 0.5, H * 0.95, et(0.86, 0.14, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Dans un milieu transparent et homogène, la lumière se propage en ligne droite : c'est le modèle du rayon lumineux.",
+    label: 'La propagation rectiligne',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MODÈLE', 'La propagation rectiligne', p, C.vert);
+      const sx = W * 0.16, sy = H * 0.50;
+      source(ctx, sx, sy, 20, et(0.03, 0.3, p), C.jaune);
+      /* Un faisceau : un ensemble de rayons issus de la source. */
+      for (let i = -3; i <= 3; i++) {
+        const q = et(0.2 + Math.abs(i) * 0.05, 0.3, p);
+        rayon(ctx, sx + 26, sy, W * 0.80, sy + i * H * 0.09, q, C.jaune);
+      }
+      txt(ctx, 'un rayon', W * 0.60, sy - H * 0.30, et(0.5, 0.25, p), C.jaune, 15, SANS);
+      txt(ctx, 'le faisceau = un ensemble de rayons', W * 0.60, sy + H * 0.32, et(0.58, 0.25, p), C.doux, 15, SANS);
+
+      puces(ctx, W * 0.08, H * 0.86, [
+        { t: "Transparent : la lumière le traverse.  Homogène : partout pareil.", c: C.blanc, s: 16 },
+        { t: "Le rayon est un modèle : il n'existe pas d'objet « rayon » dans la nature.", c: C.doux, s: 16 },
+      ], p, { debut: 0.68, pas: 0.14, dy: 30 });
+    }
+  },
+
+  { caption: "Un objet opaque arrête la lumière : derrière lui se forme un cône d'ombre, et sur l'écran une ombre portée.",
+    label: 'Les ombres',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONSÉQUENCE', "Ombres et cône d'ombre", p, C.violet);
+      const sx = W * 0.12, sy = H * 0.52;
+      source(ctx, sx, sy, 16, et(0.03, 0.25, p), C.jaune);
+      /* La balle opaque. */
+      const bx = W * 0.42, br = Math.min(W * 0.045, H * 0.08);
+      const q = et(0.15, 0.3, p);
+      bille(ctx, bx, sy, br, q, 'rgba(120,120,115,0.9)');
+      txt(ctx, 'objet opaque', bx, sy - br - 26, et(0.25, 0.25, p), C.doux, 14, SANS);
+      /* L'écran. */
+      const ex = W * 0.82;
+      seg(ctx, ex, H * 0.16, ex, H * 0.88, et(0.2, 0.3, p), C.blanc, 2.4);
+      txt(ctx, 'écran', ex + 34, H * 0.20, et(0.3, 0.25, p), C.doux, 15, SANS);
+
+      /* Les deux rayons tangents délimitent le cône d'ombre. */
+      const k = (ex - sx) / (bx - sx);
+      const yh = sy - br * k, yb = sy + br * k;
+      rayon(ctx, sx + 20, sy, ex, yh, et(0.35, 0.3, p), C.jaune, { sens: false });
+      rayon(ctx, sx + 20, sy, ex, yb, et(0.4, 0.3, p), C.jaune, { sens: false });
+      const qo = et(0.5, 0.35, p);
+      if (qo > 0) aplat(ctx, [{x:bx,y:sy-br},{x:ex,y:yh},{x:ex,y:yb},{x:bx,y:sy+br}], qo, 'rgba(20,20,18,0.55)');
+      txt(ctx, "cône d'ombre", (bx + ex) / 2, sy - H * 0.02, et(0.62, 0.25, p), C.violet, 15, SANS);
+      const qp = et(0.7, 0.25, p);
+      seg(ctx, ex, yh, ex, yb, qp, C.violet, 5);
+      txt(ctx, 'ombre portée', ex + 60, (yh + yb) / 2, et(0.78, 0.25, p), C.violet, 15, SANS);
+
+      txt(ctx, "L'ombre propre est la face non éclairée de l'objet lui-même.",
+          W * 0.5, H * 0.95, et(0.88, 0.12, p), C.or, 16, SANS);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_lum_2', chapitre: CS1, niveau: '5ème',
+  titre: 'Voir un objet',
+  desc: "La condition pour qu'un objet soit visible, le rôle de l'œil, et la vitesse à laquelle la lumière nous parvient.",
+  steps: [
+
+  { caption: "Pour voir un objet, il faut que la lumière qu'il envoie entre dans l'œil. Sans lumière, pas de vision.",
+    label: 'La condition',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONDITION', "Le trajet complet de la lumière", p, C.bleu);
+      const sy = H * 0.34;
+      source(ctx, W * 0.16, sy, 20, et(0.03, 0.3, p), C.jaune, 'lampe');
+      const ox = W * 0.50, oy = H * 0.60;
+      cadre(ctx, ox - 30, oy - 30, 60, 60, et(0.15, 0.3, p), C.vert, 2);
+      txt(ctx, 'objet', ox, oy + 52, et(0.22, 0.25, p), C.vert, 15, SANS);
+      oeil(ctx, W * 0.84, H * 0.36, Math.min(W * 0.035, H * 0.06), et(0.25, 0.3, p));
+      txt(ctx, 'œil', W * 0.84, H * 0.36 + 56, et(0.35, 0.25, p), C.doux, 15, SANS);
+
+      rayon(ctx, W * 0.20, sy + 12, ox - 32, oy - 20, et(0.35, 0.3, p), C.jaune);
+      txt(ctx, '1. la lampe éclaire l’objet', W * 0.28, H * 0.52, et(0.45, 0.25, p), C.jaune, 15, SANS);
+      rayon(ctx, ox + 32, oy - 20, W * 0.80, H * 0.40, et(0.55, 0.3, p), C.vert);
+      txt(ctx, '2. l’objet diffuse vers l’œil', W * 0.70, H * 0.58, et(0.65, 0.25, p), C.vert, 15, SANS);
+
+      puces(ctx, W * 0.10, H * 0.82, [
+        { t: "Les deux étapes sont nécessaires : sans lumière reçue, l'objet reste invisible.", c: C.blanc, s: 16 },
+        { t: "L'œil n'émet rien : il ne fait que recevoir. C'est une erreur très répandue.", c: C.rouge, s: 16 },
+      ], p, { debut: 0.74, pas: 0.13, dy: 32 });
+    }
+  },
+
+  { caption: "Dans l'œil, le cristallin fait converger la lumière sur la rétine, qui envoie l'information au cerveau.",
+    label: "L'œil",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'ANATOMIE', "Le trajet dans l'œil", p, C.rouge);
+      const cx = W * 0.44, cy = H * 0.52, r = Math.min(W * 0.11, H * 0.20);
+      oeil(ctx, cx, cy, r, p);
+      for (let i = -1; i <= 1; i++) {
+        rayon(ctx, cx - r * 3.2, cy + i * H * 0.10, cx - r * 0.62, cy + i * H * 0.02, et(0.3 + Math.abs(i) * 0.05, 0.3, p), C.jaune);
+        rayon(ctx, cx - r * 0.62, cy + i * H * 0.02, cx + r * 0.84, cy, et(0.45, 0.3, p), C.jaune, { sens: false });
+      }
+      puces(ctx, W * 0.62, H * 0.34, [
+        { t: "Le CRISTALLIN joue le rôle d'une lentille.", c: C.bleu },
+        { t: "Il fait converger la lumière sur la RÉTINE.", c: C.rouge },
+        { t: "La rétine convertit la lumière en signal nerveux.", c: C.vert },
+        { t: "Le nerf optique le porte jusqu'au cerveau.", c: C.doux },
+      ], p, { debut: 0.5, pas: 0.12, dy: 46, s: 17 });
+    }
+  },
+
+  { caption: "La lumière va vite, mais pas infiniment vite : 300 000 kilomètres par seconde.",
+    label: 'La vitesse de la lumière',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'VITESSE', 'Trois cent mille kilomètres par seconde', p, C.jaune);
+      encadre(ctx, W * 0.5, H * 0.32, W * 0.66, H * 0.15, 'c = 300 000 km/s', et(0.05, 0.3, p), C.or, 30);
+      tableau(ctx, W * 0.14, H * 0.50, W * 0.72,
+        [ { t: 'TRAJET' }, { t: 'DURÉE DU VOYAGE' } ],
+        [
+          [ 'Tour de la Terre', { t: '0,13 s', c: C.jaune, f: MONO } ],
+          [ 'Lune → Terre', { t: '1,3 s', c: C.jaune, f: MONO } ],
+          [ 'Soleil → Terre', { t: '8 min 20 s', c: C.jaune, f: MONO } ],
+          [ 'Étoile la plus proche', { t: '4,2 ans', c: C.rouge, f: MONO } ],
+        ], p, { dy: 44 });
+      txt(ctx, "Regarder loin, c'est regarder dans le passé : le Soleil qu'on voit date de 8 minutes.",
+          W * 0.5, H * 0.87, et(0.72, 0.2, p), C.blanc, 17, SANS);
+      txt(ctx, "L'année-lumière est une DISTANCE : celle parcourue en un an, soit 9 460 milliards de km.",
+          W * 0.5, H * 0.94, et(0.86, 0.14, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Lumière et vision',
+    body: [
+      { t: "Sources primaires : elles produisent la lumière. Diffusants : ils la renvoient.", c: C.jaune },
+      { t: "Dans un milieu transparent et homogène, la lumière va en ligne droite.", c: C.vert },
+      { t: "Un objet opaque crée un cône d'ombre et une ombre portée.", c: C.violet },
+      { t: "On voit un objet quand la lumière qu'il envoie entre dans l'œil.", c: C.bleu },
+      { t: "c = 300 000 km/s ; l'année-lumière est une distance.", c: C.blanc, f: MONO },
+    ],
+    encadre: 'source → objet → œil',
+    caption: "Voir suppose un trajet complet de la lumière jusqu'à l'œil."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIGNAUX, CHAPITRE 2 — SIGNAUX LUMINEUX
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CS2 = 'Signaux lumineux';
+
+LECONS.push(lecon({
+  id: 'pc_siglum_1', chapitre: CS2, niveau: '4ème',
+  titre: 'Lumières colorées',
+  desc: "La lumière blanche est un mélange : le prisme le prouve, et la synthèse additive le refait à l'envers.",
+  steps: [
+
+  { caption: "Un prisme décompose la lumière blanche : elle contient toutes les couleurs, du rouge au violet.",
+    label: 'La dispersion',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EXPÉRIENCE', 'Le prisme décompose la lumière', p, C.violet);
+      const px = W * 0.42, py = H * 0.50, t = Math.min(W * 0.075, H * 0.13);
+      prisme(ctx, px, py, t, p);
+      rayon(ctx, W * 0.10, py + t * 0.1, px - t * 0.42, py + t * 0.1, et(0.25, 0.3, p), C.blanc, { ep: 2.6 });
+      txt(ctx, 'lumière blanche', W * 0.18, py - 26, et(0.32, 0.25, p), C.blanc, 15, SANS);
+      /* Le faisceau ressort étalé : chaque couleur est déviée différemment. */
+      spectre(ctx, px + t * 0.5, py - t * 0.1, W * 0.34, 44, et(0.5, 0.4, p));
+      txt(ctx, 'le SPECTRE', px + W * 0.18, py - t * 0.1 - 24, et(0.66, 0.25, p), C.jaune, 17, MONO);
+
+      puces(ctx, W * 0.10, H * 0.82, [
+        { t: "Chaque couleur est déviée d'un angle différent : elles se séparent.", c: C.blanc, s: 16 },
+        { t: "La lumière blanche est POLYCHROMATIQUE ; un laser est monochromatique.", c: C.jaune, s: 16 },
+        { t: "L'arc-en-ciel est le même phénomène, avec des gouttes d'eau.", c: C.bleu, s: 16 },
+      ], p, { debut: 0.7, pas: 0.1, dy: 30 });
+    }
+  },
+
+  { caption: "L'opération inverse : superposer les trois lumières rouge, verte et bleue redonne du blanc.",
+    label: 'La synthèse additive',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'SYNTHÈSE ADDITIVE', 'Trois lumières suffisent', p, C.vert);
+      const cx = W * 0.36, cy = H * 0.54, r = Math.min(W * 0.10, H * 0.18);
+      const cercles = [
+        { dx: 0, dy: -r * 0.6, c: 'rgba(230,130,110,0.30)', b: C.rouge, n: 'ROUGE' },
+        { dx: -r * 0.55, dy: r * 0.45, c: 'rgba(130,210,160,0.30)', b: C.vert, n: 'VERT' },
+        { dx: r * 0.55, dy: r * 0.45, c: 'rgba(130,200,230,0.30)', b: C.bleu, n: 'BLEU' },
+      ];
+      cercles.forEach((k, i) => {
+        const q = et(0.08 + i * 0.14, 0.35, p);
+        const a = ease(q);
+        if (a > 0) {
+          ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = k.c;
+          ctx.beginPath(); ctx.arc(cx + k.dx, cy + k.dy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+        cercle(ctx, cx + k.dx, cy + k.dy, r, q, k.b, 1.8);
+      });
+      txt(ctx, 'blanc', cx, cy + r * 0.1, et(0.55, 0.3, p), C.blanc, 17, MONO);
+
+      puces(ctx, W * 0.60, H * 0.34, [
+        { t: "ROUGE + VERT + BLEU = blanc", c: C.blanc, f: MONO, s: 17 },
+        { t: "rouge + vert = jaune", c: C.jaune, f: MONO, s: 16 },
+        { t: "rouge + bleu = magenta", c: C.violet, f: MONO, s: 16 },
+        { t: "vert + bleu = cyan", c: C.bleu, f: MONO, s: 16 },
+        { t: "C'est le principe de tous les écrans : des pixels R, V, B.", c: C.doux, s: 16 },
+      ], p, { debut: 0.5, pas: 0.11, dy: 42 });
+    }
+  },
+
+  { caption: "La couleur d'un objet dépend de ce qu'il diffuse : il renvoie certaines couleurs et absorbe les autres.",
+    label: "La couleur d'un objet",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EXPLICATION', "Pourquoi une tomate est rouge", p, C.rouge);
+      const ox = W * 0.50, oy = H * 0.52;
+      spectre(ctx, W * 0.10, oy - 18, W * 0.26, 36, et(0.05, 0.35, p), { legende: false });
+      txt(ctx, 'lumière blanche', W * 0.23, oy - 42, et(0.2, 0.25, p), C.blanc, 15, SANS);
+      bille(ctx, ox, oy, Math.min(W * 0.045, H * 0.08), et(0.25, 0.3, p), C.rouge);
+      txt(ctx, 'objet rouge', ox, oy + 74, et(0.35, 0.25, p), C.rouge, 15, SANS);
+      rayon(ctx, ox + 40, oy - 12, W * 0.86, oy - 40, et(0.45, 0.3, p), C.rouge, { ep: 2.4 });
+      txt(ctx, 'il DIFFUSE le rouge', W * 0.78, oy - 66, et(0.55, 0.25, p), C.rouge, 16, SANS);
+      txt(ctx, 'il ABSORBE les autres couleurs', ox + 20, oy + 46, et(0.65, 0.25, p), C.doux, 16, SANS, 'left');
+
+      puces(ctx, W * 0.10, H * 0.84, [
+        { t: "Un objet n'a pas de couleur « en soi » : elle dépend de la lumière reçue.", c: C.blanc, s: 16 },
+        { t: "Éclairé en lumière bleue, un objet rouge paraît noir : il n'a rien à diffuser.", c: C.jaune, s: 16 },
+      ], p, { debut: 0.74, pas: 0.12, dy: 32 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_siglum_2', chapitre: CS2, niveau: '3ème',
+  titre: 'La lumière transporte une information',
+  desc: "Comment un signal lumineux porte un message, et ce que la vitesse de la lumière permet de mesurer.",
+  steps: [
+
+  { caption: "Un signal lumineux peut transporter une information : il suffit de le faire varier dans le temps.",
+    label: 'Un signal porteur',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PRINCIPE', "Allumer, éteindre, coder", p, C.jaune);
+      signalBinaire(ctx, W * 0.14, H * 0.52, W * 0.72, H * 0.16, [1,0,1,1,0,0,1,0], p, C.jaune);
+      txt(ctx, 'allumé = 1     éteint = 0', W * 0.5, H * 0.30, et(0.05, 0.25, p), C.doux, 17, SANS);
+      puces(ctx, W * 0.12, H * 0.76, [
+        { t: "Phare, morse, télécommande, fibre optique : le même principe.", c: C.blanc },
+        { t: "Le signal se propage en ligne droite, à 300 000 km/s.", c: C.vert },
+        { t: "Aucune matière n'est transportée : seule l'information voyage.", c: C.jaune },
+      ], p, { debut: 0.62, pas: 0.12, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "La fibre optique guide la lumière sur des centaines de kilomètres : le signal rebondit sans sortir du fil.",
+    label: 'La fibre optique',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'APPLICATION', 'La fibre optique', p, C.bleu);
+      const y = H * 0.48, haut = H * 0.10;
+      seg(ctx, W * 0.10, y - haut, W * 0.90, y - haut, et(0.05, 0.3, p), C.bleu, 2.4);
+      seg(ctx, W * 0.10, y + haut, W * 0.90, y + haut, et(0.08, 0.3, p), C.bleu, 2.4);
+      /* Le rayon zigzague : il se réfléchit sur les parois. */
+      let x = W * 0.11, haut_bas = -1;
+      for (let i = 0; i < 7; i++) {
+        const x2 = x + W * 0.113;
+        rayon(ctx, x, y + haut_bas * haut, x2, y - haut_bas * haut, et(0.2 + i * 0.07, 0.3, p), C.jaune, { sens: i === 3 });
+        x = x2; haut_bas = -haut_bas;
+      }
+      puces(ctx, W * 0.12, H * 0.74, [
+        { t: "La lumière se réfléchit sur les parois : elle reste piégée dans la fibre.", c: C.blanc },
+        { t: "Débit énorme, très peu de pertes, insensible aux perturbations électriques.", c: C.vert },
+        { t: "C'est l'ossature d'Internet, y compris sous les océans.", c: C.jaune },
+      ], p, { debut: 0.66, pas: 0.12, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "Puisque la lumière a une vitesse connue, mesurer une durée revient à mesurer une distance.",
+    label: 'Mesurer une distance',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MÉTHODE', "Le télémètre laser", p, C.vert);
+      const y = H * 0.42;
+      bille(ctx, W * 0.14, y, 14, et(0.05, 0.25, p), C.jaune);
+      txt(ctx, 'émetteur', W * 0.14, y + 40, et(0.12, 0.25, p), C.doux, 15, SANS);
+      seg(ctx, W * 0.82, H * 0.24, W * 0.82, H * 0.60, et(0.1, 0.3, p), C.blanc, 2.4);
+      txt(ctx, 'obstacle', W * 0.86, H * 0.22, et(0.2, 0.25, p), C.doux, 15, SANS);
+      rayon(ctx, W * 0.17, y - 12, W * 0.81, y - 12, et(0.25, 0.3, p), C.jaune, { ep: 2.2 });
+      rayon(ctx, W * 0.81, y + 12, W * 0.17, y + 12, et(0.45, 0.3, p), C.vert, { ep: 2.2 });
+      txt(ctx, "aller", W * 0.48, y - 34, et(0.35, 0.25, p), C.jaune, 15, SANS);
+      txt(ctx, "retour", W * 0.48, y + 36, et(0.55, 0.25, p), C.vert, 15, SANS);
+
+      puces(ctx, W * 0.14, H * 0.66, [
+        { t: "On mesure la durée t de l'aller-retour.", c: C.blanc, s: 17 },
+        { t: "La lumière parcourt alors 2 × d, donc :  d = c × t / 2", c: C.jaune, f: MONO, s: 18 },
+        { t: "Le même principe donne la distance Terre–Lune, au centimètre près.", c: C.doux, s: 16 },
+      ], p, { debut: 0.62, pas: 0.12, dy: 38 });
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Signaux lumineux',
+    body: [
+      { t: "La lumière blanche contient toutes les couleurs : le prisme le montre.", c: C.violet },
+      { t: "Synthèse additive : rouge + vert + bleu = blanc.", c: C.blanc },
+      { t: "La couleur d'un objet vient de ce qu'il diffuse et de ce qu'il absorbe.", c: C.rouge },
+      { t: "Un signal lumineux transporte de l'information, pas de la matière.", c: C.jaune },
+      { t: "d = c × t / 2 pour un aller-retour.", c: C.vert, f: MONO },
+    ],
+    encadre: 'R + V + B = blanc',
+    caption: "La lumière porte des couleurs, et avec elles de l'information."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIGNAUX, CHAPITRE 3 — SIGNAUX SONORES
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CS3 = 'Signaux sonores';
+
+LECONS.push(lecon({
+  id: 'pc_son_1', chapitre: CS3, niveau: '4ème',
+  titre: 'Le son a besoin de matière',
+  desc: "Comment naît un son, comment il se propage, et pourquoi il ne traverse pas le vide.",
+  steps: [
+
+  { caption: "Un son naît toujours d'une vibration : une corde, une membrane, une colonne d'air.",
+    label: "L'émission",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'ORIGINE', 'Tout son vient d’une vibration', p, C.jaune);
+      const cx = W * 0.30, cy = H * 0.50;
+      hautParleur(ctx, cx, cy, Math.min(W * 0.09, H * 0.16), et(0.05, 0.3, p));
+      /* La membrane vibre : on la montre par des arcs successifs. */
+      for (let i = 0; i < 3; i++) {
+        const q = et(0.25 + i * 0.08, 0.3, p);
+        const r = 44 + i * 26 + Math.sin(p * 8) * 4;
+        ctx.save();
+        ctx.strokeStyle = C.jaune; ctx.lineWidth = 2; ctx.globalAlpha = ease(q) * (0.7 - i * 0.16);
+        ctx.beginPath(); ctx.arc(cx + 30, cy, r, -0.8, 0.8); ctx.stroke();
+        ctx.restore();
+      }
+      puces(ctx, W * 0.54, H * 0.36, [
+        { t: "La membrane du haut-parleur va et vient très vite.", c: C.blanc },
+        { t: "Elle pousse l'air devant elle, puis le laisse revenir.", c: C.jaune },
+        { t: "Une corde de guitare, une peau de tambour : même principe.", c: C.vert },
+        { t: "Arrêter la vibration, c'est arrêter le son.", c: C.rouge },
+      ], p, { debut: 0.45, pas: 0.12, dy: 46, s: 17 });
+    }
+  },
+
+  { caption: "Le son se propage de proche en proche : l'air est alternativement comprimé et dilaté. Il faut donc un milieu matériel.",
+    label: 'La propagation',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PROPAGATION', "Des zones comprimées et dilatées", p, C.bleu);
+      hautParleur(ctx, W * 0.12, H * 0.48, 56, et(0.03, 0.25, p));
+      ondeSonore(ctx, W * 0.22, H * 0.34, W * 0.68, H * 0.28, p, { bandes: 8, seed: 12 });
+      txt(ctx, 'comprimé', W * 0.30, H * 0.28, et(0.5, 0.25, p), C.jaune, 15, SANS);
+      txt(ctx, 'dilaté', W * 0.39, H * 0.28, et(0.55, 0.25, p), C.doux, 15, SANS);
+      puces(ctx, W * 0.12, H * 0.74, [
+        { t: "Les particules d'air vibrent SUR PLACE : elles ne voyagent pas.", c: C.blanc },
+        { t: "C'est la perturbation qui se déplace, pas la matière.", c: C.jaune },
+        { t: "Sans matière, rien ne se transmet : dans le vide, aucun son.", c: C.rouge },
+      ], p, { debut: 0.62, pas: 0.12, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "La vitesse du son dépend du milieu : plus les particules sont proches, plus vite la perturbation se transmet.",
+    label: 'La vitesse du son',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'VITESSE', "Elle dépend du milieu traversé", p, C.vert);
+      tableau(ctx, W * 0.16, H * 0.32, W * 0.68,
+        [ { t: 'MILIEU' }, { t: 'VITESSE DU SON' } ],
+        [
+          [ { t: 'Vide', c: C.rouge }, { t: 'aucune propagation', c: C.rouge } ],
+          [ 'Air (20 °C)', { t: '340 m/s', c: C.jaune, f: MONO } ],
+          [ 'Eau', { t: '1 500 m/s', c: C.bleu, f: MONO } ],
+          [ 'Acier', { t: '5 000 m/s', c: C.vert, f: MONO } ],
+        ], p, { dy: 46 });
+      txt(ctx, "Le son est un million de fois plus lent que la lumière.",
+          W * 0.5, H * 0.72, et(0.6, 0.22, p), C.blanc, 18, SANS);
+      txt(ctx, "D'où l'orage : on voit l'éclair, puis on entend le tonnerre 3 s plus tard par kilomètre.",
+          W * 0.5, H * 0.82, et(0.74, 0.2, p), C.jaune, 17, SANS);
+      txt(ctx, "d = v × t   →   340 × 3 ≈ 1 000 m", W * 0.5, H * 0.91, et(0.86, 0.14, p), C.vert, 20, MONO);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_son_2', chapitre: CS3, niveau: '4ème',
+  titre: 'Hauteur, intensité et audition',
+  desc: "Lire un oscillogramme, distinguer grave et aigu, fort et faible — et protéger ses oreilles.",
+  steps: [
+
+  { caption: "Sur un oscillogramme, un son pur apparaît comme une courbe qui se répète : une période, puis la même, indéfiniment.",
+    label: "L'oscillogramme",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'ENREGISTRER', "La forme d'un son", p, C.jaune);
+      const ox = W * 0.14, oy = H * 0.52, larg = W * 0.72, amp = H * 0.16;
+      seg(ctx, ox, oy, ox + larg, oy, et(0.03, 0.2, p), 'rgba(240,236,224,0.25)', 1.4);
+      sinusoide(ctx, ox, oy, larg, amp, 3, et(0.1, 0.5, p), C.jaune);
+      /* La période marquée entre deux motifs identiques. */
+      const q = et(0.6, 0.3, p);
+      const T = larg / 3;
+      ctx.save(); ctx.setLineDash([4, 5]);
+      seg(ctx, ox, oy, ox, oy - amp - 26, q, 'rgba(240,236,224,0.3)', 1.3);
+      seg(ctx, ox + T, oy, ox + T, oy - amp - 26, q, 'rgba(240,236,224,0.3)', 1.3);
+      ctx.setLineDash([]); ctx.restore();
+      fleche(ctx, ox, oy - amp - 20, ox + T, oy - amp - 20, et(0.68, 0.25, p), C.vert, 1.8);
+      txt(ctx, 'période T', ox + T / 2, oy - amp - 42, et(0.74, 0.25, p), C.vert, 16, SANS);
+      fleche(ctx, ox + larg * 0.86, oy, ox + larg * 0.86, oy - amp, et(0.78, 0.25, p), C.rouge, 1.8);
+      txt(ctx, 'amplitude', ox + larg * 0.96, oy - amp / 2, et(0.84, 0.25, p), C.rouge, 15, SANS);
+
+      txt(ctx, "La fréquence f est le nombre de périodes par seconde : f = 1 / T, en hertz (Hz).",
+          W * 0.5, H * 0.90, et(0.88, 0.12, p), C.or, 17, SANS);
+    }
+  },
+
+  { caption: "La fréquence donne la hauteur : plus elle est grande, plus le son est aigu.",
+    label: 'Grave ou aigu',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'HAUTEUR', 'La fréquence fait le grave et l’aigu', p, C.bleu);
+      const ox = W * 0.30, larg = W * 0.56, amp = H * 0.08;
+      seg(ctx, ox, H * 0.40, ox + larg, H * 0.40, et(0.03, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      sinusoide(ctx, ox, H * 0.40, larg, amp, 2, et(0.08, 0.4, p), C.bleu);
+      txt(ctx, 'GRAVE', ox - 30, H * 0.40, et(0.1, 0.25, p), C.bleu, 18, MONO, 'right');
+      txt(ctx, 'basse fréquence', ox - 30, H * 0.40 + 24, et(0.14, 0.25, p), C.doux, 13, SANS, 'right');
+
+      seg(ctx, ox, H * 0.68, ox + larg, H * 0.68, et(0.4, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      sinusoide(ctx, ox, H * 0.68, larg, amp, 7, et(0.45, 0.4, p), C.rouge);
+      txt(ctx, 'AIGU', ox - 30, H * 0.68, et(0.5, 0.25, p), C.rouge, 18, MONO, 'right');
+      txt(ctx, 'haute fréquence', ox - 30, H * 0.68 + 24, et(0.54, 0.25, p), C.doux, 13, SANS, 'right');
+
+      txt(ctx, "L'oreille humaine perçoit de 20 Hz à 20 000 Hz — et l'aigu se perd avec l'âge.",
+          W * 0.5, H * 0.90, et(0.8, 0.2, p), C.or, 17, SANS);
+    }
+  },
+
+  { caption: "L'amplitude, elle, donne l'intensité : c'est le volume, mesuré en décibels.",
+    label: 'Fort ou faible',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'INTENSITÉ', "L'amplitude fait le volume", p, C.rouge);
+      const ox = W * 0.10, larg = W * 0.36;
+      seg(ctx, ox, H * 0.44, ox + larg, H * 0.44, et(0.03, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      sinusoide(ctx, ox, H * 0.44, larg, H * 0.05, 3, et(0.08, 0.4, p), C.vert);
+      txt(ctx, 'SON FAIBLE', ox + larg / 2, H * 0.60, et(0.2, 0.25, p), C.vert, 17, MONO);
+
+      const ox2 = W * 0.54;
+      seg(ctx, ox2, H * 0.44, ox2 + larg, H * 0.44, et(0.3, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      sinusoide(ctx, ox2, H * 0.44, larg, H * 0.14, 3, et(0.35, 0.4, p), C.rouge);
+      txt(ctx, 'SON FORT', ox2 + larg / 2, H * 0.60, et(0.5, 0.25, p), C.rouge, 17, MONO);
+      txt(ctx, 'même fréquence : même note, joué plus fort', W * 0.5, H * 0.68, et(0.58, 0.25, p), C.doux, 16, SANS);
+
+      const seuils = [
+        { t: 'conversation', v: '60 dB', c: C.vert },
+        { t: 'seuil de risque', v: '85 dB', c: C.jaune },
+        { t: 'concert', v: '105 dB', c: C.rouge },
+        { t: 'seuil de douleur', v: '120 dB', c: C.rouge },
+      ];
+      seuils.forEach((s, i) => {
+        const x = W * (0.10 + i * 0.22);
+        const q = et(0.66 + i * 0.07, 0.25, p);
+        txt(ctx, s.v, x + W * 0.08, H * 0.82, q, s.c, 19, MONO);
+        txt(ctx, s.t, x + W * 0.08, H * 0.88, q, C.doux, 13, SANS);
+      });
+      txt(ctx, "Au-delà de 85 dB prolongés, les cellules de l'oreille se détruisent sans jamais repousser.",
+          W * 0.5, H * 0.96, et(0.9, 0.1, p), C.rouge, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Signaux sonores',
+    body: [
+      { t: "Un son naît d'une vibration et se propage de proche en proche.", c: C.blanc },
+      { t: "Il lui faut un milieu matériel : pas de son dans le vide.", c: C.rouge },
+      { t: "Dans l'air : 340 m/s, un million de fois plus lent que la lumière.", c: C.jaune, f: MONO },
+      { t: "Fréquence → hauteur (grave/aigu), en hertz.", c: C.bleu },
+      { t: "Amplitude → intensité (volume), en décibels ; danger dès 85 dB.", c: C.vert },
+    ],
+    encadre: 'f = 1 / T',
+    caption: "Deux caractéristiques suffisent à décrire un son : sa hauteur et son intensité."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   SIGNAUX, CHAPITRE 4 — SIGNAUX ET COMMUNICATION
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CS4 = 'Signaux et communication';
+
+LECONS.push(lecon({
+  id: 'pc_com_1', chapitre: CS4, niveau: '3ème',
+  titre: 'La chaîne de transmission',
+  desc: "Émetteur, canal, récepteur : les trois maillons de toute communication, et ce qui abîme le signal en route.",
+  steps: [
+
+  { caption: "Toute transmission suit le même schéma : quelque chose émet, un support transporte, quelque chose reçoit.",
+    label: 'Les trois maillons',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'SCHÉMA', 'Émetteur, canal, récepteur', p, C.jaune);
+      chaineEnergetique(ctx, W * 0.08, H * 0.36, W * 0.84, [
+        { t: 'ÉMETTEUR', d: 'micro, antenne, lampe', c: C.vert },
+        { t: 'CANAL', d: 'air, câble, fibre, vide', c: C.jaune },
+        { t: 'RÉCEPTEUR', d: 'oreille, antenne, capteur', c: C.bleu },
+      ], [ { t: 'signal' }, { t: 'signal' } ], p, { bh: H * 0.20 });
+      puces(ctx, W * 0.12, H * 0.72, [
+        { t: "Le message est porté par un SIGNAL : sonore, lumineux ou électrique.", c: C.blanc },
+        { t: "Le canal peut être matériel (câble) ou non (ondes radio dans le vide).", c: C.jaune },
+        { t: "Aucune matière ne voyage : seule l'information est transmise.", c: C.vert },
+      ], p, { debut: 0.6, pas: 0.12, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "Trois natures de signaux, chacune avec son support et sa vitesse.",
+    label: 'Trois natures',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'COMPARER', 'Sonore, lumineux, électrique', p, C.bleu);
+      tableau(ctx, W * 0.07, H * 0.32, W * 0.86,
+        [ { t: 'SIGNAL' }, { t: 'SUPPORT' }, { t: 'VITESSE' }, { t: 'EXEMPLE' } ],
+        [
+          [ { t: 'Sonore', c: C.jaune, s: 17 }, 'matière (air, eau)', { t: '340 m/s', f: MONO }, 'la voix, une sirène' ],
+          [ { t: 'Lumineux', c: C.vert, s: 17 }, 'transparent ou vide', { t: '300 000 km/s', f: MONO }, 'fibre, télécommande' ],
+          [ { t: 'Électrique', c: C.bleu, s: 17 }, 'câble conducteur', { t: 'très rapide', f: MONO }, 'téléphone filaire' ],
+        ], p, { dy: 54 });
+      txt(ctx, "Seul le signal sonore exige de la matière : les deux autres traversent le vide ou un fil.",
+          W * 0.5, H * 0.82, et(0.7, 0.2, p), C.blanc, 17, SANS);
+      txt(ctx, "Les ondes radio (Wi-Fi, 4G, satellites) sont de même nature que la lumière.",
+          W * 0.5, H * 0.90, et(0.84, 0.16, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "En chemin, le signal s'affaiblit et se déforme. On le régénère à intervalles réguliers.",
+    label: "L'atténuation",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EN ROUTE', "Le signal s'affaiblit", p, C.rouge);
+      const oy = H * 0.44, ox = W * 0.10, larg = W * 0.50;
+      seg(ctx, ox, oy, ox + larg + W * 0.30, oy, et(0.03, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      /* Une sinusoïde dont l'amplitude décroît le long du trajet. */
+      const pts = [];
+      for (let i = 0; i <= 160; i++) {
+        const u = i / 160;
+        const amp = H * 0.13 * (1 - u * 0.82);
+        pts.push({ x: ox + larg * u, y: oy - Math.sin(u * Math.PI * 2 * 6) * amp });
+      }
+      courbe(ctx, pts, et(0.1, 0.45, p), C.jaune, 2.4);
+      txt(ctx, 'atténuation', ox + larg * 0.5, oy + H * 0.20, et(0.45, 0.25, p), C.rouge, 17, SANS);
+
+      /* Le répéteur, qui redonne au signal son amplitude. */
+      const q = et(0.6, 0.3, p);
+      cadre(ctx, ox + larg + 6, oy - 30, 56, 60, q, C.vert, 2);
+      txt(ctx, 'ampli', ox + larg + 34, oy, et(0.68, 0.25, p), C.vert, 14, SANS);
+      const pts2 = [];
+      for (let i = 0; i <= 80; i++) {
+        const u = i / 80;
+        pts2.push({ x: ox + larg + 68 + (W * 0.22) * u, y: oy - Math.sin(u * Math.PI * 2 * 3) * H * 0.13 });
+      }
+      courbe(ctx, pts2, et(0.74, 0.26, p), C.vert, 2.4);
+
+      puces(ctx, W * 0.10, H * 0.82, [
+        { t: "Plus la distance est grande, plus le signal faiblit.", c: C.blanc, s: 16 },
+        { t: "Des amplificateurs le régénèrent : c'est le rôle des répéteurs sur les câbles sous-marins.", c: C.vert, s: 16 },
+      ], p, { debut: 0.8, pas: 0.1, dy: 30 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_com_2', chapitre: CS4, niveau: '3ème',
+  titre: 'Analogique et numérique',
+  desc: "Pourquoi tout est passé au binaire : la différence entre les deux familles de signaux, et ce qu'elle change.",
+  steps: [
+
+  { caption: "Un signal analogique varie de façon continue ; un signal numérique ne prend que deux valeurs, 0 ou 1.",
+    label: 'Deux familles',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'DISTINCTION', 'Continu ou par paliers', p, C.violet);
+      const ox = W * 0.12, larg = W * 0.34;
+      seg(ctx, ox, H * 0.46, ox + larg, H * 0.46, et(0.03, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      sinusoide(ctx, ox, H * 0.46, larg, H * 0.11, 2.2, et(0.08, 0.4, p), C.jaune);
+      txt(ctx, 'ANALOGIQUE', ox + larg / 2, H * 0.66, et(0.25, 0.25, p), C.jaune, 18, MONO);
+      txt(ctx, 'toutes les valeurs possibles', ox + larg / 2, H * 0.72, et(0.3, 0.25, p), C.doux, 14, SANS);
+
+      const ox2 = W * 0.56;
+      signalBinaire(ctx, ox2, H * 0.52, larg, H * 0.14, [1,0,0,1,1,0,1,0], cl((p - 0.3) / 0.7), C.vert);
+      txt(ctx, 'NUMÉRIQUE', ox2 + larg / 2, H * 0.72, et(0.6, 0.25, p), C.vert, 18, MONO);
+      txt(ctx, 'deux valeurs seulement : 0 ou 1', ox2 + larg / 2, H * 0.78, et(0.65, 0.25, p), C.doux, 14, SANS);
+
+      txt(ctx, "Un son, une image, un texte : tout peut être converti en suite de 0 et de 1.",
+          W * 0.5, H * 0.92, et(0.82, 0.18, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Numériser, c'est mesurer le signal à intervalles réguliers, puis coder chaque mesure en binaire.",
+    label: 'La numérisation',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONVERSION', 'Du continu au binaire', p, C.bleu);
+      const ox = W * 0.14, oy = H * 0.50, larg = W * 0.44, amp = H * 0.14;
+      seg(ctx, ox, oy, ox + larg, oy, et(0.03, 0.2, p), 'rgba(240,236,224,0.2)', 1.3);
+      const pts = sinusoide(ctx, ox, oy, larg, amp, 1.6, et(0.06, 0.35, p), C.jaune);
+      /* Les points d'échantillonnage, prélevés à intervalles égaux. */
+      for (let i = 0; i <= 10; i++) {
+        const q = et(0.35 + i * 0.025, 0.25, p);
+        const idx = Math.round((pts.length - 1) * i / 10);
+        const pt = pts[idx];
+        bille(ctx, pt.x, pt.y, 5, q, C.rouge);
+        seg(ctx, pt.x, pt.y, pt.x, oy, q, 'rgba(230,130,110,0.35)', 1.2);
+      }
+      txt(ctx, "on mesure à intervalles réguliers", ox + larg / 2, oy + amp + 46, et(0.5, 0.25, p), C.rouge, 15, SANS);
+      fleche(ctx, ox + larg + 20, oy, ox + larg + 70, oy, et(0.6, 0.25, p), C.doux, 2);
+      txt(ctx, '0110 1011 0010', W * 0.82, oy, et(0.7, 0.3, p), C.vert, 20, MONO);
+      txt(ctx, 'chaque mesure devient un nombre binaire', W * 0.82, oy + 34, et(0.78, 0.25, p), C.doux, 14, SANS);
+
+      txt(ctx, "Plus les mesures sont fréquentes et précises, plus la copie est fidèle — et plus le fichier est lourd.",
+          W * 0.5, H * 0.92, et(0.86, 0.14, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "L'avantage décisif du numérique : un signal abîmé peut être reconstitué à l'identique, ce qui est impossible en analogique.",
+    label: "L'avantage du numérique",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'POURQUOI', "Le numérique se répare", p, C.vert);
+      const larg = W * 0.24;
+      /* Un signal binaire bruité reste lisible : 0 ou 1, il n'y a pas d'entre-deux. */
+      signalBinaire(ctx, W * 0.08, H * 0.42, larg, H * 0.12, [1,0,1,1,0], et(0.05, 0.3, p), C.vert);
+      txt(ctx, 'émis', W * 0.08 + larg / 2, H * 0.54, et(0.2, 0.25, p), C.doux, 15, SANS);
+
+      const ox2 = W * 0.40;
+      const pts = [];
+      for (let i = 0; i <= 120; i++) {
+        const u = i / 120;
+        const bits = [1,0,1,1,0];
+        const b = bits[Math.min(4, Math.floor(u * 5))];
+        pts.push({ x: ox2 + larg * u, y: H * 0.42 - b * H * 0.12 + Math.sin(u * 90) * 7 });
+      }
+      courbe(ctx, pts, et(0.3, 0.3, p), C.rouge, 2.2);
+      txt(ctx, 'reçu, déformé', ox2 + larg / 2, H * 0.54, et(0.45, 0.25, p), C.rouge, 15, SANS);
+
+      signalBinaire(ctx, W * 0.72, H * 0.42, larg, H * 0.12, [1,0,1,1,0], et(0.55, 0.3, p), C.vert);
+      txt(ctx, 'régénéré, identique', W * 0.72 + larg / 2, H * 0.54, et(0.7, 0.25, p), C.vert, 15, SANS);
+      fleche(ctx, W * 0.33, H * 0.36, W * 0.39, H * 0.36, et(0.28, 0.2, p), C.doux, 1.8);
+      fleche(ctx, W * 0.65, H * 0.36, W * 0.71, H * 0.36, et(0.52, 0.2, p), C.doux, 1.8);
+
+      puces(ctx, W * 0.10, H * 0.74, [
+        { t: "Le récepteur n'a qu'une question à trancher : est-ce plutôt 0, ou plutôt 1 ?", c: C.blanc, s: 16 },
+        { t: "Le bruit disparaît alors complètement : la copie est parfaite, même après mille relais.", c: C.vert, s: 16 },
+        { t: "En analogique, chaque copie ajoute du bruit — d'où le souffle des vieilles cassettes.", c: C.jaune, s: 16 },
+      ], p, { debut: 0.68, pas: 0.1, dy: 32 });
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Signaux et communication',
+    body: [
+      { t: "Toute transmission : émetteur → canal → récepteur.", c: C.blanc },
+      { t: "Signaux sonores (matière requise), lumineux et électriques.", c: C.jaune },
+      { t: "Le signal s'atténue avec la distance : on l'amplifie en route.", c: C.rouge },
+      { t: "Analogique : continu. Numérique : uniquement des 0 et des 1.", c: C.violet },
+      { t: "Le numérique se régénère sans perte : c'est tout son avantage.", c: C.vert },
+    ],
+    encadre: 'émetteur → canal → récepteur',
+    caption: "Communiquer, c'est transporter une information, jamais de la matière."
+  }),
+
+]}));
+
 /* ── Enregistrement auprès de cours.html ──────────────────────────────
-   Les quatre thèmes du programme sont déclarés pour que le filtre soit
-   prêt ; seuls ceux qui possèdent des leçons s'affichent réellement. */
+   Les quatre thèmes du programme du cycle 4 sont désormais couverts. */
 if (typeof window !== 'undefined') {
   window.COURS_PAR_MATIERE = window.COURS_PAR_MATIERE || {};
   window.COURS_PAR_MATIERE['physique-chimie'] = {
