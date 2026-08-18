@@ -310,6 +310,7 @@ nav{
 .som-video-meta{font-family:'DM Mono',monospace;font-size:.74rem;color:rgba(240,236,224,.45);}
 </style>
 <script src="matiere.js"></script>
+<script src="cours-physique-chimie.js"></script>
 <script src="auth.js" data-protect></script>
 <script src="ui.js" defer></script>
 </head>
@@ -330,10 +331,15 @@ nav{
    affiche un état vide : la page existe, son contenu reste à produire. */
 if (window.MB_MAT && !MB_MAT.estMaths()) {
   document.querySelector('.page-eyebrow').textContent = 'Cours animés · ' + MB_MAT.nom;
-  document.getElementById('filter-bar').remove();
-  MB_MAT.etatVide('#lesson-host', 'Les cours animés de ' + MB_MAT.nom + ' arrivent',
-    "Aucune animation n'est encore enregistrée pour cette matière.");
-  window.MB_SANS_COURS = true;
+  /* Une matière peut apporter sa propre banque de cours animés (voir
+     cours-physique-chimie.js). Sans banque, la page reste un état vide. */
+  const banque = (window.COURS_PAR_MATIERE || {})[MB_MAT.id];
+  if (!banque || !banque.lecons || !banque.lecons.length) {
+    document.getElementById('filter-bar').remove();
+    MB_MAT.etatVide('#lesson-host', 'Les cours animés de ' + MB_MAT.nom + ' arrivent',
+      "Aucune animation n'est encore enregistrée pour cette matière.");
+    window.MB_SANS_COURS = true;
+  }
 }
 </script>
 
@@ -4577,6 +4583,25 @@ LESSONS.forEach(l => {
 
 // Générer un cours pour chaque chapitre et l'ajouter
 CHAPTERS.forEach((c, i) => LESSONS.push(makeExplainer(c, i)));
+
+/* ── Matière autre que les mathématiques ───────────────────────────────
+   Les leçons ci-dessus sont celles des maths. Si la matière courante
+   apporte sa propre banque, elle s'y substitue entièrement : on ne veut
+   pas voir Pythagore dans l'espace physique-chimie.
+   LESSONS et BRANCHES sont des const : on les vide et on les remplit,
+   plutôt que de les réaffecter. */
+(function remplacerBanqueMatiere() {
+  if (!window.MB_MAT || MB_MAT.estMaths()) return;
+  const banque = (window.COURS_PAR_MATIERE || {})[MB_MAT.id];
+  if (!banque || !banque.lecons || !banque.lecons.length) return;
+  LESSONS.length = 0;
+  banque.lecons.forEach(l => LESSONS.push(l));
+  if (banque.branches && banque.branches.length) {
+    BRANCHES.length = 0;
+    banque.branches.forEach(b => BRANCHES.push(b));
+  }
+  window.MB_SANS_COURS = false;
+})();
 
 // ─── PLAYER STATE ─────────────────────────────────────────
 let currentLesson = null;
