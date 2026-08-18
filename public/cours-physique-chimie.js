@@ -2,7 +2,9 @@
    POLYMATES — COURS ANIMÉS : PHYSIQUE-CHIMIE, THÈME « MATIÈRE »
 
    Ce fichier fournit à cours.html une banque de leçons animées pour les
-   sept chapitres du thème « Matière » du cycle 4 :
+   thèmes du programme de cycle 4, chapitre par chapitre.
+
+   THÈME « MATIÈRE » :
 
      1. États et changements d'état
      2. Masse, volume et masse volumique
@@ -11,6 +13,16 @@
      5. Atomes, molécules et ions
      6. Combustions
      7. Acides, bases et pH
+
+   THÈME « ÉNERGIE » :
+
+     1. Formes et sources d'énergie
+     2. Conversions et conservation
+     3. Circuits électriques
+     4. Tension et intensité
+     5. Loi d'Ohm
+     6. Puissance et énergie électrique
+     7. Sécurité électrique
 
    ── Comment cela s'assemble ────────────────────────────────────
    cours.html définit le moteur (canvas « tableau noir », étapes, légendes)
@@ -384,12 +396,19 @@ function diapo(cfg) {
 }
 
 /* Fabrique d'une leçon : évite de répéter les mêmes champs quinze fois. */
+/* Thème en cours d'écriture : chaque bloc de chapitres le repositionne
+   avant de pousser ses leçons. */
+let THEME_COURANT = { id: 'matiere', label: 'Matière' };
+
 function lecon(cfg) {
+  /* Le thème par défaut reste « Matière » : les leçons écrites avant
+     l'ajout d'Énergie n'ont pas eu à être retouchées. */
+  const th = THEME_COURANT;
   return {
     id: cfg.id,
     chapter: cfg.chapitre,
-    branch: 'matiere',
-    tag: 'Matière · ' + cfg.niveau,
+    branch: cfg.branche || th.id,
+    tag: (cfg.theme || th.label) + ' · ' + cfg.niveau,
     title: cfg.titre,
     desc: cfg.desc,
     duration: '~' + Math.max(2, Math.round(cfg.steps.length * 0.9)) + ' min',
@@ -2460,17 +2479,1496 @@ LECONS.push(lecon({
 
 ]}));
 
+/* ══════════════════════════════════════════════════════════════════════
+   THÈME « ÉNERGIE » — outils de schéma
+   ══════════════════════════════════════════════════════════════════════ */
+
+THEME_COURANT = { id: 'energie', label: 'Énergie' };
+
+/* ── Symboles normalisés ──────────────────────────────────────────────
+   Chaque symbole se dessine autour de son centre (cx, cy) et sait
+   s'orienter : `h` vaut true si le fil est horizontal à cet endroit.
+   Tous renvoient la demi-largeur occupée sur le fil, ce qui permet au
+   traceur de circuit de ménager le bon espace. */
+
+const EMPRISE = 22;
+
+function symGenerateur(ctx, cx, cy, h, p, c) {
+  /* Deux barres inégales : la longue est la borne +, la courte la borne −. */
+  const col = c || C.jaune;
+  if (h) {
+    seg(ctx, cx - 6, cy - 20, cx - 6, cy + 20, et(0, 0.3, p), col, 2.4);
+    seg(ctx, cx + 6, cy - 10, cx + 6, cy + 10, et(0.15, 0.3, p), col, 4);
+    txt(ctx, '+', cx - 16, cy - 26, et(0.3, 0.25, p), col, 15, MONO);
+    txt(ctx, '−', cx + 18, cy - 26, et(0.35, 0.25, p), col, 15, MONO);
+  } else {
+    seg(ctx, cx - 20, cy - 6, cx + 20, cy - 6, et(0, 0.3, p), col, 2.4);
+    seg(ctx, cx - 10, cy + 6, cx + 10, cy + 6, et(0.15, 0.3, p), col, 4);
+    txt(ctx, '+', cx + 30, cy - 10, et(0.3, 0.25, p), col, 15, MONO);
+    txt(ctx, '−', cx + 30, cy + 12, et(0.35, 0.25, p), col, 15, MONO);
+  }
+  return EMPRISE;
+}
+
+function symLampe(ctx, cx, cy, h, p, c, allumee) {
+  const col = c || C.blanc, r = 16;
+  cercle(ctx, cx, cy, r, et(0, 0.35, p), col, 2);
+  const q = et(0.3, 0.3, p);
+  const d = r * 0.72;
+  seg(ctx, cx - d, cy - d, cx + d, cy + d, q, col, 1.8);
+  seg(ctx, cx + d, cy - d, cx - d, cy + d, q, col, 1.8);
+  /* Halo : la lampe brille quand le circuit est fermé. */
+  if (allumee) {
+    const a = ease(et(0.4, 0.4, p));
+    ctx.save();
+    ctx.globalAlpha = a * 0.35;
+    ctx.fillStyle = C.jaune;
+    ctx.beginPath(); ctx.arc(cx, cy, r * (2 + Math.sin(p * 8) * 0.12), 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  return EMPRISE;
+}
+
+function symInterrupteur(ctx, cx, cy, h, p, ouvert, c) {
+  const col = c || C.blanc;
+  if (h) {
+    bille(ctx, cx - 16, cy, 3.5, et(0, 0.25, p), col);
+    bille(ctx, cx + 16, cy, 3.5, et(0.05, 0.25, p), col);
+    if (ouvert) seg(ctx, cx - 16, cy, cx + 13, cy - 17, et(0.15, 0.3, p), col, 2.2);
+    else        seg(ctx, cx - 16, cy, cx + 16, cy, et(0.15, 0.3, p), col, 2.2);
+  } else {
+    bille(ctx, cx, cy - 16, 3.5, et(0, 0.25, p), col);
+    bille(ctx, cx, cy + 16, 3.5, et(0.05, 0.25, p), col);
+    if (ouvert) seg(ctx, cx, cy - 16, cx + 17, cy + 13, et(0.15, 0.3, p), col, 2.2);
+    else        seg(ctx, cx, cy - 16, cx, cy + 16, et(0.15, 0.3, p), col, 2.2);
+  }
+  return EMPRISE;
+}
+
+function symResistance(ctx, cx, cy, h, p, c) {
+  const col = c || C.vert;
+  if (h) cadre(ctx, cx - 22, cy - 10, 44, 20, et(0, 0.35, p), col, 2);
+  else   cadre(ctx, cx - 10, cy - 22, 20, 44, et(0, 0.35, p), col, 2);
+  return 26;
+}
+
+function symMesure(ctx, cx, cy, lettre, p, c) {
+  const col = c || C.bleu;
+  cercle(ctx, cx, cy, 17, et(0, 0.35, p), col, 2.2);
+  txt(ctx, lettre, cx, cy + 1, et(0.3, 0.3, p), col, 19, MONO);
+  return 22;
+}
+
+function symMoteur(ctx, cx, cy, h, p, c) {
+  const col = c || C.violet;
+  cercle(ctx, cx, cy, 17, et(0, 0.35, p), col, 2.2);
+  txt(ctx, 'M', cx, cy + 1, et(0.3, 0.3, p), col, 18, MONO);
+  return 22;
+}
+
+function symFusible(ctx, cx, cy, h, p, c) {
+  const col = c || C.rouge;
+  if (h) { cadre(ctx, cx - 20, cy - 9, 40, 18, et(0, 0.3, p), col, 2);
+           seg(ctx, cx - 20, cy, cx + 20, cy, et(0.3, 0.3, p), col, 1.6); }
+  else   { cadre(ctx, cx - 9, cy - 20, 18, 40, et(0, 0.3, p), col, 2);
+           seg(ctx, cx, cy - 20, cx, cy + 20, et(0.3, 0.3, p), col, 1.6); }
+  return 24;
+}
+
+/* ── Traceur de circuit ───────────────────────────────────────────────
+   On décrit un circuit comme un rectangle de fil, et une liste de dipôles
+   posés dessus : { cote:'haut'|'bas'|'gauche'|'droite', pos:0→1, dessin, label }.
+   Le traceur découpe le fil autour de chaque dipôle, de sorte qu'aucun trait
+   ne traverse un symbole. */
+function circuit(ctx, x, y, w, h, composants, p, opts) {
+  opts = opts || {};
+  const col = opts.c || 'rgba(240,236,224,0.55)';
+  const ep = opts.ep || 2;
+  const cotes = {
+    haut:   { x1: x,     y1: y,     x2: x + w, y2: y,     horiz: true  },
+    bas:    { x1: x,     y1: y + h, x2: x + w, y2: y + h, horiz: true  },
+    gauche: { x1: x,     y1: y,     x2: x,     y2: y + h, horiz: false },
+    droite: { x1: x + w, y1: y,     x2: x + w, y2: y + h, horiz: false },
+  };
+  const qFil = et(0, opts.durFil || 0.3, p);
+
+  Object.keys(cotes).forEach(nom => {
+    const s = cotes[nom];
+    const L = s.horiz ? (s.x2 - s.x1) : (s.y2 - s.y1);
+    const dessus = composants.filter(k => k.cote === nom).sort((a, b) => a.pos - b.pos);
+    let curseur = 0;
+    dessus.forEach(k => {
+      const centre = L * k.pos;
+      const demi = k.demi || EMPRISE;
+      const a = curseur, b = Math.max(curseur, centre - demi);
+      if (s.horiz) seg(ctx, s.x1 + a, s.y1, s.x1 + b, s.y1, qFil, col, ep);
+      else         seg(ctx, s.x1, s.y1 + a, s.x1, s.y1 + b, qFil, col, ep);
+      curseur = centre + demi;
+    });
+    if (s.horiz) seg(ctx, s.x1 + curseur, s.y1, s.x2, s.y2, qFil, col, ep);
+    else         seg(ctx, s.x1, s.y1 + curseur, s.x2, s.y2, qFil, col, ep);
+  });
+
+  /* Les dipôles, une fois le fil posé. */
+  composants.forEach((k, i) => {
+    const s = cotes[k.cote];
+    const L = s.horiz ? (s.x2 - s.x1) : (s.y2 - s.y1);
+    const cx = s.horiz ? s.x1 + L * k.pos : s.x1;
+    const cy = s.horiz ? s.y1 : s.y1 + L * k.pos;
+    const q = et((opts.debutDipoles === undefined ? 0.22 : opts.debutDipoles) + i * 0.08, 0.3, p);
+    k.dessin(ctx, cx, cy, s.horiz, q);
+    if (k.label) {
+      const dx = s.horiz ? 0 : (k.cote === 'gauche' ? -42 : 42);
+      const dy = s.horiz ? (k.cote === 'haut' ? -34 : 36) : -30;
+      txt(ctx, k.label, cx + dx, cy + dy, et(0.4 + i * 0.06, 0.3, p), k.labelC || C.doux, k.labelS || 15, SANS);
+    }
+  });
+}
+
+/* Sens conventionnel du courant : des flèches qui parcourent le fil. */
+function sensCourant(ctx, x, y, w, h, p, c) {
+  const col = c || C.jaune;
+  const fleches = [
+    { x: x + w * 0.5, y: y,     dx: 1,  dy: 0 },
+    { x: x + w,       y: y + h * 0.5, dx: 0,  dy: 1 },
+    { x: x + w * 0.5, y: y + h, dx: -1, dy: 0 },
+    { x: x,           y: y + h * 0.5, dx: 0,  dy: -1 },
+  ];
+  fleches.forEach((f, i) => {
+    const q = et(0.05 + i * 0.1, 0.3, p);
+    if (q <= 0) return;
+    fleche(ctx, f.x - f.dx * 22, f.y - f.dy * 22, f.x + f.dx * 22, f.y + f.dy * 22, q, col, 2);
+  });
+}
+
+/* Chaîne énergétique : réservoir → convertisseur → utilisation, avec les
+   formes d'énergie inscrites sur les flèches. C'est le schéma exigible. */
+function chaineEnergetique(ctx, x, y, w, blocs, transferts, p, opts) {
+  opts = opts || {};
+  const n = blocs.length;
+  const bw = opts.bw || w / (n + (n - 1) * 0.6);
+  const espace = (w - n * bw) / Math.max(1, n - 1);
+  const bh = opts.bh || 72;
+  const centres = [];
+  blocs.forEach((b, i) => {
+    const bx = x + i * (bw + espace);
+    const q = et(0.05 + i * 0.14, 0.3, p);
+    cadre(ctx, bx, y, bw, bh, q, b.c || C.blanc, 2);
+    txt(ctx, b.t, bx + bw / 2, y + bh * 0.38, et(0.1 + i * 0.14, 0.28, p), b.c || C.blanc, b.s || 16, MONO);
+    if (b.d) txt(ctx, b.d, bx + bw / 2, y + bh * 0.72, et(0.14 + i * 0.14, 0.28, p), C.doux, 13, SANS);
+    centres.push({ g: bx, d: bx + bw, c: bx + bw / 2 });
+  });
+  (transferts || []).forEach((t, i) => {
+    const a = centres[i], b = centres[i + 1];
+    if (!a || !b) return;
+    const q = et(0.3 + i * 0.16, 0.3, p);
+    fleche(ctx, a.d + 6, y + bh / 2, b.g - 6, y + bh / 2, q, t.c || C.jaune, 2.2);
+    txt(ctx, t.t, (a.d + b.g) / 2, y + bh / 2 - 22, et(0.36 + i * 0.16, 0.3, p), t.c || C.jaune, 14, SANS);
+  });
+  return y + bh;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 1 — FORMES ET SOURCES D'ÉNERGIE
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE1 = "Formes et sources d'énergie";
+
+LECONS.push(lecon({
+  id: 'pc_energie_1', chapitre: CE1, niveau: '5ème',
+  titre: "Les formes d'énergie",
+  desc: "Cinétique, de position, thermique, chimique… reconnaître sous quelle forme l'énergie se présente.",
+  steps: [
+
+  { caption: "L'énergie, c'est ce qui permet de produire un mouvement, de chauffer, d'éclairer. Elle se mesure en joules.",
+    label: "Qu'est-ce que l'énergie",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'DÉFINITION', "L'énergie", p, C.jaune);
+      const y = H * 0.46, r = Math.min(W * 0.055, H * 0.10);
+
+      /* Un même réservoir, trois effets possibles. */
+      bille(ctx, W * 0.22, y, r, et(0.05, 0.3, p), C.jaune);
+      txt(ctx, 'énergie', W * 0.22, y + 1, et(0.2, 0.25, p), '#0f1a12', 15, SANS);
+      const cibles = [
+        { t: 'mettre en MOUVEMENT', c: C.vert, dy: -H * 0.16 },
+        { t: 'CHAUFFER', c: C.rouge, dy: 0 },
+        { t: 'ÉCLAIRER', c: C.bleu, dy: H * 0.16 },
+      ];
+      cibles.forEach((k, i) => {
+        const q = et(0.32 + i * 0.14, 0.3, p);
+        fleche(ctx, W * 0.29, y, W * 0.46, y + k.dy, q, k.c, 2);
+        txt(ctx, k.t, W * 0.62, y + k.dy, et(0.38 + i * 0.14, 0.3, p), k.c, 19, MONO);
+      });
+
+      encadre(ctx, W * 0.5, H * 0.84, W * 0.60, H * 0.14,
+              "unité : le JOULE  (J)", et(0.78, 0.22, p), C.or, 22);
+      txt(ctx, "Pour les grandes quantités : 1 kJ = 1 000 J, et le kilowattheure (kWh) sur les factures.",
+          W * 0.5, H * 0.95, et(0.9, 0.1, p), C.doux, 15, SANS);
+    }
+  },
+
+  { caption: "L'énergie cinétique est celle d'un objet en mouvement. Elle augmente avec la masse, et beaucoup plus vite avec la vitesse.",
+    label: 'Énergie cinétique',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORME 1', "L'énergie cinétique", p, C.vert);
+      const route = H * 0.52;
+      seg(ctx, W * 0.06, route + 26, W * 0.94, route + 26, et(0.03, 0.2, p), C.doux, 1.6);
+
+      /* Deux mobiles : même masse, vitesses différentes. */
+      const q1 = et(0.1, 0.3, p);
+      cadre(ctx, W * 0.12, route - 18, 56, 30, q1, C.vert, 2);
+      for (let i = 0; i < 3; i++) seg(ctx, W * 0.10 - i * 14, route - 4, W * 0.115 - i * 14, route - 4, et(0.2 + i * 0.03, 0.2, p), C.doux, 1.6);
+      txt(ctx, 'v = 30 km/h', W * 0.15, route + 52, et(0.25, 0.25, p), C.vert, 16, MONO);
+
+      const q2 = et(0.3, 0.3, p);
+      cadre(ctx, W * 0.52, route - 18, 56, 30, q2, C.rouge, 2);
+      for (let i = 0; i < 6; i++) seg(ctx, W * 0.50 - i * 16, route - 4, W * 0.52 - i * 16, route - 4, et(0.4 + i * 0.02, 0.2, p), C.jaune, 1.8);
+      txt(ctx, 'v = 60 km/h', W * 0.55, route + 52, et(0.45, 0.25, p), C.rouge, 16, MONO);
+
+      puces(ctx, W * 0.10, H * 0.74, [
+        { t: "Elle dépend de la masse m et de la vitesse v :   Ec = ½ × m × v²", c: C.jaune, f: MONO, s: 18 },
+        { t: "Doubler la vitesse multiplie l'énergie cinétique par QUATRE.", c: C.rouge, s: 17 },
+        { t: "D'où la distance de freinage qui explose avec la vitesse.", c: C.doux, s: 16 },
+      ], p, { debut: 0.55, pas: 0.12, dy: 38 });
+    }
+  },
+
+  { caption: "L'énergie de position est celle que possède un objet du seul fait de sa hauteur : elle se libère quand il tombe.",
+    label: 'Énergie de position',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORME 2', "L'énergie de position", p, C.bleu);
+      const sol = H * 0.78;
+      seg(ctx, W * 0.08, sol, W * 0.62, sol, et(0.03, 0.2, p), C.doux, 1.6);
+      /* Une masse en hauteur, sa hauteur cotée. */
+      const xh = W * 0.34, yh = H * 0.34;
+      bille(ctx, xh, yh, 18, et(0.1, 0.3, p), C.bleu);
+      ctx.save(); ctx.setLineDash([5, 6]);
+      seg(ctx, xh, yh + 20, xh, sol, et(0.25, 0.3, p), 'rgba(240,236,224,0.3)', 1.4);
+      ctx.setLineDash([]); ctx.restore();
+      fleche(ctx, W * 0.24, sol, W * 0.24, yh, et(0.35, 0.3, p), C.jaune, 1.8);
+      txt(ctx, 'hauteur h', W * 0.18, (sol + yh) / 2, et(0.45, 0.25, p), C.jaune, 16, SANS);
+      txt(ctx, 'masse m', xh + 46, yh, et(0.3, 0.25, p), C.bleu, 16, SANS);
+
+      puces(ctx, W * 0.58, H * 0.36, [
+        { t: "Plus l'objet est haut, plus il en possède.", c: C.blanc },
+        { t: "Plus il est lourd, plus il en possède.", c: C.blanc },
+        { t: "En tombant, cette énergie se transforme", c: C.jaune },
+        { t: "en énergie cinétique : il accélère.", c: C.jaune },
+        { t: "C'est le principe du barrage hydraulique.", c: C.vert },
+      ], p, { debut: 0.5, pas: 0.11, dy: 42, s: 17 });
+    }
+  },
+
+  { caption: "Les autres formes à connaître : thermique, chimique, lumineuse, électrique et nucléaire.",
+    label: 'Les autres formes',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PANORAMA', "Les formes d'énergie", p);
+      const formes = [
+        { t: 'THERMIQUE', d: "l'agitation des particules · un radiateur", c: C.rouge },
+        { t: 'CHIMIQUE', d: "stockée dans la matière · aliment, pile, essence", c: C.vert },
+        { t: 'LUMINEUSE', d: "transportée par la lumière · le Soleil", c: C.jaune },
+        { t: 'ÉLECTRIQUE', d: "portée par le courant · une prise", c: C.bleu },
+        { t: 'NUCLÉAIRE', d: "contenue dans les noyaux · l'uranium", c: C.violet },
+        { t: 'MÉCANIQUE', d: "cinétique + position · un vélo lancé", c: C.blanc },
+      ];
+      formes.forEach((f, i) => {
+        const x = W * (0.06 + (i % 3) * 0.31), w = W * 0.28;
+        const y = H * (0.32 + Math.floor(i / 3) * 0.28), h = H * 0.20;
+        const q = et(0.05 + i * 0.11, 0.3, p);
+        cadre(ctx, x, y, w, h, q, f.c, 1.8);
+        txt(ctx, f.t, x + w / 2, y + h * 0.34, et(0.1 + i * 0.11, 0.25, p), f.c, 16, MONO);
+        txt(ctx, f.d, x + w / 2, y + h * 0.68, et(0.14 + i * 0.11, 0.25, p), C.doux, 13, SANS);
+      });
+      txt(ctx, "Une même énergie passe d'une forme à l'autre : c'est tout l'objet du chapitre suivant.",
+          W * 0.5, H * 0.94, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_energie_2', chapitre: CE1, niveau: '4ème',
+  titre: "Les sources d'énergie",
+  desc: "Renouvelables ou non, et comment une centrale transforme une source en électricité.",
+  steps: [
+
+  { caption: "Une source non renouvelable existe en quantité limitée : une fois consommée, elle ne se reconstitue pas à notre échelle de temps.",
+    label: 'Non renouvelables',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FAMILLE 1', 'Les sources non renouvelables', p, C.rouge);
+      const src = [
+        { t: 'CHARBON', d: 'fossile' }, { t: 'PÉTROLE', d: 'fossile' },
+        { t: 'GAZ NATUREL', d: 'fossile' }, { t: 'URANIUM', d: 'nucléaire' },
+      ];
+      src.forEach((s, i) => {
+        const x = W * (0.07 + i * 0.23), w = W * 0.19;
+        const q = et(0.05 + i * 0.12, 0.3, p);
+        cadre(ctx, x, H * 0.32, w, H * 0.20, q, C.rouge, 1.8);
+        txt(ctx, s.t, x + w / 2, H * 0.39, et(0.1 + i * 0.12, 0.25, p), C.rouge, 15, MONO);
+        txt(ctx, s.d, x + w / 2, H * 0.46, et(0.14 + i * 0.12, 0.25, p), C.doux, 13, SANS);
+      });
+      puces(ctx, W * 0.10, H * 0.64, [
+        { t: "Stocks formés en des millions d'années : ils s'épuisent.", c: C.blanc },
+        { t: "Les fossiles rejettent du CO₂ en brûlant.", c: C.jaune },
+        { t: "Le nucléaire n'émet pas de CO₂, mais produit des déchets radioactifs.", c: C.violet },
+      ], p, { debut: 0.55, pas: 0.13, dy: 42, s: 17 });
+    }
+  },
+
+  { caption: "Une source renouvelable se reconstitue en permanence : le vent souffle, le soleil brille, l'eau coule.",
+    label: 'Renouvelables',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FAMILLE 2', 'Les sources renouvelables', p, C.vert);
+      const cy = H * 0.46, r = Math.min(W * 0.05, H * 0.09);
+      const src = [
+        { t: 'SOLAIRE', d: 'le rayonnement' },
+        { t: 'ÉOLIENNE', d: 'le vent' },
+        { t: 'HYDRAULIQUE', d: "l'eau qui tombe" },
+        { t: 'BIOMASSE', d: 'le bois, les déchets' },
+        { t: 'GÉOTHERMIE', d: 'la chaleur du sol' },
+      ];
+      src.forEach((s, i) => {
+        const x = W * (0.13 + i * 0.185);
+        const q = et(0.05 + i * 0.1, 0.3, p);
+        bille(ctx, x, cy, r, q, C.vert);
+        txt(ctx, s.t, x, cy + r + 28, et(0.1 + i * 0.1, 0.25, p), C.vert, 14, MONO);
+        txt(ctx, s.d, x, cy + r + 50, et(0.14 + i * 0.1, 0.25, p), C.doux, 13, SANS);
+      });
+      puces(ctx, W * 0.12, H * 0.76, [
+        { t: "Elles se renouvellent à l'échelle d'une vie humaine.", c: C.blanc },
+        { t: "Presque toutes viennent en réalité du Soleil.", c: C.jaune },
+        { t: "Renouvelable ne veut pas dire disponible en continu : le vent tombe, la nuit vient.", c: C.doux, s: 16 },
+      ], p, { debut: 0.6, pas: 0.12, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "Presque toutes les centrales fonctionnent pareil : on fait tourner une turbine, qui entraîne un alternateur, qui produit l'électricité.",
+    label: 'Une centrale',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PRODUIRE', "Le schéma commun à presque toutes les centrales", p, C.bleu);
+      chaineEnergetique(ctx, W * 0.06, H * 0.36, W * 0.88, [
+        { t: 'SOURCE', d: 'charbon, uranium, vent…', c: C.rouge },
+        { t: 'TURBINE', d: 'elle tourne', c: C.jaune },
+        { t: 'ALTERNATEUR', d: 'il convertit', c: C.vert },
+        { t: 'RÉSEAU', d: 'vers les maisons', c: C.bleu },
+      ], [
+        { t: 'chaleur / mouvement' }, { t: 'mouvement' }, { t: 'électricité', c: C.bleu },
+      ], p, { bh: H * 0.20 });
+      txt(ctx, "Seule la façon de faire tourner la turbine change d'une centrale à l'autre.",
+          W * 0.5, H * 0.74, et(0.7, 0.2, p), C.blanc, 18, SANS);
+      txt(ctx, "Thermique et nucléaire : on chauffe de l'eau, la vapeur pousse la turbine.",
+          W * 0.5, H * 0.82, et(0.8, 0.2, p), C.doux, 16, SANS);
+      txt(ctx, "Le solaire photovoltaïque fait exception : il produit l'électricité directement.",
+          W * 0.5, H * 0.89, et(0.88, 0.12, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: "Formes et sources",
+    body: [
+      { t: "L'énergie se mesure en joules (J) ; la facture parle en kWh.", c: C.blanc },
+      { t: "Formes : cinétique, de position, thermique, chimique, électrique…", c: C.doux },
+      { t: "Ec dépend de v² : doubler la vitesse quadruple l'énergie.", c: C.jaune, f: MONO },
+      { t: "Sources non renouvelables : fossiles et uranium, en stock limité.", c: C.rouge },
+      { t: "Sources renouvelables : soleil, vent, eau, biomasse, géothermie.", c: C.vert },
+    ],
+    encadre: "source → turbine → alternateur",
+    caption: "Des formes multiples, des sources limitées ou renouvelables."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 2 — CONVERSIONS ET CONSERVATION
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE2 = 'Conversions et conservation';
+
+LECONS.push(lecon({
+  id: 'pc_conv_1', chapitre: CE2, niveau: '4ème',
+  titre: "Convertir l'énergie",
+  desc: "Lire et écrire une chaîne énergétique : d'où vient l'énergie, qui la transforme, en quoi.",
+  steps: [
+
+  { caption: "Une chaîne énergétique se lit en trois temps : un réservoir fournit, un convertisseur transforme, un effet est produit.",
+    label: 'La chaîne',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MÉTHODE', 'La chaîne énergétique', p, C.jaune);
+      chaineEnergetique(ctx, W * 0.10, H * 0.36, W * 0.80, [
+        { t: 'RÉSERVOIR', d: "il stocke l'énergie", c: C.vert },
+        { t: 'CONVERTISSEUR', d: "il change la forme", c: C.jaune },
+        { t: 'UTILISATION', d: "l'effet obtenu", c: C.bleu },
+      ], [
+        { t: "forme d'entrée" }, { t: 'forme de sortie' },
+      ], p, { bh: H * 0.20 });
+      puces(ctx, W * 0.14, H * 0.72, [
+        { t: "Sur les flèches, on écrit la FORME de l'énergie transférée.", c: C.blanc },
+        { t: "Dans les cases, on écrit les OBJETS.", c: C.doux },
+        { t: "Ne jamais mélanger les deux : c'est l'erreur la plus fréquente.", c: C.rouge },
+      ], p, { debut: 0.6, pas: 0.13, dy: 38, s: 17 });
+    }
+  },
+
+  { caption: "Trois exemples à savoir refaire : la lampe de poche, le panneau solaire et le vélo.",
+    label: 'Trois exemples',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EXEMPLES', 'Trois chaînes courantes', p, C.vert);
+      chaineEnergetique(ctx, W * 0.06, H * 0.28, W * 0.88, [
+        { t: 'PILE', c: C.vert }, { t: 'LAMPE', c: C.jaune }, { t: 'PIÈCE ÉCLAIRÉE', c: C.bleu },
+      ], [ { t: 'chimique' }, { t: 'lumineuse + thermique' } ], p, { bh: H * 0.13 });
+
+      const p2 = cl((p - 0.3) / 0.7);
+      chaineEnergetique(ctx, W * 0.06, H * 0.50, W * 0.88, [
+        { t: 'SOLEIL', c: C.jaune }, { t: 'PANNEAU', c: C.vert }, { t: 'BATTERIE', c: C.bleu },
+      ], [ { t: 'lumineuse' }, { t: 'électrique' } ], p2, { bh: H * 0.13 });
+
+      const p3 = cl((p - 0.58) / 0.42);
+      chaineEnergetique(ctx, W * 0.06, H * 0.72, W * 0.88, [
+        { t: 'ALIMENTS', c: C.rouge }, { t: 'CYCLISTE', c: C.violet }, { t: 'VÉLO EN MOUVEMENT', c: C.vert },
+      ], [ { t: 'chimique' }, { t: 'cinétique + thermique' } ], p3, { bh: H * 0.13 });
+    }
+  },
+
+  { caption: "Attention : un convertisseur produit presque toujours de la chaleur en plus de l'effet recherché.",
+    label: 'La chaleur perdue',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'TOUJOURS', "La part perdue en chaleur", p, C.rouge);
+      const bas = chaineEnergetique(ctx, W * 0.14, H * 0.34, W * 0.72, [
+        { t: 'PILE', c: C.vert }, { t: 'LAMPE', c: C.jaune }, { t: 'LUMIÈRE', c: C.bleu },
+      ], [ { t: 'chimique' }, { t: 'lumineuse' } ], p, { bh: H * 0.18 });
+
+      /* La flèche de fuite, vers le bas : c'est ce qui n'est pas utile. */
+      const q = et(0.55, 0.35, p);
+      fleche(ctx, W * 0.50, bas + 6, W * 0.50, bas + H * 0.18, q, C.rouge, 2.4);
+      txt(ctx, 'thermique', W * 0.62, bas + H * 0.12, et(0.65, 0.25, p), C.rouge, 17, SANS);
+      txt(ctx, 'la lampe chauffe : cette énergie est perdue pour l’éclairage',
+          W * 0.5, bas + H * 0.26, et(0.75, 0.25, p), C.doux, 16, SANS);
+      txt(ctx, "Une ampoule à filament perd ainsi près de 95 % de l'énergie reçue.",
+          W * 0.5, H * 0.93, et(0.88, 0.12, p), C.or, 16, SANS);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_conv_2', chapitre: CE2, niveau: '3ème',
+  titre: 'Conservation et rendement',
+  desc: "L'énergie ne disparaît jamais : elle se disperse. Comment mesurer la part réellement utile.",
+  steps: [
+
+  { caption: "Le principe fondamental : l'énergie ne se crée pas et ne se détruit pas. Tout ce qui entre ressort, sous une forme ou une autre.",
+    label: 'Conservation',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PRINCIPE', "L'énergie se conserve", p, C.or);
+      const cx = W * 0.34, cy = H * 0.50, w = W * 0.18, h = H * 0.26;
+      cadre(ctx, cx - w / 2, cy - h / 2, w, h, et(0.05, 0.3, p), C.jaune, 2.2);
+      txt(ctx, 'MOTEUR', cx, cy, et(0.2, 0.25, p), C.jaune, 18, MONO);
+
+      fleche(ctx, W * 0.10, cy, cx - w / 2 - 6, cy, et(0.25, 0.3, p), C.vert, 3);
+      txt(ctx, 'reçue : 100 J', W * 0.14, cy - 26, et(0.32, 0.25, p), C.vert, 18, MONO, 'left');
+
+      fleche(ctx, cx + w / 2 + 6, cy - h * 0.25, W * 0.74, cy - h * 0.4, et(0.45, 0.3, p), C.bleu, 2.6);
+      txt(ctx, 'utile : 35 J', W * 0.76, cy - h * 0.4, et(0.52, 0.25, p), C.bleu, 18, MONO, 'left');
+      fleche(ctx, cx + w / 2 + 6, cy + h * 0.25, W * 0.74, cy + h * 0.4, et(0.58, 0.3, p), C.rouge, 2.6);
+      txt(ctx, 'chaleur : 65 J', W * 0.76, cy + h * 0.4, et(0.65, 0.25, p), C.rouge, 18, MONO, 'left');
+
+      encadre(ctx, W * 0.5, H * 0.88, W * 0.56, H * 0.13, '35 + 65 = 100', et(0.75, 0.25, p), C.or, 24);
+      txt(ctx, "Rien n'est perdu au sens strict : c'est dispersé sous forme de chaleur.",
+          W * 0.5, H * 0.96, et(0.9, 0.1, p), C.doux, 15, SANS);
+    }
+  },
+
+  { caption: "Le rendement compare l'énergie utile à l'énergie reçue. C'est un rapport, souvent exprimé en pourcentage.",
+    label: 'Le rendement',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORMULE', 'Le rendement', p, C.vert);
+      encadre(ctx, W * 0.5, H * 0.34, W * 0.54, H * 0.16, 'η  =  utile / reçue', et(0.05, 0.3, p), C.or, 30);
+      puces(ctx, W * 0.20, H * 0.52, [
+        { t: "Toujours compris entre 0 et 1  (0 % à 100 %).", c: C.blanc, s: 17 },
+        { t: "Jamais égal à 1 : il y a toujours des pertes.", c: C.rouge, s: 17 },
+        { t: "Les deux énergies doivent être dans la même unité.", c: C.doux, s: 16 },
+      ], p, { debut: 0.3, pas: 0.11, dy: 38 });
+      const q = et(0.6, 0.35, p);
+      if (q > 0) {
+        seg(ctx, W * 0.14, H * 0.72, W * 0.86, H * 0.72, q, 'rgba(240,236,224,0.18)', 1.4);
+        txt(ctx, "Le moteur précédent :  η = 35 / 100 = 0,35", W * 0.5, H * 0.81, et(0.66, 0.25, p), C.vert, 24, MONO);
+        txt(ctx, "soit 35 % de l'énergie reçue réellement utilisée", W * 0.5, H * 0.90, et(0.8, 0.2, p), C.doux, 17, SANS);
+      }
+    }
+  },
+
+  { caption: "Comparer quelques rendements donne une idée juste de ce qu'on gagne en changeant d'appareil.",
+    label: 'Des rendements',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'REPÈRES', 'Quelques rendements typiques', p);
+      const items = [
+        { t: 'Ampoule à filament', v: 0.05, c: C.rouge },
+        { t: 'Ampoule LED', v: 0.40, c: C.vert },
+        { t: 'Moteur thermique', v: 0.35, c: C.jaune },
+        { t: 'Moteur électrique', v: 0.90, c: C.vert },
+        { t: 'Centrale thermique', v: 0.40, c: C.jaune },
+      ];
+      const x0 = W * 0.34, larg = W * 0.46;
+      items.forEach((it, i) => {
+        const y = H * 0.34 + i * H * 0.11;
+        const q = et(0.06 + i * 0.14, 0.35, p);
+        txt(ctx, it.t, x0 - 20, y, q, C.blanc, 17, SANS, 'right');
+        cadre(ctx, x0, y - 12, larg, 24, q, 'rgba(240,236,224,0.20)', 1.4);
+        const rempli = larg * it.v * ease(q);
+        if (rempli > 2) aplat(ctx, [{x:x0+2,y:y-10},{x:x0+rempli,y:y-10},{x:x0+rempli,y:y+10},{x:x0+2,y:y+10}], 1,
+                               it.c.replace('0.90', '0.35').replace('0.92', '0.35'));
+        txt(ctx, Math.round(it.v * 100) + ' %', x0 + larg + 34, y, et(0.15 + i * 0.14, 0.3, p), it.c, 17, MONO);
+      });
+      txt(ctx, "Le reste part en chaleur : c'est pourquoi une vieille ampoule brûle les doigts.",
+          W * 0.5, H * 0.94, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Conversions et conservation',
+    body: [
+      { t: "Chaîne énergétique : réservoir → convertisseur → utilisation.", c: C.blanc },
+      { t: "Sur les flèches : les formes d'énergie. Dans les cases : les objets.", c: C.doux },
+      { t: "L'énergie se conserve : entrée = sortie utile + pertes.", c: C.jaune },
+      { t: "Les pertes se font presque toujours sous forme de chaleur.", c: C.rouge },
+      { t: "Rendement η = utile / reçue, toujours inférieur à 100 %.", c: C.vert, f: MONO },
+    ],
+    encadre: 'η = utile / reçue',
+    caption: "Rien ne se perd : tout se disperse, surtout en chaleur."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 3 — CIRCUITS ÉLECTRIQUES
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE3 = 'Circuits électriques';
+
+LECONS.push(lecon({
+  id: 'pc_circuit_1', chapitre: CE3, niveau: '5ème',
+  titre: 'Le circuit et ses symboles',
+  desc: "Ce qu'il faut pour qu'une lampe s'allume : une boucle fermée, un générateur, et un schéma normalisé.",
+  steps: [
+
+  { caption: "Pour qu'un courant circule, il faut une boucle fermée reliant les deux bornes du générateur.",
+    label: 'La boucle fermée',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONDITION', 'Un circuit doit être fermé', p, C.jaune);
+      const x = W * 0.10, y = H * 0.36, w = W * 0.32, h = H * 0.38;
+
+      /* À gauche : interrupteur fermé, la lampe brille. */
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true) },
+        { cote: 'haut',   pos: 0.5, dessin: (c, cx, cy, hz, q) => symInterrupteur(c, cx, cy, hz, q, false) },
+      ], p);
+      txt(ctx, 'CIRCUIT FERMÉ', x + w / 2, y + h + H * 0.14, et(0.5, 0.25, p), C.vert, 18, MONO);
+      txt(ctx, 'la lampe brille', x + w / 2, y + h + H * 0.20, et(0.55, 0.25, p), C.doux, 15, SANS);
+
+      /* À droite : interrupteur ouvert, rien ne passe. */
+      const x2 = W * 0.58;
+      circuit(ctx, x2, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.doux, false) },
+        { cote: 'haut',   pos: 0.5, dessin: (c, cx, cy, hz, q) => symInterrupteur(c, cx, cy, hz, q, true) },
+      ], cl((p - 0.25) / 0.75));
+      txt(ctx, 'CIRCUIT OUVERT', x2 + w / 2, y + h + H * 0.14, et(0.72, 0.25, p), C.rouge, 18, MONO);
+      txt(ctx, 'plus rien ne circule', x2 + w / 2, y + h + H * 0.20, et(0.77, 0.25, p), C.doux, 15, SANS);
+    }
+  },
+
+  { caption: "Les symboles normalisés : ils permettent de dessiner le même circuit partout dans le monde.",
+    label: 'Les symboles',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONVENTION', 'Les symboles à connaître', p);
+      const items = [
+        { n: 'générateur', f: (c, x, y, q) => symGenerateur(c, x, y, false, q) },
+        { n: 'lampe', f: (c, x, y, q) => symLampe(c, x, y, true, q, C.blanc, false) },
+        { n: 'interrupteur ouvert', f: (c, x, y, q) => symInterrupteur(c, x, y, true, q, true) },
+        { n: 'interrupteur fermé', f: (c, x, y, q) => symInterrupteur(c, x, y, true, q, false) },
+        { n: 'résistance', f: (c, x, y, q) => symResistance(c, x, y, true, q) },
+        { n: 'moteur', f: (c, x, y, q) => symMoteur(c, x, y, true, q) },
+        { n: 'ampèremètre', f: (c, x, y, q) => symMesure(c, x, y, 'A', q) },
+        { n: 'voltmètre', f: (c, x, y, q) => symMesure(c, x, y, 'V', q, C.vert) },
+      ];
+      items.forEach((it, i) => {
+        const x = W * (0.14 + (i % 4) * 0.24);
+        const y = H * (0.42 + Math.floor(i / 4) * 0.30);
+        const q = et(0.05 + i * 0.09, 0.3, p);
+        /* Un bout de fil de part et d'autre, comme sur un vrai schéma. */
+        seg(ctx, x - 52, y, x - 24, y, q, 'rgba(240,236,224,0.5)', 2);
+        seg(ctx, x + 24, y, x + 52, y, q, 'rgba(240,236,224,0.5)', 2);
+        it.f(ctx, x, y, q);
+        txt(ctx, it.n, x, y + 46, et(0.1 + i * 0.09, 0.3, p), C.doux, 14, SANS);
+      });
+      txt(ctx, "Sur un schéma, les fils se tracent à la règle, en traits droits et à angle droit.",
+          W * 0.5, H * 0.95, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Le sens conventionnel du courant : hors du générateur, il va de la borne + vers la borne −.",
+    label: 'Le sens du courant',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONVENTION', 'Le sens du courant', p, C.jaune);
+      const x = W * 0.30, y = H * 0.34, w = W * 0.40, h = H * 0.40;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q), label: 'générateur' },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: 'lampe' },
+      ], p);
+      sensCourant(ctx, x, y, w, h, cl((p - 0.4) / 0.6));
+      puces(ctx, W * 0.10, H * 0.86, [
+        { t: "Ce sens est une convention, choisie avant qu'on connaisse les électrons.", c: C.doux, s: 16 },
+        { t: "Les électrons circulent en réalité en sens inverse — cela ne change aucun calcul.", c: C.jaune, s: 16 },
+      ], p, { debut: 0.72, pas: 0.12, dy: 32 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_circuit_2', chapitre: CE3, niveau: '5ème',
+  titre: 'Série et dérivation',
+  desc: "Deux façons de brancher plusieurs dipôles, deux comportements très différents — et le court-circuit.",
+  steps: [
+
+  { caption: "En série, tous les dipôles sont sur une seule boucle : le courant n'a qu'un chemin possible.",
+    label: 'Le montage en série',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MONTAGE 1', 'En série', p, C.bleu);
+      const x = W * 0.22, y = H * 0.34, w = W * 0.56, h = H * 0.36;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.35, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: 'L₁' },
+        { cote: 'haut',   pos: 0.72, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: 'L₂' },
+      ], p);
+      sensCourant(ctx, x, y, w, h, cl((p - 0.45) / 0.55));
+      puces(ctx, W * 0.14, H * 0.80, [
+        { t: "Une seule boucle : le même courant traverse tous les dipôles.", c: C.blanc },
+        { t: "Deux lampes en série brillent moins qu'une seule.", c: C.jaune },
+        { t: "Si une lampe grille, le circuit est coupé : tout s'éteint.", c: C.rouge },
+      ], p, { debut: 0.6, pas: 0.12, dy: 34, s: 17 });
+    }
+  },
+
+  { caption: "En dérivation, le courant se sépare en plusieurs branches, puis se rassemble. Chaque lampe a son propre chemin.",
+    label: 'Le montage en dérivation',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MONTAGE 2', 'En dérivation', p, C.vert);
+      const x = W * 0.22, y = H * 0.32, w = W * 0.56, h = H * 0.40;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: 'L₁' },
+      ], p);
+      /* La seconde branche, dérivée entre deux nœuds du fil du haut. */
+      const q2 = et(0.4, 0.35, p);
+      const nA = { x: x + w * 0.42, y: y }, nB = { x: x + w * 0.42, y: y + h };
+      bille(ctx, nA.x, nA.y, 4.5, q2, C.jaune);
+      bille(ctx, nB.x, nB.y, 4.5, q2, C.jaune);
+      seg(ctx, nA.x, nA.y, nA.x, y + h * 0.36, q2, 'rgba(240,236,224,0.55)', 2);
+      seg(ctx, nB.x, nB.y, nB.x, y + h * 0.64, q2, 'rgba(240,236,224,0.55)', 2);
+      symLampe(ctx, nA.x, y + h * 0.5, false, et(0.55, 0.3, p), C.blanc, true);
+      txt(ctx, 'L₂', nA.x + 44, y + h * 0.5, et(0.62, 0.25, p), C.doux, 15, SANS);
+      txt(ctx, 'nœud', nA.x + 4, nA.y - 24, et(0.5, 0.25, p), C.jaune, 14, SANS);
+
+      puces(ctx, W * 0.14, H * 0.82, [
+        { t: "Plusieurs boucles : chaque lampe reçoit la tension du générateur.", c: C.blanc },
+        { t: "Les lampes brillent normalement, quel que soit leur nombre.", c: C.vert },
+        { t: "Si une lampe grille, les autres continuent : c'est le montage des maisons.", c: C.jaune },
+      ], p, { debut: 0.68, pas: 0.1, dy: 32, s: 17 });
+    }
+  },
+
+  { caption: "Un court-circuit : un fil relie directement les deux bornes d'un dipôle. Le courant passe par le fil, qui n'oppose presque rien.",
+    label: 'Le court-circuit',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'DANGER', 'Le court-circuit', p, C.rouge);
+      const x = W * 0.26, y = H * 0.34, w = W * 0.48, h = H * 0.36;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.doux, false), label: 'éteinte' },
+      ], p);
+      /* Le fil fautif, en rouge, court-circuitant la lampe. */
+      const q = et(0.42, 0.3, p);
+      seg(ctx, x + w * 0.72, y, x + w * 0.72, y + h, q, C.rouge, 3);
+      txt(ctx, 'fil de court-circuit', x + w * 0.72 - 14, y - 22, et(0.55, 0.25, p), C.rouge, 15, SANS);
+
+      puces(ctx, W * 0.12, H * 0.80, [
+        { t: "Le courant emprunte le chemin sans résistance : la lampe s'éteint.", c: C.blanc },
+        { t: "L'intensité devient très grande : les fils chauffent fortement.", c: C.rouge },
+        { t: "Risque d'incendie — c'est ce contre quoi protègent fusibles et disjoncteurs.", c: C.jaune },
+      ], p, { debut: 0.6, pas: 0.12, dy: 34, s: 17 });
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Les circuits',
+    body: [
+      { t: "Un circuit doit être fermé pour qu'un courant circule.", c: C.blanc },
+      { t: "Sens conventionnel : du + vers le − à l'extérieur du générateur.", c: C.jaune },
+      { t: "En série : une boucle, même courant, tout s'éteint si l'un lâche.", c: C.bleu },
+      { t: "En dérivation : plusieurs branches, indépendantes les unes des autres.", c: C.vert },
+      { t: "Court-circuit : chemin sans dipôle, intensité dangereuse.", c: C.rouge },
+    ],
+    encadre: 'série : 1 boucle · dérivation : n boucles',
+    caption: "Deux montages, deux comportements à ne jamais confondre."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 4 — TENSION ET INTENSITÉ
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE4 = 'Tension et intensité';
+
+LECONS.push(lecon({
+  id: 'pc_ui_1', chapitre: CE4, niveau: '4ème',
+  titre: "L'intensité du courant",
+  desc: "Ce que mesure un ampèremètre, comment le brancher, et comment l'intensité se répartit.",
+  steps: [
+
+  { caption: "L'intensité mesure le débit du courant : la quantité de charges qui passe chaque seconde. Elle se note I et s'exprime en ampères.",
+    label: "Ce qu'est l'intensité",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'GRANDEUR', "L'intensité I", p, C.jaune);
+      /* Analogie du débit : des charges qui défilent dans un fil. */
+      const y = H * 0.44;
+      seg(ctx, W * 0.10, y - 20, W * 0.90, y - 20, et(0.03, 0.25, p), C.doux, 1.8);
+      seg(ctx, W * 0.10, y + 20, W * 0.90, y + 20, et(0.06, 0.25, p), C.doux, 1.8);
+      for (let i = 0; i < 9; i++) {
+        const q = et(0.15 + i * 0.03, 0.3, p);
+        const bx = W * (0.14 + i * 0.09) + Math.sin(p * 6) * 14;
+        bille(ctx, bx, y, 8, q, C.jaune);
+      }
+      fleche(ctx, W * 0.40, y + 52, W * 0.60, y + 52, et(0.45, 0.3, p), C.jaune, 2);
+      txt(ctx, 'sens du courant', W * 0.50, y + 76, et(0.52, 0.25, p), C.jaune, 16, SANS);
+
+      puces(ctx, W * 0.14, H * 0.72, [
+        { t: "Symbole : I   ·   unité : l'ampère (A)", c: C.blanc, f: MONO, s: 18 },
+        { t: "1 A = 1 000 mA — les circuits du collège travaillent en mA.", c: C.doux, s: 17 },
+        { t: "Plus l'intensité est grande, plus la lampe brille… et plus le fil chauffe.", c: C.rouge, s: 17 },
+      ], p, { debut: 0.6, pas: 0.12, dy: 38 });
+    }
+  },
+
+  { caption: "L'ampèremètre se branche EN SÉRIE : le courant doit le traverser pour être compté.",
+    label: "Brancher l'ampèremètre",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MESURE', "L'ampèremètre se met en série", p, C.bleu);
+      const x = W * 0.24, y = H * 0.34, w = W * 0.52, h = H * 0.38;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.5, dessin: (c, cx, cy, hz, q) => symMesure(c, cx, cy, 'A', q), label: 'ampèremètre' },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true) },
+      ], p);
+      sensCourant(ctx, x, y, w, h, cl((p - 0.45) / 0.55));
+      puces(ctx, W * 0.12, H * 0.82, [
+        { t: "On ouvre le circuit et on insère l'appareil dans la boucle.", c: C.blanc },
+        { t: "Borne COM au − ; borne A (ou mA) du côté du +.", c: C.doux },
+        { t: "Jamais en dérivation aux bornes d'un dipôle : on le détruirait.", c: C.rouge },
+      ], p, { debut: 0.62, pas: 0.12, dy: 34, s: 17 });
+    }
+  },
+
+  { caption: "En série, l'intensité est la même partout. Peu importe où l'on place l'ampèremètre, il affiche la même valeur.",
+    label: 'En série',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI 1', "Unicité de l'intensité en série", p, C.bleu);
+      const x = W * 0.20, y = H * 0.34, w = W * 0.60, h = H * 0.36;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.3, dessin: (c, cx, cy, hz, q) => symMesure(c, cx, cy, 'A', q), label: 'A₁' },
+        { cote: 'haut',   pos: 0.68, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true) },
+        { cote: 'bas',    pos: 0.5, dessin: (c, cx, cy, hz, q) => symMesure(c, cx, cy, 'A', q), label: 'A₂' },
+      ], p);
+      txt(ctx, '0,25 A', x + w * 0.3, y - 56, et(0.55, 0.3, p), C.jaune, 20, MONO);
+      txt(ctx, '0,25 A', x + w * 0.5, y + h + 58, et(0.65, 0.3, p), C.jaune, 20, MONO);
+      encadre(ctx, W * 0.5, H * 0.90, W * 0.48, H * 0.13, 'I₁ = I₂', et(0.78, 0.22, p), C.or, 26);
+      txt(ctx, "Le courant n'est pas consommé en chemin : il n'est pas un carburant.",
+          W * 0.5, H * 0.98, et(0.9, 0.1, p), C.doux, 15, SANS);
+    }
+  },
+
+  { caption: "En dérivation, l'intensité se partage : le courant principal est la somme des courants des branches.",
+    label: 'Loi des nœuds',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI 2', 'La loi des nœuds', p, C.vert);
+      const nx = W * 0.44, ny = H * 0.50;
+      /* Un nœud, un courant qui entre, deux qui sortent. */
+      fleche(ctx, W * 0.16, ny, nx - 10, ny, et(0.05, 0.3, p), C.jaune, 2.6);
+      txt(ctx, 'I = 0,50 A', W * 0.24, ny - 26, et(0.15, 0.25, p), C.jaune, 19, MONO);
+      bille(ctx, nx, ny, 6, et(0.2, 0.25, p), C.jaune);
+      txt(ctx, 'nœud', nx, ny + 28, et(0.25, 0.25, p), C.doux, 14, SANS);
+      fleche(ctx, nx + 10, ny - 6, W * 0.76, H * 0.32, et(0.3, 0.3, p), C.vert, 2.4);
+      txt(ctx, 'I₁ = 0,30 A', W * 0.84, H * 0.31, et(0.4, 0.25, p), C.vert, 19, MONO);
+      fleche(ctx, nx + 10, ny + 6, W * 0.76, H * 0.68, et(0.42, 0.3, p), C.bleu, 2.4);
+      txt(ctx, 'I₂ = 0,20 A', W * 0.84, H * 0.69, et(0.52, 0.25, p), C.bleu, 19, MONO);
+
+      encadre(ctx, W * 0.5, H * 0.87, W * 0.56, H * 0.14, 'I  =  I₁  +  I₂', et(0.65, 0.25, p), C.or, 28);
+      txt(ctx, "Tout ce qui entre dans un nœud en ressort : 0,30 + 0,20 = 0,50.",
+          W * 0.5, H * 0.97, et(0.85, 0.15, p), C.doux, 16, SANS);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_ui_2', chapitre: CE4, niveau: '4ème',
+  titre: 'La tension électrique',
+  desc: "Le voltmètre, la loi d'additivité des tensions, et pourquoi elle se comporte à l'inverse de l'intensité.",
+  steps: [
+
+  { caption: "La tension mesure la différence d'état électrique entre deux points. Elle se note U et s'exprime en volts.",
+    label: "Ce qu'est la tension",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'GRANDEUR', 'La tension U', p, C.vert);
+      /* Une tension se mesure ENTRE deux points : d'où la flèche à deux bouts. */
+      const y = H * 0.44;
+      const a = W * 0.30, b = W * 0.62;
+      bille(ctx, a, y, 6, et(0.05, 0.25, p), C.jaune);
+      bille(ctx, b, y, 6, et(0.1, 0.25, p), C.jaune);
+      txt(ctx, 'A', a, y - 26, et(0.15, 0.25, p), C.doux, 16, SANS);
+      txt(ctx, 'B', b, y - 26, et(0.18, 0.25, p), C.doux, 16, SANS);
+      symLampe(ctx, (a + b) / 2, y, true, et(0.22, 0.3, p), C.blanc, true);
+      seg(ctx, a, y, (a + b) / 2 - 22, y, et(0.12, 0.25, p), 'rgba(240,236,224,0.55)', 2);
+      seg(ctx, (a + b) / 2 + 22, y, b, y, et(0.14, 0.25, p), 'rgba(240,236,224,0.55)', 2);
+      fleche(ctx, b, y + 52, a, y + 52, et(0.4, 0.3, p), C.vert, 2.2);
+      txt(ctx, 'U_AB', (a + b) / 2, y + 76, et(0.5, 0.25, p), C.vert, 18, MONO);
+
+      puces(ctx, W * 0.14, H * 0.72, [
+        { t: "Symbole : U   ·   unité : le volt (V)", c: C.blanc, f: MONO, s: 18 },
+        { t: "Elle se mesure toujours ENTRE DEUX POINTS, aux bornes d'un dipôle.", c: C.jaune, s: 17 },
+        { t: "Pile plate : 4,5 V · secteur : 230 V · pile bâton : 1,5 V.", c: C.doux, s: 17 },
+      ], p, { debut: 0.6, pas: 0.12, dy: 38 });
+    }
+  },
+
+  { caption: "Le voltmètre se branche EN DÉRIVATION, aux bornes du dipôle, sans ouvrir le circuit.",
+    label: 'Brancher le voltmètre',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MESURE', 'Le voltmètre se met en dérivation', p, C.vert);
+      const x = W * 0.24, y = H * 0.32, w = W * 0.52, h = H * 0.34;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true) },
+      ], p);
+      /* Le voltmètre, posé en parallèle sur la lampe. */
+      const q = et(0.45, 0.35, p);
+      const gx = x + w * 0.5 - 60, dx = x + w * 0.5 + 60, vy = y - H * 0.16;
+      bille(ctx, gx, y, 4.5, q, C.vert);
+      bille(ctx, dx, y, 4.5, q, C.vert);
+      seg(ctx, gx, y, gx, vy, q, C.vert, 2);
+      seg(ctx, dx, y, dx, vy, q, C.vert, 2);
+      seg(ctx, gx, vy, x + w * 0.5 - 20, vy, q, C.vert, 2);
+      seg(ctx, x + w * 0.5 + 20, vy, dx, vy, q, C.vert, 2);
+      symMesure(ctx, x + w * 0.5, vy, 'V', et(0.6, 0.3, p), C.vert);
+
+      puces(ctx, W * 0.12, H * 0.78, [
+        { t: "On ne coupe rien : on vient se brancher en parallèle du dipôle.", c: C.blanc },
+        { t: "Borne COM du côté −, borne V du côté +.", c: C.doux },
+        { t: "Moyen mnémotechnique : le Voltmètre est en dériVation.", c: C.jaune },
+      ], p, { debut: 0.68, pas: 0.11, dy: 34, s: 17 });
+    }
+  },
+
+  { caption: "En série, les tensions s'additionnent : la tension du générateur se répartit entre les dipôles.",
+    label: 'Additivité en série',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI 3', "Additivité des tensions", p, C.bleu);
+      const x = W * 0.20, y = H * 0.34, w = W * 0.60, h = H * 0.34;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q), label: 'U = 4,5 V', labelC: C.jaune, labelS: 17 },
+        { cote: 'haut',   pos: 0.32, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: 'U₁ = 2,5 V', labelC: C.bleu, labelS: 17 },
+        { cote: 'haut',   pos: 0.70, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: 'U₂ = 2,0 V', labelC: C.bleu, labelS: 17 },
+      ], p);
+      encadre(ctx, W * 0.5, H * 0.85, W * 0.60, H * 0.14, 'U  =  U₁ + U₂  =  4,5 V', et(0.6, 0.3, p), C.or, 24);
+      txt(ctx, "L'intensité, elle, reste la même : les deux lois se comportent à l'inverse.",
+          W * 0.5, H * 0.96, et(0.85, 0.15, p), C.doux, 16, SANS);
+    }
+  },
+
+  { caption: "En dérivation, au contraire, toutes les branches ont la même tension : celle du générateur.",
+    label: 'Égalité en dérivation',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI 4', 'Tensions égales en dérivation', p, C.vert);
+      const x = W * 0.24, y = H * 0.32, w = W * 0.52, h = H * 0.38;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q), label: '6 V', labelC: C.jaune, labelS: 17 },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true), label: '6 V', labelC: C.vert, labelS: 17 },
+      ], p);
+      const q2 = et(0.4, 0.35, p);
+      const bx = x + w * 0.45;
+      bille(ctx, bx, y, 4.5, q2, C.jaune);
+      bille(ctx, bx, y + h, 4.5, q2, C.jaune);
+      seg(ctx, bx, y, bx, y + h * 0.34, q2, 'rgba(240,236,224,0.55)', 2);
+      seg(ctx, bx, y + h, bx, y + h * 0.66, q2, 'rgba(240,236,224,0.55)', 2);
+      symLampe(ctx, bx, y + h * 0.5, false, et(0.55, 0.3, p), C.blanc, true);
+      txt(ctx, '6 V', bx + 46, y + h * 0.5, et(0.62, 0.25, p), C.vert, 17, MONO);
+
+      encadre(ctx, W * 0.5, H * 0.88, W * 0.54, H * 0.13, 'U = U₁ = U₂', et(0.7, 0.25, p), C.or, 26);
+      txt(ctx, "C'est pourquoi tous les appareils d'une maison reçoivent 230 V.",
+          W * 0.5, H * 0.97, et(0.88, 0.12, p), C.doux, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Tension et intensité',
+    body: [
+      { t: "I : intensité, en ampères, mesurée EN SÉRIE (ampèremètre).", c: C.jaune },
+      { t: "U : tension, en volts, mesurée EN DÉRIVATION (voltmètre).", c: C.vert },
+      { t: "En série : I identique partout, U s'additionne.", c: C.bleu },
+      { t: "En dérivation : U identique partout, I s'additionne.", c: C.bleu },
+      { t: "Les deux lois sont symétriques — c'est le meilleur repère de mémoire.", c: C.doux },
+    ],
+    encadre: 'série : U s’ajoute · dérivation : I s’ajoute',
+    caption: "Deux grandeurs, deux appareils, deux branchements opposés."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 5 — LOI D'OHM
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE5 = "Loi d'Ohm";
+
+LECONS.push(lecon({
+  id: 'pc_ohm_1', chapitre: CE5, niveau: '3ème',
+  titre: 'La résistance et la loi d’Ohm',
+  desc: "Ce que fait une résistance dans un circuit, et la relation qui lie U, I et R.",
+  steps: [
+
+  { caption: "Une résistance freine le passage du courant. Plus elle est grande, moins il passe de courant sous la même tension.",
+    label: 'Le dipôle ohmique',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LE DIPÔLE', 'La résistance', p, C.vert);
+      const y = H * 0.44, x = W * 0.20, w = W * 0.30, h = H * 0.28;
+      /* Deux circuits identiques, deux résistances différentes. */
+      circuit(ctx, x, y - h / 2, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.55, dessin: (c, cx, cy, hz, q) => symResistance(c, cx, cy, hz, q), label: 'R = 100 Ω' },
+      ], p);
+      txt(ctx, 'I = 0,06 A', x + w / 2, y + h / 2 + 44, et(0.5, 0.25, p), C.jaune, 18, MONO);
+
+      const x2 = W * 0.56;
+      circuit(ctx, x2, y - h / 2, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.55, dessin: (c, cx, cy, hz, q) => symResistance(c, cx, cy, hz, q, C.rouge), label: 'R = 300 Ω' },
+      ], cl((p - 0.25) / 0.75));
+      txt(ctx, 'I = 0,02 A', x2 + w / 2, y + h / 2 + 44, et(0.7, 0.25, p), C.rouge, 18, MONO);
+
+      txt(ctx, "Même générateur (6 V), résistance triplée : intensité divisée par trois.",
+          W * 0.5, H * 0.84, et(0.78, 0.2, p), C.blanc, 18, SANS);
+      txt(ctx, "Unité de la résistance : l'ohm (Ω), mesuré à l'ohmmètre, hors circuit.",
+          W * 0.5, H * 0.92, et(0.88, 0.12, p), C.doux, 16, SANS);
+    }
+  },
+
+  { caption: "La loi d'Ohm relie ces trois grandeurs : la tension aux bornes d'une résistance est le produit de sa valeur par l'intensité.",
+    label: "La loi d'Ohm",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI', "La loi d'Ohm", p, C.jaune);
+      encadre(ctx, W * 0.30, H * 0.38, W * 0.40, H * 0.17, 'U  =  R × I', et(0.05, 0.3, p), C.or, 34);
+      puces(ctx, W * 0.11, H * 0.58, [
+        { t: "U : tension, en volts (V)", c: C.blanc, f: MONO, s: 17 },
+        { t: "R : résistance, en ohms (Ω)", c: C.vert, f: MONO, s: 17 },
+        { t: "I : intensité, en ampères (A)", c: C.jaune, f: MONO, s: 17 },
+        { t: "Attention : I en ampères, jamais en milliampères.", c: C.rouge, s: 16 },
+      ], p, { debut: 0.3, pas: 0.11, dy: 38 });
+      triangleFormule(ctx, W * 0.75, H * 0.46, Math.min(W * 0.13, H * 0.22), 'U', 'R', 'I', et(0.45, 0.5, p));
+      puces(ctx, W * 0.62, H * 0.80, [
+        { t: "on cache R  →  R = U / I", c: C.doux, f: MONO, s: 16 },
+        { t: "on cache I  →  I = U / R", c: C.doux, f: MONO, s: 16 },
+      ], p, { debut: 0.8, pas: 0.08, dy: 30 });
+    }
+  },
+
+  { caption: "La caractéristique d'une résistance est une droite passant par l'origine : U est proportionnelle à I.",
+    label: 'La caractéristique',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'GRAPHIQUE', 'U en fonction de I', p, C.bleu);
+      const ox = W * 0.20, oy = H * 0.82, larg = W * 0.58, haut = H * 0.50;
+      repere(ctx, ox, oy, larg, haut, et(0, 0.2, p), 'I (A)', 'U (V)');
+      /* La droite, tracée point à point. */
+      const pts = [];
+      for (let i = 0; i <= 30; i++) {
+        const u = i / 30;
+        pts.push({ x: ox + larg * 0.86 * u, y: oy - haut * 0.82 * u });
+      }
+      courbe(ctx, pts, et(0.2, 0.4, p), C.bleu, 2.6);
+      /* Un point de mesure et sa lecture. */
+      const q = et(0.55, 0.3, p);
+      const px = ox + larg * 0.5, py = oy - haut * 0.477;
+      bille(ctx, px, py, 6, q, C.jaune);
+      ctx.save(); ctx.setLineDash([4, 5]);
+      seg(ctx, px, py, px, oy, q, 'rgba(240,236,224,0.3)', 1.3);
+      seg(ctx, px, py, ox, py, q, 'rgba(240,236,224,0.3)', 1.3);
+      ctx.setLineDash([]); ctx.restore();
+      txt(ctx, '0,04 A', px, oy + 24, et(0.65, 0.25, p), C.jaune, 15, MONO);
+      txt(ctx, '4 V', ox - 14, py, et(0.68, 0.25, p), C.jaune, 15, MONO, 'right');
+
+      puces(ctx, W * 0.10, H * 0.94, [
+        { t: "Droite par l'origine = proportionnalité. Son coefficient directeur EST R : R = 4 / 0,04 = 100 Ω.", c: C.vert, s: 16 },
+      ], p, { debut: 0.78, pas: 0.1, dy: 28 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_ohm_2', chapitre: CE5, niveau: '3ème',
+  titre: "Utiliser la loi d'Ohm",
+  desc: "Trois calculs types, et le rôle concret d'une résistance de protection.",
+  steps: [
+
+  { caption: "Premier cas : on cherche la tension. On connaît R et I, on multiplie.",
+    label: 'Calculer U',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CAS 1', 'Trouver la tension', p, C.bleu);
+      puces(ctx, W * 0.18, H * 0.34, [
+        { t: "Données :  R = 220 Ω   et   I = 0,05 A", c: C.blanc, f: MONO, s: 19 },
+        { t: "Formule :  U = R × I", c: C.jaune, f: MONO, s: 19 },
+        { t: "Calcul :   U = 220 × 0,05", c: C.blanc, f: MONO, s: 19 },
+        { t: "Résultat : U = 11 V", c: C.vert, f: MONO, s: 22 },
+      ], p, { debut: 0.1, pas: 0.18, dy: 58 });
+      txt(ctx, "Toujours vérifier les unités AVANT de multiplier : 50 mA valent 0,05 A.",
+          W * 0.5, H * 0.86, et(0.8, 0.2, p), C.rouge, 17, SANS);
+    }
+  },
+
+  { caption: "Deuxième cas : on cherche l'intensité. On divise la tension par la résistance.",
+    label: 'Calculer I',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CAS 2', "Trouver l'intensité", p, C.jaune);
+      puces(ctx, W * 0.18, H * 0.34, [
+        { t: "Données :  U = 6 V   et   R = 150 Ω", c: C.blanc, f: MONO, s: 19 },
+        { t: "Formule :  I = U / R", c: C.jaune, f: MONO, s: 19 },
+        { t: "Calcul :   I = 6 / 150", c: C.blanc, f: MONO, s: 19 },
+        { t: "Résultat : I = 0,04 A  =  40 mA", c: C.vert, f: MONO, s: 22 },
+      ], p, { debut: 0.1, pas: 0.18, dy: 58 });
+      txt(ctx, "Un résultat en ampères est souvent petit : le convertir en mA le rend parlant.",
+          W * 0.5, H * 0.86, et(0.8, 0.2, p), C.doux, 17, SANS);
+    }
+  },
+
+  { caption: "Troisième cas : on cherche la résistance. C'est ainsi qu'on la détermine expérimentalement.",
+    label: 'Calculer R',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CAS 3', 'Trouver la résistance', p, C.vert);
+      const x = W * 0.10, y = H * 0.32, w = W * 0.34, h = H * 0.30;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.35, dessin: (c, cx, cy, hz, q) => symMesure(c, cx, cy, 'A', q) },
+        { cote: 'haut',   pos: 0.75, dessin: (c, cx, cy, hz, q) => symResistance(c, cx, cy, hz, q) },
+      ], p);
+      puces(ctx, W * 0.52, H * 0.36, [
+        { t: "On mesure :  U = 9 V   et   I = 0,03 A", c: C.blanc, f: MONO, s: 18 },
+        { t: "Formule :    R = U / I", c: C.jaune, f: MONO, s: 18 },
+        { t: "Calcul :     R = 9 / 0,03", c: C.blanc, f: MONO, s: 18 },
+        { t: "Résultat :   R = 300 Ω", c: C.vert, f: MONO, s: 21 },
+      ], p, { debut: 0.35, pas: 0.14, dy: 48 });
+      txt(ctx, "Une mesure de U et une de I suffisent à connaître n'importe quelle résistance.",
+          W * 0.5, H * 0.92, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "À quoi cela sert : une résistance placée en série protège un composant fragile en limitant l'intensité qui le traverse.",
+    label: 'Résistance de protection',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'APPLICATION', 'La résistance de protection', p, C.rouge);
+      const y = H * 0.34, h = H * 0.30;
+      /* Sans résistance : trop de courant, la DEL grille. */
+      circuit(ctx, W * 0.08, y, W * 0.34, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.55, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.rouge, false), label: 'DEL grillée', labelC: C.rouge },
+      ], p);
+      txt(ctx, 'SANS résistance', W * 0.25, y + h + H * 0.16, et(0.4, 0.25, p), C.rouge, 17, MONO);
+      txt(ctx, 'I trop grande', W * 0.25, y + h + H * 0.22, et(0.45, 0.25, p), C.doux, 15, SANS);
+
+      /* Avec résistance : intensité maîtrisée. */
+      circuit(ctx, W * 0.56, y, W * 0.34, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.35, dessin: (c, cx, cy, hz, q) => symResistance(c, cx, cy, hz, q), label: 'R' },
+        { cote: 'haut',   pos: 0.78, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.vert, true), label: 'DEL', labelC: C.vert },
+      ], cl((p - 0.3) / 0.7));
+      txt(ctx, 'AVEC résistance', W * 0.73, y + h + H * 0.16, et(0.7, 0.25, p), C.vert, 17, MONO);
+      txt(ctx, 'I limitée à 20 mA', W * 0.73, y + h + H * 0.22, et(0.75, 0.25, p), C.doux, 15, SANS);
+
+      txt(ctx, "La résistance absorbe une partie de la tension : il en reste moins pour le composant.",
+          W * 0.5, H * 0.95, et(0.86, 0.14, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: "La loi d'Ohm",
+    body: [
+      { t: "U = R × I    ·    R = U / I    ·    I = U / R", c: C.jaune, f: MONO, s: 20 },
+      { t: "U en volts, R en ohms, I en AMPÈRES — jamais en mA.", c: C.rouge },
+      { t: "La caractéristique d'une résistance est une droite par l'origine.", c: C.bleu },
+      { t: "Sa pente donne directement la valeur de R.", c: C.doux },
+      { t: "En série, une résistance limite l'intensité : elle protège.", c: C.vert },
+    ],
+    encadre: 'U = R × I',
+    caption: "Une seule relation, trois façons de l'utiliser."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 6 — PUISSANCE ET ÉNERGIE ÉLECTRIQUE
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE6 = 'Puissance et énergie électrique';
+
+LECONS.push(lecon({
+  id: 'pc_puis_1', chapitre: CE6, niveau: '3ème',
+  titre: 'La puissance électrique',
+  desc: "Ce que dit l'étiquette d'un appareil, et la relation P = U × I.",
+  steps: [
+
+  { caption: "La puissance indique la vitesse à laquelle un appareil consomme l'énergie. Elle se note P et s'exprime en watts.",
+    label: 'La puissance',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'GRANDEUR', 'La puissance P', p, C.jaune);
+      const app = [
+        { t: 'LED', v: '8 W', c: C.vert },
+        { t: 'Ordinateur', v: '150 W', c: C.bleu },
+        { t: 'Four', v: '2 000 W', c: C.rouge },
+        { t: 'Chauffe-eau', v: '2 500 W', c: C.rouge },
+      ];
+      app.forEach((a, i) => {
+        const x = W * (0.07 + i * 0.23), w = W * 0.19;
+        const q = et(0.05 + i * 0.12, 0.3, p);
+        cadre(ctx, x, H * 0.32, w, H * 0.20, q, a.c, 1.8);
+        txt(ctx, a.t, x + w / 2, H * 0.38, et(0.1 + i * 0.12, 0.25, p), C.blanc, 15, SANS);
+        txt(ctx, a.v, x + w / 2, H * 0.46, et(0.14 + i * 0.12, 0.25, p), a.c, 20, MONO);
+      });
+      puces(ctx, W * 0.14, H * 0.64, [
+        { t: "Symbole : P   ·   unité : le watt (W)", c: C.blanc, f: MONO, s: 18 },
+        { t: "1 kW = 1 000 W", c: C.doux, f: MONO, s: 18 },
+        { t: "Une puissance élevée ne coûte cher que si l'appareil fonctionne longtemps.", c: C.jaune, s: 17 },
+      ], p, { debut: 0.58, pas: 0.12, dy: 40 });
+    }
+  },
+
+  { caption: "La relation à connaître : la puissance est le produit de la tension par l'intensité.",
+    label: 'P = U × I',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORMULE', 'Puissance, tension, intensité', p, C.vert);
+      encadre(ctx, W * 0.30, H * 0.38, W * 0.40, H * 0.17, 'P  =  U × I', et(0.05, 0.3, p), C.or, 34);
+      puces(ctx, W * 0.11, H * 0.58, [
+        { t: "P : puissance, en watts (W)", c: C.jaune, f: MONO, s: 17 },
+        { t: "U : tension, en volts (V)", c: C.blanc, f: MONO, s: 17 },
+        { t: "I : intensité, en ampères (A)", c: C.blanc, f: MONO, s: 17 },
+      ], p, { debut: 0.3, pas: 0.1, dy: 38 });
+      triangleFormule(ctx, W * 0.75, H * 0.46, Math.min(W * 0.13, H * 0.22), 'P', 'U', 'I', et(0.45, 0.5, p));
+      const q = et(0.72, 0.28, p);
+      if (q > 0) {
+        txt(ctx, "Exemple : un radiateur sur le secteur, I = 8,7 A", W * 0.5, H * 0.84, q, C.doux, 17, SANS);
+        txt(ctx, "P = 230 × 8,7 ≈ 2 000 W", W * 0.5, H * 0.92, et(0.82, 0.18, p), C.vert, 22, MONO);
+      }
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_puis_2', chapitre: CE6, niveau: '3ème',
+  titre: "L'énergie consommée",
+  desc: "De la puissance à la facture : E = P × t, le joule et le kilowattheure.",
+  steps: [
+
+  { caption: "L'énergie consommée dépend de deux choses : la puissance de l'appareil et la durée d'utilisation.",
+    label: 'E = P × t',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORMULE', "L'énergie consommée", p, C.jaune);
+      encadre(ctx, W * 0.5, H * 0.34, W * 0.46, H * 0.16, 'E  =  P × t', et(0.05, 0.3, p), C.or, 34);
+      tableau(ctx, W * 0.14, H * 0.54, W * 0.72,
+        [ { t: 'SI P EST EN…' }, { t: 'ET t EN…' }, { t: 'ALORS E EST EN…' } ],
+        [
+          [ { t: 'watts (W)', c: C.blanc }, { t: 'secondes (s)', c: C.blanc }, { t: 'joules (J)', c: C.vert } ],
+          [ { t: 'kilowatts (kW)', c: C.blanc }, { t: 'heures (h)', c: C.blanc }, { t: 'kilowattheures (kWh)', c: C.jaune } ],
+        ], p, { dy: 50 });
+      txt(ctx, "Les deux lignes ne se mélangent jamais : c'est l'erreur classique du chapitre.",
+          W * 0.5, H * 0.84, et(0.7, 0.2, p), C.rouge, 17, SANS);
+      txt(ctx, "1 kWh = 3 600 000 J — le kWh est simplement plus commode pour une facture.",
+          W * 0.5, H * 0.92, et(0.85, 0.15, p), C.doux, 16, SANS);
+    }
+  },
+
+  { caption: "Un calcul complet : un four de 2 000 W utilisé une demi-heure, et ce que cela représente sur la facture.",
+    label: 'Exemple chiffré',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EXEMPLE', "Un four, une demi-heure", p, C.vert);
+      puces(ctx, W * 0.16, H * 0.32, [
+        { t: "P = 2 000 W = 2 kW      t = 0,5 h", c: C.blanc, f: MONO, s: 18 },
+        { t: "E = P × t = 2 × 0,5", c: C.jaune, f: MONO, s: 18 },
+        { t: "E = 1 kWh", c: C.vert, f: MONO, s: 24 },
+        { t: "À 0,20 € le kWh :  coût = 1 × 0,20 = 0,20 €", c: C.blanc, f: MONO, s: 18 },
+        { t: "En joules : E = 2 000 × 1 800 = 3 600 000 J", c: C.doux, f: MONO, s: 17 },
+      ], p, { debut: 0.1, pas: 0.15, dy: 52 });
+      txt(ctx, "Les deux résultats décrivent la même énergie, dans deux unités différentes.",
+          W * 0.5, H * 0.92, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Comparer les appareils : c'est le produit puissance × durée qui compte, pas la puissance seule.",
+    label: 'Comparer',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'COMPARAISON', "Puissance forte n'est pas toujours dépense forte", p);
+      tableau(ctx, W * 0.08, H * 0.32, W * 0.84,
+        [ { t: 'APPAREIL' }, { t: 'PUISSANCE' }, { t: 'DURÉE / JOUR' }, { t: 'ÉNERGIE / JOUR' } ],
+        [
+          [ 'Four', { t: '2 kW', c: C.rouge }, { t: '0,5 h', c: C.doux }, { t: '1 kWh', c: C.jaune } ],
+          [ 'Réfrigérateur', { t: '0,1 kW', c: C.vert }, { t: '24 h', c: C.doux }, { t: '2,4 kWh', c: C.rouge } ],
+          [ 'Ampoule LED', { t: '0,008 kW', c: C.vert }, { t: '5 h', c: C.doux }, { t: '0,04 kWh', c: C.vert } ],
+        ], p, { dy: 52 });
+      txt(ctx, "Le réfrigérateur consomme plus que le four : il est faible, mais il ne s'arrête jamais.",
+          W * 0.5, H * 0.80, et(0.7, 0.22, p), C.blanc, 18, SANS);
+      txt(ctx, "C'est la durée qui fait la facture autant que la puissance.",
+          W * 0.5, H * 0.88, et(0.84, 0.16, p), C.or, 17, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Puissance et énergie',
+    body: [
+      { t: "P = U × I, en watts : la vitesse de consommation.", c: C.jaune, f: MONO },
+      { t: "E = P × t, en joules ou en kilowattheures.", c: C.vert, f: MONO },
+      { t: "W avec s → J    ·    kW avec h → kWh", c: C.blanc, f: MONO },
+      { t: "1 kWh = 3 600 000 J.", c: C.doux },
+      { t: "La facture dépend du produit puissance × durée.", c: C.bleu },
+    ],
+    encadre: 'E = P × t',
+    caption: "La puissance dit la vitesse, l'énergie dit le total."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   ÉNERGIE, CHAPITRE 7 — SÉCURITÉ ÉLECTRIQUE
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CE7 = 'Sécurité électrique';
+
+LECONS.push(lecon({
+  id: 'pc_secu_1', chapitre: CE7, niveau: '4ème',
+  titre: 'Les dangers du courant',
+  desc: "Pourquoi le courant est dangereux pour le corps, et ce qui provoque les incendies domestiques.",
+  steps: [
+
+  { caption: "Le corps humain conduit le courant. Si un courant le traverse, il provoque des brûlures et peut arrêter le cœur.",
+    label: 'Le corps conducteur',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'DANGER 1', "Le corps laisse passer le courant", p, C.rouge);
+      const items = [
+        { i: 'moins de 0,5 mA', d: 'rien de perceptible', c: C.vert },
+        { i: '10 mA', d: 'contraction musculaire : on ne peut plus lâcher', c: C.jaune },
+        { i: '30 mA', d: 'seuil de danger : paralysie respiratoire', c: C.rouge },
+        { i: '75 mA et plus', d: 'fibrillation du cœur, risque mortel', c: C.rouge },
+      ];
+      items.forEach((k, i) => {
+        const y = H * 0.34 + i * H * 0.13;
+        const q = et(0.06 + i * 0.16, 0.3, p);
+        txt(ctx, k.i, W * 0.30, y, q, k.c, 19, MONO, 'right');
+        seg(ctx, W * 0.33, y, W * 0.36, y, q, C.doux, 1.4);
+        txt(ctx, k.d, W * 0.38, y, et(0.1 + i * 0.16, 0.3, p), C.blanc, 17, SANS, 'left');
+      });
+      txt(ctx, "L'eau rend le corps bien meilleur conducteur : le danger augmente fortement.",
+          W * 0.5, H * 0.90, et(0.78, 0.22, p), C.jaune, 17, SANS);
+      txt(ctx, "D'où l'interdiction absolue des appareils branchés près d'une baignoire.",
+          W * 0.5, H * 0.96, et(0.88, 0.12, p), C.doux, 16, SANS);
+    }
+  },
+
+  { caption: "Deux mots à distinguer : l'électrisation est le passage du courant dans le corps ; l'électrocution en est l'issue mortelle.",
+    label: 'Deux mots',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'VOCABULAIRE', 'Électrisation et électrocution', p, C.violet);
+      const w = W * 0.38, h = H * 0.26;
+      cadre(ctx, W * 0.07, H * 0.36, w, h, et(0.05, 0.3, p), C.jaune, 2);
+      txt(ctx, 'ÉLECTRISATION', W * 0.07 + w / 2, H * 0.44, et(0.12, 0.25, p), C.jaune, 19, MONO);
+      txt(ctx, "le courant traverse le corps", W * 0.07 + w / 2, H * 0.52, et(0.18, 0.25, p), C.blanc, 16, SANS);
+      cadre(ctx, W * 0.55, H * 0.36, w, h, et(0.25, 0.3, p), C.rouge, 2);
+      txt(ctx, 'ÉLECTROCUTION', W * 0.55 + w / 2, H * 0.44, et(0.32, 0.25, p), C.rouge, 19, MONO);
+      txt(ctx, "l'électrisation entraîne la mort", W * 0.55 + w / 2, H * 0.52, et(0.38, 0.25, p), C.blanc, 16, SANS);
+      txt(ctx, "Toute électrocution est une électrisation ; l'inverse est heureusement faux.",
+          W * 0.5, H * 0.76, et(0.6, 0.25, p), C.doux, 17, SANS);
+      txt(ctx, "Devant un accident : ne jamais toucher la victime avant d'avoir coupé le courant.",
+          W * 0.5, H * 0.86, et(0.78, 0.22, p), C.rouge, 18, SANS);
+      txt(ctx, "Couper au disjoncteur, puis appeler les secours : 15, 18 ou 112.",
+          W * 0.5, H * 0.93, et(0.9, 0.1, p), C.jaune, 17, SANS);
+    }
+  },
+
+  { caption: "Côté installation, deux causes d'incendie : le court-circuit et la surcharge d'une prise multiple.",
+    label: 'Incendies',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'DANGER 2', "Ce qui met le feu", p, C.rouge);
+      const w = W * 0.40, h = H * 0.30;
+      cadre(ctx, W * 0.06, H * 0.32, w, h, et(0.05, 0.3, p), C.rouge, 2);
+      txt(ctx, 'COURT-CIRCUIT', W * 0.06 + w / 2, H * 0.40, et(0.1, 0.25, p), C.rouge, 18, MONO);
+      txt(ctx, "les deux bornes se touchent", W * 0.06 + w / 2, H * 0.48, et(0.15, 0.25, p), C.blanc, 16, SANS);
+      txt(ctx, "l'intensité devient énorme, les fils fondent", W * 0.06 + w / 2, H * 0.55, et(0.2, 0.25, p), C.doux, 14, SANS);
+
+      cadre(ctx, W * 0.54, H * 0.32, w, h, et(0.28, 0.3, p), C.jaune, 2);
+      txt(ctx, 'SURCHARGE', W * 0.54 + w / 2, H * 0.40, et(0.34, 0.25, p), C.jaune, 18, MONO);
+      txt(ctx, "trop d'appareils sur une prise", W * 0.54 + w / 2, H * 0.48, et(0.4, 0.25, p), C.blanc, 16, SANS);
+      txt(ctx, "les intensités s'additionnent, le fil chauffe", W * 0.54 + w / 2, H * 0.55, et(0.45, 0.25, p), C.doux, 14, SANS);
+
+      txt(ctx, "En dérivation, chaque appareil ajoute son intensité : 3 × 10 A = 30 A dans le même fil.",
+          W * 0.5, H * 0.76, et(0.6, 0.25, p), C.blanc, 18, SANS);
+      txt(ctx, "Un fil trop chargé s'échauffe, l'isolant fond, et le feu prend.",
+          W * 0.5, H * 0.85, et(0.75, 0.2, p), C.rouge, 17, SANS);
+      txt(ctx, "Jamais de multiprise branchée sur une autre multiprise.",
+          W * 0.5, H * 0.93, et(0.88, 0.12, p), C.jaune, 17, SANS);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_secu_2', chapitre: CE7, niveau: '4ème',
+  titre: 'Les protections',
+  desc: "Fusible, disjoncteur, prise de terre, différentiel : qui protège quoi, et contre quoi.",
+  steps: [
+
+  { caption: "Le fusible et le disjoncteur protègent l'installation : ils coupent le circuit quand l'intensité dépasse une limite.",
+    label: 'Fusible et disjoncteur',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PROTECTION 1', "Contre les intensités trop fortes", p, C.jaune);
+      const x = W * 0.24, y = H * 0.32, w = W * 0.52, h = H * 0.34;
+      circuit(ctx, x, y, w, h, [
+        { cote: 'gauche', pos: 0.5, dessin: (c, cx, cy, hz, q) => symGenerateur(c, cx, cy, hz, q) },
+        { cote: 'haut',   pos: 0.5, dessin: (c, cx, cy, hz, q) => symFusible(c, cx, cy, hz, q), label: 'fusible 10 A' },
+        { cote: 'droite', pos: 0.5, dessin: (c, cx, cy, hz, q) => symLampe(c, cx, cy, hz, q, C.blanc, true) },
+      ], p);
+      puces(ctx, W * 0.12, H * 0.76, [
+        { t: "Le fusible fond au-delà de son calibre : il faut le remplacer.", c: C.blanc },
+        { t: "Le disjoncteur fait la même chose, mais se réarme d'un geste.", c: C.vert },
+        { t: "Ils protègent les FILS de l'installation, pas les personnes.", c: C.rouge },
+      ], p, { debut: 0.55, pas: 0.13, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "La prise de terre et le disjoncteur différentiel, eux, protègent les personnes.",
+    label: 'Terre et différentiel',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PROTECTION 2', 'Contre les électrisations', p, C.vert);
+      /* Un appareil dont la carcasse est reliée à la terre. */
+      const cx = W * 0.28, cy = H * 0.44;
+      cadre(ctx, cx - 60, cy - 40, 120, 80, et(0.05, 0.3, p), C.blanc, 2);
+      txt(ctx, 'appareil', cx, cy, et(0.15, 0.25, p), C.doux, 16, SANS);
+      const q = et(0.3, 0.3, p);
+      seg(ctx, cx, cy + 40, cx, cy + 96, q, C.vert, 2.4);
+      for (let i = 0; i < 3; i++) seg(ctx, cx - 26 + i * 9, cy + 96 + i * 9, cx + 26 - i * 9, cy + 96 + i * 9, et(0.4 + i * 0.05, 0.2, p), C.vert, 2.2);
+      txt(ctx, 'prise de terre', cx, cy + 140, et(0.5, 0.25, p), C.vert, 16, SANS);
+
+      puces(ctx, W * 0.50, H * 0.34, [
+        { t: "La terre évacue vers le sol le courant qui atteint la carcasse.", c: C.blanc },
+        { t: "Sans elle, ce courant passerait par la personne qui touche.", c: C.rouge },
+        { t: "Le différentiel compare le courant entrant et sortant.", c: C.jaune },
+        { t: "S'il manque plus de 30 mA, c'est qu'il fuit : il coupe en 30 ms.", c: C.vert },
+      ], p, { debut: 0.45, pas: 0.13, dy: 44, s: 17 });
+    }
+  },
+
+  { caption: "Les gestes qui évitent l'accident, à connaître par cœur.",
+    label: 'Les bons gestes',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PRÉVENTION', 'Les règles à appliquer', p, C.bleu);
+      const regles = [
+        { t: "Couper le courant avant toute intervention", c: C.vert },
+        { t: "Ne jamais toucher un appareil avec les mains mouillées", c: C.vert },
+        { t: "Débrancher en tirant la fiche, jamais le câble", c: C.vert },
+        { t: "Remplacer tout câble dénudé ou abîmé", c: C.vert },
+        { t: "Ne rien introduire dans une prise", c: C.rouge },
+        { t: "Ne pas enchaîner les multiprises", c: C.rouge },
+      ];
+      regles.forEach((r, i) => {
+        const x = W * (0.07 + (i % 2) * 0.47), w = W * 0.42;
+        const y = H * (0.32 + Math.floor(i / 2) * 0.19);
+        const q = et(0.05 + i * 0.12, 0.3, p);
+        cadre(ctx, x, y, w, H * 0.13, q, r.c, 1.6);
+        txt(ctx, r.t, x + w / 2, y + H * 0.065, et(0.1 + i * 0.12, 0.28, p), C.blanc, 15, SANS);
+      });
+      txt(ctx, "En vert : ce qu'il faut faire.   En rouge : ce qu'il ne faut jamais faire.",
+          W * 0.5, H * 0.94, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Sécurité électrique',
+    body: [
+      { t: "Le corps conduit le courant ; 30 mA suffisent à être mortels.", c: C.rouge },
+      { t: "Électrisation : le courant traverse. Électrocution : elle tue.", c: C.jaune },
+      { t: "Fusible et disjoncteur protègent l'installation contre les surintensités.", c: C.blanc },
+      { t: "Terre et différentiel protègent les personnes contre les fuites.", c: C.vert },
+      { t: "Devant un accident : couper d'abord, toucher ensuite, appeler le 112.", c: C.bleu },
+    ],
+    encadre: 'couper le courant avant tout',
+    caption: "Comprendre le danger, c'est déjà s'en protéger."
+  }),
+
+]}));
+
 /* ── Enregistrement auprès de cours.html ──────────────────────────────
    Les quatre thèmes du programme sont déclarés pour que le filtre soit
-   prêt ; seuls ceux qui possèdent des leçons s'afficheront. */
+   prêt ; seuls ceux qui possèdent des leçons s'affichent réellement. */
 if (typeof window !== 'undefined') {
   window.COURS_PAR_MATIERE = window.COURS_PAR_MATIERE || {};
   window.COURS_PAR_MATIERE['physique-chimie'] = {
     branches: [
-      { id: 'matiere',    label: 'Matière',                   color: '#7ab4c8' },
+      { id: 'matiere',    label: 'Matière',                    color: '#7ab4c8' },
       { id: 'mouvements', label: 'Mouvements et interactions', color: '#c8a07a' },
-      { id: 'energie',    label: 'Énergie',                   color: '#e8a87c' },
-      { id: 'signaux',    label: 'Signaux',                   color: '#a07ac8' },
+      { id: 'energie',    label: 'Énergie',                    color: '#e8a87c' },
+      { id: 'signaux',    label: 'Signaux',                    color: '#a07ac8' },
     ],
     lecons: LECONS,
   };
