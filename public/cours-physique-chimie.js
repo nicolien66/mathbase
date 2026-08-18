@@ -14,6 +14,14 @@
      6. Combustions
      7. Acides, bases et pH
 
+   THÈME « MOUVEMENTS ET INTERACTIONS » :
+
+     1. Décrire un mouvement
+     2. Vitesse
+     3. Forces et interactions
+     4. Poids et masse
+     5. Gravitation
+
    THÈME « ÉNERGIE » :
 
      1. Formes et sources d'énergie
@@ -3954,6 +3962,892 @@ LECONS.push(lecon({
     ],
     encadre: 'couper le courant avant tout',
     caption: "Comprendre le danger, c'est déjà s'en protéger."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   THÈME « MOUVEMENTS ET INTERACTIONS » — outils de schéma
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Le libellé court sert d'étiquette sur les cartes ; le nom complet du thème
+   reste celui de la section (voir la liste des branches, plus bas). */
+THEME_COURANT = { id: 'mouvements', label: 'Mouvements' };
+
+/* Chronophotographie : les positions successives d'un mobile, prises à
+   intervalles de temps ÉGAUX. L'écart entre deux points renseigne alors
+   directement sur la vitesse — c'est tout l'intérêt du procédé. */
+function chronophoto(ctx, pts, p, opts) {
+  opts = opts || {};
+  const c = opts.c || C.jaune;
+  pts.forEach((pt, i) => {
+    const q = et((opts.debut || 0.1) + i * (opts.pas || 0.06), 0.25, p);
+    if (q <= 0) return;
+    /* Le trait fin qui relie les positions suggère la trajectoire. */
+    if (i > 0 && opts.relier !== false) {
+      seg(ctx, pts[i - 1].x, pts[i - 1].y, pt.x, pt.y, q, 'rgba(240,236,224,0.20)', 1.3);
+    }
+    bille(ctx, pt.x, pt.y, opts.r || 7, q, c);
+    if (opts.numeroter) txt(ctx, String(i + 1), pt.x, pt.y - (opts.dyNum || 22), q, C.doux, 13, MONO);
+  });
+}
+
+/* Suite de positions le long d'une horizontale, avec un espacement qui
+   suit une loi : constant (uniforme), croissant (accéléré), décroissant. */
+function positions(x0, y, n, ecart, facteur) {
+  const out = []; let x = x0, d = ecart;
+  for (let i = 0; i < n; i++) { out.push({ x, y }); x += d; d *= (facteur || 1); }
+  return out;
+}
+
+/* Vecteur force : le segment fléché, plus son point d'application marqué.
+   Les quatre caractéristiques exigibles se lisent sur ce seul dessin. */
+function force(ctx, x, y, dx, dy, p, nom, c, opts) {
+  opts = opts || {};
+  const col = c || C.rouge;
+  bille(ctx, x, y, 5, et(0, 0.2, p), col);
+  fleche(ctx, x, y, x + dx, y + dy, et(0.1, 0.5, p), col, opts.ep || 2.6);
+  if (nom) {
+    const nx = x + dx + (opts.ndx === undefined ? (dx >= 0 ? 26 : -26) : opts.ndx);
+    const ny = y + dy + (opts.ndy === undefined ? (dy >= 0 ? 18 : -18) : opts.ndy);
+    txt(ctx, nom, nx, ny, et(0.45, 0.3, p), col, opts.s || 17, opts.f || MONO);
+  }
+}
+
+/* Dynamomètre : le ressort gradué qui mesure une force, en newtons. */
+function dynamometre(ctx, cx, haut, p, lecture, opts) {
+  opts = opts || {};
+  const h = opts.h || 150, w = opts.w || 34;
+  cadre(ctx, cx - w / 2, haut, w, h, et(0, 0.3, p), C.blanc, 2);
+  /* Le ressort, en zigzag. */
+  const q = et(0.2, 0.35, p);
+  const n = 7, y0 = haut + 16, y1 = haut + h * 0.62;
+  for (let i = 0; i < n; i++) {
+    const ya = y0 + ((y1 - y0) * i) / n, yb = y0 + ((y1 - y0) * (i + 1)) / n;
+    seg(ctx, cx + (i % 2 ? -10 : 10), ya, cx + (i % 2 ? 10 : -10), yb, cl(q * n - i), C.doux, 1.8);
+  }
+  seg(ctx, cx, y1, cx, haut + h, et(0.45, 0.25, p), C.doux, 2);
+  for (let i = 1; i <= 4; i++) {
+    seg(ctx, cx + w / 2, haut + (h * i) / 5, cx + w / 2 - 8, haut + (h * i) / 5, et(0.3 + i * 0.04, 0.2, p), C.doux, 1.3);
+  }
+  if (lecture) txt(ctx, lecture, cx, haut + h + 26, et(0.6, 0.3, p), opts.c || C.jaune, opts.s || 20, MONO);
+  if (opts.label) txt(ctx, opts.label, cx, haut - 18, et(0.5, 0.25, p), C.doux, 15, SANS);
+  return haut + h;
+}
+
+/* Astre : une sphère nommée, pour les schémas de gravitation. */
+function astre(ctx, cx, cy, r, p, nom, c, opts) {
+  opts = opts || {};
+  cercle(ctx, cx, cy, r, et(0, 0.35, p), c || C.bleu, 2.2);
+  const a = ease(et(0.1, 0.3, p));
+  if (a > 0 && opts.plein !== false) {
+    ctx.save(); ctx.globalAlpha = a * 0.18; ctx.fillStyle = c || C.bleu;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+  if (nom) txt(ctx, nom, cx, cy + r + (opts.dy || 26), et(0.3, 0.3, p), c || C.bleu, opts.s || 16, MONO);
+}
+
+/* Orbite : l'ellipse (ici un cercle) parcourue par un satellite. */
+function orbite(ctx, cx, cy, r, p, c) {
+  ctx.save(); ctx.setLineDash([5, 7]);
+  cercle(ctx, cx, cy, r, et(0, 0.4, p), c || 'rgba(240,236,224,0.25)', 1.4);
+  ctx.setLineDash([]); ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOUVEMENTS, CHAPITRE 1 — DÉCRIRE UN MOUVEMENT
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CM1 = 'Décrire un mouvement';
+
+LECONS.push(lecon({
+  id: 'pc_mouv_1', chapitre: CM1, niveau: '5ème',
+  titre: 'Référentiel et trajectoire',
+  desc: "Un mouvement n'existe que par rapport à quelque chose : choisir le référentiel avant de décrire.",
+  steps: [
+
+  { caption: "Un passager assis dans un train est immobile pour son voisin, mais en mouvement pour quelqu'un resté sur le quai. Tout dépend du point de vue choisi.",
+    label: 'La relativité du mouvement',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PRINCIPE', 'Un mouvement par rapport à quoi ?', p, C.jaune);
+      const y = H * 0.48;
+      /* Le train, avec un passager à bord ; le quai en dessous. */
+      cadre(ctx, W * 0.22, y - 44, W * 0.42, 78, et(0.05, 0.3, p), C.blanc, 2.2);
+      bille(ctx, W * 0.32, y - 4, 12, et(0.2, 0.25, p), C.jaune);
+      txt(ctx, 'passager', W * 0.32, y - 28, et(0.25, 0.25, p), C.jaune, 14, SANS);
+      bille(ctx, W * 0.52, y - 4, 12, et(0.24, 0.25, p), C.bleu);
+      txt(ctx, 'voisin', W * 0.52, y - 28, et(0.28, 0.25, p), C.bleu, 14, SANS);
+      for (let i = 0; i < 4; i++) seg(ctx, W * 0.20 - i * 26, y + 8, W * 0.17 - i * 26, y + 8, et(0.3 + i * 0.03, 0.2, p), C.doux, 1.6);
+      seg(ctx, W * 0.06, y + 52, W * 0.94, y + 52, et(0.1, 0.25, p), C.doux, 1.8);
+      bille(ctx, W * 0.78, y + 36, 12, et(0.35, 0.25, p), C.vert);
+      txt(ctx, 'observateur sur le quai', W * 0.78, y + 16, et(0.4, 0.25, p), C.vert, 14, SANS);
+
+      puces(ctx, W * 0.10, H * 0.74, [
+        { t: "Pour le voisin (référentiel = le train) : le passager est IMMOBILE.", c: C.bleu },
+        { t: "Pour l'observateur (référentiel = le quai) : il est EN MOUVEMENT.", c: C.vert },
+        { t: "Les deux ont raison : décrire un mouvement exige de dire par rapport à quoi.", c: C.jaune },
+      ], p, { debut: 0.5, pas: 0.14, dy: 38, s: 17 });
+    }
+  },
+
+  { caption: "La trajectoire est l'ensemble des positions successivement occupées. Selon sa forme, on nomme le mouvement.",
+    label: 'La trajectoire',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORME', 'Trois trajectoires', p, C.bleu);
+      const y = H * 0.46;
+
+      /* Rectiligne. */
+      const pts1 = positions(W * 0.09, y, 6, W * 0.028);
+      chronophoto(ctx, pts1, p, { debut: 0.05, pas: 0.03, c: C.vert, r: 6 });
+      txt(ctx, 'RECTILIGNE', W * 0.16, y + 70, et(0.25, 0.25, p), C.vert, 16, MONO);
+      txt(ctx, 'une droite', W * 0.16, y + 92, et(0.28, 0.25, p), C.doux, 14, SANS);
+
+      /* Circulaire. */
+      const cx = W * 0.50, r = Math.min(W * 0.075, H * 0.13);
+      orbite(ctx, cx, y, r, et(0.3, 0.3, p));
+      const pts2 = [];
+      for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + i * 0.55; pts2.push({ x: cx + Math.cos(a) * r, y: y + Math.sin(a) * r }); }
+      chronophoto(ctx, pts2, p, { debut: 0.38, pas: 0.03, c: C.jaune, r: 6, relier: false });
+      txt(ctx, 'CIRCULAIRE', cx, y + r + 46, et(0.5, 0.25, p), C.jaune, 16, MONO);
+      txt(ctx, 'un cercle', cx, y + r + 68, et(0.53, 0.25, p), C.doux, 14, SANS);
+
+      /* Curviligne. */
+      const pts3 = [];
+      for (let i = 0; i < 7; i++) { const t = i / 6; pts3.push({ x: W * (0.74 + t * 0.2), y: y - Math.sin(t * Math.PI) * H * 0.14 + H * 0.06 }); }
+      chronophoto(ctx, pts3, p, { debut: 0.6, pas: 0.03, c: C.rouge, r: 6 });
+      txt(ctx, 'CURVILIGNE', W * 0.84, y + 92, et(0.78, 0.25, p), C.rouge, 16, MONO);
+      txt(ctx, 'une courbe quelconque', W * 0.84, y + 114, et(0.81, 0.22, p), C.doux, 14, SANS);
+
+      txt(ctx, "La trajectoire dépend elle aussi du référentiel : celle d'une valve de roue est un cercle pour le cycliste, une courbe pour le trottoir.",
+          W * 0.5, H * 0.94, et(0.88, 0.12, p), C.or, 15, SANS);
+    }
+  },
+
+  { caption: "La chronophotographie enregistre les positions à intervalles de temps égaux : l'écartement des points devient une mesure de la vitesse.",
+    label: 'La chronophotographie',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'OUTIL', 'Des photos à intervalles égaux', p, C.violet);
+      const y = H * 0.42;
+      const pts = positions(W * 0.12, y, 7, W * 0.115);
+      chronophoto(ctx, pts, p, { debut: 0.08, pas: 0.07, c: C.jaune, r: 8, numeroter: true });
+      /* La durée entre deux prises, indiquée sous un intervalle. */
+      const q = et(0.62, 0.3, p);
+      if (q > 0) {
+        fleche(ctx, pts[2].x, y + 44, pts[3].x, y + 44, q, C.doux, 1.6);
+        txt(ctx, 'Δt = 0,1 s', (pts[2].x + pts[3].x) / 2, y + 68, et(0.68, 0.25, p), C.doux, 15, MONO);
+      }
+      puces(ctx, W * 0.12, H * 0.72, [
+        { t: "Chaque point est une position, prise toutes les 0,1 s.", c: C.blanc },
+        { t: "Points serrés = le mobile avance peu en 0,1 s : il va lentement.", c: C.bleu },
+        { t: "Points espacés = il parcourt plus de distance dans le même temps : il va vite.", c: C.jaune },
+      ], p, { debut: 0.6, pas: 0.13, dy: 38, s: 17 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_mouv_2', chapitre: CM1, niveau: '5ème',
+  titre: 'Uniforme, accéléré, ralenti',
+  desc: "Lire la nature d'un mouvement sur une chronophotographie, et le nommer correctement.",
+  steps: [
+
+  { caption: "Trois cas à reconnaître d'un coup d'œil, selon l'évolution de l'écart entre les points.",
+    label: 'Les trois cas',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LECTURE', "Trois natures de mouvement", p, C.jaune);
+
+      const y1 = H * 0.36, y2 = H * 0.56, y3 = H * 0.76;
+      chronophoto(ctx, positions(W * 0.28, y1, 7, W * 0.085), p, { debut: 0.05, pas: 0.04, c: C.vert, r: 7 });
+      txt(ctx, 'UNIFORME', W * 0.20, y1, et(0.05, 0.25, p), C.vert, 17, MONO, 'right');
+      txt(ctx, 'écarts égaux', W * 0.20, y1 + 22, et(0.1, 0.25, p), C.doux, 13, SANS, 'right');
+
+      chronophoto(ctx, positions(W * 0.28, y2, 7, W * 0.045, 1.24), p, { debut: 0.35, pas: 0.04, c: C.jaune, r: 7 });
+      txt(ctx, 'ACCÉLÉRÉ', W * 0.20, y2, et(0.35, 0.25, p), C.jaune, 17, MONO, 'right');
+      txt(ctx, 'écarts croissants', W * 0.20, y2 + 22, et(0.4, 0.25, p), C.doux, 13, SANS, 'right');
+
+      chronophoto(ctx, positions(W * 0.28, y3, 7, W * 0.135, 0.78), p, { debut: 0.62, pas: 0.04, c: C.rouge, r: 7 });
+      txt(ctx, 'RALENTI', W * 0.20, y3, et(0.62, 0.25, p), C.rouge, 17, MONO, 'right');
+      txt(ctx, 'écarts décroissants', W * 0.20, y3 + 22, et(0.67, 0.25, p), C.doux, 13, SANS, 'right');
+    }
+  },
+
+  { caption: "Le mouvement rectiligne uniforme : trajectoire droite ET vitesse constante. Les deux conditions comptent.",
+    label: 'Rectiligne uniforme',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CAS PARTICULIER', 'Le mouvement rectiligne uniforme', p, C.vert);
+      chronophoto(ctx, positions(W * 0.14, H * 0.38, 7, W * 0.115), p, { debut: 0.05, pas: 0.05, c: C.vert, r: 8 });
+      tableau(ctx, W * 0.16, H * 0.56, W * 0.68,
+        [ { t: 'NOM DU MOUVEMENT' }, { t: 'TRAJECTOIRE' }, { t: 'VITESSE' } ],
+        [
+          [ { t: 'rectiligne uniforme', c: C.vert, s: 16 }, 'droite', 'constante' ],
+          [ { t: 'rectiligne accéléré', c: C.jaune, s: 16 }, 'droite', 'augmente' ],
+          [ { t: 'circulaire uniforme', c: C.bleu, s: 16 }, 'cercle', 'constante' ],
+        ], p, { dy: 46 });
+      txt(ctx, "Le nom se construit toujours en deux mots : la forme, puis l'évolution de la vitesse.",
+          W * 0.5, H * 0.90, et(0.8, 0.2, p), C.or, 17, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Décrire un mouvement',
+    body: [
+      { t: "Aucun mouvement n'existe seul : il faut préciser le référentiel.", c: C.blanc },
+      { t: "Trajectoire : rectiligne, circulaire ou curviligne.", c: C.bleu },
+      { t: "Chronophotographie : positions à intervalles de temps égaux.", c: C.violet },
+      { t: "Écarts égaux = uniforme ; croissants = accéléré ; décroissants = ralenti.", c: C.jaune },
+      { t: "Le nom complet donne la trajectoire puis l'évolution de la vitesse.", c: C.doux },
+    ],
+    encadre: 'référentiel + trajectoire + vitesse',
+    caption: "Décrire un mouvement, c'est répondre à trois questions."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOUVEMENTS, CHAPITRE 2 — VITESSE
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CM2 = 'Vitesse';
+
+LECONS.push(lecon({
+  id: 'pc_vitesse_1', chapitre: CM2, niveau: '5ème',
+  titre: 'Calculer une vitesse',
+  desc: "La formule v = d / t, ses trois usages, et la conversion entre m/s et km/h.",
+  steps: [
+
+  { caption: "La vitesse compare une distance parcourue à la durée du parcours.",
+    label: 'La formule',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FORMULE', 'La vitesse', p, C.jaune);
+      encadre(ctx, W * 0.30, H * 0.38, W * 0.40, H * 0.17, 'v  =  d / t', et(0.05, 0.3, p), C.or, 34);
+      puces(ctx, W * 0.11, H * 0.58, [
+        { t: "v : vitesse, en m/s ou km/h", c: C.jaune, f: MONO, s: 17 },
+        { t: "d : distance parcourue, en m ou km", c: C.blanc, f: MONO, s: 17 },
+        { t: "t : durée du parcours, en s ou h", c: C.blanc, f: MONO, s: 17 },
+        { t: "Les unités doivent aller ensemble : km avec h, m avec s.", c: C.rouge, s: 16 },
+      ], p, { debut: 0.3, pas: 0.11, dy: 38 });
+      triangleFormule(ctx, W * 0.75, H * 0.46, Math.min(W * 0.13, H * 0.22), 'd', 'v', 't', et(0.45, 0.5, p));
+      puces(ctx, W * 0.62, H * 0.80, [
+        { t: "on cache d  →  d = v × t", c: C.doux, f: MONO, s: 16 },
+        { t: "on cache t  →  t = d / v", c: C.doux, f: MONO, s: 16 },
+      ], p, { debut: 0.8, pas: 0.08, dy: 30 });
+    }
+  },
+
+  { caption: "Un exemple complet, en respectant les unités du début à la fin.",
+    label: 'Exemple guidé',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EXEMPLE', 'Un train parcourt 240 km en 2 h', p, C.vert);
+      puces(ctx, W * 0.18, H * 0.34, [
+        { t: "Données :  d = 240 km   et   t = 2 h", c: C.blanc, f: MONO, s: 18 },
+        { t: "Formule :  v = d / t", c: C.jaune, f: MONO, s: 18 },
+        { t: "Calcul :   v = 240 / 2", c: C.blanc, f: MONO, s: 18 },
+        { t: "Résultat : v = 120 km/h", c: C.vert, f: MONO, s: 23 },
+      ], p, { debut: 0.1, pas: 0.17, dy: 56 });
+      txt(ctx, "L'unité du résultat se lit dans les données : des km divisés par des h donnent des km/h.",
+          W * 0.5, H * 0.88, et(0.8, 0.2, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Passer d'une unité à l'autre : diviser par 3,6 pour aller des km/h aux m/s, multiplier pour revenir.",
+    label: 'Les conversions',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'CONVERSION', 'km/h  et  m/s', p, C.bleu);
+      const y = H * 0.44;
+      txt(ctx, 'km/h', W * 0.24, y, et(0.05, 0.25, p), C.jaune, 30, MONO);
+      txt(ctx, 'm/s', W * 0.76, y, et(0.1, 0.25, p), C.vert, 30, MONO);
+      fleche(ctx, W * 0.34, y - 22, W * 0.66, y - 22, et(0.2, 0.3, p), C.bleu, 2.2);
+      txt(ctx, '÷ 3,6', W * 0.50, y - 46, et(0.3, 0.25, p), C.bleu, 20, MONO);
+      fleche(ctx, W * 0.66, y + 22, W * 0.34, y + 22, et(0.42, 0.3, p), C.rouge, 2.2);
+      txt(ctx, '× 3,6', W * 0.50, y + 48, et(0.5, 0.25, p), C.rouge, 20, MONO);
+
+      tableau(ctx, W * 0.22, H * 0.66, W * 0.56,
+        [ { t: 'EN km/h' }, { t: 'EN m/s' } ],
+        [
+          [ { t: '3,6 km/h', c: C.blanc, f: MONO }, { t: '1 m/s', c: C.vert, f: MONO } ],
+          [ { t: '36 km/h', c: C.blanc, f: MONO }, { t: '10 m/s', c: C.vert, f: MONO } ],
+          [ { t: '90 km/h', c: C.blanc, f: MONO }, { t: '25 m/s', c: C.vert, f: MONO } ],
+        ], p, { dy: 42 });
+      txt(ctx, "Repère utile : 36 km/h valent 10 m/s — de quoi vérifier un calcul en un clin d'œil.",
+          W * 0.5, H * 0.95, et(0.88, 0.12, p), C.or, 16, SANS);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_vitesse_2', chapitre: CM2, niveau: '4ème',
+  titre: 'Vitesse moyenne et graphique',
+  desc: "Distinguer la vitesse d'un instant de celle de tout le trajet, et lire un graphique distance-temps.",
+  steps: [
+
+  { caption: "La vitesse moyenne résume tout le trajet. La vitesse instantanée est celle qu'indique le compteur à un moment donné.",
+    label: 'Moyenne ou instantanée',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'DISTINCTION', 'Deux vitesses différentes', p, C.violet);
+      const w = W * 0.38, h = H * 0.28;
+      cadre(ctx, W * 0.07, H * 0.34, w, h, et(0.05, 0.3, p), C.jaune, 2);
+      txt(ctx, 'VITESSE MOYENNE', W * 0.07 + w / 2, H * 0.42, et(0.12, 0.25, p), C.jaune, 18, MONO);
+      txt(ctx, "distance totale / durée totale", W * 0.07 + w / 2, H * 0.50, et(0.18, 0.25, p), C.blanc, 16, SANS);
+      txt(ctx, "elle lisse les arrêts et les pointes", W * 0.07 + w / 2, H * 0.57, et(0.22, 0.25, p), C.doux, 14, SANS);
+
+      cadre(ctx, W * 0.55, H * 0.34, w, h, et(0.28, 0.3, p), C.vert, 2);
+      txt(ctx, 'VITESSE INSTANTANÉE', W * 0.55 + w / 2, H * 0.42, et(0.34, 0.25, p), C.vert, 18, MONO);
+      txt(ctx, "celle du compteur, à un instant", W * 0.55 + w / 2, H * 0.50, et(0.4, 0.25, p), C.blanc, 16, SANS);
+      txt(ctx, "elle change à chaque seconde", W * 0.55 + w / 2, H * 0.57, et(0.44, 0.25, p), C.doux, 14, SANS);
+
+      txt(ctx, "Exemple : Paris–Lyon en 4 h pour 460 km donne 115 km/h de moyenne,",
+          W * 0.5, H * 0.76, et(0.6, 0.22, p), C.blanc, 17, SANS);
+      txt(ctx, "alors que le compteur est passé par 0 (péage) et par 130 km/h.",
+          W * 0.5, H * 0.84, et(0.72, 0.22, p), C.doux, 17, SANS);
+      txt(ctx, "Un radar mesure une vitesse instantanée ; un radar-tronçon, une moyenne.",
+          W * 0.5, H * 0.93, et(0.86, 0.14, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Sur un graphique distance-temps, la pente traduit la vitesse : plus la courbe monte vite, plus le mobile va vite.",
+    label: 'Lire un graphique',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'GRAPHIQUE', 'Distance en fonction du temps', p, C.bleu);
+      const ox = W * 0.16, oy = H * 0.82, larg = W * 0.68, haut = H * 0.50;
+      repere(ctx, ox, oy, larg, haut, et(0, 0.2, p), 'temps (s)', 'distance (m)');
+
+      /* Trois phases : rapide, arrêt, plus lent. */
+      const pts = [];
+      const seq = [
+        { t0: 0.00, t1: 0.34, d0: 0.00, d1: 0.55 },
+        { t0: 0.34, t1: 0.58, d0: 0.55, d1: 0.55 },
+        { t0: 0.58, t1: 1.00, d0: 0.55, d1: 0.86 },
+      ];
+      seq.forEach(s => { for (let i = 0; i <= 20; i++) { const u = i / 20;
+        pts.push({ x: ox + larg * lp(s.t0, s.t1, u), y: oy - haut * lp(s.d0, s.d1, u) }); } });
+      courbe(ctx, pts, et(0.2, 0.5, p), C.jaune, 2.8);
+
+      txt(ctx, 'pente forte', ox + larg * 0.15, oy - haut * 0.46, et(0.55, 0.25, p), C.vert, 15, SANS);
+      txt(ctx, 'il va vite', ox + larg * 0.15, oy - haut * 0.36, et(0.6, 0.25, p), C.doux, 13, SANS);
+      txt(ctx, 'palier', ox + larg * 0.46, oy - haut * 0.62, et(0.68, 0.25, p), C.rouge, 15, SANS);
+      txt(ctx, "il est à l'arrêt", ox + larg * 0.46, oy - haut * 0.70, et(0.72, 0.25, p), C.doux, 13, SANS);
+      txt(ctx, 'pente douce', ox + larg * 0.82, oy - haut * 0.60, et(0.8, 0.2, p), C.bleu, 15, SANS);
+      txt(ctx, 'il va lentement', ox + larg * 0.82, oy - haut * 0.52, et(0.84, 0.16, p), C.doux, 13, SANS);
+
+      txt(ctx, "Une droite signifie une vitesse constante : le mouvement est uniforme.",
+          W * 0.5, H * 0.95, et(0.9, 0.1, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Une application qui compte : à vitesse double, la distance d'arrêt est bien plus que doublée.",
+    label: "Distance d'arrêt",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'APPLICATION', "La distance d'arrêt", p, C.rouge);
+      const x0 = W * 0.22;
+      const lignes = [
+        { v: '50 km/h', reac: 0.10, frein: 0.14, tot: '28 m' },
+        { v: '90 km/h', reac: 0.18, frein: 0.42, tot: '70 m' },
+        { v: '130 km/h', reac: 0.26, frein: 0.86, tot: '130 m' },
+      ];
+      lignes.forEach((l, i) => {
+        const y = H * 0.38 + i * H * 0.16;
+        const q = et(0.06 + i * 0.18, 0.35, p);
+        txt(ctx, l.v, x0 - 24, y, q, C.blanc, 18, MONO, 'right');
+        const larg = W * 0.58;
+        const r1 = larg * l.reac * ease(q), r2 = larg * l.frein * ease(q);
+        if (r1 > 2) aplat(ctx, [{x:x0,y:y-12},{x:x0+r1,y:y-12},{x:x0+r1,y:y+12},{x:x0,y:y+12}], 1, 'rgba(230,210,120,0.35)');
+        if (r2 > 2) aplat(ctx, [{x:x0+r1,y:y-12},{x:x0+r1+r2,y:y-12},{x:x0+r1+r2,y:y+12},{x:x0+r1,y:y+12}], 1, 'rgba(230,130,110,0.35)');
+        txt(ctx, l.tot, x0 + r1 + r2 + 40, y, et(0.16 + i * 0.18, 0.3, p), C.rouge, 17, MONO);
+      });
+      txt(ctx, "jaune : distance de réaction (≈ 1 s)      rouge : distance de freinage",
+          W * 0.5, H * 0.86, et(0.7, 0.2, p), C.doux, 16, SANS);
+      txt(ctx, "La distance de freinage dépend du CARRÉ de la vitesse : doubler la vitesse la quadruple.",
+          W * 0.5, H * 0.94, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'La vitesse',
+    body: [
+      { t: "v = d / t   ·   d = v × t   ·   t = d / v", c: C.jaune, f: MONO, s: 20 },
+      { t: "km avec h, m avec s : les unités ne se mélangent pas.", c: C.rouge },
+      { t: "km/h → m/s : diviser par 3,6.  m/s → km/h : multiplier par 3,6.", c: C.bleu },
+      { t: "Vitesse moyenne : tout le trajet. Instantanée : un instant précis.", c: C.blanc },
+      { t: "Graphique distance-temps : la pente donne la vitesse.", c: C.vert },
+    ],
+    encadre: 'v = d / t',
+    caption: "Une formule, deux unités, et un graphique à savoir lire."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOUVEMENTS, CHAPITRE 3 — FORCES ET INTERACTIONS
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CM3 = 'Forces et interactions';
+
+LECONS.push(lecon({
+  id: 'pc_force_1', chapitre: CM3, niveau: '4ème',
+  titre: 'Modéliser une action par une force',
+  desc: "Une interaction met toujours deux objets en jeu ; la force en est la traduction, avec ses quatre caractéristiques.",
+  steps: [
+
+  { caption: "Une interaction n'existe jamais seule : il faut deux objets. Chacun exerce une action sur l'autre.",
+    label: "L'interaction",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'PRINCIPE', 'Toujours deux objets', p, C.jaune);
+      const y = H * 0.48, r = Math.min(W * 0.06, H * 0.11);
+      bille(ctx, W * 0.28, y, r, et(0.05, 0.3, p), C.bleu);
+      txt(ctx, 'A', W * 0.28, y + 1, et(0.18, 0.25, p), '#0f1a12', 22, SANS);
+      bille(ctx, W * 0.68, y, r, et(0.12, 0.3, p), C.vert);
+      txt(ctx, 'B', W * 0.68, y + 1, et(0.22, 0.25, p), '#0f1a12', 22, SANS);
+
+      fleche(ctx, W * 0.35, y - 18, W * 0.61, y - 18, et(0.3, 0.35, p), C.rouge, 2.4);
+      txt(ctx, 'A agit sur B', W * 0.48, y - 44, et(0.4, 0.25, p), C.rouge, 16, SANS);
+      fleche(ctx, W * 0.61, y + 18, W * 0.35, y + 18, et(0.5, 0.35, p), C.bleu, 2.4);
+      txt(ctx, 'B agit sur A', W * 0.48, y + 46, et(0.6, 0.25, p), C.bleu, 16, SANS);
+
+      puces(ctx, W * 0.12, H * 0.76, [
+        { t: "Les deux actions existent toujours ensemble : c'est une INTERACTION.", c: C.blanc },
+        { t: "Elles ont la même valeur et des sens opposés.", c: C.jaune },
+        { t: "Par contact (une main qui pousse) ou à distance (un aimant, la Terre).", c: C.vert },
+      ], p, { debut: 0.68, pas: 0.12, dy: 36, s: 17 });
+    }
+  },
+
+  { caption: "Une force se représente par une flèche. Quatre caractéristiques la définissent entièrement.",
+    label: 'Les quatre caractéristiques',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MODÉLISER', 'La flèche et ses quatre caractéristiques', p, C.rouge);
+      const x = W * 0.30, y = H * 0.50;
+      cadre(ctx, x - 38, y - 24, 76, 48, et(0.03, 0.25, p), C.doux, 1.8);
+      force(ctx, x + 38, y, W * 0.20, 0, et(0.1, 0.5, p), 'F = 12 N', C.rouge);
+
+      puces(ctx, W * 0.60, H * 0.34, [
+        { t: "POINT D'APPLICATION : où la force s'exerce (le point noir).", c: C.jaune },
+        { t: "DIRECTION : la droite qui porte la flèche (ici, horizontale).", c: C.bleu },
+        { t: "SENS : vers où elle pointe (ici, vers la droite).", c: C.vert },
+        { t: "VALEUR : sa longueur, en newtons (N).", c: C.rouge },
+      ], p, { debut: 0.45, pas: 0.13, dy: 46, s: 17 });
+
+      txt(ctx, "Direction et sens ne sont pas synonymes : une même direction admet deux sens opposés.",
+          W * 0.5, H * 0.92, et(0.9, 0.1, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "La valeur d'une force se mesure au dynamomètre, en newtons.",
+    label: 'Le dynamomètre',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'MESURE', 'Le dynamomètre', p, C.vert);
+      const cx = W * 0.30;
+      const bas = dynamometre(ctx, cx, H * 0.28, p, '2,5 N', { label: 'ressort gradué' });
+      /* La masse suspendue au crochet. */
+      const q = et(0.5, 0.3, p);
+      cadre(ctx, cx - 26, bas + 30, 52, 40, q, C.bleu, 2);
+      seg(ctx, cx, bas, cx, bas + 30, et(0.45, 0.25, p), C.doux, 1.6);
+
+      puces(ctx, W * 0.55, H * 0.36, [
+        { t: "Symbole d'une force : F   ·   unité : le newton (N)", c: C.blanc, f: MONO, s: 17 },
+        { t: "Plus la force est grande, plus le ressort s'allonge.", c: C.vert },
+        { t: "L'allongement est proportionnel à la force exercée.", c: C.jaune },
+        { t: "Un objet de 100 g pèse environ 1 N sur Terre.", c: C.doux },
+      ], p, { debut: 0.5, pas: 0.12, dy: 44, s: 17 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_force_2', chapitre: CM3, niveau: '4ème',
+  titre: 'Effets des forces et équilibre',
+  desc: "Ce qu'une force change, et ce qui se passe quand plusieurs forces se compensent.",
+  steps: [
+
+  { caption: "Une force peut faire trois choses : mettre en mouvement, modifier un mouvement, ou déformer.",
+    label: 'Les effets',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EFFETS', "Ce que produit une force", p, C.jaune);
+      const y = H * 0.46, w = W * 0.27, h = H * 0.26;
+      const cas = [
+        { t: 'METTRE EN MOUVEMENT', d: "un ballon frappé démarre", c: C.vert },
+        { t: 'MODIFIER LE MOUVEMENT', d: "freiner, accélérer, tourner", c: C.jaune },
+        { t: 'DÉFORMER', d: "un ressort comprimé, une pâte", c: C.rouge },
+      ];
+      cas.forEach((k, i) => {
+        const x = W * (0.06 + i * 0.31);
+        const q = et(0.05 + i * 0.18, 0.3, p);
+        cadre(ctx, x, y - h / 2, w, h, q, k.c, 1.8);
+        txt(ctx, k.t, x + w / 2, y - h * 0.18, et(0.1 + i * 0.18, 0.25, p), k.c, 15, MONO);
+        txt(ctx, k.d, x + w / 2, y + h * 0.20, et(0.14 + i * 0.18, 0.25, p), C.doux, 14, SANS);
+      });
+      txt(ctx, "Une force ne fait pas forcément bouger : elle peut seulement déformer.",
+          W * 0.5, H * 0.78, et(0.65, 0.22, p), C.blanc, 18, SANS);
+      txt(ctx, "Et un objet peut être en mouvement sans qu'aucune force ne le pousse : il continue sur sa lancée.",
+          W * 0.5, H * 0.88, et(0.8, 0.2, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Un objet posé sur une table subit deux forces : son poids vers le bas, la réaction du support vers le haut. Elles se compensent.",
+    label: 'Forces qui se compensent',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'ÉQUILIBRE', 'Deux forces qui se compensent', p, C.vert);
+      const cx = W * 0.36, cy = H * 0.50;
+      seg(ctx, W * 0.14, cy + 44, W * 0.58, cy + 44, et(0.03, 0.25, p), C.doux, 2);
+      cadre(ctx, cx - 44, cy - 4, 88, 48, et(0.08, 0.3, p), C.bleu, 2);
+      force(ctx, cx, cy + 20, 0, H * 0.20, et(0.2, 0.4, p), 'P', C.rouge, { ndx: 26, ndy: 0 });
+      force(ctx, cx, cy + 20, 0, -H * 0.20, et(0.45, 0.4, p), 'R', C.vert, { ndx: -26, ndy: 0 });
+
+      puces(ctx, W * 0.62, H * 0.36, [
+        { t: "Même direction (verticale).", c: C.blanc },
+        { t: "Sens opposés.", c: C.blanc },
+        { t: "Même valeur.", c: C.blanc },
+        { t: "→ elles se COMPENSENT", c: C.jaune, s: 19 },
+        { t: "l'objet reste immobile", c: C.vert },
+      ], p, { debut: 0.55, pas: 0.1, dy: 42, s: 17 });
+
+      txt(ctx, "Si les trois conditions ne sont pas réunies, les forces ne se compensent pas.",
+          W * 0.5, H * 0.92, et(0.88, 0.12, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "La règle générale : si les forces se compensent, l'objet reste immobile ou garde un mouvement rectiligne uniforme. Sinon, sa vitesse change.",
+    label: 'La règle',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI', "Forces compensées ou non", p, C.bleu);
+      const w = W * 0.40, h = H * 0.30;
+      cadre(ctx, W * 0.06, H * 0.32, w, h, et(0.05, 0.3, p), C.vert, 2);
+      txt(ctx, 'FORCES COMPENSÉES', W * 0.06 + w / 2, H * 0.39, et(0.1, 0.25, p), C.vert, 17, MONO);
+      txt(ctx, "immobile", W * 0.06 + w / 2, H * 0.47, et(0.16, 0.25, p), C.blanc, 17, SANS);
+      txt(ctx, "ou rectiligne uniforme", W * 0.06 + w / 2, H * 0.54, et(0.2, 0.25, p), C.blanc, 17, SANS);
+
+      cadre(ctx, W * 0.54, H * 0.32, w, h, et(0.28, 0.3, p), C.rouge, 2);
+      txt(ctx, 'FORCES NON COMPENSÉES', W * 0.54 + w / 2, H * 0.39, et(0.34, 0.25, p), C.rouge, 17, MONO);
+      txt(ctx, "la vitesse change", W * 0.54 + w / 2, H * 0.47, et(0.4, 0.25, p), C.blanc, 17, SANS);
+      txt(ctx, "ou la trajectoire s'incurve", W * 0.54 + w / 2, H * 0.54, et(0.44, 0.25, p), C.blanc, 17, SANS);
+
+      txt(ctx, "Un parachutiste en descente à vitesse constante : poids et frottements se compensent.",
+          W * 0.5, H * 0.76, et(0.6, 0.22, p), C.blanc, 17, SANS);
+      txt(ctx, "Une pomme qui tombe : rien ne compense son poids, elle accélère.",
+          W * 0.5, H * 0.85, et(0.75, 0.2, p), C.jaune, 17, SANS);
+      txt(ctx, "Attention au piège : « immobile » et « vitesse constante » relèvent du même cas.",
+          W * 0.5, H * 0.93, et(0.88, 0.12, p), C.or, 16, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Forces et interactions',
+    body: [
+      { t: "Une interaction met en jeu deux objets ; chacun agit sur l'autre.", c: C.blanc },
+      { t: "Une force se modélise par une flèche : point, direction, sens, valeur.", c: C.jaune },
+      { t: "Unité : le newton (N), mesuré au dynamomètre.", c: C.vert },
+      { t: "Effets : mettre en mouvement, modifier le mouvement, déformer.", c: C.doux },
+      { t: "Forces compensées → repos ou mouvement rectiligne uniforme.", c: C.bleu },
+    ],
+    encadre: 'compensées = vitesse inchangée',
+    caption: "Les forces expliquent tout changement de mouvement."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOUVEMENTS, CHAPITRE 4 — POIDS ET MASSE
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CM4 = 'Poids et masse';
+
+LECONS.push(lecon({
+  id: 'pc_poids_1', chapitre: CM4, niveau: '4ème',
+  titre: 'Distinguer le poids de la masse',
+  desc: "Deux grandeurs souvent confondues dans le langage courant, mais qui n'ont ni la même nature ni la même unité.",
+  steps: [
+
+  { caption: "La masse est une quantité de matière ; le poids est une force. Ce sont deux grandeurs différentes.",
+    label: 'Deux grandeurs',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'NE PAS CONFONDRE', 'Masse et poids', p, C.jaune);
+      tableau(ctx, W * 0.08, H * 0.32, W * 0.84,
+        [ { t: '' }, { t: 'LA MASSE', c: C.bleu }, { t: 'LE POIDS', c: C.rouge } ],
+        [
+          [ "C'est…", 'une quantité de matière', 'une force' ],
+          [ 'Symbole', { t: 'm', f: MONO, s: 20 }, { t: 'P', f: MONO, s: 20 } ],
+          [ 'Unité', { t: 'kilogramme (kg)', c: C.bleu }, { t: 'newton (N)', c: C.rouge } ],
+          [ 'Instrument', 'balance', 'dynamomètre' ],
+          [ 'Change avec le lieu ?', { t: 'NON', c: C.vert }, { t: 'OUI', c: C.jaune } ],
+        ], p, { dy: 44 });
+      txt(ctx, "Dans la vie courante, « je pèse 60 kilos » mélange les deux : le kilo mesure une masse.",
+          W * 0.5, H * 0.92, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Le poids est la force d'attraction exercée par la Terre. Il est vertical, dirigé vers le bas, appliqué au centre de l'objet.",
+    label: 'Le poids, une force',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LE POIDS', "Une force verticale, vers le bas", p, C.rouge);
+      const cx = W * 0.34, cy = H * 0.42;
+      cadre(ctx, cx - 40, cy - 26, 80, 52, et(0.05, 0.3, p), C.bleu, 2);
+      force(ctx, cx, cy, 0, H * 0.26, et(0.15, 0.45, p), 'P', C.rouge, { ndx: 30, ndy: 0, s: 20 });
+      txt(ctx, "centre de gravité", cx - 96, cy, et(0.4, 0.25, p), C.doux, 14, SANS);
+
+      puces(ctx, W * 0.58, H * 0.34, [
+        { t: "Point d'application : le centre de gravité.", c: C.jaune },
+        { t: "Direction : la verticale du lieu.", c: C.bleu },
+        { t: "Sens : vers le bas, vers le centre de la Terre.", c: C.vert },
+        { t: "Valeur : en newtons, mesurée au dynamomètre.", c: C.rouge },
+      ], p, { debut: 0.45, pas: 0.13, dy: 46, s: 17 });
+    }
+  },
+
+  { caption: "La relation entre les deux : le poids est le produit de la masse par l'intensité de pesanteur du lieu.",
+    label: 'P = m × g',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'RELATION', 'Du kilogramme au newton', p, C.vert);
+      encadre(ctx, W * 0.30, H * 0.38, W * 0.40, H * 0.17, 'P  =  m × g', et(0.05, 0.3, p), C.or, 34);
+      puces(ctx, W * 0.11, H * 0.58, [
+        { t: "P : poids, en newtons (N)", c: C.rouge, f: MONO, s: 17 },
+        { t: "m : masse, en kilogrammes (kg)", c: C.bleu, f: MONO, s: 17 },
+        { t: "g : intensité de pesanteur, en N/kg", c: C.jaune, f: MONO, s: 17 },
+        { t: "Sur Terre : g ≈ 9,8 N/kg (souvent arrondi à 10).", c: C.vert, s: 16 },
+      ], p, { debut: 0.3, pas: 0.11, dy: 38 });
+      triangleFormule(ctx, W * 0.75, H * 0.46, Math.min(W * 0.13, H * 0.22), 'P', 'm', 'g', et(0.45, 0.5, p));
+      txt(ctx, "Exemple : m = 60 kg  →  P = 60 × 9,8 = 588 N",
+          W * 0.5, H * 0.92, et(0.82, 0.18, p), C.vert, 20, MONO);
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_poids_2', chapitre: CM4, niveau: '4ème',
+  titre: 'Le poids change de lieu',
+  desc: "Pourquoi la même masse ne pèse pas pareil sur la Lune, sur Mars, ou en orbite.",
+  steps: [
+
+  { caption: "Chaque astre a sa propre intensité de pesanteur : la masse reste la même, le poids change.",
+    label: "D'un astre à l'autre",
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'COMPARAISON', "Un même objet de 10 kg", p, C.violet);
+      tableau(ctx, W * 0.10, H * 0.32, W * 0.80,
+        [ { t: 'ASTRE' }, { t: 'g  (N/kg)' }, { t: 'MASSE' }, { t: 'POIDS' } ],
+        [
+          [ { t: 'Terre', c: C.bleu, s: 17 }, { t: '9,8', f: MONO }, { t: '10 kg', c: C.bleu, f: MONO }, { t: '98 N', c: C.rouge, f: MONO } ],
+          [ { t: 'Lune', c: C.doux, s: 17 }, { t: '1,6', f: MONO }, { t: '10 kg', c: C.bleu, f: MONO }, { t: '16 N', c: C.rouge, f: MONO } ],
+          [ { t: 'Mars', c: C.rouge, s: 17 }, { t: '3,7', f: MONO }, { t: '10 kg', c: C.bleu, f: MONO }, { t: '37 N', c: C.rouge, f: MONO } ],
+          [ { t: 'Jupiter', c: C.jaune, s: 17 }, { t: '24,8', f: MONO }, { t: '10 kg', c: C.bleu, f: MONO }, { t: '248 N', c: C.rouge, f: MONO } ],
+        ], p, { dy: 48 });
+      txt(ctx, "La colonne « masse » ne bouge pas : c'est la même matière partout.",
+          W * 0.5, H * 0.82, et(0.7, 0.2, p), C.bleu, 18, SANS);
+      txt(ctx, "Sur la Lune, on pèse six fois moins — d'où les bonds des astronautes.",
+          W * 0.5, H * 0.90, et(0.85, 0.15, p), C.or, 16, SANS);
+    }
+  },
+
+  { caption: "Un calcul type : convertir une masse en poids sur un autre astre, en trois lignes.",
+    label: 'Exemple guidé',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EXEMPLE', "Un astronaute et son équipement", p, C.vert);
+      puces(ctx, W * 0.16, H * 0.34, [
+        { t: "Données :  m = 120 kg   et   g(Lune) = 1,6 N/kg", c: C.blanc, f: MONO, s: 18 },
+        { t: "Formule :  P = m × g", c: C.jaune, f: MONO, s: 18 },
+        { t: "Calcul :   P = 120 × 1,6", c: C.blanc, f: MONO, s: 18 },
+        { t: "Résultat : P = 192 N", c: C.vert, f: MONO, s: 23 },
+        { t: "Sur Terre, le même ensemble pèserait 1 176 N.", c: C.doux, s: 17 },
+      ], p, { debut: 0.1, pas: 0.15, dy: 52 });
+      txt(ctx, "La masse s'écrit toujours en kg dans cette formule, jamais en grammes.",
+          W * 0.5, H * 0.93, et(0.85, 0.15, p), C.rouge, 17, SANS);
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'Poids et masse',
+    body: [
+      { t: "Masse m en kg : quantité de matière, identique partout.", c: C.bleu },
+      { t: "Poids P en N : une force, qui dépend de l'astre.", c: C.rouge },
+      { t: "P = m × g, avec g ≈ 9,8 N/kg sur Terre.", c: C.jaune, f: MONO },
+      { t: "Balance pour la masse, dynamomètre pour le poids.", c: C.doux },
+      { t: "Sur la Lune : même masse, poids six fois plus faible.", c: C.vert },
+    ],
+    encadre: 'P = m × g',
+    caption: "La masse ne change pas ; le poids dépend d'où l'on se trouve."
+  }),
+
+]}));
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOUVEMENTS, CHAPITRE 5 — GRAVITATION
+   ══════════════════════════════════════════════════════════════════════ */
+
+const CM5 = 'Gravitation';
+
+LECONS.push(lecon({
+  id: 'pc_grav_1', chapitre: CM5, niveau: '3ème',
+  titre: "L'attraction universelle",
+  desc: "Deux corps quelconques s'attirent : de quoi dépend cette force, et pourquoi on ne la sent qu'avec les astres.",
+  steps: [
+
+  { caption: "Deux corps qui possèdent une masse s'attirent mutuellement. L'attraction est réciproque, et de même valeur des deux côtés.",
+    label: 'Une attraction mutuelle',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LOI', "Toute masse en attire une autre", p, C.violet);
+      const y = H * 0.48;
+      astre(ctx, W * 0.26, y, Math.min(W * 0.07, H * 0.13), et(0.05, 0.3, p), 'Terre', C.bleu);
+      astre(ctx, W * 0.72, y, Math.min(W * 0.04, H * 0.07), et(0.12, 0.3, p), 'Lune', C.doux);
+      force(ctx, W * 0.33, y, W * 0.13, 0, et(0.3, 0.4, p), 'F', C.rouge, { ndy: -24, ndx: 0 });
+      force(ctx, W * 0.66, y, -W * 0.13, 0, et(0.48, 0.4, p), 'F', C.rouge, { ndy: 24, ndx: 0 });
+
+      puces(ctx, W * 0.12, H * 0.74, [
+        { t: "La Terre attire la Lune, et la Lune attire la Terre — avec la même force.", c: C.blanc },
+        { t: "Cette force est toujours attractive, jamais répulsive.", c: C.jaune },
+        { t: "Elle s'exerce à distance, sans contact et à travers le vide.", c: C.vert },
+      ], p, { debut: 0.6, pas: 0.13, dy: 38, s: 17 });
+    }
+  },
+
+  { caption: "Deux facteurs commandent cette force : les masses en jeu et la distance qui les sépare.",
+    label: 'De quoi elle dépend',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'FACTEURS', 'Masses et distance', p, C.jaune);
+
+      /* Masses plus grandes : force plus grande. */
+      const y1 = H * 0.36;
+      astre(ctx, W * 0.16, y1, 16, et(0.05, 0.3, p), null, C.bleu);
+      astre(ctx, W * 0.36, y1, 16, et(0.07, 0.3, p), null, C.bleu);
+      fleche(ctx, W * 0.21, y1, W * 0.31, y1, et(0.15, 0.3, p), C.rouge, 2);
+      astre(ctx, W * 0.62, y1, 30, et(0.2, 0.3, p), null, C.bleu);
+      astre(ctx, W * 0.84, y1, 30, et(0.22, 0.3, p), null, C.bleu);
+      fleche(ctx, W * 0.68, y1, W * 0.78, y1, et(0.28, 0.3, p), C.rouge, 4);
+      txt(ctx, 'masses plus grandes  →  force plus grande', W * 0.5, y1 + 62, et(0.34, 0.25, p), C.jaune, 17, SANS);
+
+      /* Distance plus grande : force plus faible. */
+      const y2 = H * 0.68;
+      astre(ctx, W * 0.12, y2, 20, et(0.42, 0.3, p), null, C.vert);
+      astre(ctx, W * 0.30, y2, 20, et(0.44, 0.3, p), null, C.vert);
+      fleche(ctx, W * 0.17, y2, W * 0.25, y2, et(0.5, 0.3, p), C.rouge, 3.5);
+      astre(ctx, W * 0.56, y2, 20, et(0.56, 0.3, p), null, C.vert);
+      astre(ctx, W * 0.90, y2, 20, et(0.58, 0.3, p), null, C.vert);
+      fleche(ctx, W * 0.68, y2, W * 0.76, y2, et(0.64, 0.3, p), C.rouge, 1.4);
+      txt(ctx, 'distance plus grande  →  force plus faible', W * 0.5, y2 + 56, et(0.72, 0.25, p), C.bleu, 17, SANS);
+
+      txt(ctx, "C'est pourquoi deux personnes côte à côte ne se sentent pas attirées : leurs masses sont bien trop petites.",
+          W * 0.5, H * 0.95, et(0.86, 0.14, p), C.or, 15, SANS);
+    }
+  },
+
+  { caption: "Le poids n'est rien d'autre que cette attraction, vue depuis la surface d'un astre.",
+    label: 'Poids et gravitation',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'LIEN', "Le poids est une force de gravitation", p, C.rouge);
+      const cx = W * 0.36, cy = H * 0.68, R = Math.min(W * 0.16, H * 0.28);
+      astre(ctx, cx, cy, R, et(0.05, 0.35, p), null, C.bleu);
+      txt(ctx, 'Terre', cx, cy + 10, et(0.25, 0.25, p), C.bleu, 18, MONO);
+      /* Trois objets posés en surface : leur poids pointe vers le centre. */
+      [-1.1, -0.5, 0.15].forEach((a, i) => {
+        const x = cx + Math.cos(a - Math.PI / 2) * R, y = cy + Math.sin(a - Math.PI / 2) * R;
+        const dx = (cx - x) * 0.42, dy = (cy - y) * 0.42;
+        bille(ctx, x, y, 8, et(0.3 + i * 0.06, 0.25, p), C.jaune);
+        fleche(ctx, x, y, x + dx, y + dy, et(0.4 + i * 0.08, 0.35, p), C.rouge, 2.2);
+      });
+      puces(ctx, W * 0.58, H * 0.34, [
+        { t: "« Vers le bas » signifie en réalité : vers le centre de la Terre.", c: C.blanc },
+        { t: "La verticale n'est pas la même en France et en Australie.", c: C.jaune },
+        { t: "g dépend de la masse de l'astre et de son rayon.", c: C.vert },
+        { t: "Plus l'astre est massif, plus g est grand.", c: C.doux },
+      ], p, { debut: 0.5, pas: 0.12, dy: 46, s: 17 });
+    }
+  },
+
+]}));
+
+LECONS.push(lecon({
+  id: 'pc_grav_2', chapitre: CM5, niveau: '3ème',
+  titre: 'Le système solaire et les satellites',
+  desc: "Ce qui maintient les planètes en orbite, et pourquoi les astronautes semblent flotter.",
+  steps: [
+
+  { caption: "Les planètes tournent autour du Soleil parce qu'il les attire : sans cette force, elles fileraient tout droit.",
+    label: 'Les orbites',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'SYSTÈME SOLAIRE', 'Ce qui retient les planètes', p, C.jaune);
+      const cx = W * 0.42, cy = H * 0.56;
+      astre(ctx, cx, cy, Math.min(W * 0.05, H * 0.09), et(0.03, 0.3, p), 'Soleil', C.jaune);
+      const rayons = [W * 0.12, W * 0.19, W * 0.27];
+      const noms = ['Mercure', 'Vénus', 'Terre'];
+      rayons.forEach((r, i) => {
+        orbite(ctx, cx, cy, r, et(0.12 + i * 0.08, 0.3, p));
+        const a = -0.7 - i * 0.9 + p * 0.5;
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.62;
+        bille(ctx, x, y, 9, et(0.3 + i * 0.08, 0.25, p), C.bleu);
+        txt(ctx, noms[i], x, y - 24, et(0.36 + i * 0.08, 0.25, p), C.doux, 13, SANS);
+        /* La force pointe toujours vers le Soleil. */
+        fleche(ctx, x, y, x + (cx - x) * 0.25, y + (cy - y) * 0.25, et(0.55 + i * 0.06, 0.3, p), C.rouge, 1.8);
+      });
+      puces(ctx, W * 0.06, H * 0.90, [
+        { t: "La force d'attraction est toujours dirigée vers le Soleil : elle courbe la trajectoire sans jamais la rattraper.", c: C.blanc, s: 16 },
+        { t: "Plus une planète est éloignée, plus son année est longue : Mercure boucle en 88 jours, Neptune en 165 ans.", c: C.jaune, s: 16 },
+      ], p, { debut: 0.7, pas: 0.12, dy: 30 });
+    }
+  },
+
+  { caption: "Un satellite en orbite tombe en permanence vers la Terre — mais il avance si vite qu'il la manque toujours.",
+    label: 'Les satellites',
+    draw(ctx, W, H, p) {
+      board(ctx, W, H);
+      entete(ctx, W, H, 'EN ORBITE', "Tomber sans jamais toucher", p, C.bleu);
+      const cx = W * 0.36, cy = H * 0.56, R = Math.min(W * 0.10, H * 0.18);
+      astre(ctx, cx, cy, R, et(0.05, 0.3, p), 'Terre', C.bleu);
+      const ro = R * 1.9;
+      orbite(ctx, cx, cy, ro, et(0.2, 0.35, p));
+      const a = -Math.PI / 2 + p * 1.2;
+      const sx = cx + Math.cos(a) * ro, sy = cy + Math.sin(a) * ro;
+      bille(ctx, sx, sy, 8, et(0.35, 0.25, p), C.jaune);
+      /* Vitesse tangente, attraction vers le centre. */
+      fleche(ctx, sx, sy, sx - Math.sin(a) * 60, sy + Math.cos(a) * 60, et(0.45, 0.3, p), C.vert, 2);
+      txt(ctx, 'vitesse', sx - Math.sin(a) * 84, sy + Math.cos(a) * 84, et(0.55, 0.25, p), C.vert, 14, SANS);
+      fleche(ctx, sx, sy, cx + Math.cos(a) * (ro - 46), cy + Math.sin(a) * (ro - 46), et(0.55, 0.3, p), C.rouge, 2);
+
+      puces(ctx, W * 0.56, H * 0.34, [
+        { t: "La Terre attire le satellite : il tombe sans cesse.", c: C.rouge },
+        { t: "Sa vitesse le porte en avant : il rate la Terre à chaque instant.", c: C.vert },
+        { t: "Le résultat de ces deux effets est une orbite fermée.", c: C.jaune },
+        { t: "Satellites : GPS, météo, télécommunications, observation.", c: C.doux },
+      ], p, { debut: 0.5, pas: 0.12, dy: 46, s: 17 });
+    }
+  },
+
+  diapo({
+    eyebrow: 'À RETENIR', label: 'À retenir', title: 'La gravitation',
+    body: [
+      { t: "Deux corps massifs s'attirent : la force est toujours attractive.", c: C.blanc },
+      { t: "Elle grandit avec les masses et diminue avec la distance.", c: C.jaune },
+      { t: "Elle agit à distance, à travers le vide.", c: C.vert },
+      { t: "Le poids est la gravitation exercée par l'astre où l'on se trouve.", c: C.rouge },
+      { t: "Les orbites résultent de l'attraction et de la vitesse combinées.", c: C.bleu },
+    ],
+    encadre: 'plus massif = plus attirant · plus loin = moins',
+    caption: "Une seule force explique la chute d'une pomme et l'orbite de la Lune."
   }),
 
 ]}));
