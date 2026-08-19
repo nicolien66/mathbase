@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Français</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Français — trois thèmes, leurs chapitres, et le cours.
+
+   La page emprunte son vocabulaire au manuscrit, comme l'histoire-géo :
+   le pilcrow rubriqué (¶) ouvre chaque paragraphe de cours, la manicule
+   (☞) signale l'astuce en marge, et le filet doré encadre l'essentiel.
+   Rien d'autre n'est ajouté : la feuille reste la feuille.
+   ═══════════════════════════════════════════════════════════════ */
+
+body { transition: none; }
+
+/* ── Accueil : les trois grands thèmes ─────────────────────────── */
+.themes { margin-top: 2.6rem; }
+.theme-bloc {
+  display: block; width: 100%; padding: 1.25rem 0; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.2);
+  font: inherit; color: inherit; cursor: pointer;
+}
+.theme-bloc:last-of-type { border-bottom: none; }
+.theme-tete { display: flex; align-items: baseline; gap: .85rem; flex-wrap: wrap; }
+.theme-tete::before {
+  content: ''; width: .55rem; height: .55rem; flex: none;
+  background: var(--teinte); border: 1px solid rgba(47,40,32,.4);
+  transform: translateY(-.15rem);
+}
+.theme-nom {
+  font-family: var(--titre); font-size: 1.85rem; font-weight: 600;
+  line-height: 1.1; transition: color .2s;
+}
+.theme-compte {
+  font-variant: small-caps; letter-spacing: .12em; font-size: .74rem;
+  color: var(--encre-pale);
+}
+.theme-ouvrir {
+  margin-left: auto; font-size: .8rem; color: var(--teinte);
+  opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s;
+}
+.theme-sous { margin-top: .2rem; padding-left: 1.4rem; color: var(--encre-pale); font-size: .96rem; }
+.theme-bloc:hover .theme-nom, .theme-bloc:focus-visible .theme-nom { color: var(--teinte); }
+.theme-bloc:hover .theme-ouvrir, .theme-bloc:focus-visible .theme-ouvrir { opacity: 1; transform: none; }
+.theme-bloc:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.note { margin-top: 2.2rem; font-size: .95rem; color: var(--encre-pale); }
+
+/* ── Fil de lecture ────────────────────────────────────────────── */
+.fil {
+  font-variant: small-caps; letter-spacing: .13em; font-size: .74rem;
+  color: var(--encre-pale); margin-bottom: 1rem;
+}
+.fil button {
+  background: none; border: none; padding: 0; font: inherit; color: inherit;
+  cursor: pointer; border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
+}
+.fil button:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.fil i { font-style: normal; opacity: .5; margin: 0 .45rem; }
+
+/* ── Sommaire d'un thème : un bouton par chapitre ──────────────── */
+.chapitres { margin-top: 2.4rem; }
+.chap {
+  display: block; width: 100%; padding: .85rem 0; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.16);
+  font: inherit; color: inherit; cursor: pointer; transition: color .2s;
+}
+.chap:last-of-type { border-bottom: none; }
+.chap-ligne { display: flex; align-items: baseline; gap: .7rem; }
+.chap-num {
+  flex: none; min-width: 1.7rem; font-variant: small-caps; letter-spacing: .1em;
+  font-size: .74rem; color: var(--encre-pale);
+}
+.chap-nom { font-family: var(--titre); font-size: 1.24rem; }
+.chap-points {
+  flex: 1; min-width: 2rem; height: .85em;
+  border-bottom: 1.5px dotted rgba(120,100,60,.42); transition: border-color .2s;
+}
+.chap-etat {
+  font-variant: small-caps; letter-spacing: .1em; font-size: .74rem;
+  color: var(--encre-pale); white-space: nowrap; transition: color .2s;
+}
+.chap-resume { margin-left: 2.4rem; color: var(--encre-pale); font-size: .93rem; }
+.chap:hover, .chap:focus-visible { color: var(--accent); }
+.chap:hover .chap-points, .chap:focus-visible .chap-points { border-bottom-color: var(--accent); }
+.chap:hover .chap-etat, .chap:focus-visible .chap-etat { color: var(--accent); }
+.chap:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── Le cours ──────────────────────────────────────────────────── */
+.mention {
+  font-variant: small-caps; letter-spacing: .16em; font-size: .76rem;
+  color: var(--encre-pale); margin-top: -.7rem; margin-bottom: 1.1rem;
+}
+.mention span {
+  display: inline-block; margin-left: .6rem; padding: .05rem .5rem;
+  border: 1px solid rgba(120,100,60,.35); font-size: .7rem; letter-spacing: .1em;
+}
+.cours { margin-top: 2.4rem; }
+.bloc + .bloc { margin-top: 2.3rem; }
+.bloc-titre {
+  font-family: var(--titre); font-weight: 600; font-size: 1.42rem; line-height: 1.25;
+  margin-bottom: .5rem; padding-left: 1.5rem; text-indent: -1.5rem;
+}
+.bloc-titre::before { content: '\00B6\00A0'; color: var(--accent); font-size: 1.05rem; }
+.saillant { font-style: normal; font-weight: 400; color: var(--accent); }
+
+.exemples {
+  margin-top: .85rem; padding: .1rem 0 .1rem 1.1rem;
+  border-left: 2px solid var(--or); font-size: .97rem; list-style: none;
+}
+.exemples li { margin: .38rem 0; }
+.exemples li.ex-faux { color: var(--encre-pale); }
+.juste { color: #4f6b52; font-weight: 600; }
+.faux  { color: #8f2f22; font-weight: 600; }
+
+.astuce {
+  margin-top: .9rem; padding-left: 1.7rem; text-indent: -1.7rem;
+  font-size: .95rem; color: var(--encre-pale);
+}
+.astuce::before { content: '\261E\00A0'; color: var(--accent); font-size: 1.02rem; }
+
+.tab-cadre { overflow-x: auto; margin-top: 1rem; }
+.tab { width: 100%; border-collapse: collapse; font-size: .94rem; }
+.tab th {
+  font-family: var(--titre); font-variant: small-caps; font-weight: 600;
+  letter-spacing: .1em; font-size: .78rem; color: var(--encre-pale);
+  text-align: left; padding: .3rem .9rem .35rem 0;
+  border-bottom: 1px solid rgba(120,100,60,.42); white-space: nowrap;
+}
+.tab td {
+  padding: .45rem .9rem .45rem 0; vertical-align: top;
+  border-bottom: 1px solid rgba(120,100,60,.14);
+}
+.tab tr:last-child td { border-bottom: none; }
+.tab td:first-child { font-family: var(--titre); font-size: 1.04rem; }
+
+.retenir {
+  margin-top: 2.8rem; padding: 1.3rem 1.5rem;
+  background: rgba(168,129,58,.07); border: 1px solid rgba(168,129,58,.3);
+}
+.retenir-titre {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .18em;
+  font-size: .8rem; color: var(--accent); margin-bottom: .6rem;
+}
+.retenir ul { list-style: none; }
+.retenir li { padding-left: 1.1rem; text-indent: -1.1rem; margin: .32rem 0; font-size: .97rem; }
+.retenir li::before { content: '\00B7\00A0'; color: var(--or); }
+
+/* ── Feuilletage ───────────────────────────────────────────────── */
+.feuillet {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; max-width: 46rem; margin: 0 auto 2.4rem; padding: 0 1rem;
+}
+.feuillet[hidden] { display: none; }
+.feuillet button {
+  display: flex; align-items: baseline; gap: .55rem; max-width: 42%;
+  background: none; border: none; cursor: pointer; padding: .4rem .2rem;
+  font-family: var(--titre); font-size: 1rem; color: var(--encre-pale);
+  text-align: left; transition: color .2s;
+}
+.feuillet button:hover:not(:disabled) { color: var(--accent); }
+.feuillet button:disabled { opacity: .3; cursor: default; }
+.feuillet button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.feuillet .chevron { font-size: 1.1rem; line-height: 1; }
+.feuillet .suivant { justify-content: flex-end; text-align: right; }
+.feuillet-nom { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jalons { display: flex; gap: .45rem; align-items: center; }
+.jalon {
+  width: .55rem; height: .55rem; border-radius: 50%; padding: 0;
+  background: none; border: 1px solid rgba(120,100,60,.5); cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.jalon:hover { border-color: var(--accent); }
+.jalon.actif { background: var(--accent); border-color: var(--accent); }
+
+@media (max-width: 640px) {
+  .feuillet .feuillet-nom { display: none; }
+  .theme-sous { padding-left: 0; }
+  .chap-ligne { flex-wrap: wrap; gap: .4rem; }
+  .chap-resume { margin-left: 0; }
+  .bloc-titre { padding-left: 1.2rem; text-indent: -1.2rem; }
+}
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+<script src="francais-contenu.js"></script>
+</head>
+<body data-matiere="francais">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div id="page"></div>
+
+<nav class="feuillet" id="feuillet" aria-label="Navigation" hidden>
+  <button type="button" id="precedent">
+    <span class="chevron" aria-hidden="true">←</span><span class="feuillet-nom"></span>
+  </button>
+  <div class="jalons" id="jalons" role="tablist"></div>
+  <button type="button" id="suivant" class="suivant">
+    <span class="feuillet-nom"></span><span class="chevron" aria-hidden="true">→</span>
+  </button>
+</nav>
+
+<p class="colophon">Polymates — Français</p>
+
+<script>
+(function () {
+  "use strict";
+
+  /* Cette page n'est l'accueil que du français. Une autre matière arrivée
+     ici par un lien ancien repart chez elle. */
+  if (window.MB_MAT && MB_MAT.id !== "francais") {
+    location.replace(MB_MAT.lien(MB_MAT.accueil) || "matieres.html");
+    return;
+  }
+
+  const THEMES = window.FRANCAIS_THEMES || [];
+  const page      = document.getElementById("page");
+  const feuillet  = document.getElementById("feuillet");
+  const precedent = document.getElementById("precedent");
+  const suivant   = document.getElementById("suivant");
+  const jalons    = document.getElementById("jalons");
+
+  /* ── Petits outils de mise en forme ───────────────────────────── */
+  function ech(t) {
+    return String(t == null ? "" : t)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  /* *mot* met en valeur ; les crochets de justesse prennent leur couleur. */
+  function fmt(t) {
+    return ech(t)
+      .replace(/\*([^*]+)\*/g, '<b class="saillant">$1</b>')
+      .replace(/✓/g, '<span class="juste">✓</span>')
+      .replace(/✗/g, '<span class="faux">✗</span>');
+  }
+  function el(balise, classe, html) {
+    const e = document.createElement(balise);
+    if (classe) e.className = classe;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function feuilleVide() {
+    const f = el("main", "feuille");
+    return f;
+  }
+  function filet() { return el("div", "filet", "<span>❦</span>"); }
+
+  /* ── L'accent de la page suit le thème ouvert ──────────────────── */
+  function teindre(couleur) {
+    document.body.style.setProperty("--accent", couleur || "#8f2f22");
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     Vue 1 — l'accueil : les trois grands thèmes
+     ══════════════════════════════════════════════════════════════ */
+  function vueAccueil() {
+    teindre(null);
+    const f = feuilleVide();
+    f.appendChild(el("p", "rubrique", "Français"));
+    f.appendChild(el("h1", null, "Lire, écrire,<br><em>et dire juste.</em>"));
+    f.appendChild(filet());
+    f.appendChild(el("p", "ouverture",
+      "Le français ne se révise pas comme une formule : il se pratique. Trois grands " +
+      "domaines gouvernent la langue — écrire les mots, construire la phrase, conjuguer " +
+      "le verbe. Chacun a sa page, ses chapitres et son cours."));
+
+    const sec = el("section", "sommaire themes");
+    sec.appendChild(el("p", "sommaire-titre", "Les trois grands thèmes de la langue"));
+
+    THEMES.forEach((t, i) => {
+      const b = el("button", "theme-bloc");
+      b.type = "button";
+      b.style.setProperty("--teinte", t.teinte);
+      b.innerHTML =
+        '<span class="theme-tete">' +
+          '<span class="theme-nom"></span>' +
+          '<span class="theme-compte"></span>' +
+          '<span class="theme-ouvrir">Ouvrir →</span>' +
+        '</span>' +
+        '<span class="theme-sous"></span>';
+      b.querySelector(".theme-nom").textContent = t.nom;
+      b.querySelector(".theme-compte").textContent =
+        t.chapitres.length + " chapitres · cours complet";
+      b.querySelector(".theme-sous").textContent = t.sous;
+      b.onclick = () => aller({ niveau: "theme", t: i });
+      sec.appendChild(b);
+    });
+
+    f.appendChild(sec);
+    f.appendChild(el("p", "note",
+      "Littérature, expression écrite et annales du brevet : sections à paraître."));
+    return f;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     Vue 2 — un thème : un bouton par chapitre
+     ══════════════════════════════════════════════════════════════ */
+  function vueTheme(i) {
+    const t = THEMES[i];
+    teindre(t.teinte);
+
+    const f = feuilleVide();
+    f.appendChild(fil([["Français", () => aller({ niveau: "accueil" })], [t.nom, null]]));
+    f.appendChild(el("p", "rubrique", t.nom));
+    f.appendChild(el("h1", null, t.titre));
+    f.appendChild(el("p", "mention", ech(t.sous) +
+      '<span>' + t.chapitres.length + ' chapitres</span>'));
+    f.appendChild(filet());
+    f.appendChild(el("p", "ouverture", ech(t.ouverture)));
+
+    const sec = el("section", "sommaire chapitres");
+    sec.appendChild(el("p", "sommaire-titre", "Les chapitres de ce thème"));
+
+    t.chapitres.forEach((c, n) => {
+      const b = el("button", "chap");
+      b.type = "button";
+      b.innerHTML =
+        '<span class="chap-ligne">' +
+          '<span class="chap-num"></span>' +
+          '<span class="chap-nom"></span>' +
+          '<span class="chap-points" aria-hidden="true"></span>' +
+          '<span class="chap-etat">Lire le cours →</span>' +
+        '</span>' +
+        '<span class="chap-resume"></span>';
+      b.querySelector(".chap-num").textContent = romain(n + 1);
+      b.querySelector(".chap-nom").textContent = c.nom;
+      b.querySelector(".chap-resume").textContent = c.resume;
+      b.onclick = () => aller({ niveau: "chapitre", t: i, c: n });
+      sec.appendChild(b);
+    });
+
+    f.appendChild(sec);
+    return f;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     Vue 3 — un chapitre : le cours
+     ══════════════════════════════════════════════════════════════ */
+  function vueChapitre(i, n) {
+    const t = THEMES[i], c = t.chapitres[n];
+    teindre(t.teinte);
+
+    const f = feuilleVide();
+    f.appendChild(fil([
+      ["Français", () => aller({ niveau: "accueil" })],
+      [t.nom,      () => aller({ niveau: "theme", t: i })],
+      ["Chapitre " + romain(n + 1), null]
+    ]));
+    f.appendChild(el("p", "rubrique", t.nom + " · chapitre " + romain(n + 1)));
+    f.appendChild(el("h1", null, ech(c.nom)));
+    f.appendChild(el("p", "mention", ech(c.resume) + '<span>' + ech(c.classe) + '</span>'));
+    f.appendChild(filet());
+
+    const cours = el("section", "cours");
+    (c.cours || []).forEach(b => {
+      const bloc = el("div", "bloc");
+      bloc.appendChild(el("h2", "bloc-titre", ech(b.titre)));
+      if (b.texte) bloc.appendChild(el("p", "bloc-texte", fmt(b.texte)));
+
+      if (b.exemples && b.exemples.length) {
+        const ul = el("ul", "exemples");
+        b.exemples.forEach(x => {
+          const li = el("li", /^✗/.test(x) ? "ex-faux" : null, fmt(x));
+          ul.appendChild(li);
+        });
+        bloc.appendChild(ul);
+      }
+
+      if (b.tableau) bloc.appendChild(tableau(b.tableau));
+      if (b.astuce)  bloc.appendChild(el("p", "astuce", fmt(b.astuce)));
+
+      cours.appendChild(bloc);
+    });
+    f.appendChild(cours);
+
+    if (c.retenir && c.retenir.length) {
+      const r = el("section", "retenir");
+      r.appendChild(el("p", "retenir-titre", "À retenir"));
+      const ul = document.createElement("ul");
+      c.retenir.forEach(x => ul.appendChild(el("li", null, fmt(x))));
+      r.appendChild(ul);
+      f.appendChild(r);
+    }
+    return f;
+  }
+
+  /* ── Fabriques communes ───────────────────────────────────────── */
+  function tableau(t) {
+    const cadre = el("div", "tab-cadre");
+    const tb = el("table", "tab");
+    const thead = document.createElement("thead");
+    const tr = document.createElement("tr");
+    (t.colonnes || []).forEach(c => {
+      const th = document.createElement("th");
+      th.innerHTML = fmt(c);
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    const tbody = document.createElement("tbody");
+    (t.lignes || []).forEach(l => {
+      const ligne = document.createElement("tr");
+      l.forEach(cell => {
+        const td = document.createElement("td");
+        td.innerHTML = fmt(cell);
+        ligne.appendChild(td);
+      });
+      tbody.appendChild(ligne);
+    });
+    tb.append(thead, tbody);
+    cadre.appendChild(tb);
+    return cadre;
+  }
+
+  function fil(etapes) {
+    const p = el("p", "fil");
+    etapes.forEach((e, i) => {
+      if (i) p.appendChild(el("i", null, "›"));
+      if (e[1]) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = e[0];
+        b.onclick = e[1];
+        p.appendChild(b);
+      } else {
+        p.appendChild(el("span", null, ech(e[0])));
+      }
+    });
+    return p;
+  }
+
+  const CHIFFRES = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+  function romain(n) { return CHIFFRES[n] || String(n); }
+
+  /* ══════════════════════════════════════════════════════════════
+     Navigation : accueil → thème → chapitre, et le feuilletage
+     ══════════════════════════════════════════════════════════════ */
+  let vue = { niveau: "accueil", t: 0, c: 0 };
+
+  function aller(v, sansHash) {
+    vue = { niveau: v.niveau, t: v.t || 0, c: v.c || 0 };
+
+    page.innerHTML = "";
+    if (vue.niveau === "chapitre")   page.appendChild(vueChapitre(vue.t, vue.c));
+    else if (vue.niveau === "theme") page.appendChild(vueTheme(vue.t));
+    else                             page.appendChild(vueAccueil());
+
+    majFeuillet();
+    majTitre();
+    if (!sansHash) {
+      const h = hashDe(vue);
+      if (location.hash !== h) history.pushState(null, "", h || location.pathname + location.search);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function majTitre() {
+    const t = THEMES[vue.t];
+    document.title = "Polymates — Français" +
+      (vue.niveau === "accueil" ? "" : " · " + t.nom) +
+      (vue.niveau === "chapitre" ? " · " + t.chapitres[vue.c].nom : "");
+  }
+
+  /* Le feuilletage change d'échelle selon le niveau : entre les thèmes
+     depuis un thème, entre les chapitres depuis un chapitre. */
+  function majFeuillet() {
+    if (vue.niveau === "accueil") { feuillet.hidden = true; return; }
+    feuillet.hidden = false;
+
+    let noms, index, ouvrir, etiquette;
+    if (vue.niveau === "theme") {
+      noms = THEMES.map(t => t.nom);
+      index = vue.t;
+      ouvrir = i => aller({ niveau: "theme", t: i });
+      etiquette = "Thèmes";
+    } else {
+      noms = THEMES[vue.t].chapitres.map(c => c.nom);
+      index = vue.c;
+      ouvrir = i => aller({ niveau: "chapitre", t: vue.t, c: i });
+      etiquette = "Chapitres du thème " + THEMES[vue.t].nom;
+    }
+    feuillet.setAttribute("aria-label", etiquette);
+    jalons.setAttribute("aria-label", etiquette);
+
+    precedent.disabled = index === 0;
+    suivant.disabled   = index === noms.length - 1;
+    precedent.querySelector(".feuillet-nom").textContent = index > 0 ? noms[index - 1] : "";
+    suivant.querySelector(".feuillet-nom").textContent =
+      index < noms.length - 1 ? noms[index + 1] : "";
+    precedent.onclick = () => ouvrir(index - 1);
+    suivant.onclick   = () => ouvrir(index + 1);
+
+    jalons.innerHTML = "";
+    noms.forEach((nom, i) => {
+      const j = document.createElement("button");
+      j.type = "button";
+      j.className = "jalon" + (i === index ? " actif" : "");
+      j.title = nom;
+      j.setAttribute("aria-label", nom);
+      j.setAttribute("aria-selected", i === index ? "true" : "false");
+      j.onclick = () => ouvrir(i);
+      jalons.appendChild(j);
+    });
+  }
+
+  /* ── L'adresse garde la page ouverte : #theme ou #theme/chapitre ── */
+  function hashDe(v) {
+    if (v.niveau === "accueil") return "";
+    const t = THEMES[v.t];
+    return "#" + t.id + (v.niveau === "chapitre" ? "/" + t.chapitres[v.c].id : "");
+  }
+  function vueDeHash() {
+    const h = (location.hash || "").replace(/^#/, "");
+    if (!h) return { niveau: "accueil" };
+    const [idT, idC] = h.split("/");
+    const t = THEMES.findIndex(x => x.id === idT);
+    if (t < 0) return { niveau: "accueil" };
+    if (!idC) return { niveau: "theme", t: t };
+    const c = THEMES[t].chapitres.findIndex(x => x.id === idC);
+    return c < 0 ? { niveau: "theme", t: t } : { niveau: "chapitre", t: t, c: c };
+  }
+
+  /* Un retour arrière peut déclencher popstate ET hashchange : on ne
+     redessine que si la page demandée n'est pas déjà celle affichée. */
+  function suivreAdresse() {
+    const v = vueDeHash();
+    if (v.niveau === vue.niveau && (v.t || 0) === vue.t && (v.c || 0) === vue.c) return;
+    aller(v, true);
+  }
+  window.addEventListener("popstate", suivreAdresse);
+  window.addEventListener("hashchange", suivreAdresse);
+
+  /* Les flèches du clavier feuillettent, sauf pendant une saisie. */
+  document.addEventListener("keydown", e => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    if (feuillet.hidden) return;
+    if (e.key === "ArrowLeft"  && !precedent.disabled) { e.preventDefault(); precedent.onclick(); }
+    if (e.key === "ArrowRight" && !suivant.disabled)   { e.preventDefault(); suivant.onclick(); }
+  });
+
+  aller(vueDeHash(), true);
+
+  /* ── Bandeau ── */
+  const u = window.MB_AUTH && MB_AUTH.user && MB_AUTH.user();
+  if (u && u.pseudo) document.getElementById("lecteur").textContent = u.pseudo;
+  document.getElementById("sortir").onclick = () => MB_AUTH.logout();
+  if (window.MB_MAT && MB_MAT.propager) MB_MAT.propager(document);
+})();
+</script>
+</body>
+</html>

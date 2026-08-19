@@ -39,37 +39,18 @@
 
 <script>
 (function () {
-  /* Cette page sert le Français et l'Histoire-Géographie : même mise en
-     page, même papier, seuls le texte et l'encre d'accent changent.
-     Les sections sont vides pour l'instant — chacune le dit franchement
-     plutôt que de faire semblant. */
+  /* Gabarit « sommaire simple » des matières littéraires : même mise en
+     page, même papier, seuls le texte et l'encre d'accent changent. Une
+     matière absente de PAGES est renvoyée vers son propre accueil. */
 
-  const PAGES = {
-    "francais": {
-      rubrique: "Français",
-      titre: 'Lire, écrire,<br><em>et dire juste.</em>',
-      ouverture:
-        "Le français ne se révise pas comme une formule : il se pratique. On y apprend à " +
-        "lire un texte de près, à conduire une idée jusqu'au bout, et à choisir le mot exact " +
-        "plutôt que le mot proche.",
-      sommaire: "Ce que contiendra cette matière",
-      sections: [
-        { nom: "Langue et grammaire",
-          detail: "Classes de mots, accords, conjugaison, syntaxe de la phrase complexe." },
-        { nom: "Littérature et textes",
-          detail: "Récits, poésie, théâtre : lecture des œuvres au programme et analyse guidée." },
-        { nom: "Expression écrite",
-          detail: "Rédaction, argumentation, réécriture, et travail sur le brouillon." },
-        { nom: "Méthodes du brevet",
-          detail: "Dictée, questions de compréhension, rédaction : les attendus de l'épreuve." },
-        { nom: "Annales",
-          detail: "Sujets tombés les années précédentes, corrigés pas à pas." },
-      ],
-    },
-  };
+  /* Le français a désormais sa propre page (francais.html), avec ses trois
+     thèmes et leurs cours : il a quitté ce gabarit. Celui-ci reste en place
+     pour la prochaine matière littéraire qui n'aura d'abord qu'un sommaire —
+     il suffit de lui ajouter une entrée ci-dessous. */
+  const PAGES = {};
 
-  /* Cette page sert les matières littéraires en sommaire simple. Les autres
-     ont leur propre accueil (l'histoire-géo a sa série de parchemins). */
+  /* Cette page sert les matières littéraires réduites à un sommaire. Les
+     autres ont leur propre accueil : francais.html, histoire.html. */
   const page = PAGES[MB_MAT.id];
   if (!page) { location.replace(MB_MAT.lien(MB_MAT.accueil) || "matieres.html"); return; }
 
