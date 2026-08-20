@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Dictées</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<link rel="stylesheet" href="atelier.css">
+<style>
+/* ── Le recueil ────────────────────────────────────────────── */
+.filtres { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: 1.8rem; }
+.filtre {
+  padding: .3rem .8rem; background: none; border: 1px solid rgba(120,100,60,.35);
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .1em;
+  font-size: .76rem; color: var(--encre-pale); cursor: pointer; transition: .15s;
+}
+.filtre:hover { border-color: var(--accent); color: var(--accent); }
+.filtre[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--papier-clair); }
+
+.dictee-ligne {
+  display: block; width: 100%; padding: .9rem 0; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.16);
+  font: inherit; color: inherit; cursor: pointer;
+}
+.dictee-ligne:last-of-type { border-bottom: none; }
+.dictee-tete { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+.dictee-nom { font-family: var(--titre); font-size: 1.26rem; transition: color .2s; }
+.dictee-info { font-variant: small-caps; letter-spacing: .11em; font-size: .72rem; color: var(--encre-pale); }
+.dictee-fleche { margin-left: auto; font-size: .8rem; color: var(--accent); opacity: 0; transition: opacity .2s; }
+.dictee-vise { margin-top: .15rem; color: var(--encre-pale); font-size: .92rem; }
+.dictee-ligne:hover .dictee-nom { color: var(--accent); }
+.dictee-ligne:hover .dictee-fleche { opacity: 1; }
+.dictee-ligne:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── La séance ─────────────────────────────────────────────── */
+.pupitre {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  flex-wrap: wrap; padding: 1.1rem 0; margin-top: 1.2rem;
+  border-top: 1px solid rgba(120,100,60,.25); border-bottom: 1px solid rgba(120,100,60,.25);
+}
+.lecture {
+  width: 3.4rem; height: 3.4rem; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); border: none; color: var(--papier-clair);
+  font-size: 1.25rem; cursor: pointer; transition: opacity .18s, transform .1s;
+}
+.lecture:hover { opacity: .87; }
+.lecture:active { transform: scale(.96); }
+.lecture:disabled { opacity: .3; cursor: default; }
+.lecture:focus-visible { outline: 2px solid var(--encre); outline-offset: 3px; }
+
+.segments { display: flex; gap: .3rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+.segment {
+  min-width: 1.9rem; padding: .22rem .35rem; background: none;
+  border: 1px solid rgba(120,100,60,.42); font-family: var(--titre);
+  font-size: .85rem; color: var(--encre-pale); cursor: pointer; transition: .15s;
+}
+.segment:hover { border-color: var(--accent); color: var(--accent); }
+.segment[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--papier-clair); }
+.segment.lu { border-color: rgba(79,107,82,.55); color: var(--acquis); }
+.segment.lu[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--papier-clair); }
+
+.segment-texte {
+  margin-top: 1rem; padding: .8rem 1rem; min-height: 3.2rem;
+  border-left: 3px solid var(--or); background: rgba(168,129,58,.07);
+  font-family: var(--titre); font-size: 1.2rem; line-height: 1.5;
+}
+.segment-texte.masque { color: transparent; text-shadow: 0 0 11px rgba(47,40,32,.55); user-select: none; }
+
+.compte-mots {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-variant: small-caps; letter-spacing: .12em; font-size: .72rem;
+  color: var(--encre-pale); margin: 1.4rem 0 .5rem;
+}
+
+/* ── Le bulletin ───────────────────────────────────────────── */
+.bulletin {
+  display: flex; align-items: flex-end; gap: 2rem; flex-wrap: wrap;
+  padding: 1.3rem 0; margin-top: .5rem;
+  border-top: 1px solid rgba(120,100,60,.25); border-bottom: 1px solid rgba(120,100,60,.25);
+}
+.note-globale { font-family: var(--titre); font-size: 3.4rem; font-weight: 600; line-height: .9; color: var(--accent); }
+.note-sur { font-family: var(--titre); font-size: 1.3rem; color: var(--encre-pale); }
+.note-nom { font-variant: small-caps; letter-spacing: .13em; font-size: .7rem; color: var(--encre-pale); margin-top: .35rem; }
+.appreciation { flex: 1 1 15rem; font-size: 1rem; line-height: 1.6; }
+
+.legende {
+  display: flex; gap: 1.4rem; flex-wrap: wrap; margin-top: .9rem;
+  font-variant: small-caps; letter-spacing: .1em; font-size: .7rem; color: var(--encre-pale);
+}
+.legende span::before { content: '—'; margin-right: .35rem; }
+.legende .l-faux::before  { color: var(--correction); }
+.legende .l-manque::before{ color: var(--correction); }
+.legende .l-ajout::before { color: rgba(184,52,42,.6); }
+
+.par-type { margin-top: 1.8rem; }
+.type-ligne { display: flex; align-items: baseline; gap: .7rem; padding: .35rem 0; }
+.type-nom { font-family: var(--titre); font-size: 1.02rem; min-width: 11rem; }
+.type-barre { flex: 1; height: 3px; background: rgba(120,100,60,.18); }
+.type-barre > span { display: block; height: 100%; background: var(--correction); }
+.type-n { font-variant: small-caps; letter-spacing: .1em; font-size: .72rem; color: var(--encre-pale); }
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+<script src="francais-contenu.js"></script>
+<script src="francais-dictees.js"></script>
+<script src="francais-progres.js"></script>
+<script src="francais-atelier.js"></script>
+</head>
+<body data-matiere="francais">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div id="rubans"></div>
+<div id="page"></div>
+
+<p class="colophon">Polymates — Français</p>
+
+<script>
+(function () {
+  "use strict";
+  if (!MB_ATELIER.installer("dictee")) return;
+
+  const { ech, el, lien, lienChapitre, nomChapitre } = MB_ATELIER;
+  const DICTEES = window.FRANCAIS_DICTEES || [];
+  const page = document.getElementById("page");
+
+  /* ══════════════════════════════════════════════════════════════
+     LA VOIX — synthèse vocale du navigateur, réglée pour le français
+     ══════════════════════════════════════════════════════════════ */
+  const Voix = (function () {
+    const dispo = "speechSynthesis" in window;
+    let voix = [], choisie = null, vitesse = 0.85;
+
+    function recenser() {
+      if (!dispo) return;
+      voix = speechSynthesis.getVoices().filter(v => /^fr/i.test(v.lang));
+      if (!choisie && voix.length) {
+        /* On préfère une voix locale : elle ne dépend pas du réseau. */
+        choisie = voix.find(v => v.localService) || voix[0];
+      }
+    }
+    if (dispo) {
+      recenser();
+      speechSynthesis.onvoiceschanged = recenser;
+    }
+
+    return {
+      dispo: () => dispo,
+      liste: () => voix,
+      aUneVoix: () => voix.length > 0,
+      choisir: nom => { choisie = voix.find(v => v.name === nom) || choisie; },
+      choisie: () => choisie,
+      vitesse: v => { if (v != null) vitesse = v; return vitesse; },
+      taire() { if (dispo) speechSynthesis.cancel(); },
+      dire(texte, fini) {
+        if (!dispo) { if (fini) fini(); return; }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(texte);
+        u.lang = "fr-FR";
+        if (choisie) u.voice = choisie;
+        u.rate = vitesse;
+        u.pitch = 1;
+        u.onend = () => { if (fini) fini(); };
+        u.onerror = () => { if (fini) fini(); };
+        /* Chrome s'endort sur les longues énonciations : on le réveille. */
+        speechSynthesis.speak(u);
+      },
+    };
+  })();
+
+  /* ══════════════════════════════════════════════════════════════
+     LE CORRECTEUR — alignement mot à mot, puis diagnostic
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Les mots, la ponctuation, et rien d'autre. */
+  function decouper(texte) {
+    const jetons = String(texte).match(/[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’-][A-Za-zÀ-ÖØ-öø-ÿ]+)*|[.,;:!?«»…()"]/g);
+    return jetons || [];
+  }
+  const estPonctuation = j => /^[.,;:!?«»…()"]$/.test(j);
+  function nu(mot) {
+    return String(mot).toLowerCase().replace(/[’‘`]/g, "'")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+  const egal = (a, b) => String(a).toLowerCase().replace(/[’‘`]/g, "'")
+                       === String(b).toLowerCase().replace(/[’‘`]/g, "'");
+
+  /* Alignement de Levenshtein sur les mots : il dit, pour chaque mot du
+     texte attendu, s'il est juste, faux, oublié — et repère les ajouts. */
+  function aligner(attendus, ecrits) {
+    const n = attendus.length, m = ecrits.length;
+    const d = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
+    for (let i = 0; i <= n; i++) d[i][0] = i;
+    for (let j = 0; j <= m; j++) d[0][j] = j;
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        const c = egal(attendus[i - 1], ecrits[j - 1]) ? 0
+                : (nu(attendus[i - 1]) === nu(ecrits[j - 1]) ? 0.4 : 1);
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+      }
+    }
+    const ops = [];
+    let i = n, j = m;
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0) {
+        const c = egal(attendus[i - 1], ecrits[j - 1]) ? 0
+                : (nu(attendus[i - 1]) === nu(ecrits[j - 1]) ? 0.4 : 1);
+        if (Math.abs(d[i][j] - (d[i - 1][j - 1] + c)) < 1e-9) {
+          ops.push(c === 0 ? { op:"juste", attendu:attendus[i-1], ecrit:ecrits[j-1] }
+                           : { op:"faux",  attendu:attendus[i-1], ecrit:ecrits[j-1] });
+          i--; j--; continue;
+        }
+      }
+      if (i > 0 && Math.abs(d[i][j] - (d[i - 1][j] + 1)) < 1e-9) {
+        ops.push({ op:"manque", attendu:attendus[i-1] }); i--; continue;
+      }
+      ops.push({ op:"ajout", ecrit:ecrits[j-1] }); j--;
+    }
+    return ops.reverse();
+  }
+
+  /* ── Les familles d'homophones : deux mots d'une même famille signalent
+        une confusion grammaticale, pas une faute d'orthographe d'usage. ── */
+  const HOMOPHONES = [
+    ["a","à"], ["et","est"], ["on","ont","on n'"], ["son","sont"], ["ce","se","ceux"],
+    ["ces","ses","c'est","s'est","sais","sait"], ["ou","où"], ["la","là","l'a","l'as"],
+    ["leur","leurs"], ["quel","quelle","quels","quelles","qu'elle","qu'elles"],
+    ["peu","peut","peux"], ["sans","s'en","sent","cent","sang"], ["dans","d'en"],
+    ["quand","quant","qu'en"], ["près","prêt","prêts","prête"], ["ni","n'y","nid"],
+    ["si","s'y","ci"], ["mes","mais","mets","met","m'est"], ["ma","m'a","m'as"],
+    ["ta","t'a","t'as"], ["notre","nôtre"], ["votre","vôtre"], ["du","dû"],
+    ["mur","mûr"], ["sur","sûr"], ["plutôt","plus"], ["tout","tous","tous"],
+    ["ces","ses"], ["dont","donc"], ["quoique","quoi"], ["parce","par"],
+  ];
+  function memeFamille(a, b) {
+    const na = nu(a), nb = nu(b);
+    return HOMOPHONES.some(g => {
+      const gn = g.map(nu);
+      return gn.indexOf(na) >= 0 && gn.indexOf(nb) >= 0;
+    });
+  }
+
+  const FINALES_VERBE = /^(é|ée|és|ées|er|ez|ai|ais|ait|aient|aie|aies)$/;
+
+  /* Les terminaisons de personne, de la plus longue à la plus courte : en
+     retirant la bonne, on retrouve le radical et on peut comparer. */
+  const FIN_VERBE = ["eraient","raient","aient","èrent","irent","urent","inrent",
+    "eront","erons","ront","rons","ions","iez","ent","ons","ont","ez",
+    "erai","erais","erait","rait","rais","era","eras","ait","ais","int","ins",
+    "ut","us","it","is","at","as","ai","a","e","s","t"];
+  const PLURIEL_VERBE = /^(eraient|raient|aient|èrent|irent|urent|inrent|eront|erons|ront|rons|ions|ent|ons|ont)$/;
+  function radicalVerbe(mot) {
+    for (const f of FIN_VERBE) {
+      if (mot.length > f.length && mot.endsWith(f)) return { radical: mot.slice(0, -f.length), fin: f };
+    }
+    return null;
+  }
+  const FIN_PARTICIPE = /(ées|ée|és|é|ies|ie|is|i|ues|ue|us|u)$/;
+
+  /* Le diagnostic : pourquoi ce mot est-il faux ? La réponse doit
+     renvoyer à un chapitre, sinon elle ne sert à rien. */
+  function diagnostiquer(ecrit, attendu, pieges) {
+    /* Un piège annoncé par la dictée l'emporte : son explication est écrite
+       pour ce mot précis, elle vaut mieux que toute déduction. */
+    const p = (pieges || []).find(x => egal(x.mot, attendu) ||
+      nu(x.mot).split(" ").indexOf(nu(attendu)) >= 0);
+    if (p) return { type: typeDepuisChapitre(p.chapitre), motif: p.pourquoi, chapitre: p.chapitre };
+
+    if (!ecrit) return { type:"Mot oublié", motif:"Ce mot n'a pas été écrit.", chapitre:null };
+
+    if (nu(ecrit) === nu(attendu) && ecrit.toLowerCase() !== attendu.toLowerCase()) {
+      return { type:"Accent", motif:"Les lettres sont bonnes : seul un accent manque ou se trompe.",
+               chapitre:"accents" };
+    }
+    if (memeFamille(ecrit, attendu)) {
+      return { type:"Homophone", motif:"Deux mots qui s'entendent pareil mais n'ont pas la même nature : le test de remplacement les départage.",
+               chapitre:"homophones" };
+    }
+
+    /* Même début, finale différente : accord ou terminaison verbale. */
+    const commun = prefixeCommun(ecrit.toLowerCase(), attendu.toLowerCase());
+    if (commun >= Math.min(3, attendu.length - 1)) {
+      const fa = attendu.toLowerCase().slice(commun), fe = ecrit.toLowerCase().slice(commun);
+      if (FINALES_VERBE.test(fa) || FINALES_VERBE.test(fe) ||
+          /^(er|é|ez|ai|ais)$/.test(fa + fe)) {
+        return { type:"Terminaison verbale", motif:"Infinitif, participe ou personne : remplacez le verbe par « mordre » pour trancher.",
+                 chapitre:"e-er-ez" };
+      }
+      /* Même radical verbal, l'un au singulier et l'autre au pluriel :
+         c'est le verbe qui n'a pas suivi son sujet. */
+      const ra = radicalVerbe(attendu.toLowerCase()), re = radicalVerbe(ecrit.toLowerCase());
+      if (ra && re && ra.radical === re.radical && ra.fin !== re.fin &&
+          (PLURIEL_VERBE.test(ra.fin) !== PLURIEL_VERBE.test(re.fin))) {
+        return { type:"Accord du verbe", motif:"Le verbe ne suit pas son sujet : posez « qui est-ce qui… ? » avant de l'écrire.",
+                 chapitre:"accord-verbe" };
+      }
+      /* Deux formes du même participe passé : c'est l'accord qui a manqué. */
+      if (FIN_PARTICIPE.test(attendu.toLowerCase()) && FIN_PARTICIPE.test(ecrit.toLowerCase()) &&
+          attendu.toLowerCase().replace(FIN_PARTICIPE, "") === ecrit.toLowerCase().replace(FIN_PARTICIPE, "")) {
+        return { type:"Accord du participe", motif:"Cherchez l'auxiliaire, puis le COD : c'est lui qui décide.",
+                 chapitre:"participe-passe" };
+      }
+      if (/^(s|x|e|es|nt|ent|ne|nne|le|lle)$/.test(fa) || /^(s|x|e|es|nt|ent)$/.test(fe)) {
+        return { type:"Accord dans le groupe nominal",
+                 motif:"Le genre ou le nombre ne suit pas le nom qui commande.",
+                 chapitre:"accord-gn" };
+      }
+    }
+    return { type:"Orthographe du mot", motif:"Le mot lui-même s'écrit autrement. À ranger dans le carnet.",
+             chapitre:null };
+  }
+  function prefixeCommun(a, b) {
+    let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; return i;
+  }
+  function typeDepuisChapitre(ch) {
+    return ({
+      "accord-gn":"Accord dans le groupe nominal", "accord-verbe":"Accord du verbe",
+      "participe-passe":"Accord du participe", "homophones":"Homophone",
+      "e-er-ez":"Terminaison verbale", "accents":"Accent", "ponctuation":"Ponctuation",
+      "imparfait-passe-simple":"Temps du récit", "futur-conditionnel":"Futur ou conditionnel",
+      "subjonctif":"Subjonctif", "temps-composes":"Temps composé",
+      "valeurs-temps":"Concordance des temps", "voix":"Voix passive",
+      "subordonnees":"Subordonnée", "types-formes":"Forme de phrase",
+    })[ch] || "Orthographe";
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE 1 — le recueil
+     ══════════════════════════════════════════════════════════════ */
+  let filtreNiveau = 0;   /* 0 = tous */
+
+  function vueRecueil() {
+    page.innerHTML = "";
+    const f = el("main", "feuille");
+    f.appendChild(el("p", "rubrique", "Français · dictées"));
+    f.appendChild(el("h1", null, "Écouter,<br><em>puis écrire juste.</em>"));
+    f.appendChild(el("div", "filet", "<span>❦</span>"));
+    f.appendChild(el("p", "ouverture",
+      "Chaque texte est écrit pour piéger une difficulté précise. On l'écoute segment " +
+      "par segment, on l'écrit sur le cahier, puis la copie revient corrigée à l'encre " +
+      "rouge — avec, pour chaque faute, le chapitre qui l'explique."));
+
+    /* Le relevé des dictées déjà faites, s'il y en a. */
+    const faites = MB_FR.dictees();
+    if (faites.length) {
+      const s = MB_FR.stats();
+      const ch = el("div", "chiffres");
+      [["Dictées faites", faites.length], ["Moyenne", s.dicteeMoyenne + " %"],
+       ["Meilleure", s.dicteeMeilleure + " %"], ["Mots au carnet", s.carnet]]
+        .forEach(([nom, val]) => {
+          const b = el("div");
+          b.appendChild(el("div", "chiffre-val", ech(val)));
+          b.appendChild(el("div", "chiffre-nom", ech(nom)));
+          ch.appendChild(b);
+        });
+      f.appendChild(ch);
+    }
+
+    const filtres = el("div", "filtres");
+    [[0, "Tous les niveaux"], [1, "6ᵉ · 5ᵉ"], [2, "4ᵉ"], [3, "3ᵉ · brevet"]].forEach(([n, nom]) => {
+      const b = el("button", "filtre", ech(nom));
+      b.type = "button";
+      b.setAttribute("aria-pressed", filtreNiveau === n ? "true" : "false");
+      b.onclick = () => { filtreNiveau = n; vueRecueil(); };
+      filtres.appendChild(b);
+    });
+    f.appendChild(filtres);
+
+    const sec = el("section", "sommaire");
+    const liste = DICTEES.filter(d => !filtreNiveau || d.niveau === filtreNiveau);
+    sec.appendChild(el("p", "sommaire-titre",
+      liste.length + (liste.length > 1 ? " dictées disponibles" : " dictée disponible")));
+
+    liste.forEach(d => {
+      const dejaFaite = faites.find(x => x.id === d.id);
+      const b = el("button", "dictee-ligne");
+      b.type = "button";
+      const vises = (d.vise || []).map(nomChapitre).filter(Boolean).join(" · ");
+      b.innerHTML =
+        '<span class="dictee-tete">' +
+          '<span class="dictee-nom">' + ech(d.titre) + '</span>' +
+          '<span class="dictee-info">' + d.mots + ' mots · niveau ' + d.niveau +
+            (d.auto ? ' · auto-dictée' : '') + '</span>' +
+          (dejaFaite ? '<span class="etiq ' + (dejaFaite.score >= 90 ? 'vert' : 'or') + '">' +
+             dejaFaite.score + ' %</span>' : '') +
+          '<span class="dictee-fleche">Commencer →</span>' +
+        '</span>' +
+        '<span class="dictee-vise">' + ech(vises) + '</span>';
+      b.onclick = () => vueSeance(d);
+      sec.appendChild(b);
+    });
+    f.appendChild(sec);
+
+    if (!Voix.dispo() || !Voix.aUneVoix()) {
+      f.appendChild(el("p", "note",
+        "Ce navigateur ne propose pas de voix française. Les dictées restent utilisables : " +
+        "le texte de chaque segment peut être affiché, pour qu'une autre personne le lise à voix haute."));
+    }
+    page.appendChild(f);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE 2 — la séance
+     ══════════════════════════════════════════════════════════════ */
+  function vueSeance(d) {
+    Voix.taire();
+    let segment = 0;
+    const lus = new Set();
+    let texteVisible = false;
+
+    page.innerHTML = "";
+    const f = el("main", "feuille");
+
+    const fil = el("p", "fil");
+    const retour = el("button", null, "Dictées");
+    retour.onclick = () => { Voix.taire(); vueRecueil(); };
+    fil.appendChild(retour);
+    fil.appendChild(el("i", null, "›"));
+    fil.appendChild(el("span", null, ech(d.titre)));
+    f.appendChild(fil);
+
+    f.appendChild(el("p", "rubrique", d.auto ? "Auto-dictée" : "Dictée · niveau " + d.niveau));
+    f.appendChild(el("h1", null, ech(d.titre)));
+    f.appendChild(el("p", "mention",
+      d.mots + " mots · " + d.texte.length + " segments" +
+      '<span class="etiq">' + ech((d.vise || []).map(nomChapitre).filter(Boolean)[0] || "langue") + '</span>'));
+    f.appendChild(el("div", "filet", "<span>❦</span>"));
+
+    if (d.auto) {
+      f.appendChild(el("p", "ouverture",
+        "Auto-dictée : lisez le texte, apprenez-le, puis masquez-le et écrivez-le de mémoire. " +
+        "Le bouton « Masquer » le voile sans le supprimer — un coup d'œil reste possible, " +
+        "mais il se paie."));
+    }
+
+    /* ── Le pupitre : écouter, répéter, avancer ── */
+    const pupitre = el("div", "pupitre");
+    const btnLire = el("button", "lecture", "▶");
+    btnLire.type = "button";
+    btnLire.title = "Lire ce segment";
+    btnLire.setAttribute("aria-label", "Lire le segment " + (segment + 1));
+
+    const segs = el("div", "segments");
+    d.texte.forEach((_, i) => {
+      const s = el("button", "segment", String(i + 1));
+      s.type = "button";
+      s.onclick = () => { segment = i; rafraichirPupitre(); dire(); };
+      segs.appendChild(s);
+    });
+
+    const btnPrec = el("button", "bouton sourd", "←");
+    btnPrec.type = "button"; btnPrec.title = "Segment précédent";
+    const btnSuiv = el("button", "bouton sourd", "→");
+    btnSuiv.type = "button"; btnSuiv.title = "Segment suivant";
+    const btnTout = el("button", "bouton sourd", "Tout lire");
+    btnTout.type = "button";
+
+    pupitre.append(btnPrec, btnLire, btnSuiv, segs, btnTout);
+    f.appendChild(pupitre);
+
+    /* ── Réglages : vitesse et voix ── */
+    const reglages = el("div", "reglages");
+    const rVitesse = el("div", "reglage");
+    rVitesse.innerHTML = '<label for="vitesse">Vitesse</label>';
+    const iv = document.createElement("input");
+    iv.type = "range"; iv.id = "vitesse"; iv.min = "0.5"; iv.max = "1.2"; iv.step = "0.05";
+    iv.value = String(Voix.vitesse());
+    const vLabel = el("span", "dictee-info", Math.round(Voix.vitesse() * 100) + " %");
+    iv.oninput = () => { Voix.vitesse(parseFloat(iv.value)); vLabel.textContent = Math.round(iv.value * 100) + " %"; };
+    rVitesse.append(iv, vLabel);
+    reglages.appendChild(rVitesse);
+
+    if (Voix.aUneVoix() && Voix.liste().length > 1) {
+      const rVoix = el("div", "reglage");
+      rVoix.innerHTML = '<label for="voix">Voix</label>';
+      const sel = document.createElement("select");
+      sel.id = "voix";
+      Voix.liste().forEach(v => {
+        const o = document.createElement("option");
+        o.value = v.name; o.textContent = v.name;
+        if (Voix.choisie() && v.name === Voix.choisie().name) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => Voix.choisir(sel.value);
+      rVoix.appendChild(sel);
+      reglages.appendChild(rVoix);
+    }
+
+    const rTexte = el("div", "reglage");
+    const btnTexte = el("button", "bouton sourd", d.auto ? "Masquer le texte" : "Afficher le texte");
+    btnTexte.type = "button";
+    btnTexte.onclick = () => {
+      texteVisible = !texteVisible;
+      btnTexte.textContent = texteVisible
+        ? (d.auto ? "Masquer le texte" : "Cacher le texte")
+        : (d.auto ? "Revoir le texte" : "Afficher le texte");
+      rafraichirPupitre();
+    };
+    rTexte.appendChild(btnTexte);
+    reglages.appendChild(rTexte);
+    f.appendChild(reglages);
+
+    const affiche = el("div", "segment-texte");
+    f.appendChild(affiche);
+
+    /* ── Le cahier ── */
+    const compte = el("div", "compte-mots");
+    compte.innerHTML = '<span>Votre copie</span><span id="nmots">0 mot</span>';
+    f.appendChild(compte);
+
+    const cahier = document.createElement("textarea");
+    cahier.className = "seyes";
+    cahier.rows = 7;
+    cahier.placeholder = "Écrivez ici, au fil de la lecture…";
+    cahier.spellcheck = false;
+    cahier.autocapitalize = "sentences";
+    cahier.oninput = () => {
+      const n = (cahier.value.trim().match(/[A-Za-zÀ-ÖØ-öø-ÿ'’-]+/g) || []).length;
+      compte.querySelector("#nmots").textContent = n + (n > 1 ? " mots" : " mot");
+      btnRendre.disabled = n < 3;
+    };
+    f.appendChild(cahier);
+
+    const barre = el("div", "barre-boutons");
+    const btnRendre = el("button", "bouton", "Rendre la copie");
+    btnRendre.type = "button"; btnRendre.disabled = true;
+    btnRendre.onclick = () => { Voix.taire(); vueCorrection(d, cahier.value); };
+    const btnAbandon = el("button", "bouton sourd", "Revenir au recueil");
+    btnAbandon.type = "button";
+    btnAbandon.onclick = () => { Voix.taire(); vueRecueil(); };
+    barre.append(btnRendre, btnAbandon);
+    f.appendChild(barre);
+
+    f.appendChild(el("p", "note",
+      "Raccourcis : la touche Échap arrête la lecture, Ctrl + Entrée rend la copie."));
+
+    page.appendChild(f);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    /* ── Comportement ── */
+    function rafraichirPupitre() {
+      [...segs.children].forEach((s, i) => {
+        s.setAttribute("aria-current", i === segment ? "true" : "false");
+        s.classList.toggle("lu", lus.has(i));
+      });
+      btnPrec.disabled = segment === 0;
+      btnSuiv.disabled = segment === d.texte.length - 1;
+      btnLire.setAttribute("aria-label", "Lire le segment " + (segment + 1));
+      affiche.textContent = d.texte[segment];
+      affiche.classList.toggle("masque", !texteVisible);
+      affiche.setAttribute("aria-hidden", texteVisible ? "false" : "true");
+    }
+    function dire() {
+      lus.add(segment);
+      rafraichirPupitre();
+      btnLire.textContent = "❙❙";
+      Voix.dire(d.texte[segment], () => { btnLire.textContent = "▶"; });
+    }
+    btnLire.onclick = () => {
+      if (btnLire.textContent === "❙❙") { Voix.taire(); btnLire.textContent = "▶"; }
+      else dire();
+    };
+    btnPrec.onclick = () => { if (segment > 0) { segment--; rafraichirPupitre(); dire(); } };
+    btnSuiv.onclick = () => { if (segment < d.texte.length - 1) { segment++; rafraichirPupitre(); dire(); } };
+    btnTout.onclick = () => {
+      let i = 0;
+      (function suite() {
+        if (i >= d.texte.length) { btnLire.textContent = "▶"; return; }
+        segment = i; lus.add(i); rafraichirPupitre();
+        btnLire.textContent = "❙❙";
+        Voix.dire(d.texte[i], () => { i++; setTimeout(suite, 700); });
+      })();
+    };
+
+    document.onkeydown = e => {
+      if (e.key === "Escape") { Voix.taire(); btnLire.textContent = "▶"; }
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !btnRendre.disabled) btnRendre.click();
+    };
+
+    rafraichirPupitre();
+    if (!d.auto) setTimeout(() => cahier.focus(), 300);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE 3 — la copie corrigée
+     ══════════════════════════════════════════════════════════════ */
+  function vueCorrection(d, copie) {
+    document.onkeydown = null;
+
+    const attendus = decouper(d.texte.join(" "));
+    const ecrits   = decouper(copie);
+    const ops = aligner(attendus, ecrits);
+
+    /* On note sur les mots : la ponctuation est signalée mais ne compte pas
+       dans la note, comme dans la plupart des barèmes de collège. */
+    const motsAttendus = attendus.filter(j => !estPonctuation(j)).length;
+    const fautes = [];
+    ops.forEach(o => {
+      if (o.op === "juste") return;
+      if (o.op === "ajout" && estPonctuation(o.ecrit)) return;
+      if (o.op !== "ajout" && estPonctuation(o.attendu)) {
+        if (o.op === "manque") fautes.push(Object.assign({}, o, {
+          diag: { type:"Ponctuation", motif:"Un signe de ponctuation manque.", chapitre:"ponctuation" } }));
+        return;
+      }
+      const diag = o.op === "ajout"
+        ? { type:"Mot en trop", motif:"Ce mot ne figure pas dans le texte.", chapitre:null }
+        : diagnostiquer(o.ecrit, o.attendu, d.pieges);
+      fautes.push(Object.assign({}, o, { diag: diag }));
+    });
+
+    const fautesNotees = fautes.filter(x => x.diag.type !== "Ponctuation" && x.op !== "ajout");
+    const score = Math.max(0, Math.round(100 * (motsAttendus - fautesNotees.length) / motsAttendus));
+
+    /* On enregistre : la note, puis chaque mot manqué au carnet. */
+    MB_FR.noteDictee({ id: d.id, titre: d.titre, score: score,
+                       mots: motsAttendus, fautes: fautesNotees.length });
+    fautesNotees.forEach(x => {
+      if (x.attendu) MB_FR.faute(x.ecrit || "", x.attendu, x.diag.type, x.diag.chapitre);
+    });
+
+    page.innerHTML = "";
+    const f = el("main", "feuille");
+
+    const fil = el("p", "fil");
+    const r1 = el("button", null, "Dictées"); r1.onclick = vueRecueil;
+    fil.append(r1, el("i", null, "›"), el("span", null, ech(d.titre)),
+               el("i", null, "›"), el("span", null, "Correction"));
+    f.appendChild(fil);
+
+    f.appendChild(el("p", "rubrique", "Copie corrigée"));
+    f.appendChild(el("h1", null, ech(d.titre)));
+    f.appendChild(el("div", "filet", "<span>❦</span>"));
+
+    /* ── Le bulletin ── */
+    const bulletin = el("div", "bulletin");
+    const note = el("div");
+    note.innerHTML = '<span class="note-globale">' + score + '</span><span class="note-sur"> / 100</span>' +
+                     '<div class="note-nom">' + fautesNotees.length +
+                     (fautesNotees.length > 1 ? ' fautes sur ' : ' faute sur ') + motsAttendus + ' mots</div>';
+    bulletin.appendChild(note);
+    bulletin.appendChild(el("p", "appreciation", ech(apprecier(score, fautesNotees))));
+    f.appendChild(bulletin);
+
+    /* ── La copie, surchargée à l'encre rouge ── */
+    const copieEl = el("div", "copie");
+    ops.forEach(o => {
+      if (o.op === "juste") {
+        copieEl.appendChild(motEl("mot juste", o.ecrit));
+      } else if (o.op === "faux") {
+        const s = motEl("mot faux", o.ecrit);
+        s.setAttribute("data-juste", o.attendu);
+        s.title = o.attendu;
+        copieEl.appendChild(s);
+      } else if (o.op === "manque") {
+        const s = motEl("mot manque", o.attendu);
+        s.title = "Mot oublié";
+        copieEl.appendChild(s);
+      } else {
+        const s = motEl("mot ajout", o.ecrit);
+        s.title = "Mot en trop";
+        copieEl.appendChild(s);
+      }
+    });
+    f.appendChild(copieEl);
+
+    const leg = el("div", "legende");
+    leg.innerHTML = '<span class="l-faux">mot barré : la forme juste est écrite au-dessus</span>' +
+                    '<span class="l-manque">mot souligné : oublié dans la copie</span>' +
+                    '<span class="l-ajout">mot ondulé : en trop</span>';
+    f.appendChild(leg);
+
+    /* ── Le relevé, faute par faute ── */
+    if (fautes.length) {
+      const rel = el("section", "releve");
+      rel.appendChild(el("p", "sommaire-titre", "Le relevé, faute par faute"));
+      fautes.forEach(x => {
+        const l = el("div", "faute-ligne");
+        l.appendChild(el("span", "faute-ecrit", ech(x.ecrit || "—")));
+        l.appendChild(el("span", "faute-fleche", "→"));
+        l.appendChild(el("span", "faute-juste", ech(x.attendu || "(à supprimer)")));
+        l.appendChild(el("span", "faute-motif",
+          '<b class="dictee-info">' + ech(x.diag.type) + '</b> — ' + ech(x.diag.motif)));
+        if (x.diag.chapitre) {
+          const a = document.createElement("a");
+          a.className = "faute-lien";
+          a.href = lienChapitre(x.diag.chapitre);
+          a.textContent = "Revoir le cours →";
+          l.appendChild(a);
+        }
+        rel.appendChild(l);
+      });
+      f.appendChild(rel);
+
+      /* ── La répartition par type : où se perdent les points ── */
+      const parType = {};
+      fautes.forEach(x => { parType[x.diag.type] = (parType[x.diag.type] || 0) + 1; });
+      const max = Math.max.apply(null, Object.values(parType));
+      const pt = el("section", "par-type");
+      pt.appendChild(el("p", "sommaire-titre", "Où se perdent les points"));
+      Object.keys(parType).sort((a, b) => parType[b] - parType[a]).forEach(t => {
+        const l = el("div", "type-ligne");
+        l.innerHTML = '<span class="type-nom">' + ech(t) + '</span>' +
+          '<span class="type-barre"><span style="width:' + Math.round(100 * parType[t] / max) + '%"></span></span>' +
+          '<span class="type-n">' + parType[t] + '</span>';
+        pt.appendChild(l);
+      });
+      f.appendChild(pt);
+    } else {
+      const v = el("div", "vide");
+      v.innerHTML = '<div class="vide-titre">Copie parfaite</div>' +
+        '<p>Pas une faute. Passez à une dictée du niveau supérieur.</p>';
+      f.appendChild(v);
+    }
+
+    /* ── Le texte original, pour comparer ── */
+    const det = document.createElement("details");
+    det.style.marginTop = "2.2rem";
+    const som = document.createElement("summary");
+    som.className = "sommaire-titre";
+    som.style.cursor = "pointer";
+    som.textContent = "Lire le texte original";
+    det.appendChild(som);
+    det.appendChild(el("p", "note", ech(d.texte.join(" "))));
+    f.appendChild(det);
+
+    const barre = el("div", "barre-boutons");
+    const rejouer = el("button", "bouton", "Refaire cette dictée");
+    rejouer.type = "button"; rejouer.onclick = () => vueSeance(d);
+    const autre = el("button", "bouton creux", "Choisir une autre dictée");
+    autre.type = "button"; autre.onclick = vueRecueil;
+    const revision = document.createElement("a");
+    revision.className = "bouton sourd";
+    revision.href = lien("francais-exercices.html") + "#revision";
+    revision.textContent = "Réviser les mots manqués";
+    barre.append(rejouer, autre, revision);
+    f.appendChild(barre);
+
+    page.appendChild(f);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function motEl(classe, texte) {
+    const s = el("span", classe);
+    s.textContent = texte;
+    return s;
+  }
+
+  /* L'appréciation dit ce qu'il faut travailler, pas seulement le niveau. */
+  function apprecier(score, fautes) {
+    const types = {};
+    fautes.forEach(x => { types[x.diag.type] = (types[x.diag.type] || 0) + 1; });
+    const dominant = Object.keys(types).sort((a, b) => types[b] - types[a])[0];
+    const suite = dominant && types[dominant] > 1
+      ? " Les fautes se concentrent sur un point : " + dominant.toLowerCase() +
+        ". C'est là qu'il faut travailler, et le relevé indique le chapitre."
+      : (dominant ? " La seule difficulté rencontrée relève de : " + dominant.toLowerCase() + "." : "");
+
+    if (score === 100) return "Aucune faute. Le texte est écrit exactement.";
+    if (score >= 95) return "Très bonne copie : les accords tiennent et les homophones ne piègent pas." + suite;
+    if (score >= 85) return "Copie solide, avec quelques inattentions." + suite;
+    if (score >= 70) return "L'ensemble est compris, mais les règles ne sont pas encore automatiques." + suite;
+    if (score >= 50) return "La moitié du texte est juste. Relisez le chapitre concerné avant de recommencer." + suite;
+    return "Cette dictée est encore trop difficile : reprenez le cours, puis un texte de niveau inférieur." + suite;
+  }
+
+  /* ── Départ ── */
+  vueRecueil();
+})();
+</script>
+</body>
+</html>

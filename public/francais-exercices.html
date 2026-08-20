@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Exercices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<link rel="stylesheet" href="atelier.css">
+<style>
+.theme-titre {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .16em;
+  font-size: .8rem; color: var(--teinte, var(--accent)); margin: 2rem 0 .6rem;
+  padding-bottom: .3rem; border-bottom: 1px solid rgba(120,100,60,.28);
+}
+.chap-ex {
+  display: flex; align-items: baseline; gap: .7rem; width: 100%;
+  padding: .6rem 0; text-align: left; background: none; border: none;
+  border-bottom: 1px solid rgba(120,100,60,.14);
+  font: inherit; color: inherit; cursor: pointer; transition: color .2s;
+}
+.chap-ex:last-of-type { border-bottom: none; }
+.chap-ex-nom { font-family: var(--titre); font-size: 1.16rem; }
+.chap-ex-points { flex: 1; min-width: 1.5rem; height: .8em; border-bottom: 1.5px dotted rgba(120,100,60,.4); }
+.chap-ex-n { font-variant: small-caps; letter-spacing: .1em; font-size: .72rem; color: var(--encre-pale); white-space: nowrap; }
+.chap-ex:hover { color: var(--accent); }
+.chap-ex:hover .chap-ex-points { border-bottom-color: var(--accent); }
+.chap-ex:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.chap-ex .score { font-family: var(--titre); font-size: .95rem; }
+.chap-ex .score.haut { color: var(--acquis); }
+.chap-ex .score.bas  { color: var(--correction); }
+
+.avancee {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; padding-bottom: .9rem; margin-bottom: 1.2rem;
+  border-bottom: 1px solid rgba(120,100,60,.22);
+}
+.bilan-note { font-family: var(--titre); font-size: 3.2rem; font-weight: 600; line-height: 1; color: var(--accent); }
+.bilan-sur { font-family: var(--titre); font-size: 1.2rem; color: var(--encre-pale); }
+/* L'énoncé est le titre de la vue, mais il ne doit pas écraser la page :
+   on annule ici la taille des grands titres de parchemin.css. */
+.feuille h1.question-enonce {
+  font-size: 1.5rem; font-weight: 600; line-height: 1.35; margin-bottom: 0;
+  letter-spacing: 0;
+}
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+<script src="francais-contenu.js"></script>
+<script src="francais-exercices.js"></script>
+<script src="francais-verbes.js"></script>
+<script src="francais-progres.js"></script>
+<script src="francais-atelier.js"></script>
+</head>
+<body data-matiere="francais">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div id="rubans"></div>
+<div id="page"></div>
+
+<p class="colophon">Polymates — Français</p>
+
+<script>
+(function () {
+  "use strict";
+  if (!MB_ATELIER.installer("exercices")) return;
+
+  const { ech, el, lien, lienChapitre, nomChapitre, melange, pareil } = MB_ATELIER;
+  const THEMES = window.FRANCAIS_THEMES || [];
+  const BANQUE = window.FRANCAIS_EXERCICES || [];
+  const V = window.MB_VERBES;
+  const page = document.getElementById("page");
+  const TAILLE = 10;                      /* questions par séance */
+
+  /* ══════════════════════════════════════════════════════════════
+     FABRIQUES DE QUESTIONS
+     Chaque mode produit la même forme :
+       { enonce, options, bonne, verifier(r), explication, chapitre, libre }
+     ══════════════════════════════════════════════════════════════ */
+
+  function depuisBanque(e) {
+    const libre = !e.options;
+    return {
+      enonce: e.enonce,
+      options: e.options ? melange(e.options) : null,
+      bonne: e.reponse,
+      libre: libre,
+      indice: e.type === "faute" ? "Écrivez la forme correcte du mot en rouge." : null,
+      verifier: r => String(e.reponse).split("|").some(x => pareil(r, x)),
+      explication: e.explication,
+      chapitre: e.chapitre,
+      /* Un mot unique peut entrer au carnet ; une phrase entière, non. */
+      motCle: /^[^\s]+$/.test(String(e.reponse).split("|")[0]) ? String(e.reponse).split("|")[0] : null,
+    };
+  }
+
+  /* La conjugaison n'a pas besoin d'une banque : un verbe, un temps, une
+     personne, et le moteur donne la réponse — indéfiniment. */
+  const VERBES_DRILL = V.liste().concat(V.irreguliers());
+  function questionConjugaison(niveau) {
+    const temps = niveau === "simple" ? V.TEMPS_SIMPLES
+                : niveau === "compose" ? V.TEMPS_COMPOSES
+                : V.TEMPS_SIMPLES.concat(V.TEMPS_COMPOSES);
+    for (let essai = 0; essai < 40; essai++) {
+      const inf = VERBES_DRILL[Math.floor(Math.random() * VERBES_DRILL.length)];
+      const c = V.conjugue(inf);
+      if (!c || c.impersonnel) continue;
+      const t = temps[Math.floor(Math.random() * temps.length)];
+      const i = Math.floor(Math.random() * 6);
+      const forme = c.temps[t][i];
+      if (!forme) continue;
+      const attendu = V.avecPronom(forme, i, t);
+      const chapitre = ({
+        "Présent":"present", "Imparfait":"imparfait-passe-simple",
+        "Passé simple":"imparfait-passe-simple", "Futur simple":"futur-conditionnel",
+        "Conditionnel présent":"futur-conditionnel", "Subjonctif présent":"subjonctif",
+      })[t] || "temps-composes";
+      return {
+        enonce: "Conjuguez *" + c.infinitif + "* — " + t.toLowerCase() +
+                ", " + ["1re personne du singulier","2e personne du singulier","3e personne du singulier",
+                        "1re personne du pluriel","2e personne du pluriel","3e personne du pluriel"][i] + ".",
+        options: null, libre: true, bonne: attendu,
+        indice: "Le pronom est facultatif : « " + V.pronom(i, t) + " » ou la forme seule.",
+        verifier: r => pareil(r, attendu) || pareil(r, forme),
+        explication: "La forme attendue est « " + attendu + " ». Groupe " + c.groupe +
+                     ", auxiliaire " + c.auxiliaire + ".",
+        chapitre: chapitre,
+        motCle: forme,
+      };
+    }
+    return null;
+  }
+
+  /* La révision du carnet : le mot manqué en dictée revient, seul, et il
+     faut le réécrire. C'est la répétition espacée de MB_FR qui décide
+     lesquels reviennent et quand. */
+  function questionCarnet(f) {
+    return {
+      enonce: "Écrivez correctement ce mot : *" + (f.erreurs[0] || f.attendu) + "*",
+      options: null, libre: true, bonne: f.attendu,
+      indice: f.type ? "Type de faute repéré : " + f.type.toLowerCase() + "." : null,
+      verifier: r => pareil(r, f.attendu),
+      explication: "Le mot s'écrit « " + f.attendu + " ». Manqué " + f.ratés +
+                   (f.ratés > 1 ? " fois." : " fois."),
+      chapitre: f.chapitre,
+      carnet: f.mot,
+    };
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE 1 — le choix de la séance
+     ══════════════════════════════════════════════════════════════ */
+  function vueChoix() {
+    page.innerHTML = "";
+    const f = el("main", "feuille");
+    f.appendChild(el("p", "rubrique", "Français · exercices"));
+    f.appendChild(el("h1", null, "S'entraîner<br><em>jusqu'à l'automatisme.</em>"));
+    f.appendChild(el("div", "filet", "<span>❦</span>"));
+    f.appendChild(el("p", "ouverture",
+      "Une règle comprise n'est pas une règle acquise. Dix questions par séance, " +
+      "corrigées à la volée, avec l'explication et le renvoi au chapitre. " +
+      "Les mots manqués en dictée reviennent d'eux-mêmes, à intervalles croissants."));
+
+    const s = MB_FR.stats();
+
+    /* ── Les séances transversales ── */
+    const cartes = el("div", "cartes");
+    const propositions = [
+      { id:"revision", marque:"☞", nom:"Réviser mes fautes",
+        texte:"Les mots manqués en dictée ou en exercice, ramenés au bon moment.",
+        chiffre: s.aReviser ? s.aReviser + " à revoir aujourd'hui" : "rien à revoir",
+        actif: s.aReviser > 0 },
+      { id:"conjugaison", marque:"⁂", nom:"Marathon de conjugaison",
+        texte:"Un verbe, un temps, une personne — tiré au sort, sans fin.",
+        chiffre:"illimité", actif:true },
+      { id:"melange", marque:"✽", nom:"Mélange général",
+        texte:"Dix questions tirées dans les vingt-cinq chapitres.",
+        chiffre: BANQUE.length + " questions en réserve", actif:true },
+    ];
+    propositions.forEach(p => {
+      const b = el("button", "carte");
+      b.type = "button";
+      b.disabled = !p.actif;
+      if (!p.actif) b.style.opacity = ".45";
+      b.innerHTML =
+        '<span class="carte-tete">' +
+          '<span class="carte-marque" aria-hidden="true">' + p.marque + '</span>' +
+          '<span class="carte-nom">' + ech(p.nom) + '</span>' +
+          '<span class="carte-chiffre">' + ech(p.chiffre) + '</span>' +
+          (p.actif ? '<span class="carte-fleche">Commencer →</span>' : '') +
+        '</span>' +
+        '<span class="carte-texte">' + ech(p.texte) + '</span>';
+      if (p.actif) b.onclick = () => lancer(p.id);
+      cartes.appendChild(b);
+    });
+    f.appendChild(cartes);
+
+    /* ── Chapitre par chapitre ── */
+    THEMES.forEach(t => {
+      const titre = el("p", "theme-titre", ech(t.nom));
+      titre.style.setProperty("--teinte", t.teinte);
+      f.appendChild(titre);
+      t.chapitres.forEach(c => {
+        const n = BANQUE.filter(e => e.chapitre === c.id).length;
+        const score = MB_FR.scoreChapitre(c.id);
+        const b = el("button", "chap-ex");
+        b.type = "button";
+        b.disabled = n === 0;
+        b.innerHTML =
+          '<span class="chap-ex-nom">' + ech(c.nom) + '</span>' +
+          '<span class="chap-ex-points" aria-hidden="true"></span>' +
+          (score != null ? '<span class="score ' + (score >= 75 ? "haut" : "bas") + '">' + score + ' %</span>' : '') +
+          '<span class="chap-ex-n">' + n + (n > 1 ? " questions" : " question") + '</span>';
+        if (n) b.onclick = () => lancer("chapitre", c.id);
+        f.appendChild(b);
+      });
+    });
+
+    page.appendChild(f);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE 2 — la séance
+     ══════════════════════════════════════════════════════════════ */
+  function lancer(mode, chapId) {
+    let questions = [], titre = "", sousTitre = "";
+
+    if (mode === "revision") {
+      const dus = MB_FR.aReviser(TAILLE);
+      questions = dus.map(questionCarnet);
+      titre = "Révision du carnet";
+      sousTitre = "Les mots que vous avez déjà manqués";
+    } else if (mode === "conjugaison") {
+      for (let i = 0; i < TAILLE; i++) {
+        const q = questionConjugaison("tous");
+        if (q) questions.push(q);
+      }
+      titre = "Marathon de conjugaison";
+      sousTitre = "Tiré au sort dans tout le catalogue de verbes";
+    } else if (mode === "melange") {
+      questions = melange(BANQUE).slice(0, TAILLE).map(depuisBanque);
+      titre = "Mélange général";
+      sousTitre = "Les vingt-cinq chapitres, sans prévenir";
+    } else {
+      const pool = BANQUE.filter(e => e.chapitre === chapId);
+      questions = melange(pool).slice(0, TAILLE).map(depuisBanque);
+      titre = nomChapitre(chapId) || "Exercices";
+      sousTitre = "Chapitre du cours";
+    }
+
+    if (!questions.length) { vueChoix(); return; }
+    seance({ titre, sousTitre, questions, mode, chapId });
+  }
+
+  function seance(S) {
+    let i = 0, justes = 0;
+    const resultats = [];
+
+    function dessiner() {
+      const q = S.questions[i];
+      page.innerHTML = "";
+      const f = el("main", "feuille");
+
+      const fil = el("p", "fil");
+      const r = el("button", null, "Exercices");
+      r.onclick = vueChoix;
+      fil.append(r, el("i", null, "›"), el("span", null, ech(S.titre)));
+      f.appendChild(fil);
+
+      /* ── L'avancée : les perles disent d'un coup d'œil où l'on en est ── */
+      const av = el("div", "avancee");
+      const compteur = el("div", "compteur");
+      compteur.innerHTML = '<b>' + (i + 1) + ' / ' + S.questions.length + '</b><span>' + ech(S.sousTitre) + '</span>';
+      const perles = el("div", "perles");
+      S.questions.forEach((_, n) => {
+        const p = el("span", "perle" + (resultats[n] === true ? " bon" : resultats[n] === false ? " mauvais" : ""));
+        perles.appendChild(p);
+      });
+      av.append(compteur, perles);
+      f.appendChild(av);
+
+      /* ── La question ── */
+      const bloc = el("div", "question");
+      const enonce = el("h1", "question-enonce");
+      enonce.innerHTML = enonceHtml(q);
+      bloc.appendChild(enonce);
+      if (q.indice) bloc.appendChild(el("p", "note", ech(q.indice)));
+
+      let repondu = false;
+      const verdict = el("div", "verdict");
+      verdict.style.display = "none";
+
+      function conclure(bon, donnee) {
+        if (repondu) return;
+        repondu = true;
+        resultats[i] = bon;
+        if (bon) justes++;
+
+        /* On enregistre : le chapitre progresse, le carnet s'ajuste. */
+        if (q.chapitre) MB_FR.noteExercice(q.chapitre, bon);
+        if (q.carnet) MB_FR.revue(q.carnet, bon);
+        else if (!bon && q.motCle) MB_FR.faute(donnee || "", q.motCle, "Exercice", q.chapitre);
+
+        verdict.className = "verdict " + (bon ? "bon" : "mauvais");
+        verdict.style.display = "";
+        verdict.innerHTML =
+          '<div class="verdict-titre">' + (bon ? "Juste." : "Non — la réponse est « " + ech(q.bonne) + " ».") + '</div>' +
+          '<p>' + ech(q.explication) + '</p>';
+        if (q.chapitre) {
+          const a = document.createElement("a");
+          a.className = "faute-lien";
+          a.href = lienChapitre(q.chapitre);
+          a.textContent = "Revoir « " + (nomChapitre(q.chapitre) || "le cours") + " » →";
+          a.style.display = "inline-block";
+          a.style.marginTop = ".5rem";
+          verdict.appendChild(a);
+        }
+        [...perles.children].forEach((p, n) => {
+          p.className = "perle" + (resultats[n] === true ? " bon" : resultats[n] === false ? " mauvais" : "");
+        });
+        suivant.disabled = false;
+        suivant.focus();
+      }
+
+      /* ── Répondre : par boutons, ou en écrivant ── */
+      if (q.options) {
+        const choix = el("div", "choix");
+        q.options.forEach((o, n) => {
+          const b = el("button", "choix-btn");
+          b.type = "button";
+          b.innerHTML = '<span class="lettre">' + "abcd"[n] + '</span><span>' + ech(o) + '</span>';
+          b.onclick = () => {
+            const bon = q.verifier(o);
+            [...choix.children].forEach((x, m) => {
+              x.disabled = true;
+              if (q.verifier(q.options[m])) x.classList.add("bon");
+            });
+            if (!bon) b.classList.add("mauvais");
+            conclure(bon, o);
+          };
+          choix.appendChild(b);
+        });
+        bloc.appendChild(choix);
+      } else {
+        const champ = document.createElement("input");
+        champ.type = "text";
+        champ.className = "saisie";
+        champ.placeholder = "Votre réponse…";
+        champ.autocomplete = "off";
+        champ.autocapitalize = "off";
+        champ.spellcheck = false;
+        const valider = () => {
+          if (repondu || !champ.value.trim()) return;
+          const bon = q.verifier(champ.value);
+          champ.classList.add(bon ? "bon" : "mauvais");
+          champ.disabled = true;
+          conclure(bon, champ.value.trim());
+        };
+        champ.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); valider(); } };
+        bloc.appendChild(champ);
+        const bv = el("div", "barre-boutons");
+        const bValider = el("button", "bouton creux", "Vérifier");
+        bValider.type = "button"; bValider.onclick = valider;
+        bv.appendChild(bValider);
+        bloc.appendChild(bv);
+        setTimeout(() => champ.focus(), 120);
+      }
+
+      bloc.appendChild(verdict);
+      f.appendChild(bloc);
+
+      const barre = el("div", "barre-boutons");
+      const suivant = el("button", "bouton", i === S.questions.length - 1 ? "Voir le bilan" : "Question suivante →");
+      suivant.type = "button"; suivant.disabled = true;
+      suivant.onclick = () => {
+        if (i === S.questions.length - 1) bilan();
+        else { i++; dessiner(); }
+      };
+      const abandon = el("button", "bouton sourd", "Arrêter");
+      abandon.type = "button"; abandon.onclick = vueChoix;
+      barre.append(suivant, abandon);
+      f.appendChild(barre);
+
+      page.appendChild(f);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* ── Le bilan de séance ── */
+    function bilan() {
+      const taux = Math.round(100 * justes / S.questions.length);
+      page.innerHTML = "";
+      const f = el("main", "feuille");
+      f.appendChild(el("p", "rubrique", "Bilan de séance"));
+      f.appendChild(el("h1", null, ech(S.titre)));
+      f.appendChild(el("div", "filet", "<span>❦</span>"));
+
+      const b = el("div", "bulletin");
+      const n = el("div");
+      n.innerHTML = '<span class="bilan-note">' + justes + '</span><span class="bilan-sur"> / ' +
+                    S.questions.length + '</span><div class="note-nom">' + taux + ' % de réussite</div>';
+      b.appendChild(n);
+      b.appendChild(el("p", "appreciation", ech(
+        taux === 100 ? "Sans faute. Ce chapitre est acquis : passez au suivant, ou tentez une dictée qui l'emploie."
+        : taux >= 80 ? "Bonne maîtrise. Les quelques erreurs restantes sont signalées : relisez-en l'explication."
+        : taux >= 50 ? "La règle est comprise mais pas encore automatique. Refaites la séance : les questions changent d'ordre."
+        : "Reprenez le cours du chapitre avant de recommencer — l'entraînement ne remplace pas la règle.")));
+      f.appendChild(b);
+
+      /* Ce qui a été manqué, pour ne pas le perdre. */
+      const rates = S.questions.filter((_, n) => resultats[n] === false);
+      if (rates.length) {
+        const rel = el("section", "releve");
+        rel.appendChild(el("p", "sommaire-titre", "À revoir"));
+        rates.forEach(q => {
+          const l = el("div", "faute-ligne");
+          l.appendChild(el("span", "faute-juste", ech(q.bonne)));
+          l.appendChild(el("span", "faute-motif", ech(q.explication)));
+          if (q.chapitre) {
+            const a = document.createElement("a");
+            a.className = "faute-lien";
+            a.href = lienChapitre(q.chapitre);
+            a.textContent = "Le cours →";
+            l.appendChild(a);
+          }
+          rel.appendChild(l);
+        });
+        f.appendChild(rel);
+      }
+
+      const barre = el("div", "barre-boutons");
+      const encore = el("button", "bouton", "Une autre séance");
+      encore.type = "button";
+      encore.onclick = () => lancer(S.mode, S.chapId);
+      const retour = el("button", "bouton creux", "Changer d'exercice");
+      retour.type = "button"; retour.onclick = vueChoix;
+      const dictee = document.createElement("a");
+      dictee.className = "bouton sourd";
+      dictee.href = lien("francais-dictee.html");
+      dictee.textContent = "Passer à une dictée";
+      barre.append(encore, retour, dictee);
+      f.appendChild(barre);
+
+      page.appendChild(f);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    dessiner();
+  }
+
+  /* Le trou de l'énoncé se dessine, les astérisques mettent en valeur. */
+  function enonceHtml(q) {
+    let t = ech(q.enonce);
+    t = t.replace(/\*([^*]+)\*/g, '<span class="vise">$1</span>');
+    t = t.replace(/___+/g, '<span class="creux-mot">?</span>');
+    return t;
+  }
+
+  /* ── Départ : #revision mène droit au carnet ── */
+  if ((location.hash || "").replace("#", "") === "revision" && MB_FR.stats().aReviser) {
+    lancer("revision");
+  } else {
+    vueChoix();
+  }
+})();
+</script>
+</body>
+</html>

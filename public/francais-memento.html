@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Mémento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<link rel="stylesheet" href="atelier.css">
+<style>
+.fiche { margin-top: 2.2rem; padding-bottom: 1.6rem; border-bottom: 1px solid rgba(120,100,60,.18); }
+.fiche:last-of-type { border-bottom: none; }
+.fiche-source {
+  display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  font-variant: small-caps; letter-spacing: .12em; font-size: .7rem; color: var(--encre-pale);
+}
+.fiche-source .pastille { width: .45rem; height: .45rem; background: var(--teinte); flex: none; }
+.fiche-titre { font-family: var(--titre); font-size: 1.35rem; font-weight: 600; margin: .25rem 0 .1rem; }
+.fiche-lien {
+  font-variant: small-caps; letter-spacing: .1em; font-size: .7rem; color: var(--accent);
+  text-decoration: none; border-bottom: 1px solid transparent;
+}
+.fiche-lien:hover { border-bottom-color: var(--accent); }
+.fiche ul { list-style: none; margin-top: .7rem; }
+.fiche li { padding-left: 1.1rem; text-indent: -1.1rem; margin: .3rem 0; font-size: .97rem; }
+.fiche li::before { content: '\00B7\00A0'; color: var(--or); }
+mark { background: rgba(168,129,58,.32); color: inherit; padding: 0 .1em; }
+.compte-fiches {
+  font-variant: small-caps; letter-spacing: .13em; font-size: .72rem;
+  color: var(--encre-pale); margin-top: 1.4rem;
+}
+.familles { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: 1rem; }
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+<script src="francais-contenu.js"></script>
+<script src="francais-verbes.js"></script>
+<script src="francais-progres.js"></script>
+<script src="francais-atelier.js"></script>
+</head>
+<body data-matiere="francais">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div id="rubans"></div>
+<div id="page"></div>
+
+<p class="colophon">Polymates — Français</p>
+
+<script>
+(function () {
+  "use strict";
+  if (!MB_ATELIER.installer("memento")) return;
+
+  const { ech, el, lienChapitre } = MB_ATELIER;
+  const THEMES = window.FRANCAIS_THEMES || [];
+  const V = window.MB_VERBES;
+  const page = document.getElementById("page");
+
+  /* ══════════════════════════════════════════════════════════════
+     Le mémento ne recopie rien : il moissonne le cours.
+     Chaque tableau de règle et chaque « à retenir » devient une fiche,
+     rattachée à son chapitre. Ajouter un tableau au cours l'ajoute ici.
+     ══════════════════════════════════════════════════════════════ */
+  const FICHES = [];
+  THEMES.forEach(t => {
+    t.chapitres.forEach(c => {
+      (c.cours || []).forEach(b => {
+        if (b.tableau) {
+          FICHES.push({ theme: t, chapitre: c, titre: b.titre, tableau: b.tableau });
+        }
+      });
+      if (c.retenir && c.retenir.length) {
+        FICHES.push({ theme: t, chapitre: c, titre: "L'essentiel — " + c.nom, points: c.retenir });
+      }
+    });
+  });
+
+  /* Une fiche fabriquée, celle qu'aucun chapitre ne porte : les formes
+     clés des verbes irréguliers, réunies en un seul tableau. */
+  const VERBES_CLES = ["être","avoir","aller","faire","dire","prendre","venir","tenir","voir",
+    "pouvoir","vouloir","savoir","devoir","mettre","partir","sortir","courir","mourir","naître",
+    "connaître","croire","boire","lire","écrire","vivre","suivre","ouvrir","recevoir","craindre","conduire"];
+  FICHES.push({
+    theme: THEMES.find(t => t.id === "conjugaison") || THEMES[0],
+    chapitre: { id: "irreguliers", nom: "Les verbes irréguliers à connaître" },
+    titre: "Les cinq formes clés des verbes irréguliers",
+    tableau: {
+      colonnes: ["Verbe", "je, présent", "nous, présent", "il, passé simple", "je, futur", "participe passé"],
+      lignes: VERBES_CLES.map(v => {
+        const c = V.conjugue(v);
+        return c ? [v, c.temps["Présent"][0], c.temps["Présent"][3],
+                    c.temps["Passé simple"][2], c.temps["Futur simple"][0], c.participePasse]
+                 : [v, "—", "—", "—", "—", "—"];
+      }),
+    },
+  });
+
+  /* ── Recherche : sur le titre, le chapitre et tout le contenu ── */
+  function texteDe(f) {
+    let t = f.titre + " " + f.chapitre.nom + " " + f.theme.nom;
+    if (f.points) t += " " + f.points.join(" ");
+    if (f.tableau) t += " " + f.tableau.colonnes.join(" ") + " " +
+      f.tableau.lignes.map(l => l.join(" ")).join(" ");
+    return t;
+  }
+  const INDEX = FICHES.map(f => ({ f: f, mots: nu(texteDe(f)) }));
+  function nu(s) {
+    return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+
+  let requete = "", themeActif = "";
+
+  function vue() {
+    page.innerHTML = "";
+    const f = el("main", "feuille");
+    f.style.maxWidth = "54rem";
+
+    f.appendChild(el("p", "rubrique", "Français · mémento"));
+    f.appendChild(el("h1", null, "Toutes les règles,<br><em>en un seul endroit.</em>"));
+    f.appendChild(el("div", "filet", "<span>❦</span>"));
+    f.appendChild(el("p", "ouverture",
+      "Chaque tableau du cours et chaque « à retenir » est repris ici, sans le texte " +
+      "qui l'entoure. On y cherche une règle en pleine dictée, on la lit, on repart. " +
+      "Un mot dans le champ ci-dessous suffit."));
+
+    /* ── Le champ de recherche ── */
+    const chercher = el("div", "chercher");
+    const champ = document.createElement("input");
+    champ.type = "search";
+    champ.placeholder = "accord, homophone, subjonctif, participe…";
+    champ.value = requete;
+    champ.autocomplete = "off"; champ.spellcheck = false;
+    champ.setAttribute("aria-label", "Chercher une règle");
+    champ.oninput = () => { requete = champ.value; rendre(); };
+    chercher.appendChild(champ);
+    f.appendChild(chercher);
+
+    const familles = el("div", "familles");
+    [["", "Tout"]].concat(THEMES.map(t => [t.id, t.nom])).forEach(([id, nom]) => {
+      const b = el("button", "filtre", ech(nom));
+      b.type = "button";
+      b.setAttribute("aria-pressed", themeActif === id ? "true" : "false");
+      b.onclick = () => { themeActif = id; rendre(); };
+      familles.appendChild(b);
+    });
+    f.appendChild(familles);
+
+    const compte = el("p", "compte-fiches");
+    f.appendChild(compte);
+    const hote = el("div");
+    f.appendChild(hote);
+    page.appendChild(f);
+
+    function rendre() {
+      const q = nu(requete.trim());
+      const mots = q ? q.split(/\s+/) : [];
+      const gardees = INDEX.filter(x =>
+        (!themeActif || x.f.theme.id === themeActif) &&
+        mots.every(m => x.mots.indexOf(m) >= 0)
+      ).map(x => x.f);
+
+      [...familles.children].forEach((b, i) => {
+        const id = i === 0 ? "" : THEMES[i - 1].id;
+        b.setAttribute("aria-pressed", themeActif === id ? "true" : "false");
+      });
+
+      compte.textContent = gardees.length
+        ? gardees.length + (gardees.length > 1 ? " fiches" : " fiche")
+        : "aucune fiche ne correspond";
+
+      hote.innerHTML = "";
+      if (!gardees.length) {
+        const v = el("div", "vide");
+        v.innerHTML = '<div class="vide-titre">Rien sous ce mot</div>' +
+          '<p>Essayez un terme plus général : accord, temps, pronom, majuscule.</p>';
+        hote.appendChild(v);
+        return;
+      }
+      gardees.forEach(fi => hote.appendChild(fiche(fi, mots)));
+    }
+    rendre();
+    if (!requete) setTimeout(() => champ.focus(), 150);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function fiche(f, mots) {
+    const bloc = el("section", "fiche");
+    const src = el("div", "fiche-source");
+    src.style.setProperty("--teinte", f.theme.teinte);
+    src.innerHTML = '<span class="pastille" aria-hidden="true"></span>' +
+                    '<span>' + ech(f.theme.nom) + '</span><span>·</span>' +
+                    '<span>' + ech(f.chapitre.nom) + '</span>';
+    bloc.appendChild(src);
+
+    const titre = el("h2", "fiche-titre");
+    titre.innerHTML = surligner(f.titre, mots);
+    bloc.appendChild(titre);
+
+    const a = document.createElement("a");
+    a.className = "fiche-lien";
+    a.href = lienChapitre(f.chapitre.id);
+    a.textContent = "Lire le cours →";
+    bloc.appendChild(a);
+
+    if (f.points) {
+      const ul = document.createElement("ul");
+      f.points.forEach(p => {
+        const li = document.createElement("li");
+        li.innerHTML = surligner(p, mots);
+        ul.appendChild(li);
+      });
+      bloc.appendChild(ul);
+    }
+    if (f.tableau) {
+      const cadre = el("div", "tab-cadre");
+      const tb = el("table", "tab");
+      const thead = document.createElement("thead"), tr = document.createElement("tr");
+      f.tableau.colonnes.forEach(c => {
+        const th = document.createElement("th");
+        th.innerHTML = surligner(c, mots);
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+      const tbody = document.createElement("tbody");
+      f.tableau.lignes.forEach(l => {
+        const ligne = document.createElement("tr");
+        l.forEach(c => {
+          const td = document.createElement("td");
+          td.innerHTML = surligner(c, mots);
+          ligne.appendChild(td);
+        });
+        tbody.appendChild(ligne);
+      });
+      tb.append(thead, tbody);
+      cadre.appendChild(tb);
+      bloc.appendChild(cadre);
+    }
+    return bloc;
+  }
+
+  /* Le terme cherché est marqué dans le texte : c'est ce qui rend une
+     liste de fiches lisible d'un coup d'œil. */
+  function surligner(texte, mots) {
+    let h = ech(texte).replace(/\*([^*]+)\*/g, '<b class="saillant">$1</b>');
+    if (!mots || !mots.length) return h;
+    const nuH = nu(h);
+    const zones = [];
+    mots.forEach(m => {
+      if (!m) return;
+      let i = nuH.indexOf(m);
+      while (i >= 0) { zones.push([i, i + m.length]); i = nuH.indexOf(m, i + m.length); }
+    });
+    if (!zones.length) return h;
+    zones.sort((a, b) => a[0] - b[0]);
+    /* On fusionne les zones qui se chevauchent, puis on marque de droite à
+       gauche pour que les positions restent valides. */
+    const nettes = [];
+    zones.forEach(z => {
+      const d = nettes[nettes.length - 1];
+      if (d && z[0] <= d[1]) d[1] = Math.max(d[1], z[1]);
+      else nettes.push(z.slice());
+    });
+    for (let i = nettes.length - 1; i >= 0; i--) {
+      const [a, b] = nettes[i];
+      /* On ne marque pas à l'intérieur d'une balise. */
+      if (h.lastIndexOf("<", a) > h.lastIndexOf(">", a)) continue;
+      h = h.slice(0, a) + "<mark>" + h.slice(a, b) + "</mark>" + h.slice(b);
+    }
+    return h;
+  }
+
+  vue();
+})();
+</script>
+</body>
+</html>

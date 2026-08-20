@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Conjugueur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<link rel="stylesheet" href="atelier.css">
+<style>
+.carte-verbe {
+  display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap;
+  padding: 1.1rem 0 .9rem; border-bottom: 1px solid rgba(120,100,60,.25);
+}
+.verbe-nom { font-family: var(--titre); font-size: 2.4rem; font-weight: 600; line-height: 1; }
+.cles {
+  display: flex; flex-wrap: wrap; gap: 1.6rem; padding: 1.1rem 0;
+  border-bottom: 1px solid rgba(120,100,60,.25);
+}
+.cle-val { font-family: var(--titre); font-size: 1.15rem; font-weight: 600; color: var(--accent); }
+.cle-nom { font-variant: small-caps; letter-spacing: .12em; font-size: .68rem; color: var(--encre-pale); margin-top: .2rem; }
+
+.temps-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.6rem 2.4rem; margin-top: 2rem; }
+.temps-bloc { break-inside: avoid; }
+.temps-nom {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .14em;
+  font-size: .78rem; color: var(--accent); padding-bottom: .3rem; margin-bottom: .45rem;
+  border-bottom: 1px solid rgba(120,100,60,.3);
+}
+.temps-bloc ul { list-style: none; }
+.temps-bloc li { padding: .12rem 0; font-size: 1rem; }
+.temps-bloc li em { font-style: normal; color: var(--encre-pale); }
+.groupe-titre {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .18em;
+  font-size: .82rem; color: var(--encre-pale); margin: 2.4rem 0 -.4rem;
+}
+.suggestions-verbes { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: 1rem; }
+.puce-verbe {
+  padding: .22rem .65rem; background: none; border: 1px solid rgba(120,100,60,.32);
+  font-family: var(--titre); font-size: .95rem; color: var(--encre-pale); cursor: pointer; transition: .15s;
+}
+.puce-verbe:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+<script src="francais-contenu.js"></script>
+<script src="francais-verbes.js"></script>
+<script src="francais-progres.js"></script>
+<script src="francais-atelier.js"></script>
+</head>
+<body data-matiere="francais">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div id="rubans"></div>
+<div id="page"></div>
+
+<p class="colophon">Polymates — Français</p>
+
+<script>
+(function () {
+  "use strict";
+  if (!MB_ATELIER.installer("conjugueur", { large: true })) return;
+
+  const { ech, el, lien } = MB_ATELIER;
+  const V = window.MB_VERBES;
+  const page = document.getElementById("page");
+
+  const COURANTS = ["être","avoir","aller","faire","prendre","venir","voir","pouvoir",
+                    "vouloir","savoir","devoir","dire","mettre","partir","finir","chanter"];
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE — la table de conjugaison
+     ══════════════════════════════════════════════════════════════ */
+  function vue(verbe) {
+    const c = verbe ? V.conjugue(verbe) : null;
+    page.innerHTML = "";
+    const f = el("main", "feuille" + (c ? " large" : ""));
+    if (c) f.style.maxWidth = "62rem";
+
+    f.appendChild(el("p", "rubrique", "Français · conjugueur"));
+    f.appendChild(el("h1", null, c ? ech(c.infinitif) : 'Tous les temps,<br><em>de tous les verbes.</em>'));
+    f.appendChild(el("div", "filet", "<span>❦</span>"));
+
+    if (!c) {
+      f.appendChild(el("p", "ouverture",
+        "Écrivez un verbe à l'infinitif : sa table complète s'affiche, des temps simples " +
+        "aux temps composés, avec les cinq formes clés dont tout le reste se déduit. " +
+        "Les verbes préfixés — reprendre, devenir, survivre — sont reconnus d'eux-mêmes."));
+    }
+
+    /* ── La recherche ── */
+    const chercher = el("div", "chercher");
+    const champ = document.createElement("input");
+    champ.type = "search";
+    champ.placeholder = "un verbe à l'infinitif…";
+    champ.autocomplete = "off"; champ.spellcheck = false;
+    champ.setAttribute("aria-label", "Chercher un verbe");
+    if (verbe) champ.value = verbe;
+    chercher.appendChild(champ);
+    const listeSug = el("div", "suggestions");
+    listeSug.style.display = "none";
+    chercher.appendChild(listeSug);
+    f.appendChild(chercher);
+
+    let visee = -1;
+    function suggerer() {
+      const res = V.cherche(champ.value, 7);
+      listeSug.innerHTML = "";
+      visee = -1;
+      if (!champ.value.trim() || !res.length) { listeSug.style.display = "none"; return; }
+      res.forEach(v => {
+        const b = el("button", "suggestion", ech(v));
+        b.type = "button";
+        b.onclick = () => aller(v);
+        listeSug.appendChild(b);
+      });
+      listeSug.style.display = "";
+    }
+    champ.oninput = suggerer;
+    champ.onkeydown = e => {
+      const opts = [...listeSug.children];
+      if (e.key === "ArrowDown" && opts.length) {
+        e.preventDefault(); visee = Math.min(visee + 1, opts.length - 1);
+      } else if (e.key === "ArrowUp" && opts.length) {
+        e.preventDefault(); visee = Math.max(visee - 1, -1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        aller(visee >= 0 ? opts[visee].textContent : champ.value);
+        return;
+      } else if (e.key === "Escape") { listeSug.style.display = "none"; return; }
+      opts.forEach((o, i) => o.classList.toggle("vise", i === visee));
+    };
+
+    if (!c) {
+      const puces = el("div", "suggestions-verbes");
+      COURANTS.forEach(v => {
+        const b = el("button", "puce-verbe", ech(v));
+        b.type = "button"; b.onclick = () => aller(v);
+        puces.appendChild(b);
+      });
+      f.appendChild(el("p", "note", "Ou commencez par l'un de ceux-ci :"));
+      f.appendChild(puces);
+
+      const barre = el("div", "barre-boutons");
+      const drill = el("button", "bouton", "Passer à l'entraînement");
+      drill.type = "button"; drill.onclick = vueEntrainement;
+      barre.appendChild(drill);
+      f.appendChild(barre);
+      page.appendChild(f);
+      setTimeout(() => champ.focus(), 150);
+      return;
+    }
+
+    /* ── L'identité du verbe ── */
+    const ident = el("div", "carte-verbe");
+    ident.innerHTML =
+      '<span class="dictee-info">' + ech(c.groupe) + 'ᵉ groupe</span>' +
+      '<span class="etiq">auxiliaire ' + ech(c.auxiliaire) + '</span>' +
+      (c.pronominal ? '<span class="etiq">pronominal</span>' : '') +
+      (c.impersonnel ? '<span class="etiq">impersonnel</span>' : '');
+    f.appendChild(ident);
+
+    /* ── Les cinq formes clés : la méthode du cours, rendue visible ── */
+    const cles = el("div", "cles");
+    [["je, présent", premier(c.temps["Présent"])],
+     ["nous, présent", c.temps["Présent"][3]],
+     ["il, passé simple", c.temps["Passé simple"][2]],
+     ["je, futur", premier(c.temps["Futur simple"])],
+     ["participe passé", c.participePasse],
+     ["participe présent", c.participePresent]]
+      .forEach(([nom, val]) => {
+        if (!val) return;
+        const b = el("div");
+        b.appendChild(el("div", "cle-val", ech(val)));
+        b.appendChild(el("div", "cle-nom", ech(nom)));
+        cles.appendChild(b);
+      });
+    f.appendChild(cles);
+    f.appendChild(el("p", "note",
+      "Ces formes suffisent : le « nous » du présent donne l'imparfait et le subjonctif, " +
+      "le radical du futur donne le conditionnel, le participe passé donne tous les temps composés."));
+
+    /* ── Les tables ── */
+    ["Indicatif — temps simples", "Indicatif — temps composés", "Autres modes"].forEach(groupe => {
+      const temps = groupe === "Indicatif — temps simples"
+          ? ["Présent", "Imparfait", "Passé simple", "Futur simple"]
+        : groupe === "Indicatif — temps composés"
+          ? ["Passé composé", "Plus-que-parfait", "Passé antérieur", "Futur antérieur"]
+          : ["Conditionnel présent", "Conditionnel passé", "Subjonctif présent", "Subjonctif passé"];
+      f.appendChild(el("p", "groupe-titre", ech(groupe)));
+      const g = el("div", "temps-grille");
+      temps.forEach(t => g.appendChild(blocTemps(c, t)));
+      f.appendChild(g);
+    });
+
+    /* Impératif, participes, gérondif : les modes sans six personnes. */
+    f.appendChild(el("p", "groupe-titre", "Modes sans conjugaison complète"));
+    const g = el("div", "temps-grille");
+    const imp = el("div", "temps-bloc");
+    imp.appendChild(el("p", "temps-nom", "Impératif présent"));
+    const ul = document.createElement("ul");
+    if (c.imperatif.some(Boolean)) {
+      c.imperatif.forEach(x => { if (x) ul.appendChild(el("li", null, ech(x))); });
+    } else ul.appendChild(el("li", null, "<em>ce verbe n'a pas d'impératif</em>"));
+    imp.appendChild(ul);
+    g.appendChild(imp);
+
+    const autres = el("div", "temps-bloc");
+    autres.appendChild(el("p", "temps-nom", "Modes impersonnels"));
+    const ul2 = document.createElement("ul");
+    ul2.appendChild(el("li", null, "<em>infinitif</em> " + ech(c.infinitif)));
+    if (c.participePresent) ul2.appendChild(el("li", null, "<em>participe présent</em> " + ech(c.participePresent)));
+    ul2.appendChild(el("li", null, "<em>participe passé</em> " + ech(c.participePasse)));
+    if (c.gerondif) ul2.appendChild(el("li", null, "<em>gérondif</em> " + ech(c.gerondif)));
+    autres.appendChild(ul2);
+    g.appendChild(autres);
+    f.appendChild(g);
+
+    const barre = el("div", "barre-boutons");
+    const drill = el("button", "bouton", "S'entraîner sur ce verbe");
+    drill.type = "button"; drill.onclick = () => vueEntrainement(c.infinitif.replace(/^s'|^se /, ""));
+    const autre = el("button", "bouton creux", "Chercher un autre verbe");
+    autre.type = "button"; autre.onclick = () => aller(null);
+    barre.append(drill, autre);
+    f.appendChild(barre);
+
+    page.appendChild(f);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* L'étiquette porte déjà le pronom : la forme se donne nue. */
+  function premier(formes) {
+    for (let i = 0; i < formes.length; i++) if (formes[i]) return formes[i];
+    return null;
+  }
+  function blocTemps(c, t) {
+    const b = el("div", "temps-bloc");
+    b.appendChild(el("p", "temps-nom", ech(t)));
+    const ul = document.createElement("ul");
+    c.temps[t].forEach((forme, i) => {
+      if (!forme) return;
+      ul.appendChild(el("li", null, ech(V.avecPronom(forme, i, t))));
+    });
+    if (!ul.children.length) ul.appendChild(el("li", null, "<em>—</em>"));
+    b.appendChild(ul);
+    return b;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     VUE — l'entraînement ciblé
+     ══════════════════════════════════════════════════════════════ */
+  function vueEntrainement(verbeImpose) {
+    let tempsChoisis = V.TEMPS_SIMPLES.slice();
+    let pool = verbeImpose ? [verbeImpose] : V.liste();
+    let question = null, serie = 0, meilleure = 0, resultats = [];
+
+    function tirer() {
+      for (let n = 0; n < 60; n++) {
+        const inf = pool[Math.floor(Math.random() * pool.length)];
+        const c = V.conjugue(inf);
+        if (!c || c.impersonnel) continue;
+        const t = tempsChoisis[Math.floor(Math.random() * tempsChoisis.length)];
+        const i = Math.floor(Math.random() * 6);
+        const forme = c.temps[t][i];
+        if (!forme) continue;
+        return { inf: c.infinitif, temps: t, pers: i, forme: forme,
+                 attendu: V.avecPronom(forme, i, t), c: c };
+      }
+      return null;
+    }
+
+    function dessiner() {
+      question = question || tirer();
+      page.innerHTML = "";
+      const f = el("main", "feuille");
+
+      const fil = el("p", "fil");
+      const r = el("button", null, "Conjugueur");
+      r.onclick = () => aller(null);
+      fil.append(r, el("i", null, "›"), el("span", null, "Entraînement"));
+      f.appendChild(fil);
+
+      const av = el("div", "avancee");
+      const compteur = el("div", "compteur");
+      compteur.innerHTML = '<b>' + serie + '</b><span>d\'affilée · record ' + meilleure + '</span>';
+      const perles = el("div", "perles");
+      resultats.slice(-12).forEach(x => perles.appendChild(el("span", "perle " + (x ? "bon" : "mauvais"))));
+      av.append(compteur, perles);
+      f.appendChild(av);
+
+      if (!question) {
+        f.appendChild(el("p", "note", "Aucun temps sélectionné : cochez-en au moins un."));
+      } else {
+        const h = el("h1", "question-enonce");
+        h.style.fontSize = "1.7rem";
+        h.style.marginBottom = "0";
+        h.innerHTML = '<span class="vise">' + ech(question.inf) + '</span> — ' +
+          ech(question.temps.toLowerCase()) + ', ' +
+          ech(["1re personne du singulier","2e personne du singulier","3e personne du singulier",
+               "1re personne du pluriel","2e personne du pluriel","3e personne du pluriel"][question.pers]);
+        f.appendChild(h);
+
+        const champ = document.createElement("input");
+        champ.type = "text"; champ.className = "saisie";
+        champ.placeholder = V.pronom(question.pers, question.temps) + " …";
+        champ.autocomplete = "off"; champ.autocapitalize = "off"; champ.spellcheck = false;
+        f.appendChild(champ);
+
+        const verdict = el("div", "verdict");
+        verdict.style.display = "none";
+        f.appendChild(verdict);
+
+        let repondu = false;
+        const valider = () => {
+          if (repondu || !champ.value.trim()) return;
+          repondu = true;
+          const bon = MB_ATELIER.pareil(champ.value, question.attendu) ||
+                      MB_ATELIER.pareil(champ.value, question.forme);
+          champ.classList.add(bon ? "bon" : "mauvais");
+          champ.disabled = true;
+          resultats.push(bon);
+          if (bon) { serie++; meilleure = Math.max(meilleure, serie); }
+          else { serie = 0; MB_FR.faute(champ.value.trim(), question.attendu, "Conjugaison", chapitreDe(question.temps)); }
+          MB_FR.noteExercice(chapitreDe(question.temps), bon);
+          verdict.className = "verdict " + (bon ? "bon" : "mauvais");
+          verdict.style.display = "";
+          verdict.innerHTML = '<div class="verdict-titre">' +
+            (bon ? "Juste." : "Non — « " + ech(question.attendu) + " ».") + '</div>' +
+            '<p>' + ech(question.c.infinitif + ", " + question.c.groupe + "ᵉ groupe, auxiliaire " +
+                        question.c.auxiliaire + ".") + '</p>';
+          suivant.disabled = false;
+          suivant.focus();
+        };
+        champ.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); repondu ? suivant.click() : valider(); } };
+
+        var suivant = el("button", "bouton", "Verbe suivant →");
+        suivant.type = "button"; suivant.disabled = true;
+        suivant.onclick = () => { question = tirer(); dessiner(); };
+        const bValider = el("button", "bouton creux", "Vérifier");
+        bValider.type = "button"; bValider.onclick = valider;
+        const stop = el("button", "bouton sourd", "Arrêter");
+        stop.type = "button"; stop.onclick = () => aller(null);
+        const barre = el("div", "barre-boutons");
+        barre.append(bValider, suivant, stop);
+        f.appendChild(barre);
+        setTimeout(() => champ.focus(), 120);
+      }
+
+      /* ── Les réglages de l'entraînement ── */
+      const reg = el("div", "reglages");
+      const bloc = el("div", "reglage");
+      bloc.innerHTML = '<label>Temps travaillés</label>';
+      reg.appendChild(bloc);
+      V.TEMPS_SIMPLES.concat(V.TEMPS_COMPOSES).forEach(t => {
+        const b = el("button", "filtre", ech(t));
+        b.type = "button";
+        b.setAttribute("aria-pressed", tempsChoisis.indexOf(t) >= 0 ? "true" : "false");
+        b.onclick = () => {
+          const i = tempsChoisis.indexOf(t);
+          if (i >= 0) { if (tempsChoisis.length > 1) tempsChoisis.splice(i, 1); }
+          else tempsChoisis.push(t);
+          question = tirer(); dessiner();
+        };
+        reg.appendChild(b);
+      });
+      f.appendChild(reg);
+
+      if (verbeImpose) {
+        f.appendChild(el("p", "note", "Entraînement restreint au verbe « " + ech(verbeImpose) +
+          " ». Les fautes rejoignent le carnet, et reviendront en révision."));
+      }
+
+      page.appendChild(f);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    dessiner();
+  }
+
+  function chapitreDe(t) {
+    return ({ "Présent":"present", "Imparfait":"imparfait-passe-simple",
+      "Passé simple":"imparfait-passe-simple", "Futur simple":"futur-conditionnel",
+      "Conditionnel présent":"futur-conditionnel", "Subjonctif présent":"subjonctif" })[t] || "temps-composes";
+  }
+
+  /* ── Adresse : #prendre ouvre directement la table du verbe ── */
+  function aller(verbe) {
+    const h = verbe ? "#" + encodeURIComponent(verbe) : " ";
+    if (verbe) history.replaceState(null, "", h);
+    else history.replaceState(null, "", location.pathname + location.search);
+    vue(verbe && V.conjugue(verbe) ? verbe : null);
+  }
+  window.addEventListener("hashchange", () => {
+    const v = decodeURIComponent((location.hash || "").replace("#", ""));
+    vue(v && V.conjugue(v) ? v : null);
+  });
+
+  const depart = decodeURIComponent((location.hash || "").replace("#", ""));
+  vue(depart && V.conjugue(depart) ? depart : null);
+})();
+</script>
+</body>
+</html>

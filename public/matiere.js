@@ -25,9 +25,9 @@
      autres pages pour afficher le nom et la couleur de la matière. */
   /* `accueil` : chaque matière ouvre sur sa propre page. Les matières
      scientifiques partagent l'interface sombre (app.html) ; le français
-     (francais.html) et l'histoire-géographie (histoire.html) ont la leur,
-     sur papier. humanites.html reste le gabarit des matières littéraires
-     qui n'ont encore qu'un sommaire. */
+     (francais.html, qui ouvre son atelier) et l'histoire-géographie
+     (histoire.html) ont la leur, sur papier. humanites.html reste le
+     gabarit des matières littéraires réduites à un sommaire. */
   const MATIERES = [
     { id:"mathematiques",   nom:"Mathématiques",       icone:"📐", couleur:"#7ac8a0", ouverte:true,
       accueil:"app.html",
@@ -37,7 +37,7 @@
       desc:"Matière, mouvements, énergie et signaux : cours, exercices et annales." },
     { id:"francais",        nom:"Français",            icone:"📖", couleur:"#a07ac8", ouverte:true,
       accueil:"francais.html",
-      desc:"Orthographe, grammaire et conjugaison : le cours, chapitre par chapitre." },
+      desc:"Cours, exercices, dictées corrigées, conjugueur et mémento." },
     { id:"histoire-geo",    nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a", ouverte:true,
       accueil:"histoire.html",
       desc:"Repères historiques, cartes et enjeux du monde actuel." },
