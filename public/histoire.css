@@ -1,0 +1,506 @@
+/* ═══════════════════════════════════════════════════════════════
+   POLYMATES — histoire.css
+
+   Parti pris : la page de manuscrit. Papier vergé, encre ferro-gallique
+   (brun-noir, jamais du noir pur), rubriques à l’encre colorée, filet
+   doré très fin. Cormorant Garamond pour les titres, Spectral pour le
+   texte courant, petites capitales pour les mentions.
+
+   Deux principes structurants :
+
+   · LA TEINTE DE PÉRIODE. Chaque période a son encre. Elle suit le
+     lecteur partout : bande de la frise, filet de la carte, tête de
+     fiche, réglure du quiz. La couleur dit toujours où l’on est.
+
+   · LA MARGE. La fiche de révision est composée comme un feuillet :
+     le cours au centre, les dates, les notions et les personnages en
+     marge, à la manière des annotations d’un manuscrit. Sur petit
+     écran, la marge repasse sous le texte.
+
+   Cette feuille est autonome : elle ne dépend pas de parchemin.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --papier:        #ede0c2;
+  --papier-clair:  #f5ecd8;
+  --papier-ombre:  #ddcca6;
+  --encre:         #2f2820;
+  --encre-pale:    #6d6252;
+  --encre-fantome: #9a8e78;
+  --or:            #a8813a;
+  --trait:         rgba(120,100,60,.22);
+  --trait-fort:    rgba(120,100,60,.45);
+  --accent:        #2f4b6e;   /* encre des cartes anciennes */
+  --teinte:        var(--accent);  /* redéfinie période par période */
+
+  --titre: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
+  --texte: 'Spectral', Georgia, 'Times New Roman', serif;
+
+  --feuille: 62rem;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+body {
+  min-height: 100vh;
+  color: var(--encre);
+  font-family: var(--texte);
+  font-weight: 300;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  background-color: var(--papier);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 25% 15%, rgba(255,252,240,.55), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 80% 85%, rgba(180,158,116,.20), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+::selection { background: rgba(47,75,110,.18); }
+
+/* ── En-tête ───────────────────────────────────────────────────── */
+.bandeau {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1.5rem; flex-wrap: wrap;
+  max-width: var(--feuille); margin: 0 auto; padding: 1.5rem 2rem 1.1rem;
+  border-bottom: 1px solid var(--papier-ombre);
+}
+.bandeau-titre {
+  font-family: var(--titre); font-size: 1.3rem; font-weight: 600;
+  color: var(--encre); text-decoration: none;
+}
+.bandeau-titre em { font-style: italic; color: var(--accent); }
+.bandeau-droite { display: flex; align-items: baseline; gap: 1.1rem; font-size: .82rem; }
+.bandeau-droite span { color: var(--encre-pale); }
+.bandeau-droite a, .bandeau-droite button {
+  font: inherit; color: var(--encre-pale); background: none; border: none;
+  padding: 0; cursor: pointer; text-decoration: none;
+  border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
+}
+.bandeau-droite a:hover, .bandeau-droite button:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Barre d’outils : classe, recherche, révision ───────────────── */
+.outils {
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(237,224,194,.94);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--papier-ombre);
+}
+.outils-dedans {
+  max-width: var(--feuille); margin: 0 auto; padding: .55rem 2rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+.fil { display: flex; align-items: baseline; gap: .5rem; font-size: .78rem; color: var(--encre-pale); }
+.fil button {
+  font: inherit; background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--encre-pale); border-bottom: 1px solid transparent;
+}
+.fil button:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.fil .fil-ici { color: var(--encre); font-family: var(--titre); font-size: .95rem; }
+
+.classes { display: flex; align-items: center; gap: .3rem; margin-left: auto; flex-wrap: wrap; }
+.classes-nom {
+  font-variant: small-caps; letter-spacing: .14em; font-size: .68rem;
+  color: var(--encre-fantome); margin-right: .35rem;
+}
+.classe-btn {
+  font-family: var(--titre); font-size: .92rem; line-height: 1;
+  padding: .3rem .5rem; cursor: pointer;
+  background: none; border: 1px solid transparent; border-radius: 2px;
+  color: var(--encre-pale); transition: color .18s, border-color .18s, background .18s;
+}
+.classe-btn:hover { color: var(--accent); }
+.classe-btn[aria-pressed="true"] {
+  color: var(--papier-clair); background: var(--accent); border-color: var(--accent);
+}
+.classe-sep { width: 1px; height: 1rem; background: var(--trait); margin: 0 .3rem; }
+
+.outil-btn {
+  font-family: var(--titre); font-size: .95rem;
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .6rem; cursor: pointer;
+  background: none; border: 1px solid var(--trait-fort); border-radius: 2px;
+  color: var(--encre); transition: color .18s, border-color .18s;
+}
+.outil-btn:hover { color: var(--accent); border-color: var(--accent); }
+.outil-btn kbd {
+  font-family: var(--texte); font-size: .68rem; color: var(--encre-fantome);
+  border: 1px solid var(--trait); border-radius: 2px; padding: 0 .25rem;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── La feuille ────────────────────────────────────────────────── */
+.feuille {
+  max-width: var(--feuille); margin: 2.2rem auto 3rem; padding: 3.4rem 4rem 3rem;
+  background: var(--papier-clair);
+  border: 1px solid var(--papier-ombre);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 22px 45px -30px rgba(70,55,30,.55),
+    0 2px 5px rgba(70,55,30,.10);
+  animation: leve .5s ease both;
+}
+@keyframes leve { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.rubrique {
+  font-family: var(--titre); font-variant: small-caps; font-weight: 600;
+  letter-spacing: .22em; font-size: .78rem; color: var(--teinte);
+  margin-bottom: .8rem;
+}
+h1 {
+  font-family: var(--titre); font-weight: 600;
+  font-size: clamp(2.1rem, 5.4vw, 3.1rem); line-height: 1.08;
+  letter-spacing: -.005em;
+}
+h1 em { font-style: italic; color: var(--teinte); }
+
+.filet { display: flex; align-items: center; gap: 1rem; color: var(--or); margin: 1.6rem 0 1.8rem; }
+.filet::before, .filet::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--or), transparent);
+}
+.filet span { font-size: .9rem; line-height: 1; }
+
+.ouverture { font-size: 1.06rem; }
+.ouverture.lettrine::first-letter {
+  font-family: var(--titre); font-weight: 600; color: var(--teinte);
+  float: left; font-size: 4rem; line-height: .78; margin: .28rem .5rem 0 0;
+}
+
+.mention {
+  font-variant: small-caps; letter-spacing: .14em; font-size: .74rem;
+  color: var(--encre-pale);
+}
+
+/* ── Frise : le ruban des périodes ─────────────────────────────── */
+.ruban { margin: 2rem 0 .6rem; }
+.ruban-cadre { overflow-x: auto; overflow-y: hidden; padding-bottom: .4rem; }
+.ruban-cadre svg { display: block; }
+.periode-zone { cursor: pointer; }
+.periode-bande { transition: opacity .2s; }
+.periode-zone:hover .periode-bande, .periode-zone:focus-visible .periode-bande { opacity: .82; }
+
+.frise-cadre {
+  position: relative; overflow-x: auto; overflow-y: hidden;
+  padding: 1.4rem 0 .4rem; margin-top: 1.4rem;
+  scrollbar-width: thin; scrollbar-color: var(--trait-fort) transparent;
+}
+.frise-cadre::-webkit-scrollbar { height: 9px; }
+.frise-cadre::-webkit-scrollbar-track { background: rgba(120,100,60,.10); }
+.frise-cadre::-webkit-scrollbar-thumb { background: var(--trait-fort); border-radius: 5px; }
+.frise-cadre::-webkit-scrollbar-thumb:hover { background: var(--teinte); }
+.frise-cadre svg { display: block; }
+
+.evenement { cursor: pointer; }
+.evenement .point { transition: r .18s ease; }
+.evenement:hover .point, .evenement:focus-visible .point { r: 6; }
+.evenement:focus { outline: none; }
+.evenement:focus-visible .point { stroke: var(--teinte); stroke-width: 2; stroke-opacity: 1; }
+
+.infobulle {
+  position: absolute; left: 0; top: 0; z-index: 5;
+  transform: translate(-50%, -100%);
+  display: flex; align-items: baseline; gap: .5rem; white-space: nowrap;
+  padding: .3rem .7rem;
+  background: var(--papier-clair);
+  border: 1px solid var(--trait-fort);
+  box-shadow: 0 6px 16px -8px rgba(70,55,30,.6);
+  opacity: 0; pointer-events: none; transition: opacity .16s ease;
+}
+.infobulle.visible { opacity: 1; }
+.infobulle .bulle-an { font-family: var(--titre); font-weight: 600; font-size: 1rem; color: var(--teinte); }
+.infobulle .bulle-texte { font-size: .84rem; }
+
+.note-echelle {
+  margin-top: .7rem; font-variant: small-caps; letter-spacing: .12em;
+  font-size: .7rem; color: var(--encre-fantome); text-align: right;
+}
+
+/* ── Grille des périodes ───────────────────────────────────────── */
+.periodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: 1rem; margin-top: 2.2rem; }
+.periode-carte {
+  --teinte: var(--accent);
+  position: relative; display: flex; flex-direction: column; gap: .45rem;
+  text-align: left; font: inherit; color: inherit; cursor: pointer;
+  padding: 1.1rem 1.2rem 1rem;
+  background: linear-gradient(to bottom, rgba(255,252,242,.7), transparent 60%);
+  border: 1px solid var(--trait);
+  border-top: 2px solid var(--teinte);
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.periode-carte:hover, .periode-carte:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--teinte);
+  box-shadow: 0 16px 30px -24px rgba(70,55,30,.9);
+}
+.carte-nom { font-family: var(--titre); font-size: 1.35rem; font-weight: 600; line-height: 1.15; }
+.carte-dates { font-variant: small-caps; letter-spacing: .12em; font-size: .72rem; color: var(--encre-pale); }
+.carte-resume { font-size: .88rem; line-height: 1.6; color: var(--encre-pale); }
+.carte-pied {
+  margin-top: auto; padding-top: .6rem; display: flex; align-items: baseline;
+  justify-content: space-between; gap: .6rem;
+  font-variant: small-caps; letter-spacing: .1em; font-size: .7rem; color: var(--encre-fantome);
+}
+.carte-pied strong { color: var(--teinte); font-weight: 600; }
+
+/* Jauge de progression, fine comme un filet */
+.jauge { height: 2px; background: var(--trait); margin-top: .55rem; }
+.jauge i { display: block; height: 100%; background: var(--teinte); transition: width .4s ease; }
+
+/* ── Sommaire à points de conduite ─────────────────────────────── */
+.sommaire { margin-top: 2.4rem; }
+.sommaire-titre {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .18em;
+  font-size: .8rem; color: var(--encre-pale); margin-bottom: .8rem;
+}
+.entree {
+  display: flex; align-items: baseline; gap: .7rem; width: 100%;
+  padding: .6rem 0; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.16);
+  font: inherit; color: inherit; cursor: pointer; transition: color .2s;
+}
+.entree:last-of-type { border-bottom: none; }
+.entree-nom { font-family: var(--titre); font-size: 1.2rem; }
+.entree-points { flex: 1; height: .85em; border-bottom: 1.5px dotted rgba(120,100,60,.42); transition: border-color .2s; }
+.entree-etat { font-variant: small-caps; letter-spacing: .1em; font-size: .72rem; color: var(--encre-pale); white-space: nowrap; }
+.entree:hover, .entree:focus-visible { color: var(--teinte); }
+.entree:hover .entree-points { border-bottom-color: var(--teinte); }
+.entree-vu { color: var(--teinte); }
+
+.etiquettes { display: inline-flex; gap: .3rem; }
+.etiquette {
+  font-family: var(--titre); font-size: .78rem; line-height: 1;
+  padding: .16rem .35rem; border: 1px solid var(--trait); border-radius: 2px;
+  color: var(--encre-pale);
+}
+
+/* ── Fiche de chapitre : le feuillet à marge ───────────────────── */
+.fiche-tete { border-bottom: 1px solid var(--trait); padding-bottom: 1.4rem; }
+.fiche-tete h1 { font-size: clamp(1.9rem, 4.4vw, 2.6rem); }
+.accroche {
+  font-style: italic; font-size: 1.08rem; color: var(--encre-pale);
+  margin-top: .9rem; padding-left: 1rem; border-left: 2px solid var(--teinte);
+}
+
+.feuillet { display: grid; grid-template-columns: 1fr 17rem; gap: 2.6rem; margin-top: 2rem; align-items: start; }
+
+.partie + .partie { margin-top: 1.9rem; }
+.partie h2 {
+  font-family: var(--titre); font-weight: 600; font-size: 1.42rem;
+  line-height: 1.2; margin-bottom: .6rem;
+  display: flex; align-items: baseline; gap: .6rem;
+}
+.partie h2::before {
+  content: ''; width: .42rem; height: .42rem; flex: none;
+  background: var(--teinte); transform: translateY(-.15rem);
+}
+.partie ul { list-style: none; }
+.partie li { position: relative; padding-left: 1.1rem; margin-bottom: .55rem; }
+.partie li::before {
+  content: '·'; position: absolute; left: .3rem; top: -.1rem;
+  color: var(--teinte); font-size: 1.2rem;
+}
+
+/* Les marginalia */
+.marge { display: flex; flex-direction: column; gap: 1.5rem; position: sticky; top: 4.2rem; }
+.bloc-marge { border-top: 1px solid var(--teinte); padding-top: .7rem; }
+.bloc-titre {
+  font-family: var(--titre); font-variant: small-caps; letter-spacing: .16em;
+  font-size: .72rem; color: var(--teinte); margin-bottom: .5rem;
+}
+.marge-liste { list-style: none; font-size: .86rem; line-height: 1.55; }
+.marge-liste li + li { margin-top: .55rem; }
+.marge-an { font-family: var(--titre); font-weight: 600; color: var(--encre); }
+.marge-mot { font-family: var(--titre); font-size: 1rem; font-weight: 600; }
+.marge-def, .marge-role { color: var(--encre-pale); }
+.marge-vie { font-variant: small-caps; letter-spacing: .08em; font-size: .68rem; color: var(--encre-fantome); }
+
+/* À retenir : l’encadré qu’on relit la veille */
+.retenir {
+  margin-top: 2.4rem; padding: 1.3rem 1.5rem;
+  background: rgba(255,252,242,.75);
+  border: 1px solid var(--trait);
+  border-left: 3px solid var(--teinte);
+}
+.retenir ol { list-style: none; counter-reset: r; }
+.retenir li { counter-increment: r; position: relative; padding-left: 1.7rem; }
+.retenir li + li { margin-top: .5rem; }
+.retenir li::before {
+  content: counter(r); position: absolute; left: 0; top: .05rem;
+  font-family: var(--titre); font-weight: 600; font-size: .9rem; color: var(--teinte);
+}
+
+/* ── Quiz ──────────────────────────────────────────────────────── */
+.quiz { margin-top: 2.4rem; }
+.question + .question { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px solid var(--trait); }
+.question-txt { font-family: var(--titre); font-size: 1.2rem; margin-bottom: .7rem; }
+.choix { display: flex; flex-direction: column; gap: .4rem; }
+.choix button {
+  font: inherit; text-align: left; cursor: pointer;
+  padding: .5rem .8rem;
+  background: rgba(255,252,242,.6); border: 1px solid var(--trait); border-radius: 2px;
+  color: inherit; transition: border-color .18s, background .18s, color .18s;
+}
+.choix button:hover:not(:disabled) { border-color: var(--teinte); }
+.choix button:disabled { cursor: default; }
+.choix button.juste { border-color: #4f6b52; background: rgba(79,107,82,.14); }
+.choix button.faux  { border-color: #8f2f22; background: rgba(143,47,34,.10); color: var(--encre-pale); }
+.choix button .marque { float: right; font-family: var(--titre); font-weight: 600; }
+.explication {
+  margin-top: .6rem; font-size: .9rem; color: var(--encre-pale);
+  padding-left: .8rem; border-left: 2px solid var(--trait-fort);
+}
+.score {
+  margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--trait);
+  font-family: var(--titre); font-size: 1.05rem;
+}
+.score em { font-style: normal; color: var(--teinte); font-weight: 600; }
+
+/* ── Actions de bas de fiche ───────────────────────────────────── */
+.actions {
+  display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+  margin-top: 2.2rem; padding-top: 1.2rem; border-top: 1px solid var(--trait);
+}
+.bouton {
+  font-family: var(--titre); font-size: .98rem;
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .42rem .85rem; cursor: pointer;
+  background: none; border: 1px solid var(--trait-fort); border-radius: 2px;
+  color: var(--encre); transition: color .18s, border-color .18s, background .18s;
+}
+.bouton:hover { color: var(--teinte); border-color: var(--teinte); }
+.bouton.plein { background: var(--teinte); border-color: var(--teinte); color: var(--papier-clair); }
+.bouton.plein:hover { color: var(--papier-clair); opacity: .9; }
+
+.voisins { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.6rem; }
+.voisin {
+  font: inherit; background: none; border: none; cursor: pointer; text-align: left;
+  color: var(--encre-pale); max-width: 47%; padding: .3rem 0;
+  transition: color .2s;
+}
+.voisin:hover { color: var(--teinte); }
+.voisin span { display: block; }
+.voisin .sens { font-variant: small-caps; letter-spacing: .12em; font-size: .68rem; }
+.voisin .titre { font-family: var(--titre); font-size: 1rem; }
+.voisin.apres { text-align: right; margin-left: auto; }
+
+/* ── Révision : cartes de dates ────────────────────────────────── */
+.onglets { display: flex; gap: .2rem; border-bottom: 1px solid var(--trait); margin: 1.6rem 0 1.8rem; }
+.onglet {
+  font-family: var(--titre); font-size: 1.02rem; padding: .5rem .9rem;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; color: var(--encre-pale); transition: color .2s, border-color .2s;
+}
+.onglet:hover { color: var(--accent); }
+.onglet[aria-selected="true"] { color: var(--encre); border-bottom-color: var(--accent); }
+
+.carte-date {
+  position: relative; margin: 0 auto; max-width: 30rem; min-height: 13rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .8rem; text-align: center; cursor: pointer;
+  padding: 2rem 1.6rem;
+  background: linear-gradient(to bottom, rgba(255,252,242,.85), rgba(255,252,242,.4));
+  border: 1px solid var(--trait-fort); border-top: 2px solid var(--teinte);
+  box-shadow: 0 14px 28px -24px rgba(70,55,30,.9);
+}
+.carte-face-an { font-family: var(--titre); font-size: clamp(2.4rem, 8vw, 3.4rem); font-weight: 600; line-height: 1; color: var(--teinte); }
+.carte-face-txt { font-family: var(--titre); font-size: 1.35rem; line-height: 1.25; }
+.carte-indice { font-variant: small-caps; letter-spacing: .14em; font-size: .68rem; color: var(--encre-fantome); }
+.carte-periode { font-variant: small-caps; letter-spacing: .12em; font-size: .7rem; color: var(--encre-pale); }
+.carte-barre { display: flex; align-items: center; justify-content: center; gap: .8rem; margin-top: 1.2rem; flex-wrap: wrap; }
+.compteur { font-variant: small-caps; letter-spacing: .12em; font-size: .74rem; color: var(--encre-pale); }
+
+/* ── Recherche ─────────────────────────────────────────────────── */
+.voile {
+  position: fixed; inset: 0; z-index: 90; display: none;
+  background: rgba(60,48,28,.35); backdrop-filter: blur(2px);
+  padding: 6vh 1rem 1rem;
+}
+.voile.ouvert { display: block; }
+.chercheur {
+  max-width: 40rem; margin: 0 auto;
+  background: var(--papier-clair); border: 1px solid var(--papier-ombre);
+  box-shadow: 0 30px 60px -30px rgba(50,38,18,.8);
+}
+.chercheur input {
+  width: 100%; font: inherit; font-family: var(--titre); font-size: 1.3rem;
+  padding: 1rem 1.2rem; background: none; border: none; border-bottom: 1px solid var(--trait);
+  color: var(--encre);
+}
+.chercheur input::placeholder { color: var(--encre-fantome); }
+.chercheur input:focus { outline: none; border-bottom-color: var(--accent); }
+.resultats { max-height: 58vh; overflow-y: auto; }
+.resultat {
+  display: block; width: 100%; text-align: left; font: inherit; cursor: pointer;
+  padding: .65rem 1.2rem; background: none; border: none;
+  border-bottom: 1px solid rgba(120,100,60,.12); color: inherit;
+}
+.resultat:hover, .resultat.vise { background: rgba(168,129,58,.10); }
+.resultat-nom { font-family: var(--titre); font-size: 1.05rem; }
+.resultat-nom mark { background: rgba(168,129,58,.28); color: inherit; }
+.resultat-ou { font-variant: small-caps; letter-spacing: .1em; font-size: .68rem; color: var(--encre-pale); }
+.resultat-quoi { font-size: .85rem; color: var(--encre-pale); }
+.chercheur-pied {
+  padding: .5rem 1.2rem; font-size: .72rem; color: var(--encre-fantome);
+  display: flex; gap: 1rem; flex-wrap: wrap;
+}
+
+/* ── Divers ────────────────────────────────────────────────────── */
+.colophon {
+  max-width: var(--feuille); margin: 0 auto 3rem; padding: 0 4rem;
+  font-variant: small-caps; letter-spacing: .14em;
+  font-size: .74rem; color: var(--encre-pale); text-align: center;
+}
+.vide { padding: 2.5rem 0; text-align: center; color: var(--encre-pale); }
+.vide strong { display: block; font-family: var(--titre); font-size: 1.2rem; color: var(--encre); margin-bottom: .4rem; }
+
+#billet {
+  position: fixed; left: 50%; bottom: 1.6rem; z-index: 120;
+  transform: translate(-50%, 200%);
+  padding: .55rem 1.1rem; font-size: .88rem;
+  background: var(--papier-clair); border: 1px solid var(--trait-fort);
+  box-shadow: 0 14px 30px -18px rgba(70,55,30,.8);
+  transition: transform .35s cubic-bezier(.22,1,.36,1);
+}
+#billet.on { transform: translate(-50%, 0); }
+
+/* ── Petits écrans ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .feuillet { grid-template-columns: 1fr; gap: 2rem; }
+  .marge { position: static; }
+}
+@media (max-width: 640px) {
+  .bandeau { padding: 1.1rem 1.1rem .9rem; }
+  .outils-dedans { padding: .5rem 1.1rem; gap: .6rem; }
+  .classes { margin-left: 0; width: 100%; }
+  .feuille { margin: 1.2rem .8rem 2rem; padding: 2.2rem 1.4rem 1.8rem; }
+  .colophon { padding: 0 1.4rem; }
+  .ouverture.lettrine::first-letter { font-size: 3.2rem; }
+  .entree { flex-wrap: wrap; gap: .35rem; }
+  .entree-points { min-width: 2rem; }
+  .voisin { max-width: 48%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .feuille { animation: none; }
+  * { transition: none !important; }
+}
+
+/* ── Impression : la fiche seule, propre ───────────────────────── */
+@media print {
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .bandeau, .outils, .colophon, .actions, .voisins, .voile, #billet,
+  .quiz .choix button, .onglets { display: none !important; }
+  .feuille {
+    max-width: none; margin: 0; padding: 0; border: none; box-shadow: none;
+    background: none; animation: none;
+  }
+  .feuillet { grid-template-columns: 1fr 15rem; gap: 1.5rem; }
+  .marge { position: static; }
+  .partie, .retenir, .question { break-inside: avoid; }
+  .retenir { background: none; }
+  a { text-decoration: none; color: inherit; }
+}
