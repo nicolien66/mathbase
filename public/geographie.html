@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Géographie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="parchemin.css">
+<style>
+/* ── Série de parchemins : un par année, feuilletable ──────────────────
+   La page est la sœur de histoire.html : même papier, même feuilletage.
+   Là où l'Histoire déroule le TEMPS sur des frises, la Géographie déroule
+   les ÉCHELLES — du quartier habité au monde entier. La bande n'est donc
+   pas une chronologie mais un parcours de thèmes, lu de gauche à droite. */
+.serie { position: relative; }
+.parchemin { display: none; }
+.parchemin.actif { display: block; }
+
+.feuille.large { max-width: 96rem; padding-left: 3rem; padding-right: 3rem; }
+
+/* ── Colonne de bandes : une par année ── */
+.colonne-bandes { margin-top: 2.4rem; }
+.bande-annee { margin-bottom: 2.6rem; }
+.bande-annee:last-child { margin-bottom: .5rem; }
+
+/* Titre de l'année : cliquable, il mène à ses thèmes. */
+.bande-tete {
+  display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
+  width: 100%; padding: .5rem 0 .6rem; text-align: left;
+  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.22);
+  font: inherit; color: inherit; cursor: pointer;
+}
+.bande-tete::before {
+  content: ''; width: .55rem; height: .55rem; flex: none;
+  background: var(--teinte); border: 1px solid rgba(47,40,32,.4);
+  transform: translateY(-.1rem);
+}
+.bande-nom {
+  font-family: var(--titre); font-size: 1.5rem; font-weight: 600;
+  transition: color .2s;
+}
+.bande-question, .bande-compte {
+  font-variant: small-caps; letter-spacing: .12em; font-size: .74rem; color: var(--encre-pale);
+}
+.bande-compte { opacity: .75; }
+.bande-ouvrir {
+  margin-left: auto; font-size: .8rem; color: var(--accent);
+  opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s;
+}
+.bande-tete:hover .bande-nom, .bande-tete:focus-visible .bande-nom { color: var(--accent); }
+.bande-tete:hover .bande-ouvrir, .bande-tete:focus-visible .bande-ouvrir { opacity: 1; transform: none; }
+.bande-tete:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.bande-cadre { position: relative; overflow-x: auto; overflow-y: hidden; padding: 1.6rem 0 .5rem; }
+.bande-cadre svg { display: block; }
+.bande-cadre { scrollbar-width: thin; scrollbar-color: rgba(120,100,60,.45) transparent; }
+.bande-cadre::-webkit-scrollbar { height: 9px; }
+.bande-cadre::-webkit-scrollbar-track { background: rgba(120,100,60,.10); }
+.bande-cadre::-webkit-scrollbar-thumb { background: rgba(120,100,60,.45); border-radius: 5px; }
+.bande-cadre::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.bande-note {
+  margin-top: .8rem; font-variant: small-caps; letter-spacing: .12em;
+  font-size: .72rem; color: var(--encre-pale); text-align: right;
+}
+.annee-zone { cursor: pointer; }
+
+/* Points de chapitre : discrets au repos, francs au survol. */
+.chapitre-point { cursor: pointer; }
+.chapitre-point .point { transition: r .18s ease, fill-opacity .18s ease; }
+.chapitre-point:hover .point, .chapitre-point:focus-visible .point { r: 6; }
+.chapitre-point:focus { outline: none; }
+.chapitre-point:focus-visible .point { stroke: var(--accent); stroke-width: 2; stroke-opacity: 1; }
+
+/* L'infobulle : un billet posé sur le papier. */
+.bande-infobulle {
+  position: absolute; left: 0; top: 0; z-index: 5;
+  transform: translate(-50%, -100%);
+  display: flex; align-items: baseline; gap: .5rem; white-space: nowrap;
+  padding: .3rem .7rem;
+  background: var(--papier-clair);
+  border: 1px solid rgba(120,100,60,.45);
+  box-shadow: 0 6px 16px -8px rgba(70,55,30,.6);
+  opacity: 0; pointer-events: none;
+  transition: opacity .16s ease;
+}
+.bande-infobulle.visible { opacity: 1; }
+.bande-infobulle .bulle-theme {
+  font-family: var(--titre); font-weight: 600; font-size: 1rem; color: var(--accent);
+}
+.bande-infobulle .bulle-texte { font-size: .84rem; color: var(--encre); }
+.annee-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-segment { transition: opacity .2s; }
+.annee-zone:hover .theme-segment { opacity: .82; }
+
+/* ── Thèmes d'une année ── */
+.themes { margin-top: 2.4rem; }
+.annee-question {
+  font-variant: small-caps; letter-spacing: .16em; font-size: .78rem;
+  color: var(--encre-pale); margin-top: -.7rem; margin-bottom: 1.2rem;
+}
+.classe-mention {
+  display: inline-block; margin-left: .6rem; padding: .05rem .5rem;
+  border: 1px solid rgba(120,100,60,.35); border-radius: 2px;
+  font-size: .7rem; letter-spacing: .1em; color: var(--encre-pale);
+}
+/* Un thème regroupe ses chapitres : le titre du thème sépare les blocs. */
+.theme-titre {
+  margin-top: 1.8rem; margin-bottom: .5rem;
+  font-family: var(--titre); font-size: 1.22rem; font-weight: 600; color: var(--accent);
+}
+.theme-titre:first-of-type { margin-top: .4rem; }
+.theme-intro { font-size: .92rem; color: var(--encre-pale); margin-bottom: .7rem; }
+
+/* ── Feuilletage ── */
+.feuillet {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; max-width: 46rem; margin: 0 auto 2.5rem; padding: 0 1rem;
+}
+.serie[data-large="oui"] .feuillet { max-width: 96rem; }
+.feuillet button {
+  display: flex; align-items: baseline; gap: .55rem;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--titre); font-size: 1rem; color: var(--encre-pale);
+  padding: .4rem .2rem; transition: color .2s;
+  max-width: 42%; text-align: left;
+}
+.feuillet button:hover:not(:disabled) { color: var(--accent); }
+.feuillet button:disabled { opacity: .3; cursor: default; }
+.feuillet button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.feuillet .chevron { font-size: 1.1rem; line-height: 1; }
+.feuillet .suivant { text-align: right; justify-content: flex-end; }
+.feuillet-nom { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.jalons { display: flex; gap: .45rem; align-items: center; }
+.jalon {
+  width: .55rem; height: .55rem; border-radius: 50%; padding: 0;
+  background: none; border: 1px solid rgba(120,100,60,.5); cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.jalon:hover { border-color: var(--accent); }
+.jalon.actif { background: var(--accent); border-color: var(--accent); }
+.jalon.vue-ensemble { border-radius: 1px; width: 1.1rem; }
+
+@media (max-width: 900px) {
+  .feuille.large { padding-left: 1.6rem; padding-right: 1.6rem; }
+  .feuillet .feuillet-nom { display: none; }
+  .jalons { gap: .35rem; }
+}
+</style>
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect data-sans-chip></script>
+</head>
+<body data-matiere="geographie">
+
+<header class="bandeau">
+  <a class="bandeau-titre" href="matieres.html">Poly<em>mates</em></a>
+  <div class="bandeau-droite">
+    <span id="lecteur"></span>
+    <a href="matieres.html">Changer de matière</a>
+    <button type="button" id="sortir">Se déconnecter</button>
+  </div>
+</header>
+
+<div class="serie" id="serie"></div>
+
+<nav class="feuillet" id="feuillet" aria-label="Navigation entre les années">
+  <button type="button" id="precedent">
+    <span class="chevron" aria-hidden="true">←</span><span class="feuillet-nom"></span>
+  </button>
+  <div class="jalons" id="jalons" role="tablist" aria-label="Années"></div>
+  <button type="button" id="suivant" class="suivant">
+    <span class="feuillet-nom"></span><span class="chevron" aria-hidden="true">→</span>
+  </button>
+</nav>
+
+<p class="colophon">Polymates — Géographie</p>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ══════════════════════════════════════════════════════════════
+     Le programme, année par année. Chaque année pose une question
+     et la traite en trois ou quatre thèmes ; chaque thème se déploie
+     en chapitres. Sur la bande, la largeur d'un thème suit son nombre
+     de chapitres : elle dit le poids du thème dans l'année, rien de plus.
+     ══════════════════════════════════════════════════════════════ */
+  const ANNEES = [
+    {
+      nom: "Sixième", titre: 'Habiter la Terre,<br><em>et la partager.</em>',
+      question: "Comment les hommes occupent-ils la planète ?", classe: "6ᵉ",
+      teinte: "#6f9e8a",
+      ouverture: "La géographie commence par une observation simple : les hommes ne se " +
+        "répartissent pas au hasard sur la Terre. On part de la façon dont on habite un " +
+        "lieu — une métropole, une campagne, un littoral — avant d'élargir au monde entier.",
+      themes: [
+        { nom: "Habiter une métropole", court: "Métropoles",
+          intro: "Les villes concentrent les hommes et les activités, et posent partout les mêmes défis.",
+          chapitres: [
+            "Les métropoles et leurs habitants",
+            "La ville de demain",
+          ] },
+        { nom: "Habiter un espace de faible densité", court: "Faibles densités",
+          intro: "Loin des villes, des espaces peu peuplés qui ne sont pourtant pas vides.",
+          chapitres: [
+            "Habiter un espace à forte contrainte naturelle",
+            "Habiter un espace de faible densité à vocation agricole",
+          ] },
+        { nom: "Habiter les littoraux", court: "Littoraux",
+          intro: "Une frange étroite où se concentrent industries, ports et tourisme.",
+          chapitres: [
+            "Littoral industrialo-portuaire, littoral touristique",
+            "Des espaces convoités et fragiles",
+          ] },
+        { nom: "Le monde habité", court: "Monde habité",
+          intro: "Changement d'échelle : la répartition de la population à la surface du globe.",
+          chapitres: [
+            "La répartition de la population mondiale",
+            "Les grands foyers de peuplement",
+          ] },
+      ],
+    },
+    {
+      nom: "Cinquième", titre: 'Vivre nombreux,<br><em>avec des ressources limitées.</em>',
+      question: "Comment habiter durablement le monde ?", classe: "5ᵉ",
+      teinte: "#c08a4a",
+      ouverture: "L'année pose la question du développement durable : une population qui croît, " +
+        "des ressources qui ne suivent pas toujours, et des risques que le changement climatique " +
+        "aggrave. Trois thèmes pour un même fil : comment tenir sur le long terme.",
+      themes: [
+        { nom: "La question démographique et l'inégal développement", court: "Démographie",
+          intro: "La population mondiale augmente, mais pas partout au même rythme ni dans les mêmes conditions.",
+          chapitres: [
+            "La croissance démographique et ses effets",
+            "Répartition de la richesse et de la pauvreté dans le monde",
+          ] },
+        { nom: "Des ressources limitées, à gérer et à renouveler", court: "Ressources",
+          intro: "Se nourrir, boire, se chauffer : trois besoins, trois tensions sur les ressources.",
+          chapitres: [
+            "L'alimentation : assurer la sécurité alimentaire",
+            "L'eau : une ressource inégalement répartie",
+            "L'énergie : des besoins croissants",
+          ] },
+        { nom: "Prévenir les risques, s'adapter au changement global", court: "Risques",
+          intro: "Un aléa devient un risque quand il rencontre des sociétés vulnérables.",
+          chapitres: [
+            "Le changement climatique et ses conséquences",
+            "Prévenir les risques industriels et technologiques",
+          ] },
+      ],
+    },
+    {
+      nom: "Quatrième", titre: 'Un monde relié,<br><em>et très inégal.</em>',
+      question: "Comment la mondialisation transforme-t-elle les territoires ?", classe: "4ᵉ",
+      teinte: "#4a7fa8",
+      ouverture: "Marchandises, capitaux, informations et personnes circulent comme jamais. " +
+        "L'année suit ces flux et regarde ce qu'ils font aux territoires : certains sont " +
+        "reliés au reste du monde, d'autres restent à l'écart.",
+      themes: [
+        { nom: "L'urbanisation du monde", court: "Urbanisation",
+          intro: "Plus d'un habitant sur deux vit en ville : la ville devient la norme.",
+          chapitres: [
+            "Espaces et paysages de l'urbanisation",
+            "Des villes inégalement connectées aux réseaux mondiaux",
+          ] },
+        { nom: "Les mobilités humaines transnationales", court: "Mobilités",
+          intro: "Migrations et tourisme : deux façons très différentes de franchir les frontières.",
+          chapitres: [
+            "Un monde de migrants",
+            "Le tourisme et ses espaces",
+          ] },
+        { nom: "Des espaces transformés par la mondialisation", court: "Espaces transformés",
+          intro: "Mers, littoraux, territoires reliés ou délaissés : la mondialisation trie les espaces.",
+          chapitres: [
+            "Mers et océans : un monde maritimisé",
+            "L'adaptation du territoire des États-Unis aux nouvelles conditions de la mondialisation",
+            "Les dynamiques d'un grand ensemble géographique africain",
+          ] },
+      ],
+    },
+    {
+      nom: "Troisième", titre: 'La France,<br><em>et l\'Europe autour.</em>',
+      question: "Comment aménager et relier les territoires français ?", classe: "3ᵉ",
+      teinte: "#8a6fa8",
+      ouverture: "Dernière année du cycle : on revient sur le territoire national, ses " +
+        "dynamiques et ses déséquilibres, puis on élargit à l'Union européenne et au " +
+        "rayonnement de la France dans le monde.",
+      themes: [
+        { nom: "Dynamiques territoriales de la France contemporaine", court: "Dynamiques",
+          intro: "Aires urbaines, espaces productifs, espaces de faible densité : trois France qui évoluent.",
+          chapitres: [
+            "Les aires urbaines, une nouvelle géographie de la France mondialisée",
+            "Les espaces productifs et leurs évolutions",
+            "Les espaces de faible densité et leurs atouts",
+          ] },
+        { nom: "Pourquoi et comment aménager le territoire ?", court: "Aménager",
+          intro: "Aménager, c'est arbitrer entre efficacité économique et égalité entre les territoires.",
+          chapitres: [
+            "Aménager pour réduire les inégalités",
+            "Les territoires ultramarins : une problématique spécifique",
+          ] },
+        { nom: "La France et l'Union européenne", court: "France et UE",
+          intro: "Un territoire national inséré dans un ensemble européen et ouvert sur le monde.",
+          chapitres: [
+            "L'Union européenne, un nouveau territoire de référence",
+            "La France et l'Europe dans le monde",
+          ] },
+      ],
+    },
+  ];
+
+  /* ── Dimensions de la bande ── */
+  const H = 200, BANDE_Y = 150, BANDE_H = 34, MARGE = 30;
+  const PAR_CHAPITRE = 132, MIN_SEGMENT = 210;
+
+  /* Largeur de chaque thème, puis de l'année entière. */
+  ANNEES.forEach(a => {
+    let x = 0;
+    a.themes.forEach(t => {
+      t._l = Math.max(MIN_SEGMENT, t.chapitres.length * PAR_CHAPITRE);
+      t._x = x; x += t._l;
+    });
+    a._l = x;
+  });
+
+  const ns = (nom, attrs, parent) => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", nom);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+  };
+
+  /* ── Infobulle : le nom du chapitre n'apparaît qu'au survol ──────
+     Même parti pris que sur les frises d'histoire : la bande se lit
+     d'abord comme une forme, et le détail se demande. */
+  function brancherInfobulle(cadre, svg) {
+    const bulle = document.createElement("div");
+    bulle.className = "bande-infobulle";
+    bulle.innerHTML = '<span class="bulle-theme"></span><span class="bulle-texte"></span>';
+    cadre.appendChild(bulle);
+    let visible = null;
+
+    function montrer(g) {
+      const i = g._infos;
+      bulle.querySelector(".bulle-theme").textContent = i.theme;
+      bulle.querySelector(".bulle-texte").textContent = i.texte;
+      const r = g.getBoundingClientRect(), c = cadre.getBoundingClientRect();
+      bulle.style.left = (r.left - c.left + cadre.scrollLeft + r.width / 2) + "px";
+      bulle.style.top  = (r.top - c.top - 8) + "px";
+      bulle.classList.add("visible");
+      visible = g;
+    }
+    function cacher() { bulle.classList.remove("visible"); visible = null; }
+
+    svg.querySelectorAll(".chapitre-point").forEach(g => {
+      g.addEventListener("mouseenter", () => montrer(g));
+      g.addEventListener("mouseleave", cacher);
+      g.addEventListener("focus", () => montrer(g));
+      g.addEventListener("blur", cacher);
+      /* Sur écran tactile, où le survol n'existe pas : une tape suffit. */
+      g.addEventListener("click", e => {
+        e.stopPropagation();
+        visible === g ? cacher() : montrer(g);
+      });
+    });
+    cadre.addEventListener("click", cacher);
+    return cacher;
+  }
+
+  /* ── Construction des parchemins ──────────────────────────────── */
+  const serie = document.getElementById("serie");
+
+  function construireBandeAnnee(a, i) {
+    const L = a._l + MARGE * 2;
+    const nbChapitres = a.themes.reduce((n, t) => n + t.chapitres.length, 0);
+
+    const svg = ns("svg", { viewBox: "0 0 " + L + " " + H, width: L, height: H, role: "img",
+      "aria-label": "Thèmes de " + a.nom + " : " + a.themes.map(t => t.nom).join(", ") });
+
+    const zone = ns("g", { class: "annee-zone", tabindex: "0", role: "button",
+      "aria-label": "Ouvrir les thèmes de " + a.nom }, svg);
+    zone.addEventListener("click", () => aller(i + 1));
+    zone.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); aller(i + 1); }
+    });
+
+    /* Un segment par thème, d'une nuance à l'autre : la bande se lit
+       comme un dégradé, du plus proche au plus lointain. */
+    a.themes.forEach((t, n) => {
+      const opacite = 0.82 - n * 0.13;
+      ns("rect", { class: "theme-segment", x: MARGE + t._x, y: BANDE_Y, width: t._l, height: BANDE_H,
+        fill: a.teinte, "fill-opacity": opacite.toFixed(2) }, zone);
+      ns("rect", { x: MARGE + t._x, y: BANDE_Y, width: t._l, height: BANDE_H,
+        fill: "none", stroke: "#2f2820", "stroke-opacity": ".35", "stroke-width": "1" }, zone);
+
+      /* Numéro et nom court sous le segment. */
+      const cx = MARGE + t._x + t._l / 2;
+      const num = ns("text", { x: cx, y: BANDE_Y + BANDE_H + 20, "text-anchor": "middle",
+        fill: "#6d6252", "font-family": "'Spectral', Georgia, serif", "font-size": "12",
+        "letter-spacing": "1.4" }, svg);
+      num.textContent = "THÈME " + (n + 1);
+      const lib = ns("text", { x: cx, y: BANDE_Y + BANDE_H + 38, "text-anchor": "middle",
+        fill: "#2f2820", "font-family": "'Cormorant Garamond', Garamond, serif",
+        "font-size": "16" }, svg);
+      lib.textContent = t.court;
+    });
+
+    /* Points de chapitre, à trois hauteurs pour rester lisibles. */
+    const HAUTEURS = [48, 88, 128];
+    let rang = 0;
+    a.themes.forEach(t => {
+      const pas = t._l / t.chapitres.length;
+      t.chapitres.forEach((ch, n) => {
+        const px = MARGE + t._x + (n + 0.5) * pas;
+        const haut = HAUTEURS[rang % HAUTEURS.length];
+        rang++;
+
+        const g = ns("g", { class: "chapitre-point", tabindex: "0", role: "button",
+          "aria-label": t.nom + " : " + ch }, svg);
+        ns("line", { x1: px, y1: BANDE_Y, x2: px, y2: BANDE_Y - haut,
+          stroke: "#2f2820", "stroke-opacity": ".3", "stroke-width": "1" }, g);
+        ns("circle", { class: "point", cx: px, cy: BANDE_Y - haut, r: "4",
+          fill: a.teinte, stroke: "#2f2820", "stroke-opacity": ".55" }, g);
+        /* Cible large et invisible : le point se vise sans précision. */
+        ns("circle", { cx: px, cy: BANDE_Y - haut, r: "13", fill: "transparent" }, g);
+
+        g._infos = { theme: "Thème " + (a.themes.indexOf(t) + 1), texte: ch };
+      });
+    });
+
+    const bloc = document.createElement("section");
+    bloc.className = "bande-annee";
+    bloc.style.setProperty("--teinte", a.teinte);
+
+    const tete = document.createElement("button");
+    tete.type = "button";
+    tete.className = "bande-tete";
+    tete.innerHTML =
+      '<span class="bande-nom"></span>' +
+      '<span class="bande-question"></span>' +
+      '<span class="bande-compte"></span>' +
+      '<span class="bande-ouvrir">Voir les thèmes →</span>';
+    tete.querySelector(".bande-nom").textContent = a.nom;
+    tete.querySelector(".bande-question").textContent = a.question;
+    tete.querySelector(".bande-compte").textContent =
+      a.themes.length + " thèmes · " + nbChapitres + " chapitres";
+    tete.onclick = () => aller(i + 1);
+
+    const cadre = document.createElement("div");
+    cadre.className = "bande-cadre";
+    cadre.appendChild(svg);
+
+    bloc.append(tete, cadre);
+    brancherInfobulle(cadre, svg);
+    return bloc;
+  }
+
+  function feuilleVueEnsemble() {
+    const f = document.createElement("main");
+    f.className = "feuille large parchemin";
+    f.innerHTML =
+      '<p class="rubrique">Géographie</p>' +
+      '<h1>Toute la géographie,<br><em>échelle par échelle.</em></h1>' +
+      '<div class="filet"><span>❦</span></div>' +
+      '<p class="ouverture">Chaque année du collège pose une question et la traite en trois ou ' +
+      'quatre thèmes. Les points marquent les chapitres : survolez-en un pour le découvrir. ' +
+      'Cliquez une bande pour ouvrir les thèmes de l\'année — les flèches, en bas de page, ' +
+      'permettent ensuite de les parcourir dans l\'ordre.</p>' +
+      '<div class="colonne-bandes" id="colonne-bandes"></div>' +
+      '<p class="bande-note">Thèmes du programme, largeur proportionnelle au nombre de chapitres</p>' +
+      '<p class="ouverture" style="margin-top:2rem;font-size:.95rem;color:var(--encre-pale)">' +
+      'L\'histoire a son propre espace : ' +
+      '<a href="histoire.html?matiere=histoire">ouvrir l\'histoire →</a>. ' +
+      'Enseignement moral et civique : section à paraître.</p>';
+    const colonne = f.querySelector("#colonne-bandes");
+    ANNEES.forEach((a, i) => colonne.appendChild(construireBandeAnnee(a, i)));
+    return f;
+  }
+
+  function feuilleAnnee(a) {
+    const f = document.createElement("main");
+    f.className = "feuille parchemin";
+
+    const rubrique = document.createElement("p");
+    rubrique.className = "rubrique";
+    rubrique.textContent = a.nom;
+
+    const h1 = document.createElement("h1");
+    h1.innerHTML = a.titre;
+
+    const question = document.createElement("p");
+    question.className = "annee-question";
+    question.textContent = a.question;
+    const cl = document.createElement("span");
+    cl.className = "classe-mention";
+    cl.textContent = "classe de " + a.classe;
+    question.appendChild(cl);
+
+    const filet = document.createElement("div");
+    filet.className = "filet";
+    filet.innerHTML = "<span>❦</span>";
+
+    const ouv = document.createElement("p");
+    ouv.className = "ouverture";
+    ouv.textContent = a.ouverture;
+
+    f.append(rubrique, h1, question, filet, ouv);
+
+    /* Un bloc par thème : son titre, sa phrase d'intention, ses chapitres. */
+    a.themes.forEach((t, n) => {
+      const titre = document.createElement("p");
+      titre.className = "theme-titre";
+      titre.textContent = "Thème " + (n + 1) + " · " + t.nom;
+
+      const intro = document.createElement("p");
+      intro.className = "theme-intro";
+      intro.textContent = t.intro;
+
+      const sec = document.createElement("section");
+      sec.className = "sommaire themes";
+      sec.style.marginTop = "0";
+
+      t.chapitres.forEach(nom => {
+        const ligne = document.createElement("div");
+        ligne.className = "entree";
+        ligne.style.cursor = "default";
+        ligne.innerHTML =
+          '<span class="entree-nom"></span>' +
+          '<span class="entree-points" aria-hidden="true"></span>' +
+          '<span class="entree-etat">à paraître</span>';
+        ligne.querySelector(".entree-nom").textContent = nom;
+        sec.appendChild(ligne);
+      });
+
+      f.append(titre, intro, sec);
+    });
+
+    return f;
+  }
+
+  const feuilles = [feuilleVueEnsemble()].concat(ANNEES.map(feuilleAnnee));
+  feuilles.forEach(f => serie.appendChild(f));
+
+  /* ── Feuilletage ──────────────────────────────────────────────── */
+  const NOMS = ["Vue d'ensemble"].concat(ANNEES.map(a => a.nom));
+  const precedent = document.getElementById("precedent");
+  const suivant   = document.getElementById("suivant");
+  const jalons    = document.getElementById("jalons");
+  let index = 0;
+
+  NOMS.forEach((nom, i) => {
+    const j = document.createElement("button");
+    j.type = "button";
+    j.className = "jalon" + (i === 0 ? " vue-ensemble" : "");
+    j.title = nom;
+    j.setAttribute("aria-label", nom);
+    j.onclick = () => aller(i);
+    jalons.appendChild(j);
+  });
+
+  function aller(i) {
+    index = Math.min(Math.max(i, 0), feuilles.length - 1);
+    feuilles.forEach((f, n) => f.classList.toggle("actif", n === index));
+    serie.setAttribute("data-large", index === 0 ? "oui" : "non");
+
+    precedent.disabled = index === 0;
+    suivant.disabled   = index === feuilles.length - 1;
+    precedent.querySelector(".feuillet-nom").textContent = index > 0 ? NOMS[index - 1] : "";
+    suivant.querySelector(".feuillet-nom").textContent =
+      index < NOMS.length - 1 ? NOMS[index + 1] : "";
+
+    [...jalons.children].forEach((j, n) => {
+      j.classList.toggle("actif", n === index);
+      j.setAttribute("aria-selected", n === index ? "true" : "false");
+    });
+
+    document.title = "Polymates — " + (index === 0 ? "Géographie" : NOMS[index]);
+    if (location.hash !== "#" + index) history.replaceState(null, "", "#" + index);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  precedent.onclick = () => aller(index - 1);
+  suivant.onclick   = () => aller(index + 1);
+
+  /* Les flèches du clavier feuillettent aussi, sauf si l'on saisit du texte. */
+  document.addEventListener("keydown", e => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+    /* Dans une bande, les flèches servent à la parcourir horizontalement :
+       on laisse le navigateur faire défiler. */
+    if (document.activeElement.closest && document.activeElement.closest(".bande-cadre")) return;
+    if (e.key === "ArrowLeft")  { e.preventDefault(); aller(index - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); aller(index + 1); }
+  });
+
+  const depart = Number((location.hash || "").replace("#", ""));
+  aller(Number.isInteger(depart) && depart > 0 ? depart : 0);
+
+  /* ── Bandeau ── */
+  const u = MB_AUTH.user();
+  if (u && u.pseudo) document.getElementById("lecteur").textContent = u.pseudo;
+  document.getElementById("sortir").onclick = () => MB_AUTH.logout();
+})();
+</script>
+</body>
+</html>

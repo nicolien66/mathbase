@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    POLYMATES — parchemin.css
-   Style commun au Français et à l'Histoire-Géographie.
+   Style commun aux matières « sur papier » : Français et Géographie.
+   (L'Histoire a depuis son propre histoire.css.)
 
    Parti pris : la page de manuscrit français. Papier vergé, encre
    ferro-gallique (brun-noir, jamais du noir pur), rubriques à l'encre
@@ -28,9 +29,13 @@
   --texte: 'Spectral', Georgia, 'Times New Roman', serif;
 }
 
-/* Histoire-Géographie : encre bleue des cartes anciennes plutôt que
-   le rouge des rubriques littéraires. */
+/* Histoire : encre bleue des cartes anciennes plutôt que le rouge des
+   rubriques littéraires. La géographie prend un bleu-vert plus clair,
+   celui des relevés hydrographiques, pour se distinguer d'un coup d'œil.
+   L'ancien identifiant reste accepté le temps que les liens se mettent à jour. */
+body[data-matiere="histoire"],
 body[data-matiere="histoire-geo"] { --accent: #2f4b6e; }
+body[data-matiere="geographie"]   { --accent: #2c6560; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 

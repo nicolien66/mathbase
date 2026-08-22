@@ -50,7 +50,8 @@
   const PAGES = {};
 
   /* Cette page sert les matières littéraires réduites à un sommaire. Les
-     autres ont leur propre accueil : francais.html, histoire.html. */
+     autres ont leur propre accueil : francais.html, histoire.html,
+     geographie.html. */
   const page = PAGES[MB_MAT.id];
   if (!page) { location.replace(MB_MAT.lien(MB_MAT.accueil) || "matieres.html"); return; }
 

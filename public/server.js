@@ -43,7 +43,9 @@ function parseJsonTolerant(raw) {
    Le correcteur doit VOIR la figure, pas seulement en lire une description.
    On convertit la page du PDF en PNG et on la joint à l'appel Mistral.
    En cas d'échec (dépendance absente, fichier manquant), on renvoie null :
-   la correction se poursuit alors en mode texte avec figure_desc en repli. */
+   la correction est alors REFUSÉE pour les annales : sans la page, le
+   correcteur inventerait la configuration. Le champ figure_desc subsiste
+   pour l'import et le diagnostic, mais n'est plus jamais transmis à l'IA. */
 let _pdfjs = null, _canvas = null, _renderKO = false;
 const _pageCache = new Map();               // clé "fichier#page" -> data URL
 const PAGE_CACHE_MAX = 60;
@@ -339,7 +341,23 @@ const pool = new Pool({
 });
 
 app.use(bodyParser.json({ limit: "25mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+/* Fichiers statiques. Sans en-tête de cache explicite, le navigateur applique
+   une fraîcheur « heuristique » et peut resservir un script.js périmé pendant
+   des heures après un déploiement — les corrections semblent alors sans effet.
+   « no-cache » n'interdit pas le cache : il impose de revalider. Avec l'ETag,
+   un fichier inchangé coûte un simple 304. */
+/* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
+   numéro ne correspond pas à la dernière version déployée, c'est que le
+   serveur n'a pas redémarré sur le code attendu. */
+const SERVEUR_VERSION = "2026-08-16-reparation-pages";
+
+app.use(express.static(path.join(__dirname, "public"), {
+  etag: true,
+  setHeaders(res, chemin) {
+    if (/\.(html|js|css)$/i.test(chemin)) res.setHeader("Cache-Control", "no-cache");
+    else if (/\.(png|jpe?g|svg|woff2?|pdf)$/i.test(chemin)) res.setHeader("Cache-Control", "public, max-age=86400");
+  },
+}));
 
 /* ═══════════ ROUTES AUTH ═══════════ */
 const pubUser = (u) => ({ id: u.id, email: u.email, pseudo: u.pseudo, role: u.role, classe: u.classe });
@@ -638,10 +656,44 @@ Réponds UNIQUEMENT en JSON :
   }
 });
 
+/* ── PAGE D'ANNALE EN IMAGE, POUR LE CLIENT ──
+   Les exercices de CONSTRUCTION (« compléter la figure de l'annexe »,
+   « tracer », « construire ») demandent que l'élève dessine SUR le document
+   du sujet. Le client a donc besoin de la page en image ; jusqu'ici, seul le
+   serveur y avait accès pour la correction.
+
+   La réponse est mise en cache par renderPageImage : demander deux fois la
+   même page ne coûte qu'un rendu. */
+app.get("/annales/:id/page/:n", auth, async (req, res) => {
+  try {
+    const id = Number(req.params.id), n = Number(req.params.n);
+    if (!Number.isInteger(id) || !Number.isInteger(n) || n < 1)
+      return res.status(400).json({ error: "Paramètres invalides." });
+
+    const { rows } = await pool.query("SELECT image_url FROM annales WHERE id = $1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Sujet introuvable." });
+    const url = rows[0].image_url;
+    if (!url) return res.status(404).json({ error: "Ce sujet n'a pas de PDF rattaché." });
+
+    /* Échelle modérée : l'élève dessine par-dessus, une image trop lourde
+       ralentirait le navigateur sans rien apporter. */
+    const img = await renderPageImage(url, n, 1.5);
+    if (!img) return res.status(404).json({
+      error: "Page indisponible (PDF absent du serveur, ou numéro hors limites)." });
+    res.json({ image: img, page: n });
+  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
+});
+
 app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
   try {
-    await pool.query("DELETE FROM annales WHERE id = $1", [Number(req.params.id)]);
-    res.json({ ok: true });
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: "Identifiant invalide." });
+    /* On répond franchement quand rien n'a été supprimé : un « ok » silencieux
+       sur zéro ligne laisse croire à une suppression qui n'a pas eu lieu. */
+    const r = await pool.query("DELETE FROM annales WHERE id = $1", [id]);
+    if (!r.rowCount) return res.status(404).json({ error: "Aucun sujet ne porte l'identifiant " + id + "." });
+    console.log("[annales] sujet " + id + " supprimé par " + (req.user && req.user.email || "?"));
+    res.json({ ok: true, supprimes: r.rowCount });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -744,19 +796,78 @@ async function initDB() {
   await seedDB();
 }
 
-/* ── BOOTSTRAP DU COMPTE ADMINISTRATEUR ── */
+/* ── BOOTSTRAP DU COMPTE ADMINISTRATEUR ──
+   L'ancienne version ne créait le compte QUE si aucun admin n'existait : une
+   fois le premier créé, modifier ADMIN_PASSWORD n'avait plus aucun effet, et
+   l'on restait bloqué sur le mot de passe du tout premier démarrage.
+   Désormais, quand ADMIN_PASSWORD est défini, le compte correspondant est
+   créé OU remis à jour à chaque démarrage : la variable fait foi. */
 async function seedAdmin() {
   const email = (process.env.ADMIN_EMAIL || "admin@polymates.fr").toLowerCase();
-  const pw    = process.env.ADMIN_PASSWORD || "admin123";
-  const { rows } = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
-  if (rows.length) return;
+  const pwVar = process.env.ADMIN_PASSWORD;
+  const pw    = pwVar || "admin123";
+
+  const { rows: existants } = await pool.query(
+    "SELECT id, email FROM users WHERE role = 'admin' ORDER BY id");
+
+  if (pwVar) {
+    /* La variable est définie : elle commande. On crée le compte, ou l'on
+       réaligne son mot de passe et son rôle. */
+    await pool.query(
+      `INSERT INTO users (email, pseudo, password_hash, role)
+       VALUES ($1, $2, $3, 'admin')
+       ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash,
+                                         role = 'admin'`,
+      [email, "Administrateur", hashPassword(pw)]);
+    console.log(`Compte admin aligné sur les variables d'environnement : ${email}`);
+    if (existants.length && !existants.some(u => u.email === email))
+      console.log("  ⚠ D'autres comptes admin existent : " +
+        existants.map(u => u.email).join(", "));
+    return;
+  }
+
+  /* Aucune variable : on ne crée le compte par défaut que s'il n'y a aucun
+     administrateur, pour ne pas écraser un mot de passe choisi à la main. */
+  if (existants.length) {
+    console.log("Compte(s) admin existant(s) : " + existants.map(u => u.email).join(", "));
+    console.log("  ⚠ ADMIN_PASSWORD n'est pas défini : impossible de réinitialiser " +
+      "le mot de passe automatiquement. Définissez-le puis redémarrez.");
+    return;
+  }
   await pool.query(
-    "INSERT INTO users (email, pseudo, password_hash, role) VALUES ($1, $2, $3, 'admin') ON CONFLICT (email) DO UPDATE SET role = 'admin'",
-    [email, "Administrateur", hashPassword(pw)]
-  );
+    `INSERT INTO users (email, pseudo, password_hash, role)
+     VALUES ($1, $2, $3, 'admin')
+     ON CONFLICT (email) DO UPDATE SET role = 'admin'`,
+    [email, "Administrateur", hashPassword(pw)]);
   console.log(`Compte admin créé : ${email}` +
-    (process.env.ADMIN_PASSWORD ? "" : "  ⚠ mot de passe par défaut « admin123 » — définissez ADMIN_PASSWORD !"));
+    "  ⚠ mot de passe par défaut « admin123 » — définissez ADMIN_PASSWORD !");
 }
+
+/* ── DIAGNOSTIC DU COMPTE ADMINISTRATEUR ──
+   Route PUBLIQUE mais volontairement avare : elle ne révèle aucun mot de
+   passe ni aucun jeton. Elle sert seulement à répondre à la question
+   « pourquoi ne puis-je pas me connecter ? » — quelles adresses existent,
+   et si les variables d'environnement sont bien lues. */
+app.get("/admin/diagnostic-connexion", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT email, pseudo, role FROM users WHERE role = 'admin' ORDER BY id");
+    const attendu = (process.env.ADMIN_EMAIL || "admin@polymates.fr").toLowerCase();
+    res.json({
+      version_serveur: SERVEUR_VERSION,
+      ADMIN_EMAIL_definie: !!process.env.ADMIN_EMAIL,
+      ADMIN_PASSWORD_definie: !!process.env.ADMIN_PASSWORD,
+      adresse_attendue: attendu,
+      comptes_admin: rows.map(r => r.email),
+      concordance: rows.some(r => r.email === attendu),
+      conseil: !process.env.ADMIN_PASSWORD
+        ? "ADMIN_PASSWORD n'est pas définie : définissez-la puis REDÉMARREZ le service. Le mot de passe sera alors réappliqué au démarrage."
+        : (rows.some(r => r.email === attendu)
+            ? "Tout est cohérent. Connectez-vous avec l'adresse ci-dessus et la valeur d'ADMIN_PASSWORD. Attention aux espaces en fin de variable."
+            : "ADMIN_PASSWORD est définie mais aucun compte ne porte l'adresse attendue : redémarrez le service pour que le compte soit créé.")
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 /* ── SEED : banque de départ (insérée uniquement si la table est vide) ── */
 const SEED = [
@@ -920,6 +1031,189 @@ function verdictIncoherent(p) {
    chaque sujet d'un coup remplit la mémoire (chaque image pèse plusieurs Mo)
    et fait tomber le conteneur — d'où le test de rendu isolé, un sujet à la
    fois, via ?rendu=<id>. */
+/* ── RÉPARATION DES NUMÉROS DE PAGE ──
+   Une centaine de sujets ont été importés par une version antérieure qui ne
+   stockait pas la page de chaque question. Or la correction se fait
+   désormais sur l'image de la page : sans numéro, l'exercice n'est plus
+   corrigé du tout.
+
+   Cette route relit les PDF — qui sont sur le serveur, pas sur le poste de
+   l'administrateur — et retrouve la page de chaque question en trois passes,
+   de la plus sûre à la plus tolérante :
+     1. le TITRE de la question, tel qu'il apparaît en tête de page ;
+     2. une empreinte de son énoncé : ses mots rares ;
+     3. à défaut, la page de la question précédente.
+   Une question dont la page reste indéterminée est laissée en l'état : mieux
+   vaut ne pas corriger que pointer la mauvaise page.
+
+   Le traitement se fait par LOTS (?lot=25 par défaut) pour ne pas saturer la
+   mémoire : on relance jusqu'à ce que « restants » tombe à zéro. */
+const _BANALS_PAGE = new Set(["pour","dans","avec","cette","donc","alors","plus","moins",
+  "entre","chaque","tous","toutes","leur","elle","nous","vous","est","sont","une","des",
+  "les","que","qui","par","sur","aux","son","ses","exercice","points","point","suivant",
+  "suivante","calculer","determiner","justifier","reponse"]);
+
+const _normPage = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/\s+/g, " ").trim();
+const _compactPage = t => _normPage(t).replace(/[^a-z0-9]/g, "");
+
+function _empreinte(texte, n) {
+  const mots = _normPage(texte).replace(/[^a-z0-9 ]/g, " ").split(/\s+/)
+    .filter(m => m.length >= 5 && !_BANALS_PAGE.has(m));
+  return [...new Set(mots)].slice(0, n || 14);
+}
+
+function _trouverPage(q, pagesTxt, precedente) {
+  const pagesNorm = pagesTxt.map(_normPage);
+  const pagesComp = pagesTxt.map(_compactPage);
+
+  const titre = String(q.enonce || "").split(" — ")[0].trim();
+  if (titre) {
+    const t = _compactPage(titre);
+    if (t.length >= 6) {
+      const i = pagesComp.findIndex(p => p.includes(t));
+      if (i >= 0) return { page: i + 1, methode: "titre" };
+    }
+  }
+  const mots = _empreinte(q.enonce_correction || q.enonce || "", 14);
+  if (mots.length >= 3) {
+    let best = -1, score = 0;
+    pagesNorm.forEach((p, i) => {
+      const s2 = mots.filter(m => p.includes(m)).length / mots.length;
+      if (s2 > score) { score = s2; best = i; }
+    });
+    if (best >= 0 && score >= 0.45) return { page: best + 1, methode: "empreinte" };
+  }
+  if (precedente) return { page: precedente, methode: "suite de la précédente" };
+  return null;
+}
+
+app.post("/admin/reparer-pages", auth, requireAdmin, async (req, res) => {
+  try {
+    const seul = req.query.id ? Number(req.query.id) : null;
+    const lot  = Math.max(1, Math.min(60, Number(req.query.lot) || 25));
+    const appliquer = req.query.execute === "1";
+
+    const { rows } = await pool.query(
+      `SELECT id, title, image_url, questions FROM annales
+        WHERE image_url IS NOT NULL AND btrim(image_url) <> ''
+        ${seul ? "AND id = $1" : ""} ORDER BY id`, seul ? [seul] : []);
+
+    /* On ne retient que les sujets dont au moins une question manque de page. */
+    const aTraiter = [];
+    for (const a of rows) {
+      let qs = a.questions;
+      if (typeof qs === "string") { try { qs = JSON.parse(qs); } catch { qs = null; } }
+      if (!Array.isArray(qs) || !qs.length) continue;
+      if (qs.some(q => !Array.isArray(q.pages) || !q.pages.length)) aTraiter.push({ a, qs });
+    }
+    const paquet = aTraiter.slice(0, lot);
+
+    const detail = [];
+    let repares = 0, echecs = 0, questionsTrouvees = 0;
+    const methodes = {};
+
+    for (const { a, qs } of paquet) {
+      const chemin = _cheminSujet(a.image_url);
+      if (!chemin || !fs.existsSync(chemin)) {
+        echecs++;
+        detail.push({ id: a.id, titre: a.title, resultat: "PDF absent du disque du serveur" });
+        continue;
+      }
+      let pagesTxt;
+      try { pagesTxt = await texteParPage(fs.readFileSync(chemin)); }
+      catch (e) {
+        echecs++;
+        detail.push({ id: a.id, titre: a.title, resultat: "lecture impossible : " + e.message });
+        continue;
+      }
+
+      let trouvees = 0, prec = null, sansPage = 0;
+      qs.forEach(q => {
+        if (Array.isArray(q.pages) && q.pages.length) { prec = q.pages[0]; return; }
+        sansPage++;
+        const r = _trouverPage(q, pagesTxt, prec);
+        if (r) {
+          q.pages = [r.page];
+          q.pages_total = pagesTxt.length;
+          prec = r.page;
+          trouvees++;
+          methodes[r.methode] = (methodes[r.methode] || 0) + 1;
+        }
+      });
+      questionsTrouvees += trouvees;
+      if (trouvees) repares++;
+      detail.push({ id: a.id, titre: a.title, sans_page: sansPage, retrouvees: trouvees,
+        resultat: trouvees === sansPage ? "complet"
+                : trouvees ? "partiel" : "aucune page trouvée" });
+
+      if (appliquer && trouvees)
+        await pool.query("UPDATE annales SET questions = $1 WHERE id = $2",
+          [JSON.stringify(qs), a.id]);
+    }
+
+    res.json({
+      mode: appliquer ? "appliqué" : "simulation",
+      sujets_a_reparer: aTraiter.length,
+      traites: paquet.length,
+      restants: Math.max(0, aTraiter.length - paquet.length),
+      sujets_repares: repares,
+      questions_retrouvees: questionsTrouvees,
+      echecs,
+      methodes,
+      detail,
+      memoire_mo: Math.round(process.memoryUsage().rss / 1048576)
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: e.message }); }
+});
+
+/* ── QUELLES QUESTIONS DEMANDENT UN TRACÉ ? ──
+   Avant d'outiller la construction, il faut savoir combien de questions sont
+   concernées et de quelle nature elles sont. Cette route parcourt les
+   annales et les classe. */
+app.get("/admin/diagnostic-constructions", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, title, classe, image_url, questions FROM annales ORDER BY id");
+    let questionsTotal = 0;
+    const totaux = { geometrie: 0, repere: 0, diagramme: 0 };
+    let avecAnnexe = 0, sujetsConcernes = 0;
+    const sujets = [];
+
+    rows.forEach(a => {
+      let qs = a.questions;
+      if (typeof qs === "string") { try { qs = JSON.parse(qs); } catch { qs = null; } }
+      if (!Array.isArray(qs) || !qs.length) return;
+      questionsTotal += qs.length;
+      const r = analyserSujet(qs);
+      if (!r.total) return;
+      sujetsConcernes++;
+      totaux.geometrie += r.parType.geometrie;
+      totaux.repere    += r.parType.repere;
+      totaux.diagramme += r.parType.diagramme;
+      avecAnnexe += r.avecAnnexe;
+      sujets.push({ id: a.id, titre: a.title, classe: a.classe,
+        pdf: !!a.image_url, total: r.total, ...r.parType,
+        annexe: r.avecAnnexe,
+        /* les questions sans page ne pourront pas afficher leur annexe */
+        sans_page: r.detail.filter(d => !d.pages.length).length,
+        exemples: r.detail.slice(0, 3).map(d => d.titre) });
+    });
+
+    sujets.sort((a, b) => b.total - a.total);
+    res.json({
+      version_serveur: SERVEUR_VERSION,
+      questions_analysees: questionsTotal,
+      sujets_concernes: sujetsConcernes,
+      questions_a_tracer: totaux.geometrie + totaux.repere + totaux.diagramme,
+      par_type: totaux,
+      renvoyant_a_une_annexe: avecAnnexe,
+      sujets: sujets.slice(0, 60),
+      sujets_total: sujets.length
+    });
+  } catch (e) { console.error(e); res.status(500).json({ error: e.message }); }
+});
+
 app.get("/admin/diagnostic-figures", auth, requireAdmin, async (req, res) => {
   try {
     const moteur    = await _loadRenderer();
@@ -1003,6 +1297,15 @@ app.post("/exercises/correct", auth, async (req, res) => {
   const key = process.env.MISTRAL_KEY;
   if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
 
+  /* Le barème vient du sujet lui-même : « Exercice 3 (5 points) ». À défaut,
+     on note sur 4, valeur courante d'une question de brevet — et on le dit,
+     pour que le correcteur ne s'imagine pas une précision qu'il n'a pas. */
+  const baremeSujet = Number(exercise.bareme) > 0 ? Number(exercise.bareme) : null;
+  const bareme = baremeSujet || 4;
+  const baremeCtx = baremeSujet
+    ? `\nBARÈME : cette question vaut ${baremeSujet} points, d'après le sujet officiel. Note sur ${baremeSujet}.`
+    : `\nBARÈME : le sujet n'indique pas de barème pour cette question. Note sur 4.`;
+
   const solutionCtx = exercise.solution ? `\nSOLUTION OFFICIELLE : ${exercise.solution}` : "";
 
   /* ── Source principale : l'IMAGE de la page du sujet ──
@@ -1034,7 +1337,8 @@ app.post("/exercises/correct", auth, async (req, res) => {
   // risquer un rejet de l'API ; la correction repart alors en mode texte.
   const poids = images.reduce((n, u) => n + u.length, 0);
   if (poids > 5 * 1024 * 1024) {
-    console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) + " Ko) — mode texte.");
+    console.warn("[pages] images trop lourdes (" + Math.round(poids / 1024) +
+      " Ko) — l'annale ne sera pas corrigée plutôt que corrigée à l'aveugle.");
     images.length = 0;
     raisonSansFigure = "images des pages trop lourdes (" + Math.round(poids / 1024) + " Ko)";
   }
@@ -1043,27 +1347,59 @@ app.post("/exercises/correct", auth, async (req, res) => {
   else console.warn("[correction] « " + (exercise.title || "?") +
                     " » corrigé SANS la figure — raison : " + raisonSansFigure);
 
-  const figureCtx = avecImage
-    ? (exercise.figure_desc
-        ? `\nNOTE DE SECOURS (description textuelle approximative, reconstituée automatiquement — n'y recours QUE si l'image est illisible, et ne la fais jamais primer sur ce que tu vois) : ${exercise.figure_desc}`
-        : "")
-    : (exercise.figure_desc
-        ? `\nDESCRIPTION PARTIELLE DE LA FIGURE (reconstituée automatiquement à partir du TEXTE de l'énoncé, jamais du dessin) : ${exercise.figure_desc}
-AVERTISSEMENT : incomplète par construction. Ce qui n'est codé que sur le dessin (angle droit marqué, côtés de même longueur, position des points, mesure portée sur la figure) n'y figure PAS. L'élève, lui, a la vraie figure sous les yeux. Ne le contredis jamais sur une donnée que cette description ne permet pas de vérifier : dis-lui que tu ne peux pas la vérifier, et corrige son raisonnement plutôt que ses données.`
-        : "");
+  /* Cette route sert DEUX sortes d'exercices, qu'il faut traiter autrement :
+       · les ANNALES, rattachées à un PDF (champ annale_url) : leur énoncé
+         n'existe qu'en image, et l'extraction textuelle est trompeuse ;
+       · les exercices GÉNÉRÉS, dont l'énoncé est complet dans `content` et
+         qui n'ont aucun PDF — ceux-là se corrigent très bien en texte. */
+  const estAnnale = !!exercise.annale_url;
 
-  const sourceCtx = avecImage
-    ? `\n\nSOURCE PRINCIPALE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux. Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux. FAIS-EN TA RÉFÉRENCE : en cas de désaccord entre l'image et le texte reproduit ci-dessous, l'IMAGE a raison — le texte provient d'une extraction automatique imparfaite. La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`
-    : `\n\nAttention : tu ne disposes PAS de l'image du sujet. Tu travailles sur une extraction textuelle imparfaite.
-RÈGLE ABSOLUE EN L'ABSENCE DE FIGURE : n'invente JAMAIS de configuration géométrique. N'utilise que les noms de points, les longueurs et les parallélismes littéralement présents dans l'énoncé ou dans la solution officielle ci-dessus. Il t'est interdit d'introduire des points (D, E, M…) qui n'y figurent pas, ou de supposer quelle droite est parallèle à quelle autre. Si le rapport à écrire dépend d'un élément que tu ne peux pas lire, dis-le franchement à l'élève, appuie-toi sur la SOLUTION OFFICIELLE pour la démarche, et mets le verdict à "partial" au lieu de deviner.`;
+  /* ── RÈGLE ABSOLUE POUR LES ANNALES ──
+     Sans l'image de la page, le correcteur ne dispose que d'une extraction
+     textuelle et d'une description reconstituée : il complète alors les
+     manques par des configurations inventées. On préfère ne pas corriger et
+     le dire franchement à l'élève. */
+  /* Un énoncé qui RENVOIE au PDF sans qu'aucune image ne soit disponible est
+     tout aussi incorrigible qu'une annale sans page : le correcteur n'aurait
+     qu'une phrase creuse. On refuse dans les deux cas. */
+  const renvoieAuPdf = /reporte-toi au sujet|voir le sujet|ci-dessus/i.test(exercise.content || "");
+
+  if ((estAnnale || renvoieAuPdf) && !avecImage) {
+    console.warn("[correction] « " + (exercise.title || "?") +
+      " » NON corrigé faute d'image — raison : " + raisonSansFigure);
+    return res.json({
+      verdict: "partial",
+      analyse: "Je ne peux pas corriger cet exercice pour l'instant : la page du sujet " +
+        "n'a pas pu être chargée, et je refuse de juger ton travail sans avoir " +
+        "exactement la même chose que toi sous les yeux.",
+      demarche: "Ta réponse a bien été enregistrée. Reprends l'exercice plus tard, " +
+        "ou compare-la à la correction officielle si tu l'as.",
+      solution: exercise.solution || "",
+      score: null,
+      non_corrige: true,
+      raison_technique: raisonSansFigure
+    });
+  }
+
+  /* Aucune description de figure n'est transmise : elles étaient reconstituées
+     à partir du texte, donc muettes sur tout ce qui n'est codé que sur le
+     dessin — et c'est précisément ce qui poussait le correcteur à inventer. */
+  const figureCtx = "";   // aucune description reconstituée, jamais
+
+  const sourceCtx = !avecImage
+    ? ""                                   // exercice généré : l'énoncé suffit
+    : `\n\nSOURCE UNIQUE : ${images.length === 1 ? "l'image jointe est la page" : "les images jointes sont les pages"} du sujet officiel où se trouve cet exercice. C'est exactement ce que l'élève a sous les yeux, et c'est ta SEULE source pour l'énoncé et la figure.
+Lis-y l'énoncé exact, les figures, les codages (angles droits, égalités de longueurs), les valeurs portées sur les dessins et les tableaux.
+INTERDICTION : aucun texte d'énoncé ne t'est fourni à côté. Ne suppose donc RIEN qui ne se lise sur l'image — pas de point supplémentaire, pas de parallélisme deviné, pas de mesure reconstituée. Si un élément nécessaire est illisible ou hors cadre, dis-le franchement à l'élève et mets le verdict à "partial" plutôt que de deviner.
+La page peut contenir d'autres exercices : ne corrige que celui indiqué par le titre.`;
 
   const prompt = `Tu es un professeur de mathématiques qui corrige la copie d'un élève, comme dans la marge d'un cahier. Tu es précis, bienveillant et tu tutoies l'élève.
 
 EXERCICE : ${exercise.title}${sourceCtx}
 
-ÉNONCÉ (extraction automatique du PDF, à titre indicatif) : ${exercise.content}${figureCtx}${solutionCtx}
-
-REMARQUE SUR L'ÉNONCÉ : il provient d'une extraction automatique du sujet PDF. La mise en forme mathématique peut être dégradée (fractions, exposants, racines) et des fragments d'en-tête de page ont pu s'y glisser. S'il te paraît tronqué ou ambigu, appuie-toi sur l'image si tu en as une ; sinon dis-le explicitement et ne pénalise pas l'élève pour une ambiguïté venant du sujet.
+${avecImage
+  ? "L'énoncé est à lire SUR L'IMAGE : aucune transcription ne t'en est donnée."
+  : `ÉNONCÉ : ${exercise.content}`}${figureCtx}${solutionCtx}
 
 CE QUE L'ÉLÈVE A ÉCRIT (son brouillon, mot pour mot) :
 ${answer}
@@ -1074,6 +1410,16 @@ Ta mission : réagir DIRECTEMENT à ce que l'élève a écrit, pas à une répon
 3. Si c'est juste : confirme et dis ce qui rend le raisonnement correct.
 3 bis. En cas de doute entre « l'élève s'est trompé » et « l'énoncé dont je dispose est incomplet », choisis TOUJOURS la seconde hypothèse et signale-le. Mieux vaut ne pas trancher que sanctionner à tort.
 4. Ensuite seulement, donne la bonne démarche puis la solution finale.
+
+${baremeCtx}
+
+NOTATION — tu attribues une note, pas seulement un verdict.
+· La note va de 0 au barème indiqué, par demi-points.
+· Un résultat juste SANS justification ne vaut pas tous les points : au brevet, la démarche compte. Compte environ deux tiers des points pour le raisonnement et le résultat, un tiers pour la rédaction (étapes visibles, théorème cité quand il est nécessaire, unités, phrase de réponse).
+· Un résultat faux mais une démarche correcte mérite une part substantielle des points : ne mets pas 0 pour une erreur de calcul isolée.
+· Une réponse vide, hors sujet ou recopiée de l'énoncé vaut 0.
+· Sois exigeant mais juste, comme un correcteur de brevet : la moyenne d'une copie honnête doit rester atteignable.
+· La note doit être COHÉRENTE avec le verdict : "correct" ne descend pas sous 80 % du barème, "incorrect" ne dépasse pas 35 %.
 
 CAS DU QCM : si l'élève répond par une lettre ou un numéro d'option (« réponse D », « c'est la B », « 3 »), retrouve dans l'énoncé le CONTENU de cette option et juge ce contenu, rien d'autre. Un QCM ne demande aucune rédaction : ne reproche JAMAIS à l'élève de ne pas avoir détaillé sa démarche, et ne le compte pas comme une erreur. Si tu n'arrives pas à retrouver les options dans l'énoncé, dis-le franchement et mets le verdict à "partial" plutôt que de deviner.
 
@@ -1092,6 +1438,8 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
   "analyse": "Comment l'élève est arrivé à sa réponse. Si erreur, l'étape exacte qui cloche et la raison profonde de l'erreur. 2 à 4 phrases, adressées à l'élève.",
   "demarche": "La bonne démarche, étape par étape, claire et sobre. Sépare les étapes par des retours à la ligne.",
   "solution": "Le résultat final attendu, en une ou deux lignes.",
+  "redaction": "Ce que vaut la RÉDACTION de l'élève : justifications, étapes apparentes, théorème cité quand il le faut, unités, phrase de conclusion. Dis ce qui manque, en une ou deux phrases.",
+  "note": nombre — la note attribuée, entre 0 et le barème indiqué. Utilise les demi-points. Voir les règles de notation ci-dessus.,
   "verdict": "correct" | "partial" | "incorrect"
 }`;
 
@@ -1164,6 +1512,23 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
     parsed.figure_vue = avecImage;
     if (!avecImage) parsed.figure_diagnostic = raisonSansFigure;
 
+    /* La note est bornée au barème : un correcteur généreux ne doit pas
+       inventer des points qui n'existent pas, ni en retirer sous zéro.
+       On arrondit au demi-point, comme au brevet. */
+    const brute = Number(parsed.note);
+    parsed.note = Number.isFinite(brute)
+      ? Math.max(0, Math.min(bareme, Math.round(brute * 2) / 2))
+      : null;
+    parsed.bareme = bareme;
+    parsed.bareme_du_sujet = !!baremeSujet;
+
+    /* Cohérence note / verdict : un « correct » noté 1/5 laisserait l'élève
+       perplexe. On aligne le verdict sur la note, qui est plus fine. */
+    if (parsed.note !== null) {
+      const part = parsed.note / bareme;
+      parsed.verdict = part >= 0.8 ? "correct" : part >= 0.35 ? "partial" : "incorrect";
+    }
+
     res.json(parsed);
   } catch (err) {
     console.error("Erreur correction:", err.message);
@@ -1189,6 +1554,93 @@ app.post("/exercises/analyse", auth, async (req, res) => {
 });
 
 /* ── AJOUTER UN EXERCICE ── */
+/* ── RÉPARTITION DU CONTENU PAR MATIÈRE (admin) ───────────────────────────
+   Dit la vérité de la base : combien d'exercices et d'annales portent quelle
+   matière. Permet de distinguer un problème de données d'un fichier périmé
+   servi par le cache du navigateur. */
+app.get("/admin/diagnostic-matieres", auth, requireAdmin, async (req, res) => {
+  try {
+    const compter = async (table) => {
+      const { rows } = await pool.query(
+        `SELECT COALESCE(matiere, '(vide)') AS matiere, COUNT(*)::int AS n
+           FROM ${table} GROUP BY 1 ORDER BY 2 DESC`);
+      return rows;
+    };
+    const colonne = async (table, nom) => {
+      const { rows } = await pool.query(
+        `SELECT 1 FROM information_schema.columns
+          WHERE table_name = $1 AND column_name = $2 LIMIT 1`, [table, nom || "matiere"]);
+      return rows.length > 0;
+    };
+    /* Les fichiers du front sont-ils réellement déployés, et à jour ?
+       Un serveur à jour avec un public/ ancien donne exactement le symptôme
+       « je vois encore les maths partout ». */
+    const pub = path.join(__dirname, "public");
+    const attendus = [
+      { nom: "matiere.js",                 doit_contenir: "MB_MAT" },
+      { nom: "contenu-physique-chimie.js", doit_contenir: "physique-chimie" },
+      { nom: "script.js",                  doit_contenir: "matiereCourante" },
+      { nom: "app.html",                   doit_contenir: "matiere.js" },
+      { nom: "matieres.html",              doit_contenir: "MB_MAT.liste" },
+      { nom: "ui.js",                      doit_contenir: "mb-subject" },
+      { nom: "axe.js",                     doit_contenir: "MB_AXE" },
+      { nom: "tableau.js",                 doit_contenir: "MB_TABLEAU" },
+    ];
+    const fichiers = attendus.map(f => {
+      try {
+        const chemin = path.join(pub, f.nom);
+        const st = fs.statSync(chemin);
+        const contenuFichier = fs.readFileSync(chemin, "utf8");
+        return {
+          nom: f.nom, present: true,
+          a_jour: contenuFichier.includes(f.doit_contenir),
+          ko: Math.round(st.size / 1024),
+          modifie: st.mtime.toISOString().slice(0, 16).replace("T", " "),
+        };
+      } catch {
+        return { nom: f.nom, present: false, a_jour: false };
+      }
+    });
+
+    /* Combien d'exercices portent un plateau interactif, et lequel ?
+       C'est ce qui distingue « le widget n'est pas déployé » de
+       « les exercices n'ont pas été enregistrés avec leur plateau ». */
+    let interactifs = [];
+    if (await colonne("exercises", "interactif")) {
+      /* Le regroupement se fait en JavaScript plutôt qu'en SQL : un GROUP BY
+         portant sur une extraction JSON est correct en PostgreSQL, mais rien
+         ne garantit qu'il le reste selon la version ou le type réel de la
+         colonne. La requête ci-dessous n'utilise que des constructions
+         élémentaires, donc elle ne peut pas échouer. */
+      const { rows: ia } = await pool.query(
+        `SELECT chapitre, interactif ->> 'widget' AS widget
+           FROM exercises
+          WHERE interactif IS NOT NULL AND interactif::text NOT IN ('null', '', '{}')`);
+      const compte = new Map();
+      ia.forEach(r => {
+        const k = (r.chapitre || "—") + "\u0000" + (r.widget || "(illisible)");
+        compte.set(k, (compte.get(k) || 0) + 1);
+      });
+      interactifs = [...compte.entries()]
+        .map(([k, n]) => ({ chapitre: k.split("\u0000")[0], widget: k.split("\u0000")[1], n }))
+        .sort((a, b) => b.n - a.n);
+    }
+
+    res.json({
+      version_serveur: SERVEUR_VERSION,
+      colonne_matiere: { exercises: await colonne("exercises"), annales: await colonne("annales") },
+      colonne_interactif: await colonne("exercises", "interactif"),
+      interactifs,
+      fichiers,
+      exercices: await compter("exercises"),
+      annales:   await compter("annales"),
+    });
+  } catch (err) {
+    console.error("Erreur diagnostic matières:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/exercises", auth, async (req, res) => {
   const { title, content, level, subject, difficulty, solution, classe, chapitre, type,
           image_url, figure_desc, matiere } = req.body;
@@ -1260,7 +1712,7 @@ app.delete("/exercises/:id", async (req, res) => {
 /* ── LANCEMENT ── */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Serveur lancé sur http://localhost:${PORT}`);
+  console.log(`Serveur lancé sur http://localhost:${PORT} — version ${SERVEUR_VERSION}`);
   /* Diagnostic de démarrage : sans ce moteur de rendu, le correcteur ne voit
      JAMAIS les figures des sujets et travaille à l'aveugle sur le texte. */
   _loadRenderer().then(mod => {

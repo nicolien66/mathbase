@@ -25,9 +25,10 @@
      autres pages pour afficher le nom et la couleur de la matière. */
   /* `accueil` : chaque matière ouvre sur sa propre page. Les matières
      scientifiques partagent l'interface sombre (app.html) ; le français
-     (francais.html, qui ouvre son atelier) et l'histoire-géographie
-     (histoire.html) ont la leur, sur papier. humanites.html reste le
-     gabarit des matières littéraires réduites à un sommaire. */
+     (francais.html, qui ouvre son atelier), l'histoire (histoire.html) et
+     la géographie (geographie.html) ont la leur, sur papier.
+     humanites.html reste le gabarit des matières littéraires réduites à
+     un sommaire. */
   const MATIERES = [
     { id:"mathematiques",   nom:"Mathématiques",       icone:"📐", couleur:"#7ac8a0", ouverte:true,
       accueil:"app.html",
@@ -38,9 +39,12 @@
     { id:"francais",        nom:"Français",            icone:"📖", couleur:"#a07ac8", ouverte:true,
       accueil:"francais.html",
       desc:"Cours, exercices, dictées corrigées, conjugueur et mémento." },
-    { id:"histoire-geo",    nom:"Histoire-Géographie", icone:"🌍", couleur:"#c8a07a", ouverte:true,
+    { id:"histoire",        nom:"Histoire",            icone:"🏛️", couleur:"#c8a07a", ouverte:true,
       accueil:"histoire.html",
-      desc:"Repères historiques, cartes et enjeux du monde actuel." },
+      desc:"Chaque période du programme : frises, fiches de révision et quiz, du collège au lycée." },
+    { id:"geographie",      nom:"Géographie",          icone:"🌍", couleur:"#7a9ec8", ouverte:true,
+      accueil:"geographie.html",
+      desc:"Habiter la Terre, ressources, mondialisation et territoires." },
     { id:"anglais",         nom:"Anglais",             icone:"🗣️", couleur:"#c8b97a", ouverte:false,
       accueil:"app.html",
       desc:"Vocabulaire, grammaire et compréhension orale et écrite." },
@@ -49,11 +53,18 @@
       desc:"Sciences de la vie et de la Terre." },
   ];
 
+  /* Identifiants abandonnés, conservés pour ne casser ni les liens déjà
+     partagés ni le choix mémorisé dans le navigateur. « Histoire-Géographie »
+     ayant été scindée en deux matières, son ancien identifiant mène à
+     l'Histoire — c'est elle qui hérite de la page et de son contenu. */
+  const ANCIENS = { "histoire-geo": "histoire" };
+
   /* ── Quelle matière ? l'URL prime, sinon le dernier choix, sinon maths ── */
   function resoudre() {
     let id = null;
     try { id = new URLSearchParams(location.search).get("matiere"); } catch (_) {}
     if (!id) { try { id = localStorage.getItem(CLE); } catch (_) {} }
+    if (id && ANCIENS[id]) id = ANCIENS[id];
     const m = MATIERES.find(x => x.id === id && x.ouverte);
     return m || MATIERES.find(x => x.id === DEFAUT);
   }
