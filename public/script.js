@@ -334,7 +334,22 @@ function renderByChapter(data) {
     byChap.get(key).push(ex);
   });
 
-  const structure = (typeof CHAPTER_STRUCTURE !== "undefined") ? CHAPTER_STRUCTURE : (window.CHAPTER_STRUCTURE || []);
+  /* Chaque groupe de chapitres porte un `niveaux` (["college"], ["lycee"]…).
+     Sous un filtre de niveau, on ne montre que les groupes de ce niveau :
+     sans cela, le bouton « Lycée » affichait aussi tous les chapitres du
+     collège, vides. Un groupe hors niveau n'est pas perdu pour autant : s'il
+     contient des exercices du niveau demandé (un exercice de lycée rangé dans
+     un chapitre de collège, par exemple), ces chapitres-là restent visibles.
+     Un groupe sans `niveaux` reste affiché partout. */
+  const catalogue = (typeof CHAPTER_STRUCTURE !== "undefined") ? CHAPTER_STRUCTURE : (window.CHAPTER_STRUCTURE || []);
+  const structure = [];
+  catalogue.forEach(m => {
+    const chapitres = m.chapters || [];
+    const duNiveau = !currentFilter || !m.niveaux || m.niveaux.includes(currentFilter);
+    const gardes = duNiveau ? chapitres : chapitres.filter(c => byChap.has(c));
+    if (gardes.length) structure.push(Object.assign({}, m, { chapters: gardes }));
+  });
+
   const known = new Set();
   structure.forEach(m => m.chapters.forEach(c => known.add(c)));
 
@@ -2374,6 +2389,7 @@ function selectLevel(btn, level) {
   document.querySelectorAll(".seance-level-card").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   seanceLevel = level;
+  remplirChapitres();   // les chapitres proposés suivent le niveau
 }
 
 /* Filtre par chapitre : la liste est bâtie sur CHAPTER_STRUCTURE, donc dans
@@ -2381,9 +2397,16 @@ function selectLevel(btn, level) {
    la séance, une seule fois. */
 function remplirChapitres() {
   const sel = document.getElementById("seance-chapitre");
-  if (!sel || sel.dataset.rempli) return;
-  const structure = (typeof CHAPTER_STRUCTURE !== "undefined")
+  if (!sel) return;
+  /* La liste dépend du niveau choisi : on la reconstruit à chaque changement
+     plutôt que de la figer une fois pour toutes. */
+  if (sel.dataset.niveau === (seanceLevel || "")) return;
+  const choix = sel.value;
+  sel.innerHTML = '<option value="">Tous les chapitres</option>';
+  const catalogue = (typeof CHAPTER_STRUCTURE !== "undefined")
     ? CHAPTER_STRUCTURE : (window.CHAPTER_STRUCTURE || []);
+  const structure = catalogue.filter(m =>
+    !seanceLevel || !m.niveaux || m.niveaux.includes(seanceLevel));
   structure.forEach(m => {
     if (!m.chapters || !m.chapters.length) return;
     const grp = document.createElement("optgroup");
@@ -2395,7 +2418,10 @@ function remplirChapitres() {
     });
     sel.appendChild(grp);
   });
-  sel.dataset.rempli = "1";
+  sel.dataset.niveau = seanceLevel || "";
+  /* On garde le chapitre sélectionné s'il existe encore à ce niveau. */
+  if (choix && [...sel.options].some(o => o.value === choix)) sel.value = choix;
+  else selectChapitre("");
 }
 
 function selectChapitre(chapitre) {

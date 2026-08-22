@@ -1507,9 +1507,14 @@ const THEME_CONTENT = {
 
 /* ═══════════ STRUCTURE MATIÈRE → CHAPITRES (pour la page exercices) ═══════════ */
 const CHAPTER_STRUCTURE = [
+  /* ── PRIMAIRE & COLLÈGE ──────────────────────────────────────────────────
+     `niveaux` dit à quels niveaux un groupe de chapitres appartient. La page
+     exercices s'en sert pour n'afficher, sous un filtre de niveau, que les
+     chapitres de ce niveau (un groupe sans `niveaux` reste visible partout). */
   {
     "subject": "NOMBRES",
     "color": "#7ab4c8",
+    "niveaux": ["primaire", "college"],
     "chapters": [
       "Entiers & décimaux",
       "Fractions",
@@ -1525,6 +1530,7 @@ const CHAPTER_STRUCTURE = [
   {
     "subject": "ALGÈBRE",
     "color": "#c8a07a",
+    "niveaux": ["primaire", "college"],
     "chapters": [
       "Enchaînement d'opérations",
       "Calcul littéral",
@@ -1535,6 +1541,7 @@ const CHAPTER_STRUCTURE = [
   {
     "subject": "GÉOMÉTRIE",
     "color": "#a07ac8",
+    "niveaux": ["primaire", "college"],
     "chapters": [
       "Géométrie",
       "Symétrie axiale",
@@ -1554,6 +1561,7 @@ const CHAPTER_STRUCTURE = [
   {
     "subject": "FONCTIONS",
     "color": "#7ac8a0",
+    "niveaux": ["primaire", "college"],
     "chapters": [
       "Notions de fonctions",
       "Fonction linéaire",
@@ -1563,6 +1571,7 @@ const CHAPTER_STRUCTURE = [
   {
     "subject": "PROBABILITÉS",
     "color": "#c87a9a",
+    "niveaux": ["primaire", "college"],
     "chapters": [
       "Bases des probabilités"
     ]
@@ -1570,9 +1579,85 @@ const CHAPTER_STRUCTURE = [
   {
     "subject": "STATISTIQUES",
     "color": "#e8a87c",
+    "niveaux": ["primaire", "college"],
     "chapters": [
       "Organisation des données",
       "Statistiques"
+    ]
+  },
+
+  /* ── LYCÉE : seconde (tronc commun) + spécialité mathématiques ────────────
+     Les intitulés sont distincts de ceux du collège, sinon les exercices des
+     deux niveaux se retrouveraient comptés dans la même carte de chapitre. */
+  {
+    "subject": "NOMBRES & CALCULS — LYCÉE",
+    "color": "#7ab4c8",
+    "niveaux": ["lycee"],
+    "chapters": [
+      "Ensembles de nombres et intervalles",
+      "Calcul littéral et équations (2nde)",
+      "Inéquations et tableaux de signes",
+      "Second degré : forme canonique et racines",
+      "Suites numériques : définition et variations",
+      "Suites : limites et raisonnement par récurrence"
+    ]
+  },
+  {
+    "subject": "ANALYSE — LYCÉE",
+    "color": "#7ac8a0",
+    "niveaux": ["lycee"],
+    "chapters": [
+      "Fonctions de référence (2nde)",
+      "Variations et lectures graphiques (2nde)",
+      "Dérivation et tangentes",
+      "Applications de la dérivation : variations et extremums",
+      "Convexité et dérivée seconde",
+      "Fonction exponentielle",
+      "Fonction logarithme népérien",
+      "Fonctions trigonométriques",
+      "Limites de fonctions et asymptotes",
+      "Continuité et théorème des valeurs intermédiaires",
+      "Primitives et équations différentielles",
+      "Calcul intégral"
+    ]
+  },
+  {
+    "subject": "GÉOMÉTRIE — LYCÉE",
+    "color": "#a07ac8",
+    "niveaux": ["lycee"],
+    "chapters": [
+      "Repérage et vecteurs du plan",
+      "Équations de droites et colinéarité",
+      "Trigonométrie et cercle trigonométrique",
+      "Produit scalaire dans le plan",
+      "Géométrie repérée : droites et cercles",
+      "Vecteurs, droites et plans de l'espace",
+      "Produit scalaire dans l'espace et équations de plans",
+      "Représentations paramétriques et distances"
+    ]
+  },
+  {
+    "subject": "PROBABILITÉS & STATISTIQUES — LYCÉE",
+    "color": "#c87a9a",
+    "niveaux": ["lycee"],
+    "chapters": [
+      "Statistiques descriptives et écart-type (2nde)",
+      "Probabilités sur un ensemble fini (2nde)",
+      "Probabilités conditionnelles et indépendance",
+      "Variables aléatoires : loi, espérance et variance",
+      "Succession d'épreuves et loi binomiale",
+      "Somme de variables aléatoires et concentration",
+      "Échantillonnage et loi des grands nombres",
+      "Dénombrement et combinaisons"
+    ]
+  },
+  {
+    "subject": "ALGORITHMIQUE — LYCÉE",
+    "color": "#c8b97a",
+    "niveaux": ["lycee"],
+    "chapters": [
+      "Algorithmes et programmes en Python",
+      "Boucles, listes et fonctions Python"
     ]
   }
 ];
