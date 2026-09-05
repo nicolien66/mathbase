@@ -939,6 +939,13 @@ function paintExamQuestion() {
   ta.value = saved ? saved.answer : "";
   ta.readOnly = figee;
   ta.placeholder = "R\u00e9ponse \u00e0 la question " + (q._label || "").replace(/^.*\u00b7 question /, "") + " \u2026";
+  /* Widget de la question, s'il y en a un : tableau à compléter, axe gradué,
+     diagramme… En son absence, la page reste en réponse rédigée. */
+  if (window.MB_EXAM_WIDGET) {
+    const pose = MB_EXAM_WIDGET.monter(q, { corrige: figee });
+    const lab = document.getElementById("exam-answer-label");
+    if (!pose && lab) lab.textContent = "Ta réponse (rédige comme sur ta copie)";
+  }
   document.getElementById("exam-feedback").innerHTML = (saved && saved.result) ? examFeedbackHTML(saved.result) : "";
   document.getElementById("exam-actions").style.display = figee ? "none" : "";
   const next = document.getElementById("exam-next");
@@ -952,9 +959,16 @@ function paintExamQuestion() {
 
 async function submitExamAnswer() {
   const ta = document.getElementById("exam-answer");
+  /* Quand la question porte un widget, la construction EST une partie de la
+     réponse : exiger en plus du texte bloquerait un « complète le tableau »
+     qui ne demande aucune rédaction. */
+  const plateau = window.MB_EXAM_WIDGET ? MB_EXAM_WIDGET.lire() : null;
   const answer = ta.value.trim();
-  if (!answer) { showToast("Rédige ta réponse avant de valider.", "error"); return; }
+  if (!answer && !plateau) { showToast("Rédige ta réponse avant de valider.", "error"); return; }
   const q = EXAM.qs[EXAM.index];
+  /* Le correcteur ne voit que du texte : on lui joint un résumé de la
+     construction, sans quoi il jugerait une réponse vide. */
+  const resumePlateau = plateau && window.MB_EXAM_WIDGET ? MB_EXAM_WIDGET.resume() : "";
   const pseudoEx = {
     title: EXAM.annale.title + " \u2014 " + (q._label || ("question " + (EXAM.index + 1))),
     // enonce_correction : texte complet du sujet, non affiché à l'élève
@@ -981,7 +995,10 @@ async function submitExamAnswer() {
       await new Promise(r => setTimeout(r, 600));
       result = { verdict: "partial", analyse: "Mode démo : compare ta réponse au corrigé ci-dessous — le serveur Polymates fournira une correction détaillée de ta démarche.", solution: q.solution || "—" };
     } else {
-      const res = await MB_AUTH.apiFetch("/exercises/correct", { method: "POST", body: JSON.stringify({ exercise: pseudoEx, answer }) });
+      const envoi = resumePlateau
+        ? (answer ? answer + "\n\n" + resumePlateau : resumePlateau)
+        : answer;
+      const res = await MB_AUTH.apiFetch("/exercises/correct", { method: "POST", body: JSON.stringify({ exercise: pseudoEx, answer: envoi }) });
       if (!res.ok) {
         // On récupère le message réel du serveur au lieu de le perdre.
         const d = await res.json().catch(() => ({}));

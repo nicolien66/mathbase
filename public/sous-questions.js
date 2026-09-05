@@ -310,6 +310,43 @@
     return { preambule: t.slice(0, gardes[0].debut).replace(/\s+/g, " ").trim(), items };
   }
 
+  /* Dernier recours : certains sujets, surtout les plus anciens, n'ont ni
+     numérotation ni intitulé — leurs questions sont de simples phrases
+     interrogatives à la suite. Chaque « ? » termine alors une question qui
+     mérite son propre espace de réponse.
+     N'est tenté qu'après l'échec des deux autres voies, et sous garde-fous :
+     l'extraction PDF produit des « ?? » parasites dans les figures cotées. */
+  function parseInterrogatives(texte) {
+    const t = String(texte || "").replace(/\r/g, "").replace(/\s+/g, " ").trim();
+    const coupes = [];
+    for (let i = 0; i < t.length; i++) {
+      if (t[i] !== "?") continue;
+      // un « ? » de vraie question suit un mot — en tenant compte de l'espace
+      // que la typographie française place devant — et jamais un autre « ? ».
+      const avant = precedentUtile(t, i);
+      if (!/[A-Za-z\u00c0-\u00ff0-9)\]]/.test(avant)) continue;
+      if (t[i + 1] === "?" || t[i - 1] === "?") continue;
+      coupes.push(i + 1);
+    }
+    if (coupes.length < 2) return null;
+
+    const morceaux = [];
+    let debut = 0;
+    for (const c of coupes) { morceaux.push(t.slice(debut, c).trim()); debut = c; }
+    const reste = t.slice(debut).trim();
+
+    /* Une question fait au moins quelques mots : en deçà, le « ? » venait
+       d'une cote de figure et non d'une consigne. */
+    const items = morceaux.filter(m => m.length >= 40);
+    if (items.length < 2) return null;
+    if (reste.length >= 40) items.push(reste);
+
+    return {
+      preambule: "",
+      items: items.map((m, i) => ({ label: "Question " + (i + 1), texte: m })),
+    };
+  }
+
   /* Point d'entrée. Renvoie { preambule, items } ou null si l'énoncé ne
      contient pas au moins deux sous-questions identifiables. */
   function parse(texte) {
@@ -322,9 +359,9 @@
       bruts.push(...troncons);
     }
     const { items, preambule, rejets } = consolider(bruts);
-    if (items.length < 2) return parseNommees(texte);
+    if (items.length < 2) return parseNommees(texte) || parseInterrogatives(texte);
     const res = assembler(items, preambule);
-    if (res.items.length < 2) return parseNommees(texte);
+    if (res.items.length < 2) return parseNommees(texte) || parseInterrogatives(texte);
     res.rejets = rejets;
     return res;
   }

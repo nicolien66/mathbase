@@ -220,8 +220,12 @@
           <div class="exam-chrono-box">⏱ <span id="exam-chrono">00:00</span></div>
         </div>
         <div class="annale-paper exam-enonce" id="exam-enonce"></div>
-        <label class="exam-label">Ta réponse (rédige comme sur ta copie)</label>
-        <textarea id="exam-answer" class="exam-answer" rows="7" placeholder="Rédige ta démarche et ton résultat…"></textarea>
+        <label class="exam-label" id="exam-answer-label">Ta réponse (rédige comme sur ta copie)</label>
+        <!-- Le widget éventuel de la question s'insère en tête de cette zone,
+             au-dessus du brouillon (voir examen-widgets.js). -->
+        <div id="exam-answer-zone">
+          <textarea id="exam-answer" class="exam-answer" rows="7" placeholder="Rédige ta démarche et ton résultat…"></textarea>
+        </div>
         <div class="exam-actions" id="exam-actions">
           <button class="annale-btn primary" id="exam-validate" onclick="submitExamAnswer()">Valider ma réponse</button>
           <button class="annale-btn" onclick="skipExamQuestion()">Passer cette question →</button>
@@ -698,6 +702,7 @@
 <script src="solides.js"></script>
 <script src="diagrammes.js"></script>
 <script src="sous-questions.js"></script>
+<script src="examen-widgets.js"></script>
 <script src="script.js"></script>
 
 <!-- RELECTURE D'UN PROBLÈME DÉPOSÉ EN PDF : énoncé à gauche, PDF à droite -->
