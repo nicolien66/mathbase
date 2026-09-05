@@ -39,6 +39,15 @@
   /* Lignes issues du dessin : lettres isolées, angles, cotes. */
   const BRUIT = /^\s*(?:[A-Za-z]|\d+\s*°|\d+[,.]?\d*|[A-Za-z]\s*[=:]\s*\S{0,6})\s*$/;
 
+  /* « Partie 1 : le terrain » → « Partie 1 » : le titre alourdirait le
+     libellé de chaque question. */
+  function nomCourtPartie(ligne) {
+    const m = String(ligne).match(
+      /^\s*((?:premi[\u00e8e]re|deuxi[\u00e8e]me|troisi[\u00e8e]me|quatri[\u00e8e]me)\s+partie|partie\s*[A-D0-9]?)/i);
+    if (!m) return null;                 // « Problème », « Exercice 3 » : pas un préfixe utile
+    return m[1].replace(/\s+/g, " ").trim();
+  }
+
   const estChiffre = c => c >= "0" && c <= "9";
   const estLettre  = c => /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(c);
 
@@ -122,18 +131,72 @@
      ne l'est pas — c'est du bruit de figure. */
   /* Une nouvelle partie relance la numérotation : « Partie A : 1. 2. » puis
      « Partie B : 1. 2. ». Sans cela le « 1. » de la seconde partie repart en
-     arrière et toutes ses questions se recollent à la précédente. */
+     arrière et toutes ses questions se recollent à la précédente.
+     Le titre qui suit est facultatif — « Partie 1 : le terrain » est courant
+     dans les problèmes — mais la ligne doit rester courte, sinon une phrase
+     commençant par « Partie… » déclencherait une remise à zéro. */
   const NOUVELLE_PARTIE =
-    /^\s*(?:(?:premi[èe]re|deuxi[èe]me|troisi[èe]me|quatri[èe]me)\s+partie|partie\s*[A-D0-9]?|exercice\s*\d*)\s*[:.\-–]?\s*$/i;
+    /^\s*(?:(?:premi[èe]re|deuxi[èe]me|troisi[èe]me|quatri[èe]me)\s+partie|partie\s*[A-D0-9]?|probl[èe]me|exercice\s*\d*)\s*(?:[:.\-–—]\s*\S.{0,50})?\s*$/i;
+
+  /* Choisit, parmi les numéros candidats d'un segment, la plus longue suite
+     cohérente. Indispensable : accepter les marqueurs au fil du texte laisse
+     un « 12. » parasite venu d'une légende s'installer comme référence, après
+     quoi les vrais « 1. 2. 3. » sont tous rejetés comme régressifs.
+     Programmation dynamique en O(n²) : n reste petit (quelques dizaines). */
+  function meilleureSuite(nums) {
+    if (!nums.length) return new Set();
+    const long = new Array(nums.length).fill(1);
+    const prec = new Array(nums.length).fill(-1);
+    for (let i = 1; i < nums.length; i++) {
+      for (let j = 0; j < i; j++) {
+        // un numéro suit le précédent s'il progresse d'au plus 3 : on tolère
+        // qu'une question ait été avalee par l'extraction, pas un bond.
+        const ok = nums[i].n > nums[j].n && nums[i].n <= nums[j].n + 3;
+        if (ok && long[j] + 1 > long[i]) { long[i] = long[j] + 1; prec[i] = j; }
+      }
+    }
+    let best = 0;
+    for (let i = 1; i < nums.length; i++) {
+      if (long[i] > long[best]) best = i;
+      // à longueur égale, on préfère la suite qui démarre le plus bas :
+      // une numérotation d'exercice commence bien plus souvent à 1 qu'à 9.
+      else if (long[i] === long[best]) {
+        const dep = k => { while (prec[k] !== -1) k = prec[k]; return nums[k].n; };
+        if (dep(i) < dep(best)) best = i;
+      }
+    }
+    const gardes = new Set();
+    for (let k = best; k !== -1; k = prec[k]) gardes.add(nums[k].i);
+    return gardes;
+  }
 
   function consolider(bruts) {
+    /* Un segment = une partie du sujet. La numérotation y est indépendante :
+       « Partie A : 1. 2. » puis « Partie B : 1. 2. ». */
+    const segments = [];
+    let courant = { debut: 0, nums: [], partie: null };
+    bruts.forEach((b, i) => {
+      if (b.type === "texte" && NOUVELLE_PARTIE.test(b.texte)) {
+        segments.push(courant);
+        courant = { debut: i, nums: [],
+                    partie: nomCourtPartie(b.texte) };
+        return;
+      }
+      if (b.type === "num" && Number(b.num)) courant.nums.push({ i, n: Number(b.num) });
+    });
+    segments.push(courant);
+
+    const retenus = new Set();
+    const partieDe = {};
+    segments.forEach(seg => {
+      meilleureSuite(seg.nums).forEach(i => { retenus.add(i); partieDe[i] = seg.partie; });
+    });
+
     const items = [];
     const preambule = [];
-    let dernierNum = 0;
-    let premier = true;          // aucun numéro encore accepté
     let rejets = 0;
+    let partie = null;
     let lettresDe = {};
-    let partie = null;          // « Partie B », quand le sujet en comporte
 
     const recoller = txt => {
       if (!txt) return;
@@ -141,50 +204,40 @@
       else preambule.push(txt);
     };
 
-    for (const b of bruts) {
+    bruts.forEach((b, i) => {
       if (b.type === "texte") {
         if (NOUVELLE_PARTIE.test(b.texte)) {
-          dernierNum = 0; premier = true; lettresDe = {};
-          partie = b.texte.replace(/[\s:.\-\u2013]+$/, "").trim() || null;
+          partie = nomCourtPartie(b.texte);
+          lettresDe = {};
         }
         recoller(b.texte);
-        continue;
+        return;
       }
 
       if (b.type === "num") {
-        const n = Number(b.num);
-        /* Le premier numéro rencontré est accepté tel quel : l'extraction
-           avale régulièrement les premières questions d'un exercice, et
-           exiger qu'il commence à 1 faisait tomber tout le reste avec lui.
-           Ensuite seulement on impose la progression. */
-        const recevable = n && (premier ? n <= 20 : (n > dernierNum && n <= dernierNum + 3));
-        if (!recevable) {
-          rejets++;
-          recoller((b.num || "") + ". " + b.texte);
-          continue;
-        }
-        dernierNum = n;
-        premier = false;
-        items.push({ type: "num", num: String(n), lettre: null, partie: partie,
+        if (!retenus.has(i)) { rejets++; recoller((b.num || "") + ". " + b.texte); return; }
+        lettresDe = {};
+        items.push({ type: "num", num: String(Number(b.num)), lettre: null,
+                     partie: partieDe[i] !== undefined ? partieDe[i] : partie,
                      lignes: b.texte ? [b.texte] : [] });
-        continue;
+        return;
       }
 
-      // Lettre : elle se rattache au dernier numéro rencontré.
-      const parent = dernierNum ? String(dernierNum) : null;
+      // Lettre : elle se rattache au dernier numéro retenu.
+      const dernier = items.slice().reverse().find(x => x.type === "num");
+      const parent = dernier ? dernier.num : null;
       const suite = lettresDe[parent] || [];
       const code = b.lettre.charCodeAt(0);
       const precedent = suite.length ? suite[suite.length - 1] : 96; // « a » − 1
       if (code <= precedent || code > precedent + 2) {
-        rejets++;
-        recoller(b.lettre + ". " + b.texte);
-        continue;
+        rejets++; recoller(b.lettre + ". " + b.texte); return;
       }
       suite.push(code);
       lettresDe[parent] = suite;
-      items.push({ type: "let", num: parent, lettre: b.lettre, partie: partie,
+      items.push({ type: "let", num: parent, lettre: b.lettre,
+                   partie: dernier ? dernier.partie : partie,
                    lignes: b.texte ? [b.texte] : [] });
-    }
+    });
     return { items, preambule, rejets };
   }
 
@@ -224,6 +277,39 @@
     };
   }
 
+  /* Repli : certains sujets ne numérotent pas leurs sous-questions mais les
+     nomment — « Affirmation 1 », « Cas 2 », « Proposition 3 ». On ne tente
+     ce découpage QUE si la numérotation ordinaire n'a rien donné : il ne peut
+     donc pas dégrader les exercices déjà correctement traités. */
+  const NOMMEE = /\b(affirmations?|cas|propositions?)\s*n?[\u00b0o]?\s*(\d{1,2})\b/gi;
+
+  function parseNommees(texte) {
+    const t = String(texte || "").replace(/\r/g, "");
+    const trouves = [];
+    NOMMEE.lastIndex = 0;
+    let m;
+    while ((m = NOMMEE.exec(t)) !== null) {
+      trouves.push({ debut: m.index, fin: m.index + m[0].length,
+                     mot: m[1], n: Number(m[2]) });
+    }
+    if (trouves.length < 2) return null;
+    // Même exigence de progression que pour les numéros : « Affirmation 1 »
+    // répétée dans une consigne puis dans l'énoncé ne doit pas créer de doublon.
+    const gardes = [];
+    let dernier = 0;
+    for (const x of trouves) {
+      if (x.n > dernier && x.n <= dernier + 3) { gardes.push(x); dernier = x.n; }
+    }
+    if (gardes.length < 2) return null;
+    const nom = g => g.mot.replace(/s$/i, "").replace(/^./, c => c.toUpperCase());
+    const items = gardes.map((g, i) => ({
+      label: nom(g) + " " + g.n,
+      texte: t.slice(g.fin, i + 1 < gardes.length ? gardes[i + 1].debut : t.length)
+              .replace(/\s+/g, " ").trim(),
+    }));
+    return { preambule: t.slice(0, gardes[0].debut).replace(/\s+/g, " ").trim(), items };
+  }
+
   /* Point d'entrée. Renvoie { preambule, items } ou null si l'énoncé ne
      contient pas au moins deux sous-questions identifiables. */
   function parse(texte) {
@@ -236,9 +322,9 @@
       bruts.push(...troncons);
     }
     const { items, preambule, rejets } = consolider(bruts);
-    if (items.length < 2) return null;
+    if (items.length < 2) return parseNommees(texte);
     const res = assembler(items, preambule);
-    if (res.items.length < 2) return null;
+    if (res.items.length < 2) return parseNommees(texte);
     res.rejets = rejets;
     return res;
   }
