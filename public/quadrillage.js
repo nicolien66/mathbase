@@ -329,9 +329,12 @@
        une surface de tracé, pas du texte. Seuls les éléments d'interface
        posés SUR le papier (boutons, légendes) prennent l'encre sombre.
        Les surcharges de plateau, de quadrillage et de figure ont été
-       retirées — l'une d'elles visait `.mbq-grille`, une classe que le
-       code n'émet jamais (il pose `.mbq-line`), si bien que le quadrillage
-       restait blanc à 9 % sur fond clair : invisible. */
+       retirées — l'une d'elles visait .mbq-grille, une classe que le code
+       n'émet jamais (il pose .mbq-line), si bien que le quadrillage restait
+       blanc à 9 % sur fond clair : invisible.
+       ATTENTION : ce bloc est un littéral de gabarit. Jamais d'accent grave
+       dans ces commentaires — il fermerait la chaîne et le CSS deviendrait
+       du code. */
     .mbq-sur-papier{color:#17120c}
     .mbq-sur-papier .mbq-tool{color:#5b4f36;border-color:rgba(31,26,19,.28)}
 `;
