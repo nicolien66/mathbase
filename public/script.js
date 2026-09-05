@@ -729,89 +729,20 @@ function renderExamenChoice() {
   });
 }
 
-/* ── DÉCOUPAGE EN SOUS-QUESTIONS ───────────────────────────────────────────
+/* ── DÉCOUPAGE EN SOUS-QUESTIONS ─────────────────────────────────
    L'élève traite « 1. », « 2. », « 4. a. »… une par une plutôt que l'exercice
-   entier. Le découpage se fait à la volée sur le texte d'énoncé conservé en
-   base (enonce_correction) : aucune migration n'est nécessaire. */
+   entier, chacune avec son espace de réponse.
+
+   Le découpage lui-même vit dans sous-questions.js, parce que l'audit en
+   ligne de commande (audit-sous-questions.js) doit exécuter exactement le
+   même code : deux copies divergeraient au premier correctif. */
 function parseSousQuestions(texte) {
-  const lignes = String(texte || "").replace(/\r/g, "").split("\n");
-  // Le texte peut renvoyer la suite à la ligne suivante (« 2. » seul), et les
-  // étiquettes de figure s'intercalent quand le sujet est sur deux colonnes.
-  const NUM = /^\s*(\d{1,2})\s*[.)]\s*(\S.*)?$/;
-  const LET = /^\s*([a-h])\s*[.)]\s*(\S.*)?$/;
-  // Lignes parasites : lettres isolées, angles, cotes — issues du dessin.
-  const BRUIT = /^\s*(?:[A-Za-z]|\d+\s*°|\d+[,.]?\d*|[A-Za-z]\s*[=:]\s*\S{0,6})\s*$/;
-  const items = [];
-  let preambule = [], courant = null;
-
-  for (const l of lignes) {
-    const mn = l.match(NUM), ml = l.match(LET);
-    // Le bruit n'est écarté que si la ligne n'est pas un marqueur : « 2. »
-    // ressemble à un nombre isolé mais introduit bien une sous-question.
-    if (!mn && !ml && BRUIT.test(l)) continue;
-    if (mn) {
-      // Cas « 1. a. Montrer que… » : numéro et lettre sur la même ligne.
-      const suite = (mn[2] || "").match(LET);
-      if (suite) {
-        courant = { type: "let", num: mn[1], lettre: suite[1], lignes: suite[2] ? [suite[2]] : [] };
-      } else {
-        courant = { type: "num", num: mn[1], lettre: null, lignes: mn[2] ? [mn[2]] : [] };
-      }
-      items.push(courant);
-    }
-    else if (ml && items.length) {
-      const parent = items.slice().reverse().find(x => x.num);
-      courant = { type: "let", num: parent ? parent.num : null, lettre: ml[1], lignes: ml[2] ? [ml[2]] : [] };
-      items.push(courant);
-    }
-    else if (courant) courant.lignes.push(l.trim());
-    else preambule.push(l.trim());
+  if (!window.MB_SQ) {
+    console.error("[Polymates] sous-questions.js n'est pas chargé : "
+      + "les exercices d'annale ne seront pas découpés en questions.");
+    return null;
   }
-  if (!items.length) return null;
-
-  /* ── Garde-fou ──────────────────────────────────────────────────────────
-     L'extraction PDF (colonnes, encarts, figures) brouille parfois la
-     numérotation : questions absorbées, ordre inversé. Plutôt que de
-     présenter à l'élève des numéros faux ou lacunaires, on ne découpe QUE
-     si la numérotation est irréprochable ; sinon l'exercice reste entier. */
-  const numeros = [];
-  for (const it of items) {
-    const n = Number(it.num);
-    if (!n) return null;                                // item sans numéro rattaché
-    if (!numeros.length || numeros[numeros.length - 1] !== n) numeros.push(n);
-  }
-  // les numéros doivent démarrer à 1, être croissants et sans trou
-  if (numeros[0] !== 1) return null;
-  for (let i = 1; i < numeros.length; i++) if (numeros[i] !== numeros[i - 1] + 1) return null;
-
-  // les lettres d'un même numéro doivent démarrer à « a » et se suivre
-  const parNum = {};
-  for (const it of items) if (it.type === "let") (parNum[it.num] = parNum[it.num] || []).push(it.lettre);
-  for (const n in parNum) {
-    const L = parNum[n];
-    if (L[0] !== "a") return null;
-    for (let i = 1; i < L.length; i++)
-      if (L[i].charCodeAt(0) !== L[i - 1].charCodeAt(0) + 1) return null;
-  }
-
-  const sorties = [];
-  for (let i = 0; i < items.length; i++) {
-    const it = items[i], suivant = items[i + 1];
-    const texteItem = it.lignes.join(" ").replace(/\s+/g, " ").trim();
-    if (suivant && suivant.type === "let" && suivant.num === it.num && it.type === "num") {
-      it._contexte = texteItem; continue;               // sert de contexte à ses lettres
-    }
-    let ctx = "";
-    if (it.type === "let") {
-      const parent = items.slice(0, i).reverse().find(x => x.type === "num" && x.num === it.num);
-      if (parent && parent._contexte) ctx = parent._contexte;
-    }
-    sorties.push({
-      label: it.type === "let" ? it.num + ". " + it.lettre + "." : it.num + ".",
-      texte: (ctx ? ctx + " " : "") + texteItem,
-    });
-  }
-  return sorties.length > 1 ? { preambule: preambule.join(" ").replace(/\s+/g, " ").trim(), items: sorties } : null;
+  return MB_SQ.parse(texte);
 }
 
 /* Développe la liste des exercices en une liste de sous-questions. */
