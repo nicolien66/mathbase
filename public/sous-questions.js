@@ -120,11 +120,20 @@
      Un trou est toléré (une question avalée par l'extraction ne doit pas faire
      tomber les suivantes) ; un retour en arrière ou un bond de plus de trois
      ne l'est pas — c'est du bruit de figure. */
+  /* Une nouvelle partie relance la numérotation : « Partie A : 1. 2. » puis
+     « Partie B : 1. 2. ». Sans cela le « 1. » de la seconde partie repart en
+     arrière et toutes ses questions se recollent à la précédente. */
+  const NOUVELLE_PARTIE =
+    /^\s*(?:(?:premi[èe]re|deuxi[èe]me|troisi[èe]me|quatri[èe]me)\s+partie|partie\s*[A-D0-9]?|exercice\s*\d*)\s*[:.\-–]?\s*$/i;
+
   function consolider(bruts) {
     const items = [];
     const preambule = [];
     let dernierNum = 0;
-    const lettresDe = {};
+    let premier = true;          // aucun numéro encore accepté
+    let rejets = 0;
+    let lettresDe = {};
+    let partie = null;          // « Partie B », quand le sujet en comporte
 
     const recoller = txt => {
       if (!txt) return;
@@ -133,16 +142,31 @@
     };
 
     for (const b of bruts) {
-      if (b.type === "texte") { recoller(b.texte); continue; }
+      if (b.type === "texte") {
+        if (NOUVELLE_PARTIE.test(b.texte)) {
+          dernierNum = 0; premier = true; lettresDe = {};
+          partie = b.texte.replace(/[\s:.\-\u2013]+$/, "").trim() || null;
+        }
+        recoller(b.texte);
+        continue;
+      }
 
       if (b.type === "num") {
         const n = Number(b.num);
-        if (!n || n <= dernierNum || n > dernierNum + 3) {
+        /* Le premier numéro rencontré est accepté tel quel : l'extraction
+           avale régulièrement les premières questions d'un exercice, et
+           exiger qu'il commence à 1 faisait tomber tout le reste avec lui.
+           Ensuite seulement on impose la progression. */
+        const recevable = n && (premier ? n <= 20 : (n > dernierNum && n <= dernierNum + 3));
+        if (!recevable) {
+          rejets++;
           recoller((b.num || "") + ". " + b.texte);
           continue;
         }
         dernierNum = n;
-        items.push({ type: "num", num: String(n), lettre: null, lignes: b.texte ? [b.texte] : [] });
+        premier = false;
+        items.push({ type: "num", num: String(n), lettre: null, partie: partie,
+                     lignes: b.texte ? [b.texte] : [] });
         continue;
       }
 
@@ -152,20 +176,26 @@
       const code = b.lettre.charCodeAt(0);
       const precedent = suite.length ? suite[suite.length - 1] : 96; // « a » − 1
       if (code <= precedent || code > precedent + 2) {
+        rejets++;
         recoller(b.lettre + ". " + b.texte);
         continue;
       }
       suite.push(code);
       lettresDe[parent] = suite;
-      items.push({ type: "let", num: parent, lettre: b.lettre, lignes: b.texte ? [b.texte] : [] });
+      items.push({ type: "let", num: parent, lettre: b.lettre, partie: partie,
+                   lignes: b.texte ? [b.texte] : [] });
     }
-    return { items, preambule };
+    return { items, preambule, rejets };
   }
 
   /* Assemble le résultat : un libellé et un texte par sous-question.
      Un numéro suivi de ses lettres ne devient pas une question à lui seul —
      son texte sert de contexte à « a. », « b. »… */
   function assembler(items, preambule) {
+    /* Deux parties produisent chacune une question « 1. » : on préfixe le
+       libellé pour que l'élève sache où il en est. */
+    const parties = [...new Set(items.map(x => x.partie).filter(Boolean))];
+    const prefixer = parties.length > 1;
     for (const it of items) {
       it._texte = it.lignes.join(" ").replace(/\s+/g, " ").trim();
     }
@@ -182,8 +212,9 @@
           .find(x => x.type === "num" && x.num === it.num);
         if (parent && parent._contexte) ctx = parent._contexte;
       }
+      const brut = it.type === "let" ? it.num + ". " + it.lettre + "." : it.num + ".";
       sorties.push({
-        label: it.type === "let" ? it.num + ". " + it.lettre + "." : it.num + ".",
+        label: (prefixer && it.partie ? it.partie + " \u00b7 " : "") + brut,
         texte: (ctx ? ctx + " " : "") + it._texte,
       });
     }
@@ -204,10 +235,12 @@
       if (troncons.length === 1 && troncons[0].type === "texte" && BRUIT.test(l)) continue;
       bruts.push(...troncons);
     }
-    const { items, preambule } = consolider(bruts);
+    const { items, preambule, rejets } = consolider(bruts);
     if (items.length < 2) return null;
     const res = assembler(items, preambule);
-    return res.items.length > 1 ? res : null;
+    if (res.items.length < 2) return null;
+    res.rejets = rejets;
+    return res;
   }
 
   /* Diagnostic destiné à l'audit : ce que le parseur a vu, et ce qu'il a
@@ -222,10 +255,12 @@
     }
     const reperes = bruts.filter(b => b.type !== "texte").length;
     const res = parse(texte);
+    // « écartés » compte les marqueurs réellement rejetés comme incohérents,
+    // et non les numéros qui servent de contexte à leurs lettres.
     return {
       marqueursReperes: reperes,
       sousQuestions: res ? res.items.length : 0,
-      ecartes: reperes - (res ? res.items.length : 0),
+      ecartes: res ? (res.rejets || 0) : consolider(bruts).rejets,
       labels: res ? res.items.map(x => x.label) : [],
     };
   }
