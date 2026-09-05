@@ -1576,6 +1576,24 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
         images.map(u => ({ type: "image_url", image_url: u })))
     : prompt;
 
+  /* Trois tentatives espacées en cas de limite de débit : 1 s, puis 3 s, puis
+     9 s. Une copie ne doit pas rester sans correction parce que l'élève a
+     validé deux questions coup sur coup. */
+  async function appelCorrecteurRessaye(contenu) {
+    let dernier;
+    for (let essai = 0; essai < 3; essai++) {
+      try { return await appelCorrecteur(contenu); }
+      catch (e) {
+        dernier = e;
+        if (!e.transitoire || essai === 2) throw e;
+        const pause = e.attendre || 1000 * Math.pow(3, essai);
+        console.warn("Correcteur saturé, nouvelle tentative dans " + pause + " ms");
+        await new Promise(r => setTimeout(r, pause));
+      }
+    }
+    throw dernier;
+  }
+
   /* Un seul appel au correcteur, renvoie le JSON analysé (ou null). */
   async function appelCorrecteur(contenu) {
     const mistralRes = await fetch("https://api.mistral.ai/v1/chat/completions", {
@@ -1594,6 +1612,18 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
     });
     if (!mistralRes.ok) {
       const err = await mistralRes.text();
+      /* 429 et 5xx sont transitoires : l'appel n'a pas échoué sur le fond, il
+         est arrivé trop vite ou au mauvais moment. Abandonner ici afficherait
+         « correction indisponible » à un élève dont la copie est correcte. */
+      if (mistralRes.status === 429 || mistralRes.status >= 500) {
+        const err429 = new Error("Erreur Mistral : " + err);
+        err429.transitoire = true;
+        /* Mistral indique parfois le délai à respecter : on le suit plutôt que
+           de deviner. */
+        const ra = Number(mistralRes.headers.get("retry-after"));
+        err429.attendre = Number.isFinite(ra) && ra > 0 ? ra * 1000 : 0;
+        throw err429;
+      }
       throw new Error("Erreur Mistral : " + err);
     }
     const data = await mistralRes.json();
@@ -1604,7 +1634,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
   }
 
   try {
-    let parsed = await appelCorrecteur(userContent);
+    let parsed = await appelCorrecteurRessaye(userContent);
     if (!parsed) {
       return res.status(502).json({ error: "Le correcteur a renvoyé une réponse illisible. Réessaie." });
     }
@@ -1620,7 +1650,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
         `alors que la valeur de l'élève (${parsed.valeur_eleve}) et la valeur attendue (${parsed.valeur_attendue}) ` +
         `sont numériquement ÉGALES. Une réponse juste écrite sous une autre forme reste juste. ` +
         `Reprends la correction depuis le début et rends un verdict cohérent avec ta propre comparaison.`;
-      const relance = await appelCorrecteur(
+      const relance = await appelCorrecteurRessaye(
         avecImage ? [{ type: "text", text: rappel }].concat(images.map(u => ({ type: "image_url", image_url: u })))
                   : rappel);
       if (relance) parsed = relance;
