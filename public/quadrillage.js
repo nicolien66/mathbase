@@ -288,33 +288,35 @@
 .mbq-tool[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#0b0b09;font-weight:500}
 .mbq-tool:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .mbq-spacer{flex:1}
-.mbq-board{display:flex;justify-content:center;background:var(--surface3);
-  border:1px solid var(--border);border-radius:10px;padding:.8rem}
+.mbq-board{display:flex;justify-content:center;background:var(--w-fond,#63676b);
+  border:1px solid var(--w-bord,rgba(0,0,0,.40));border-radius:10px;padding:.8rem}
 .mbq-grid{width:100%;max-width:480px;height:auto;touch-action:none;display:block;cursor:crosshair}
 .mbq-apercu{width:100%;max-width:340px;height:auto;display:block}
-.mbq-board-apercu{padding:.6rem;background:var(--surface2)}
-.mbq-line{stroke:rgba(255,255,255,.09);stroke-width:1}
-.mbq-major{stroke:rgba(255,255,255,.17)}
+.mbq-board-apercu{padding:.6rem;background:var(--w-fond,#63676b)}
+/* Le quadrillage : noir, les lignes de 5 en 5 plus franches. */
+.mbq-line{stroke:var(--w-grille,rgba(0,0,0,.50));stroke-width:1}
+.mbq-major{stroke:var(--w-grille-forte,#000)}
 .mbq-cell{fill:transparent}
-.mbq-on{fill:var(--accent);fill-opacity:.85}
-.mbq-fixe{fill:var(--muted);fill-opacity:.45}
-.mbq-ok{fill:var(--accent2);fill-opacity:.75}
-.mbq-manque{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:4 3}
-.mbq-faux{fill:var(--danger);fill-opacity:.55}
+/* Ce que l'élève trace : blanc. */
+.mbq-on{fill:var(--w-figure,#fff);fill-opacity:.92}
+.mbq-fixe{fill:var(--w-figure,#fff);fill-opacity:.40}
+.mbq-ok{fill:var(--w-juste,#a8f0c6);fill-opacity:.75}
+.mbq-manque{fill:none;stroke:var(--w-codage,#ffd166);stroke-width:2;stroke-dasharray:4 3}
+.mbq-faux{fill:var(--w-faux,#ffab97);fill-opacity:.55}
 .mbq-node{fill:transparent}
-.mbq-near{fill:var(--accent);fill-opacity:.5}
-.mbq-seg{stroke:var(--accent);stroke-width:3;stroke-linecap:round;fill:none}
-.mbq-seg-fixe{stroke:var(--muted)}
-.mbq-seg.mbq-ok{stroke:var(--accent2);fill:none}
-.mbq-seg.mbq-manque{stroke:var(--accent);stroke-dasharray:5 4;stroke-opacity:.8;fill:none}
-.mbq-seg.mbq-faux{stroke:var(--danger);fill:none}
-.mbq-band{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4;stroke-opacity:.7;pointer-events:none}
-.mbq-axe{stroke:var(--accent2);stroke-width:2;stroke-dasharray:9 5;stroke-opacity:.85}
-.mbq-centre{fill:var(--accent2)}
-.mbq-centre-halo{fill:none;stroke:var(--accent2);stroke-width:1.5;stroke-opacity:.55}
-.mbq-vecteur{stroke:var(--accent2);stroke-width:2.5;stroke-linecap:round}
-.mbq-pointe{stroke:var(--accent2);stroke-width:2.5;fill:none;stroke-linecap:round}
-.mbq-axe-lab{fill:var(--accent2);font-family:var(--mono);font-size:11px;opacity:.9}
+.mbq-near{fill:var(--w-figure,#fff);fill-opacity:.45}
+.mbq-seg{stroke:var(--w-figure,#fff);stroke-width:3;stroke-linecap:round;fill:none}
+.mbq-seg-fixe{stroke:var(--w-figure,#fff);stroke-opacity:.55}
+.mbq-seg.mbq-ok{stroke:var(--w-juste,#a8f0c6);fill:none}
+.mbq-seg.mbq-manque{stroke:var(--w-codage,#ffd166);stroke-dasharray:5 4;stroke-opacity:.8;fill:none}
+.mbq-seg.mbq-faux{stroke:var(--w-faux,#ffab97);fill:none}
+.mbq-band{stroke:var(--w-codage,#ffd166);stroke-width:2;stroke-dasharray:5 4;stroke-opacity:.7;pointer-events:none}
+.mbq-axe{stroke:var(--w-repere,#9fe3ff);stroke-width:2;stroke-dasharray:9 5;stroke-opacity:.85}
+.mbq-centre{fill:var(--w-repere,#9fe3ff)}
+.mbq-centre-halo{fill:none;stroke:var(--w-repere,#9fe3ff);stroke-width:1.5;stroke-opacity:.55}
+.mbq-vecteur{stroke:var(--w-repere,#9fe3ff);stroke-width:2.5;stroke-linecap:round}
+.mbq-pointe{stroke:var(--w-repere,#9fe3ff);stroke-width:2.5;fill:none;stroke-linecap:round}
+.mbq-axe-lab{fill:var(--w-repere,#9fe3ff);font-family:var(--mono);font-size:11px;opacity:.9}
 .mbq-foot{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.8rem}
 .mbq-verdict{font-size:.85rem;line-height:1.5;flex:1;min-width:180px}
 .mbq-bon{color:var(--accent2)} .mbq-moyen{color:var(--accent)} .mbq-mauvais{color:var(--danger)}
@@ -322,18 +324,15 @@
 .mbq-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:.6rem}
 .mbq-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:.35rem;vertical-align:-1px}
 @media (prefers-reduced-motion:reduce){.mbq-tool{transition:none}}
-    /* ── Sur le papier de la séance : encre sombre ── */
+    /* ── Sur le papier de la séance ──────────────────────────────────────
+       Le plateau garde volontairement sa palette gris/noir/blanc : c'est
+       une surface de tracé, pas du texte. Seuls les éléments d'interface
+       posés SUR le papier (boutons, légendes) prennent l'encre sombre.
+       Les surcharges de plateau, de quadrillage et de figure ont été
+       retirées — l'une d'elles visait `.mbq-grille`, une classe que le
+       code n'émet jamais (il pose `.mbq-line`), si bien que le quadrillage
+       restait blanc à 9 % sur fond clair : invisible. */
     .mbq-sur-papier{color:#17120c}
-    .mbq-sur-papier .mbq-board{background:rgba(31,26,19,.03);border-color:rgba(31,26,19,.20)}
-    .mbq-sur-papier .mbq-grille{stroke:rgba(31,26,19,.22)}
-    .mbq-sur-papier .mbq-axe{stroke:rgba(31,26,19,.55)}
-    .mbq-sur-papier .mbq-grad,.mbq-sur-papier .mbq-label{fill:#5b4f36}
-    .mbq-sur-papier .mbq-on{fill:#9a833f}
-    .mbq-sur-papier .mbq-fixe{fill:#6b5d40}
-    .mbq-sur-papier .mbq-ok{fill:#1f7a4d}
-    .mbq-sur-papier .mbq-manque{stroke:#9a833f}
-    .mbq-sur-papier .mbq-faux{fill:#b03a26}
-    .mbq-sur-papier .mbq-near{fill:#9a833f}
     .mbq-sur-papier .mbq-tool{color:#5b4f36;border-color:rgba(31,26,19,.28)}
 `;
     document.head.appendChild(s);

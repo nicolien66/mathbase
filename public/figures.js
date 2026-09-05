@@ -345,22 +345,26 @@
     const s = document.createElement("style");
     s.textContent = `
       .mbf-wrap, .mbf-plateau { color: var(--text, #f0ece0); }
-      .mbf-cadre { background: rgba(255,255,255,.02); border: 1px solid var(--border, rgba(255,255,255,.1));
+      /* Le cadre est le plan de travail : gris, comme partout ailleurs. */
+      .mbf-cadre { background: var(--w-fond, #63676b); border: 1px solid var(--w-bord, rgba(0,0,0,.40));
         border-radius: 10px; padding: .5rem; margin-bottom: .8rem; }
-      .mbf-svg { display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto; }
+      /* Le tracé hérite de currentColor : on impose le blanc au SVG seul,
+         pour ne pas déteindre sur l'énoncé qui l'entoure. */
+      .mbf-svg { display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto;
+        color: var(--w-figure, #fff); }
       .mbf-trait { stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
       .mbf-pointille { stroke: currentColor; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
-      .mbf-marque { stroke: var(--accent, #c8b97a); stroke-width: 1.8; }
-      .mbf-chevron { stroke: var(--accent, #c8b97a); stroke-width: 1.8; fill: none;
+      .mbf-marque { stroke: var(--w-codage, #ffd166); stroke-width: 1.8; }
+      .mbf-chevron { stroke: var(--w-codage, #ffd166); stroke-width: 1.8; fill: none;
         stroke-linecap: round; stroke-linejoin: round; }
       .mbf-fleche { fill: currentColor; }
       .mbf-cercle, .mbf-arc { stroke: currentColor; stroke-width: 1.8; fill: none; }
-      .mbf-polygone { stroke: currentColor; stroke-width: 1.8; fill: rgba(200,185,122,.07); }
-      .mbf-angledroit { stroke: var(--accent, #c8b97a); stroke-width: 1.6; fill: none; }
+      .mbf-polygone { stroke: currentColor; stroke-width: 1.8; fill: rgba(255,255,255,.10); }
+      .mbf-angledroit { stroke: var(--w-codage, #ffd166); stroke-width: 1.6; fill: none; }
       .mbf-point { fill: currentColor; }
       .mbf-nom { font-family: Georgia, serif; font-style: italic; font-size: 15px; fill: currentColor; }
       .mbf-texte { font-family: 'DM Sans', sans-serif; font-size: 13px;
-        fill: var(--muted, rgba(240,236,224,.6)); }
+        fill: var(--w-figure-dim, rgba(255,255,255,.62)); }
       .mbf-bloc + .mbf-bloc { margin-top: .9rem; padding-top: .8rem;
         border-top: 1px solid var(--border, rgba(255,255,255,.1)); }
       .mbf-num { color: var(--accent, #c8b97a); font-weight: 500; }
@@ -384,25 +388,13 @@
       .mbf-moyen { color: var(--accent, #c8b97a); }
       .mbf-mauvais { color: var(--danger, #e6826e); }
 
-      /* ── Sur le papier de la séance : encre sombre ── */
-      /* Le conteneur seul ne suffit pas : .mbf-plateau redéfinit la couleur
-         plus haut dans la feuille, et le SVG, qui hérite de currentColor,
-         repassait en crème — donc invisible sur le papier. On impose donc la
-         couleur au conteneur ET à ses descendants. */
+      /* ── Sur le papier de la séance ──────────────────────────────────
+         L'énoncé et les boutons prennent l'encre sombre ; le cadre de
+         tracé, lui, reste gris/blanc comme sur l'écran sombre, pour que
+         la figure ne se confonde jamais avec son support. */
       .mbf-sur-papier,
       .mbf-sur-papier .mbf-wrap,
-      .mbf-sur-papier .mbf-plateau,
-      .mbf-sur-papier .mbf-svg { color: #17120c; }
-      .mbf-sur-papier .mbf-fleche, .mbf-sur-papier .mbf-point { fill: #17120c; }
-      .mbf-sur-papier .mbf-trait, .mbf-sur-papier .mbf-cercle,
-      .mbf-sur-papier .mbf-arc, .mbf-sur-papier .mbf-polygone { stroke: #17120c; }
-      .mbf-sur-papier .mbf-pointille { stroke: #4a3f2c; }
-      .mbf-sur-papier .mbf-nom { fill: #17120c; }
-      .mbf-sur-papier .mbf-cadre { background: rgba(31,26,19,.03); border-color: rgba(31,26,19,.20); }
-      .mbf-sur-papier .mbf-marque, .mbf-sur-papier .mbf-chevron,
-      .mbf-sur-papier .mbf-angledroit { stroke: #9a6b1f; }
-      .mbf-sur-papier .mbf-polygone { fill: rgba(154,131,63,.10); }
-      .mbf-sur-papier .mbf-texte { fill: #6b5d40; }
+      .mbf-sur-papier .mbf-plateau { color: #17120c; }
       .mbf-sur-papier .mbf-bloc + .mbf-bloc { border-top-color: rgba(31,26,19,.18); }
       .mbf-sur-papier .mbf-num { color: #9a833f; }
       .mbf-sur-papier .mbf-opt { color: #5b4f36; border-color: rgba(31,26,19,.28); }

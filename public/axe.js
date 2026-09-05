@@ -312,23 +312,27 @@
     const s = document.createElement("style");
     s.textContent = `
       .mba-wrap { color: var(--text, #f0ece0); }
-      .mba-board { background: rgba(255,255,255,.02); border: 1px solid var(--border, rgba(255,255,255,.1));
+      .mba-board { background: var(--w-fond, #63676b); border: 1px solid var(--w-bord, rgba(0,0,0,.40));
         border-radius: 10px; padding: .4rem .2rem; margin: .6rem 0; }
-      .mba-axe { display: block; width: 100%; height: auto; cursor: crosshair; }
-      .mba-grad { font-size: 13px; fill: var(--muted, rgba(240,236,224,.55));
+      /* La droite graduée et ses traits de graduation sont tracés en
+         currentColor : c'est le support réglé, donc noir. */
+      .mba-axe { display: block; width: 100%; height: auto; cursor: crosshair;
+        color: var(--w-grille-forte, #000); }
+      .mba-grad { font-size: 13px; fill: var(--w-grille, rgba(0,0,0,.50));
         font-family: 'DM Mono', monospace; }
-      .mba-fixe { fill: var(--muted, rgba(240,236,224,.55)); }
-      .mba-nom-fixe { font-size: 14px; fill: var(--muted, rgba(240,236,224,.55));
+      /* Les points — donnés ou placés par l'élève — sont la figure : blancs. */
+      .mba-fixe { fill: var(--w-figure-dim, rgba(255,255,255,.62)); }
+      .mba-nom-fixe { font-size: 14px; fill: var(--w-figure-dim, rgba(255,255,255,.62));
         font-family: Georgia, serif; font-style: italic; }
-      .mba-point { fill: var(--accent, #c8b97a); }
-      .mba-tige { stroke: var(--accent, #c8b97a); stroke-width: 1.2; stroke-opacity: .55;
+      .mba-point { fill: var(--w-figure, #fff); }
+      .mba-tige { stroke: var(--w-figure, #fff); stroke-width: 1.2; stroke-opacity: .55;
         stroke-dasharray: 3 3; }
-      .mba-nom { font-size: 15px; fill: var(--accent, #c8b97a);
+      .mba-nom { font-size: 15px; fill: var(--w-figure, #fff);
         font-family: Georgia, serif; font-style: italic; }
-      .mba-juste { fill: none; stroke: var(--accent2, #82d2a0); stroke-width: 2.5; }
-      .mba-faux  { fill: none; stroke: var(--danger, #e6826e); stroke-width: 2.5; }
-      .mba-manque{ fill: none; stroke: var(--accent, #c8b97a); stroke-width: 2; stroke-dasharray: 3 3; }
-      .mba-attendu { font-size: 12px; fill: var(--accent, #c8b97a); font-family: 'DM Mono', monospace; }
+      .mba-juste { fill: none; stroke: var(--w-juste, #a8f0c6); stroke-width: 2.5; }
+      .mba-faux  { fill: none; stroke: var(--w-faux, #ffab97); stroke-width: 2.5; }
+      .mba-manque{ fill: none; stroke: var(--w-codage, #ffd166); stroke-width: 2; stroke-dasharray: 3 3; }
+      .mba-attendu { font-size: 12px; fill: var(--w-codage, #ffd166); font-family: 'DM Mono', monospace; }
       .mba-tools, .mba-foot { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
       .mba-consigne { font-size: .85rem; color: var(--muted, rgba(240,236,224,.55)); }
       .mba-consigne strong { color: var(--accent, #c8b97a); font-size: 1rem; }
@@ -354,18 +358,6 @@
          illisible. On repasse donc à l'encre sombre du brouillon (#17120c),
          en gardant les mêmes repères de couleur pour la correction. */
       .mba-sur-papier { color: #17120c; }
-      .mba-sur-papier .mba-board { background: rgba(31,26,19,.03);
-        border-color: rgba(31,26,19,.20); }
-      .mba-sur-papier .mba-grad { fill: #5b4f36; }
-      .mba-sur-papier .mba-fixe { fill: #6b5d40; }
-      .mba-sur-papier .mba-nom-fixe { fill: #6b5d40; }
-      .mba-sur-papier .mba-point { fill: #17120c; }
-      .mba-sur-papier .mba-tige { stroke: #17120c; stroke-opacity: .45; }
-      .mba-sur-papier .mba-nom { fill: #17120c; }
-      .mba-sur-papier .mba-juste { stroke: #1f7a4d; }
-      .mba-sur-papier .mba-faux { stroke: #b03a26; }
-      .mba-sur-papier .mba-manque { stroke: #9a833f; }
-      .mba-sur-papier .mba-attendu { fill: #1f7a4d; }
       .mba-sur-papier .mba-consigne { color: #6b5d40; }
       .mba-sur-papier .mba-consigne strong { color: #17120c; }
       .mba-sur-papier .mba-tool { color: #5b4f36; border-color: rgba(31,26,19,.28); }

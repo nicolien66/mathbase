@@ -255,7 +255,7 @@ function showView(name, tabName) {
   document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add("active");
   if (name === "browse") loadExercises();
   if (name === "chapter") renderChapterView();
-  if (name === "add") backToInput();
+  if (name === "add") initAddView();
   if (name === "seance") resetSeanceWelcome();
   if (name === "annales") loadAnnales();
   window.scrollTo(0, 0);
@@ -1423,11 +1423,38 @@ async function loadExercises() {
 /* ══════════════════════════════════════════════════════════════════════════
    AJOUTER : exercice / problème / annale
    ══════════════════════════════════════════════════════════════════════════ */
-let ADD_TYPE = "exercice";
+/* Matières où l'on n'ajoute plus que des annales : les panneaux « exercice »
+   et « problème » n'y sont plus proposés, la banque se remplit à partir des
+   sujets déposés en PDF, que l'IA découpe en exercices.
+   Pour étendre la règle à une autre matière, ajoute son identifiant ici. */
+const AJOUT_ANNALES_SEULEMENT = ["mathematiques", "physique-chimie"];
+function annalesSeulement() {
+  return AJOUT_ANNALES_SEULEMENT.includes(matiereCourante());
+}
+
+let ADD_TYPE = annalesSeulement() ? "annale" : "exercice";
 let AN_FILE = null;      // PDF de l'annale
 let PB_FILES = [];       // PDF joints au problème
 
+/* Prépare la vue « Ajouter » à chaque ouverture : dans les matières
+   restreintes, on masque le sélecteur de type et on n'affiche que l'annale. */
+function initAddView() {
+  const restreint = annalesSeulement();
+  const sw = document.getElementById("add-type-switch");
+  if (sw) sw.style.display = restreint ? "none" : "";
+  const sub = document.getElementById("add-sub");
+  if (sub && restreint) {
+    sub.textContent = "Dépose le PDF d'un sujet — l'IA le découpe en exercices, "
+                    + "associe les pages et décrit les figures.";
+  }
+  const head = document.querySelector("#view-add .form-page-header h1");
+  if (head && restreint) head.innerHTML = "Ajouter une<br><em>annale.</em>";
+  if (restreint) { setAddType("annale"); return; }
+  backToInput();
+}
+
 function setAddType(t) {
+  if (annalesSeulement()) t = "annale";   // seul type ouvert dans ces matières
   ADD_TYPE = t;
   ["exercice", "probleme", "annale"].forEach(k => {
     const b = document.getElementById("tb-" + k);
@@ -1682,6 +1709,14 @@ async function enregistrerProbleme() {
 document.addEventListener("DOMContentLoaded", () => {
   brancheDepot("an-drop", "an-file", false);
   brancheDepot("pb-drop", "pb-files", true);
+  // Les libellés qui annonçaient « exercice, problème ou annale » deviennent
+  // faux là où seule l'annale reste ouverte : on les recale au chargement.
+  if (annalesSeulement()) {
+    const d = document.getElementById("home-add-desc");
+    if (d) d.textContent = "Déposer le PDF d'un sujet d'annale — l'IA le découpe en exercices et le classe.";
+    const b = document.getElementById("empty-add-btn");
+    if (b) b.textContent = "Ajouter une annale →";
+  }
   ouvrirDepuisUrl();
 });
 
@@ -1777,7 +1812,9 @@ async function submitExercise(data) {
 }
 
 function backToInput() {
-  document.getElementById("step-input").style.display = "block";
+  // Dans les matières réservées aux annales, le formulaire « exercice »
+  // n'existe plus : on ne le fait jamais réapparaître.
+  document.getElementById("step-input").style.display = annalesSeulement() ? "none" : "block";
   document.getElementById("step-result").style.display = "none";
 }
 

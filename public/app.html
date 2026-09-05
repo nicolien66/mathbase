@@ -75,7 +75,7 @@
         <div class="home-card" onclick="showView('add')" style="--hc:var(--lycee)">
           <div class="home-card-icon">➕</div>
           <div class="home-card-title">Ajouter</div>
-          <div class="home-card-desc">Proposer un nouvel exercice, problème ou annale — l'IA l'analyse et le classe.</div>
+          <div class="home-card-desc" id="home-add-desc">Proposer un nouvel exercice, problème ou annale — l'IA l'analyse et le classe.</div>
           <div class="home-card-go">Contribuer →</div>
         </div>
       </div>
@@ -124,7 +124,7 @@
         <div class="empty-glyph">∅</div>
         <h3>Aucun exercice trouvé</h3>
         <p>Essaie un autre filtre ou enrichis la base.</p>
-        <button class="btn-primary" onclick="showView('add')">Ajouter le premier →</button>
+        <button class="btn-primary" id="empty-add-btn" onclick="showView('add')">Ajouter le premier →</button>
       </div>
     </div>
   </div>
@@ -456,11 +456,13 @@
       <div class="form-page-header">
         <p class="hero-tag">Contribuer</p>
         <h1>Ajouter du<br><em>contenu.</em></h1>
-        <p class="hero-sub">Choisis ce que tu veux ajouter — l'IA analyse et classe automatiquement.</p>
+        <p class="hero-sub" id="add-sub">Choisis ce que tu veux ajouter — l'IA analyse et classe automatiquement.</p>
       </div>
 
-      <!-- CHOIX DU TYPE -->
-      <div class="type-switch">
+      <!-- CHOIX DU TYPE
+           Masqué dans les matières où l'ajout est réservé aux annales
+           (voir AJOUT_ANNALES_SEULEMENT dans script.js). -->
+      <div class="type-switch" id="add-type-switch">
         <button class="type-btn active" id="tb-exercice" onclick="setAddType('exercice')">
           <span class="type-ico">✎</span><span class="type-lab">Exercice</span>
           <span class="type-sub">Énoncé court, application directe</span>

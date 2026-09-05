@@ -289,21 +289,19 @@
     const s = document.createElement("style");
     s.id = "mbs-styles";
     s.textContent = `
-.mbs-cadre{display:flex;justify-content:center;background:var(--surface3);
-  border:1px solid var(--border);border-radius:10px;padding:1rem}
+.mbs-cadre{display:flex;justify-content:center;background:var(--w-fond,#63676b);
+  border:1px solid var(--w-bord,rgba(0,0,0,.40));border-radius:10px;padding:1rem}
 .mbs-svg{width:100%;max-width:260px;height:auto;display:block}
-.mbs-arete{stroke:var(--text);stroke-width:1.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
-.mbs-cache{stroke:var(--muted);stroke-width:1.3;stroke-dasharray:5 4;stroke-opacity:.75}
-.mbs-face{fill:var(--accent);fill-opacity:.10;stroke:none}
-.mbs-codage{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
-    /* ── Sur le papier de la séance : encre sombre ── */
-    .mbs-sur-papier{color:#17120c}
-    .mbs-sur-papier .mbs-cadre{background:rgba(31,26,19,.03);border-color:rgba(31,26,19,.20)}
-    .mbs-sur-papier .mbs-arete{stroke:#17120c}
-    .mbs-sur-papier .mbs-cache{stroke:#6b5d40;stroke-opacity:.85}
-    .mbs-sur-papier .mbs-face{fill:#9a833f;fill-opacity:.12}
-    .mbs-sur-papier .mbs-codage{stroke:#9a6b1f}
-    .mbs-sur-papier text{fill:#5b4f36}`;
+/* Le solide est la figure : arêtes blanches, arêtes cachées en blanc atténué. */
+.mbs-arete{stroke:var(--w-figure,#fff);stroke-width:1.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.mbs-cache{stroke:var(--w-figure-dim,rgba(255,255,255,.62));stroke-width:1.3;stroke-dasharray:5 4;stroke-opacity:.85}
+.mbs-face{fill:var(--w-figure,#fff);fill-opacity:.10;stroke:none}
+.mbs-codage{stroke:var(--w-codage,#ffd166);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mbs-svg text{fill:var(--w-figure,#fff)}
+    /* ── Sur le papier de la séance ────────────────────────────
+       Le texte autour passe à l'encre sombre ; le cadre du solide, lui,
+       garde le gris et ses arêtes blanches. */
+    .mbs-sur-papier{color:#17120c}`;
     document.head.appendChild(s);
   }
 

@@ -25,6 +25,17 @@
   if (window.MB_MAT && !MB_MAT.estMaths()) return;
 
   const COULEURS = ["#7ac8a0", "#c8b97a", "#7ac8e6", "#e6826e"];
+
+  /* Le canvas ne peut pas lire les variables CSS : on redit ici, une fois,
+     la même lecture que les widgets SVG — quadrillage et axes noirs sur le
+     gris du plan, courbes par-dessus. Les courbes gardent COULEURS : leur
+     teinte distingue les fonctions les unes des autres. */
+  const PLAN = {
+    grille:     "rgba(0,0,0,.50)",
+    axe:        "#000000",
+    graduation: "rgba(0,0,0,.75)",
+    repere:     "rgba(0,0,0,.35)",
+  };
   const CLE = "mb_graph_fns";
 
   const CSS = `
@@ -48,7 +59,7 @@
     #mb-graph .mb-g-icon:hover{color:#7ac8a0;}
     #mb-graph .mb-g-close:hover{color:#e6826e;}
     #mb-graph .mb-g-board{position:relative;border:1px solid rgba(255,255,255,.08);border-radius:10px;
-      overflow:hidden;background:rgba(245,242,232,.03);}
+      overflow:hidden;background:var(--w-fond,#63676b);}
     #mb-graph canvas{display:block;width:100%;height:210px;cursor:grab;touch-action:none;}
     #mb-graph canvas.drag{cursor:grabbing;}
     #mb-graph .mb-g-read{position:absolute;left:.5rem;top:.45rem;font-family:'DM Mono',monospace;
@@ -191,9 +202,9 @@
     const x0 = versX(0, w), x1 = versX(w, w);
     const y0 = versY(h, h), y1 = versY(0, h);
 
-    /* Quadrillage */
+    /* Quadrillage : noir, comme sur tous les autres widgets. */
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(245,242,232,.07)";
+    ctx.strokeStyle = PLAN.grille;
     ctx.beginPath();
     for (let x = Math.ceil(x0 / pas) * pas; x <= x1; x += pas) {
       const px = Math.round(pixX(x, w)) + 0.5;
@@ -205,8 +216,8 @@
     }
     ctx.stroke();
 
-    /* Axes, seulement s'ils sont dans la fenêtre */
-    ctx.strokeStyle = "rgba(240,236,224,.35)";
+    /* Axes : ils appartiennent au support réglé, donc noirs eux aussi. */
+    ctx.strokeStyle = PLAN.axe;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     const ax = Math.round(pixX(0, w)) + 0.5, ay = Math.round(pixY(0, h)) + 0.5;
@@ -215,7 +226,7 @@
     ctx.stroke();
 
     /* Graduations chiffrées le long des axes visibles */
-    ctx.fillStyle = "rgba(240,236,224,.4)";
+    ctx.fillStyle = PLAN.graduation;
     ctx.font = "10px 'DM Mono', monospace";
     const dec = pas < 1 ? String(pas).split(".")[1].length : 0;
     const yTexte = Math.min(Math.max(ay, 12), h - 4);
@@ -257,7 +268,7 @@
     if (souris) {
       const x = versX(souris.x, w);
       ctx.setLineDash([3, 4]);
-      ctx.strokeStyle = "rgba(240,236,224,.22)";
+      ctx.strokeStyle = PLAN.repere;
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(souris.x, 0); ctx.lineTo(souris.x, h); ctx.stroke();
       ctx.setLineDash([]);

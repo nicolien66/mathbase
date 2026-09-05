@@ -32,6 +32,33 @@
   --serif: 'Playfair Display', Georgia, serif;
   --sans:  'DM Sans', sans-serif;
   --mono:  'DM Mono', monospace;
+
+  /* ── Plan de travail des widgets ──────────────────────────────────────
+     Quadrillage, figures, axes gradués, solides, diagrammes et grapheur
+     partagent une seule lecture : le quadrillage est NOIR, posé sur un
+     GRIS moyen, et la figure tracée par-dessus est BLANCHE. Les trois ne
+     peuvent plus se confondre, et cela vaut aussi bien sur l'écran sombre
+     que sur la page de séance.
+     Le gris est choisi à mi-chemin entre le noir et le blanc (contraste
+     ≈ 4,6 des deux côtés) : ni le quadrillage ni la figure n'y perdent.
+     Les couleurs qui portent un sens — juste, faux, oublié, séries d'un
+     diagramme, axe de symétrie — ne sont PAS touchées : les repeindre en
+     blanc effacerait l'information qu'elles transportent. */
+  --w-fond:         #63676b;
+  --w-bord:         rgba(0,0,0,.40);
+  --w-grille:       rgba(0,0,0,.50);
+  --w-grille-fine:  rgba(0,0,0,.28);
+  --w-grille-forte: #000000;
+  --w-figure:       #ffffff;
+  --w-figure-dim:   rgba(255,255,255,.62);
+  /* Les couleurs qui portent un sens. Celles du thème sombre (--accent2,
+     --danger) tombaient à moins de 2 de contraste sur ce gris : elles sont
+     reprises ici en versions claires, toutes au-dessus de 3 — le seuil
+     admis pour un objet graphique. */
+  --w-repere:       #9fe3ff;   /* axe de symétrie, vecteur, guide de tracé */
+  --w-codage:       #ffd166;   /* codage de figure, et « oublié » à la correction */
+  --w-juste:        #a8f0c6;
+  --w-faux:         #ffab97;
 }
 
 /* ── RESET ── */
