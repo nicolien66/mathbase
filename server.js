@@ -349,7 +349,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-17-signalements";
+const SERVEUR_VERSION = "2026-08-16-reparation-pages";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -361,31 +361,6 @@ app.use(express.static(path.join(__dirname, "public"), {
 
 /* ═══════════ ROUTES AUTH ═══════════ */
 const pubUser = (u) => ({ id: u.id, email: u.email, pseudo: u.pseudo, role: u.role, classe: u.classe });
-
-/* ── TARIFICATION EN CRÉDITS ─────────────────────────────────────────────
-   Réglable sans toucher au code, par variables d'environnement. Les valeurs
-   par défaut sont volontairement basses : mieux vaut ajuster à la hausse une
-   fois la consommation réelle observée que bloquer des élèves d'emblée. */
-const CREDITS_BIENVENUE  = Number(process.env.CREDITS_BIENVENUE  || 100);
-const COUT_CORRECTION    = Number(process.env.COUT_CORRECTION    || 1);
-const COUT_CORRECTION_IMG = Number(process.env.COUT_CORRECTION_IMG || 3);
-
-/* Solde courant : somme du grand livre. */
-async function soldeCredits(userId) {
-  const { rows } = await pool.query(
-    "SELECT COALESCE(sum(delta),0)::int AS solde FROM credits WHERE user_id = $1", [userId]);
-  return rows[0].solde;
-}
-
-/* Débite, et renvoie le nouveau solde. Ne bloque jamais l'action en cours :
-   le contrôle du solde se fait AVANT l'appel coûteux, pas ici. */
-async function debiterCredits(userId, montant, motif, detail) {
-  if (!userId || !montant) return null;
-  await pool.query(
-    "INSERT INTO credits (user_id, delta, motif, detail) VALUES ($1,$2,$3,$4)",
-    [userId, -Math.abs(montant), motif, detail || null]);
-  return soldeCredits(userId);
-}
 
 app.get("/auth/ping", (req, res) => res.json({ ok: true }));
 
@@ -722,102 +697,6 @@ app.delete("/annales/:id", auth, requireAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-/* ── SIGNALEMENTS : dépôt par l'élève ── */
-app.post("/signalements", auth, async (req, res) => {
-  try {
-    const { annale_id, annale_titre, question, type, message,
-            exercise_id, exercise_titre, chapitre, famille } = req.body || {};
-    const texte = String(message || "").trim();
-    if (texte.length < 5)
-      return res.status(400).json({ error: "Décris le problème en quelques mots." });
-    if (texte.length > 2000)
-      return res.status(400).json({ error: "Message trop long (2000 caractères au plus)." });
-    const types = ["enonce", "correction", "figure", "note", "solution", "plateau", "autre"];
-    /* La source se déduit de ce qui est fourni : un exercice d'entraînement
-       ou une question d'annale. Le titre est conservé dans le même champ, ce
-       qui évite de dupliquer l'affichage côté administration. */
-    const estExercice = !!Number(exercise_id);
-    await pool.query(
-      `INSERT INTO signalements (annale_id, annale_titre, question, type, message,
-                                 user_id, pseudo, exercise_id, source, chapitre, famille)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [estExercice ? null : (Number(annale_id) || null),
-       String(estExercice ? (exercise_titre || "") : (annale_titre || "")).slice(0, 200) || null,
-       String(question || "").slice(0, 120) || null,
-       types.includes(type) ? type : "autre", texte,
-       req.user && req.user.id, (req.user && req.user.pseudo) || null,
-       estExercice ? Number(exercise_id) : null,
-       estExercice ? "exercice" : "annale",
-       String(chapitre || "").slice(0, 120) || null,
-       String(famille || "").slice(0, 120) || null]);
-    res.json({ ok: true });
-  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
-});
-
-/* ── SIGNALEMENTS : consultation par l'administrateur ── */
-app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
-  try {
-    const statut = req.query.statut;
-    const source = req.query.source;               // annale | exercice
-    const conds = [], params = [];
-    if (statut === "nouveau" || statut === "traite") { params.push(statut); conds.push("statut = $" + params.length); }
-    if (source === "annale" || source === "exercice") { params.push(source); conds.push("COALESCE(source,'annale') = $" + params.length); }
-    const { rows } = await pool.query(
-      `SELECT * FROM signalements ${conds.length ? "WHERE " + conds.join(" AND ") : ""}
-        ORDER BY created_at DESC LIMIT 400`, params);
-
-    /* Regroupé par sujet : c'est ainsi qu'on repère un sujet qui pose
-       vraiment problème, plutôt qu'un signalement isolé. */
-    const parSujet = new Map();
-    rows.forEach(r => {
-      /* On regroupe par SUJET pour les annales, par FAMILLE pour les
-         exercices : c'est l'unité qui a du sens de chaque côté. */
-      const estEx = (r.source || "annale") === "exercice";
-      const k = estEx ? "f:" + (r.famille || r.chapitre || "?") : "a:" + (r.annale_id || 0);
-      if (!parSujet.has(k)) parSujet.set(k, {
-        source: estEx ? "exercice" : "annale",
-        annale_id: r.annale_id, exercise_id: r.exercise_id,
-        titre: estEx ? (r.famille || r.chapitre || "(sans famille)")
-                     : (r.annale_titre || "(sujet supprimé)"),
-        chapitre: r.chapitre || null,
-        total: 0, nouveaux: 0, types: {} });
-      const e = parSujet.get(k);
-      e.total++;
-      if (r.statut === "nouveau") e.nouveaux++;
-      e.types[r.type] = (e.types[r.type] || 0) + 1;
-    });
-
-    res.json({
-      total: rows.length,
-      nouveaux: rows.filter(r => r.statut === "nouveau").length,
-      par_source: {
-        annale: rows.filter(r => (r.source || "annale") === "annale").length,
-        exercice: rows.filter(r => r.source === "exercice").length },
-      par_sujet: [...parSujet.values()].sort((a, b) => b.total - a.total),
-      signalements: rows
-    });
-  } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
-});
-
-/* ── SIGNALEMENTS : marquer traité, ou supprimer ── */
-app.patch("/admin/signalements/:id", auth, requireAdmin, async (req, res) => {
-  try {
-    const statut = req.body && req.body.statut === "nouveau" ? "nouveau" : "traite";
-    const r = await pool.query("UPDATE signalements SET statut = $1 WHERE id = $2",
-      [statut, Number(req.params.id)]);
-    if (!r.rowCount) return res.status(404).json({ error: "Signalement introuvable." });
-    res.json({ ok: true, statut });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete("/admin/signalements/:id", auth, requireAdmin, async (req, res) => {
-  try {
-    const r = await pool.query("DELETE FROM signalements WHERE id = $1", [Number(req.params.id)]);
-    if (!r.rowCount) return res.status(404).json({ error: "Signalement introuvable." });
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 /* ── CONFIG CLIENT (clé Mistral pour la séance) — réservé aux connectés ── */
 app.get("/config", auth, (req, res) => {
   res.json({ mistralKey: process.env.MISTRAL_KEY || "" });
@@ -912,90 +791,6 @@ async function initDB() {
   await pool.query(`ALTER TABLE annales ADD COLUMN IF NOT EXISTS matiere TEXT`);
   await pool.query(`UPDATE annales SET matiere = 'mathematiques' WHERE matiere IS NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_annales_matiere ON annales (matiere)`);
-  /* ── SIGNALEMENTS ──
-     Ce que l'élève remonte après une épreuve : un énoncé illisible, une
-     correction qui lui paraît fausse, une figure absente. C'est la seule
-     source d'information sur ce qui cloche réellement dans les sujets —
-     un diagnostic automatique ne voit pas qu'une question est incompréhensible. */
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS signalements (
-      id          SERIAL PRIMARY KEY,
-      annale_id   INTEGER,                    -- le sujet concerné
-      annale_titre TEXT,                      -- conservé même si le sujet est supprimé
-      question    TEXT,                       -- libellé de la question, ou null pour le sujet entier
-      type        TEXT,                       -- enonce | correction | figure | autre
-      message     TEXT NOT NULL,
-      user_id     INTEGER,
-      pseudo      TEXT,
-      statut      TEXT DEFAULT 'nouveau',     -- nouveau | traite
-      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  /* Les signalements viennent de DEUX endroits : les annales (examen) et les
-     exercices d'entraînement. On ajoute donc de quoi désigner un exercice,
-     et un champ « source » pour les distinguer d'un coup d'œil. */
-  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS exercise_id INTEGER`);
-  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS source TEXT`);
-  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS chapitre TEXT`);
-  /* ── TIRELIRE ─────────────────────────────────────────────────────────
-     Un grand livre plutôt qu'un solde : chaque mouvement est conservé, et le
-     solde s'en déduit par somme. On peut ainsi montrer à l'élève d'où vient
-     sa consommation, ce qu'un simple compteur rendrait impossible — et une
-     erreur se corrige par un mouvement inverse, jamais par une réécriture.
-     Les montants sont en CRÉDITS entiers, pas en euros : la conversion reste
-     une décision commerciale, extérieure à la base. */
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS credits (
-      id         SERIAL PRIMARY KEY,
-      user_id    INTEGER NOT NULL,
-      delta      INTEGER NOT NULL,          -- positif : recharge ; négatif : consommation
-      motif      TEXT    NOT NULL,          -- 'recharge', 'correction', 'annale', 'offert'…
-      detail     TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_credits_user ON credits (user_id, created_at DESC)`);
-
-  /* Crédits offerts à l'ouverture du compte, pour qu'un nouvel élève puisse
-     essayer le site sans rien avancer. */
-  await pool.query(`
-    INSERT INTO credits (user_id, delta, motif, detail)
-    SELECT u.id, $1, 'offert', 'Crédits de bienvenue'
-      FROM users u
-     WHERE NOT EXISTS (SELECT 1 FROM credits c WHERE c.user_id = u.id)
-  `, [CREDITS_BIENVENUE]);
-
-  /* ── PROGRESSION ──────────────────────────────────────────────────────
-     Une ligne par tentative : on garde l'historique complet plutôt qu'un
-     simple drapeau « réussi », parce que le tableau de bord doit pouvoir
-     afficher un taux de réussite par famille, ce qu'un drapeau écraserait.
-     La contrainte d'unicité porte donc sur (élève, exercice, date) et non
-     sur (élève, exercice). */
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS progression (
-      id          SERIAL PRIMARY KEY,
-      user_id     INTEGER NOT NULL,
-      exercise_id INTEGER NOT NULL,
-      matiere     TEXT,
-      chapitre    TEXT,
-      famille     TEXT,
-      type        TEXT,
-      difficulty  TEXT,
-      reussi      BOOLEAN NOT NULL,
-      note        NUMERIC,
-      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_prog_user    ON progression (user_id)`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_prog_ex      ON progression (user_id, exercise_id)`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_prog_famille ON progression (user_id, chapitre, famille)`);
-
-  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS famille TEXT`);
-  await pool.query(`UPDATE signalements SET source = 'annale' WHERE source IS NULL`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_statut ON signalements (statut)`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_exercice ON signalements (exercise_id)`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_annale ON signalements (annale_id)`);
-
   console.log("Base de données prête.");
   await seedAdmin();
   await seedDB();
@@ -1502,18 +1297,6 @@ app.post("/exercises/correct", auth, async (req, res) => {
   const key = process.env.MISTRAL_KEY;
   if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
 
-  /* Contrôle du solde AVANT l'appel coûteux : refuser après coup ferait payer
-     le service sans le facturer. Les administrateurs ne sont pas décomptés. */
-  const facture = req.user && req.user.role !== "admin";
-  const cout = exercise && exercise.annale_id ? COUT_CORRECTION_IMG : COUT_CORRECTION;
-  if (facture) {
-    const solde = await soldeCredits(req.user.id);
-    if (solde < cout) return res.status(402).json({
-      error: "Crédits insuffisants.", solde, cout,
-      message: "Ta tirelire est vide : recharge-la depuis ton compte pour continuer.",
-    });
-  }
-
   /* Le barème vient du sujet lui-même : « Exercice 3 (5 points) ». À défaut,
      on note sur 4, valeur courante d'une question de brevet — et on le dit,
      pour que le correcteur ne s'imagine pas une précision qu'il n'a pas. */
@@ -1746,12 +1529,6 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Les champs sont dans l'ordre 
       parsed.verdict = part >= 0.8 ? "correct" : part >= 0.35 ? "partial" : "incorrect";
     }
 
-    /* Débit seulement maintenant : une correction qui a échoué n'est pas
-       facturée, puisque l'élève n'a rien reçu. */
-    if (facture) {
-      parsed.solde = await debiterCredits(req.user.id, cout, "correction",
-        (exercise && (exercise.title || exercise.chapitre)) || null);
-    }
     res.json(parsed);
   } catch (err) {
     console.error("Erreur correction:", err.message);
@@ -1902,32 +1679,6 @@ app.get("/exercises", auth, async (req, res) => {
   if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
   if (difficulty) { query += ` AND difficulty = $${i++}`; params.push(difficulty); }
   if (chapitre)   { query += ` AND chapitre = $${i++}`;   params.push(chapitre); }
-
-  /* ── Mémoire de l'élève ────────────────────────────────────────────────
-     Un exercice déjà réussi ne doit pas revenir tant que sa famille n'a pas
-     été bouclée. Mais dès que TOUTE la famille est réussie, elle redevient
-     disponible en entier : sans cela l'élève finirait par épuiser le stock et
-     n'aurait plus rien à travailler.
-     Le filtre s'applique au tirage d'une séance (?nonReussis=1) et jamais à
-     la consultation du catalogue, qui doit rester exhaustive. */
-  if (req.query.nonReussis === "1" && req.user && req.user.id) {
-    query += `
-      AND NOT (
-        id IN (SELECT exercise_id FROM progression
-                WHERE user_id = $${i} AND reussi = TRUE)
-        AND EXISTS (
-          -- il reste au moins un exercice non réussi dans la même famille
-          SELECT 1 FROM exercises f
-           WHERE COALESCE(f.matiere,'mathematiques') = COALESCE(exercises.matiere,'mathematiques')
-             AND f.chapitre IS NOT DISTINCT FROM exercises.chapitre
-             AND f.famille  IS NOT DISTINCT FROM exercises.famille
-             AND f.id NOT IN (SELECT exercise_id FROM progression
-                               WHERE user_id = $${i} AND reussi = TRUE)
-        )
-      )`;
-    params.push(req.user.id);
-    i++;
-  }
   query += " ORDER BY created_at DESC";
   try {
     const result = await pool.query(query, params);
@@ -1935,227 +1686,6 @@ app.get("/exercises", auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   COMPTE DE L'ÉLÈVE — informations, suppression, tirelire
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── MODIFIER SES INFORMATIONS ──
-   Le rôle n'est PAS modifiable ici : un élève pourrait sinon se promouvoir
-   administrateur en éditant sa propre fiche. */
-app.patch("/auth/me", auth, async (req, res) => {
-  const { pseudo, email, classe, mot_de_passe_actuel, nouveau_mot_de_passe } = req.body || {};
-  try {
-    const champs = [], vals = [];
-    let i = 1;
-    if (pseudo !== undefined) {
-      const p = String(pseudo).trim();
-      if (p.length < 2) return res.status(400).json({ error: "Pseudo trop court." });
-      champs.push(`pseudo = $${i++}`); vals.push(p.slice(0, 60));
-    }
-    if (classe !== undefined) { champs.push(`classe = $${i++}`); vals.push(String(classe).slice(0, 40) || null); }
-    if (email !== undefined) {
-      const e = String(email).trim().toLowerCase();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return res.status(400).json({ error: "Adresse invalide." });
-      const { rows } = await pool.query("SELECT id FROM users WHERE email = $1 AND id <> $2", [e, req.user.id]);
-      if (rows.length) return res.status(409).json({ error: "Cette adresse est déjà utilisée." });
-      champs.push(`email = $${i++}`); vals.push(e);
-    }
-
-    /* Changer de mot de passe exige l'ancien : sans cela, un jeton volé
-       permettrait de verrouiller le compte de son propriétaire. */
-    if (nouveau_mot_de_passe) {
-      if (String(nouveau_mot_de_passe).length < 6)
-        return res.status(400).json({ error: "Mot de passe trop court (6 caractères minimum)." });
-      const { rows } = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.user.id]);
-      const ok = rows.length && verifyPassword(String(mot_de_passe_actuel || ""), rows[0].password_hash);
-      if (!ok) return res.status(403).json({ error: "Mot de passe actuel incorrect." });
-      champs.push(`password_hash = $${i++}`);
-      vals.push(hashPassword(String(nouveau_mot_de_passe)));
-    }
-
-    if (!champs.length) return res.status(400).json({ error: "Rien à modifier." });
-    vals.push(req.user.id);
-    const { rows } = await pool.query(
-      `UPDATE users SET ${champs.join(", ")} WHERE id = $${i} RETURNING id, email, pseudo, role, classe`,
-      vals);
-    res.json(rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-/* ── SUPPRIMER SON COMPTE ──
-   Irréversible, donc protégé par le mot de passe : un jeton seul ne suffit
-   pas. Les données rattachées partent avec le compte, les signalements sont
-   seulement détachés pour ne pas perdre un retour utile. */
-app.delete("/auth/me", auth, async (req, res) => {
-  const { mot_de_passe } = req.body || {};
-  try {
-    const { rows } = await pool.query("SELECT password_hash, role FROM users WHERE id = $1", [req.user.id]);
-    if (!rows.length) return res.status(404).json({ error: "Compte introuvable." });
-    if (!verifyPassword(String(mot_de_passe || ""), rows[0].password_hash))
-      return res.status(403).json({ error: "Mot de passe incorrect." });
-
-    /* Garde-fou : le dernier administrateur ne peut pas se supprimer, sous
-       peine de rendre le site inadministrable. */
-    if (rows[0].role === "admin") {
-      const { rows: a } = await pool.query("SELECT count(*)::int AS n FROM users WHERE role = 'admin'");
-      if (a[0].n <= 1) return res.status(409).json({ error: "Dernier administrateur : suppression refusée." });
-    }
-
-    await pool.query("DELETE FROM progression WHERE user_id = $1", [req.user.id]);
-    await pool.query("DELETE FROM credits     WHERE user_id = $1", [req.user.id]);
-    await pool.query("UPDATE signalements SET user_id = NULL WHERE user_id = $1", [req.user.id]);
-    await pool.query("DELETE FROM users WHERE id = $1", [req.user.id]);
-    res.json({ supprime: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-/* ── TIRELIRE : SOLDE ET MOUVEMENTS ── */
-app.get("/credits", auth, async (req, res) => {
-  try {
-    const solde = await soldeCredits(req.user.id);
-    const { rows: mouvements } = await pool.query(
-      `SELECT delta, motif, detail, created_at
-         FROM credits WHERE user_id = $1
-        ORDER BY created_at DESC LIMIT 50`, [req.user.id]);
-    const { rows: parMotif } = await pool.query(
-      `SELECT motif, sum(delta)::int AS total, count(*)::int AS n
-         FROM credits WHERE user_id = $1 AND delta < 0
-        GROUP BY motif ORDER BY total ASC`, [req.user.id]);
-    res.json({
-      solde, mouvements, consommation: parMotif,
-      tarifs: { correction: COUT_CORRECTION, correction_avec_image: COUT_CORRECTION_IMG },
-    });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-/* ── RECHARGER ──
-   Aucune facturation réelle n'est branchée : cette route crédite le compte
-   et rien d'autre. Elle est donc réservée aux administrateurs tant qu'un
-   prestataire de paiement n'a pas été relié, faute de quoi n'importe qui
-   se créditerait à volonté. */
-app.post("/credits/recharge", auth, async (req, res) => {
-  const montant = Math.round(Number(req.body && req.body.montant));
-  const cible   = Number(req.body && req.body.user_id) || req.user.id;
-  if (!Number.isFinite(montant) || montant <= 0 || montant > 100000)
-    return res.status(400).json({ error: "Montant invalide." });
-  if (req.user.role !== "admin")
-    return res.status(403).json({ error: "Recharge indisponible : aucun moyen de paiement n'est encore relié." });
-  try {
-    await pool.query(
-      "INSERT INTO credits (user_id, delta, motif, detail) VALUES ($1,$2,'recharge',$3)",
-      [cible, montant, (req.body && req.body.detail) || "Recharge manuelle"]);
-    res.json({ solde: await soldeCredits(cible) });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   PROGRESSION DE L'ÉLÈVE
-   Ce que l'élève a travaillé, réussi ou manqué. Toujours cloisonné par
-   compte : req.user.id vient du jeton, jamais du corps de la requête, pour
-   qu'un élève ne puisse ni lire ni écrire la progression d'un autre.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── ENREGISTRER UNE TENTATIVE ── */
-app.post("/progression", auth, async (req, res) => {
-  const { exercise_id, reussi, note } = req.body || {};
-  if (!Number(exercise_id)) return res.status(400).json({ error: "exercise_id manquant." });
-  try {
-    /* Chapitre, famille et matière sont relus depuis l'exercice plutôt que
-       repris du client : ils doivent rester justes même si le client est
-       périmé ou si l'exercice a été reclassé depuis. */
-    const { rows } = await pool.query(
-      `SELECT chapitre, famille, type, difficulty, COALESCE(matiere,'mathematiques') AS matiere
-         FROM exercises WHERE id = $1`, [Number(exercise_id)]);
-    if (!rows.length) return res.status(404).json({ error: "Exercice introuvable." });
-    const e = rows[0];
-    await pool.query(
-      `INSERT INTO progression (user_id, exercise_id, matiere, chapitre, famille,
-                                type, difficulty, reussi, note)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [req.user.id, Number(exercise_id), e.matiere, e.chapitre, e.famille,
-       e.type, e.difficulty, !!reussi,
-       Number.isFinite(Number(note)) ? Number(note) : null]);
-    res.json({ ok: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-/* ── STATISTIQUES POUR LE TABLEAU DE BORD ──
-   Renvoie deux niveaux de lecture : par chapitre, et par famille dans chaque
-   chapitre. Le pourcentage est calculé sur les TENTATIVES, pas sur les
-   exercices distincts : réussir du premier coup et réussir au troisième essai
-   ne racontent pas la même histoire. */
-app.get("/progression/stats", auth, async (req, res) => {
-  const matiere = req.query.matiere || "mathematiques";
-  try {
-    const { rows: familles } = await pool.query(
-      `SELECT chapitre,
-              COALESCE(famille, '(sans famille)') AS famille,
-              count(*)::int                                  AS tentatives,
-              count(*) FILTER (WHERE reussi)::int            AS reussies,
-              count(DISTINCT exercise_id)::int               AS exercices_vus,
-              count(DISTINCT exercise_id) FILTER (WHERE reussi)::int AS exercices_reussis,
-              max(created_at)                                AS derniere
-         FROM progression
-        WHERE user_id = $1 AND COALESCE(matiere,'mathematiques') = $2
-        GROUP BY chapitre, COALESCE(famille, '(sans famille)')
-        ORDER BY chapitre, famille`, [req.user.id, matiere]);
-
-    /* Effectif total de chaque famille, pour dire « 12 réussis sur 40 » et
-       non seulement « 12 réussis ». */
-    const { rows: tailles } = await pool.query(
-      `SELECT chapitre, COALESCE(famille,'(sans famille)') AS famille, count(*)::int AS total
-         FROM exercises
-        WHERE COALESCE(matiere,'mathematiques') = $1
-        GROUP BY chapitre, COALESCE(famille,'(sans famille)')`, [matiere]);
-    const taille = new Map(tailles.map(t => [t.chapitre + "\u0000" + t.famille, t.total]));
-
-    const chapitres = new Map();
-    for (const f of familles) {
-      f.total_famille = taille.get(f.chapitre + "\u0000" + f.famille) || 0;
-      f.taux = f.tentatives ? Math.round(100 * f.reussies / f.tentatives) : 0;
-      const ch = f.chapitre || "(sans chapitre)";
-      if (!chapitres.has(ch)) chapitres.set(ch, {
-        chapitre: ch, tentatives: 0, reussies: 0,
-        exercices_reussis: 0, familles: [] });
-      const c = chapitres.get(ch);
-      c.tentatives        += f.tentatives;
-      c.reussies          += f.reussies;
-      c.exercices_reussis += f.exercices_reussis;
-      c.familles.push(f);
-    }
-    const parChapitre = [...chapitres.values()].map(c => Object.assign(c, {
-      taux: c.tentatives ? Math.round(100 * c.reussies / c.tentatives) : 0,
-    }));
-
-    const total = parChapitre.reduce((a, c) => ({
-      tentatives: a.tentatives + c.tentatives,
-      reussies:   a.reussies   + c.reussies,
-    }), { tentatives: 0, reussies: 0 });
-
-    res.json({
-      matiere,
-      total: Object.assign(total, {
-        taux: total.tentatives ? Math.round(100 * total.reussies / total.tentatives) : 0,
-      }),
-      chapitres: parChapitre,
-    });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-/* ── RÉINITIALISER ──
-   Sans chapitre : tout. Avec : ce chapitre seulement. Utile quand l'élève veut
-   refaire une famille qu'il a bouclée il y a longtemps. */
-app.delete("/progression", auth, async (req, res) => {
-  try {
-    const { chapitre, matiere } = req.query;
-    let q = "DELETE FROM progression WHERE user_id = $1", p = [req.user.id], i = 2;
-    if (matiere)  { q += ` AND COALESCE(matiere,'mathematiques') = $${i++}`; p.push(matiere); }
-    if (chapitre) { q += ` AND chapitre = $${i++}`; p.push(chapitre); }
-    const r = await pool.query(q, p);
-    res.json({ efface: r.rowCount });
-  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 /* ── RÉCUPÉRER UN EXERCICE PAR ID ── */
