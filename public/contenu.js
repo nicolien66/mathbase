@@ -1534,8 +1534,7 @@ const CHAPTER_STRUCTURE = [
     "chapters": [
       "Enchaînement d'opérations",
       "Calcul littéral",
-      "Équations",
-      "Inéquations"
+      "Équations"
     ]
   },
   {
@@ -1552,7 +1551,6 @@ const CHAPTER_STRUCTURE = [
       "Théorème de Pythagore",
       "Théorème de Thalès",
       "Trigonométrie",
-      "Triangles semblables",
       "Homothéties",
       "Translation et rotation",
       "Volumes et solides"
