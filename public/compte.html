@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Mon compte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* L'architecture de cette page reste à développer. Ce premier jet affiche
+     les informations réellement disponibles sur le compte connecté, plutôt
+     que des champs fictifs qu'il faudrait défaire ensuite. */
+  .cpt-wrap { max-width: 760px; margin: 0 auto; padding: 2.4rem 1.2rem 4rem; }
+  .cpt-tete h1 { font-family: var(--serif); font-size: 2.4rem; margin: 0 0 .3rem; }
+  .cpt-tete em { color: var(--accent); font-style: italic; }
+  .cpt-sous { color: var(--muted); font-family: var(--sans); margin-bottom: 2rem; }
+
+  .cpt-bloc { border: 1px solid var(--border); border-radius: 12px;
+              background: var(--surface2); padding: 1.2rem 1.3rem; margin-bottom: 1rem; }
+  .cpt-bloc h2 { font-family: var(--sans); font-size: .78rem; letter-spacing: .1em;
+                 text-transform: uppercase; color: var(--muted); margin: 0 0 .9rem; }
+  .cpt-ligne { display: flex; justify-content: space-between; align-items: baseline;
+               padding: .45rem 0; border-top: 1px solid var(--border);
+               font-family: var(--sans); font-size: .92rem; }
+  .cpt-ligne:first-of-type { border-top: none; }
+  .cpt-val { font-family: var(--mono); color: var(--text); }
+  .cpt-vide { color: var(--muted); font-style: italic; }
+
+  .cpt-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.4rem; }
+  .cpt-lien { display: inline-block; padding: .55rem 1rem; border-radius: 999px;
+              border: 1px solid var(--border2); color: var(--muted);
+              font-family: var(--sans); font-size: .85rem; text-decoration: none;
+              transition: color .2s, border-color .2s; }
+  .cpt-lien:hover { color: var(--text); border-color: var(--accent); }
+  .cpt-danger:hover { color: var(--danger); border-color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="cpt-wrap">
+  <div class="cpt-tete">
+    <h1>Mon <em>compte.</em></h1>
+    <p class="cpt-sous" id="cpt-sous">Chargement…</p>
+  </div>
+
+  <div class="cpt-bloc">
+    <h2>Élève</h2>
+    <div id="cpt-ident"></div>
+  </div>
+
+  <div class="cpt-bloc">
+    <h2>Travail effectué</h2>
+    <div id="cpt-travail"></div>
+  </div>
+
+  <div class="cpt-actions">
+    <a class="cpt-lien" href="tableau-de-bord.html">Tableau de bord →</a>
+    <a class="cpt-lien" href="app.html">Retour à l'espace</a>
+    <a class="cpt-lien cpt-danger" href="#" id="cpt-logout">Se déconnecter</a>
+  </div>
+</div>
+
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect></script>
+<script src="ui.js" defer></script>
+<script>
+(function () {
+  "use strict";
+
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function ligne(libelle, valeur) {
+    const v = (valeur === null || valeur === undefined || valeur === "")
+      ? '<span class="cpt-vide">non renseigné</span>' : esc(valeur);
+    return '<div class="cpt-ligne"><span>' + libelle + '</span>'
+         + '<span class="cpt-val">' + v + '</span></div>';
+  }
+
+  async function charger() {
+    const sous = document.getElementById("cpt-sous");
+    const u = (window.MB_AUTH && MB_AUTH.user()) || null;
+
+    if (!u) {
+      sous.textContent = "Aucun compte connecté.";
+      document.getElementById("cpt-ident").innerHTML =
+        '<div class="cpt-vide">Connecte-toi pour voir tes informations.</div>';
+      return;
+    }
+
+    sous.textContent = "Tes informations et ton activité.";
+    document.getElementById("cpt-ident").innerHTML =
+        ligne("Pseudo", u.pseudo)
+      + ligne("Adresse e-mail", u.email)
+      + ligne("Classe", u.classe)
+      + (u.role ? ligne("Rôle", u.role) : "");
+
+    /* Le compteur de travail vient de la même source que le tableau de bord :
+       une seule vérité, pas deux chiffres qui divergeraient. */
+    const trav = document.getElementById("cpt-travail");
+    try {
+      const mat = (window.MB_MAT && MB_MAT.id) || "mathematiques";
+      const res = await MB_AUTH.apiFetch("/progression/stats?matiere=" + encodeURIComponent(mat));
+      if (!res.ok) throw new Error("Erreur " + res.status);
+      const d = await res.json();
+      trav.innerHTML =
+          ligne("Exercices faits", d.total.tentatives)
+        + ligne("Exercices réussis", d.total.reussies)
+        + ligne("Taux de réussite", d.total.taux + " %")
+        + ligne("Chapitres abordés", d.chapitres.length);
+    } catch (e) {
+      trav.innerHTML = '<div class="cpt-vide">Activité indisponible pour l\'instant.</div>';
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    charger();
+    const out = document.getElementById("cpt-logout");
+    if (out) out.onclick = e => { e.preventDefault(); MB_AUTH.logout(); };
+  });
+})();
+</script>
+</body>
+</html>

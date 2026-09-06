@@ -1857,3 +1857,25 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   color: var(--accent2, #82d2a0); background: rgba(130,210,160,.08);
   border-color: rgba(130,210,160,.3);
 }
+
+/* ── Accès au tableau de bord, contre le titre de l'accueil ──────────────
+   Volontairement discret : c'est un accès de consultation, pas une action
+   de travail — il ne doit pas concurrencer les cartes de la grille. */
+.hero-bord {
+  display: inline-block;
+  margin: .2rem 0 .9rem;
+  padding: .42rem .9rem;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: .82rem;
+  letter-spacing: .02em;
+  text-decoration: none;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.hero-bord:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(200,185,122,.08);
+}

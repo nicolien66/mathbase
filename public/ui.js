@@ -101,10 +101,12 @@
     });
     header.appendChild(tabsEl);
 
+    /* Le bouton de droite menait à la séance, doublon des onglets ; il ouvre
+       désormais l'espace personnel de l'élève. */
     const cta = document.createElement("a");
     cta.className = "mb-cta";
-    cta.href = window.MB_MAT ? MB_MAT.lien("app.html#entrainement") : "app.html#entrainement";
-    cta.textContent = "Démarrer une séance →";
+    cta.href = window.MB_MAT ? MB_MAT.lien("compte.html") : "compte.html";
+    cta.textContent = "Compte";
     header.appendChild(cta);
 
     document.body.prepend(header);

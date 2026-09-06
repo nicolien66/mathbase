@@ -2435,6 +2435,9 @@ async function startSeance() {
     if (seanceLevel) params.append("level", seanceLevel);
     if (seanceDiff)  params.append("difficulty", seanceDiff);
     if (seanceChapitre) params.append("chapitre", seanceChapitre);
+    /* On ne veut que ce qui reste à travailler : le serveur écarte les
+       exercices déjà réussis, sauf si toute leur famille l'est. */
+    params.append("nonReussis", "1");
     url += "?" + params.toString();
 
     let data;
@@ -2658,6 +2661,34 @@ function goTo(target, direction) {
   anim.onfinish = () => { leaf.className = "page-leaf"; isTurning = false; };
 }
 
+/* ── MÉMOIRE DE L'ÉLÈVE ──────────────────────────────────────────────────
+   Chaque tentative corrigée est enregistrée côté serveur, sous le compte
+   connecté. Un exercice « réussi » (verdict correct) ne sera plus tiré en
+   séance tant que sa famille n'est pas bouclée.
+
+   Choix assumé : « partial » ne compte PAS comme réussi. Une réponse à moitié
+   juste mérite d'être revue, et l'écarter du tirage priverait l'élève de
+   l'exercice qu'il maîtrise justement le moins.
+
+   L'échec de l'enregistrement n'interrompt jamais la séance : perdre une
+   ligne de statistique est moins grave que bloquer un élève au milieu de son
+   travail. */
+async function enregistrerProgression(ex, result) {
+  if (!ex || !ex.id || !result || DEMO_MODE) return;
+  try {
+    await MB_AUTH.apiFetch("/progression", {
+      method: "POST",
+      body: JSON.stringify({
+        exercise_id: ex.id,
+        reussi: result.verdict === "correct",
+        note: typeof result.note === "number" ? result.note : null,
+      }),
+    });
+  } catch (e) {
+    console.warn("Progression non enregistrée :", e.message);
+  }
+}
+
 async function submitAnswer() {
   const ta     = document.getElementById("session-answer");
   if (isTurning) return;
@@ -2669,6 +2700,7 @@ async function submitAnswer() {
     const result = corrigerDiagramme(exD);
     if (!result) return;
     seanceHistory[seanceIndex] = { answer: "(construction)", result, skipped: false };
+    enregistrerProgression(exD, result);
     if (seanceIndex > seanceMax) seanceMax = seanceIndex;
     document.getElementById("page-answer").classList.add("locked");
     document.getElementById("page-answer-label").textContent = "Ta repr\u00e9sentation";
@@ -2685,6 +2717,7 @@ async function submitAnswer() {
     const result = corrigerInteractif(exI);
     if (!result) return;
     seanceHistory[seanceIndex] = { answer: "(construction)", result, skipped: false };
+    enregistrerProgression(exI, result);
     if (seanceIndex > seanceMax) seanceMax = seanceIndex;
     document.getElementById("page-answer").classList.add("locked");
     document.getElementById("page-answer-label").textContent = "Ta construction";
@@ -2719,8 +2752,9 @@ async function submitAnswer() {
       if (result.error) throw new Error(result.error);
     }
 
-    // Enregistrer dans l'historique (relisible plus tard)
+    // Enregistrer dans l'historique (relisible plus tard) et dans la mémoire du compte
     seanceHistory[seanceIndex] = { answer, result, skipped: false };
+    enregistrerProgression(ex, result);
     if (seanceIndex > seanceMax) seanceMax = seanceIndex;
 
     // Verrouiller le brouillon, afficher la correction
