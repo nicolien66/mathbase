@@ -8,10 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* L'architecture de cette page reste à développer. Ce premier jet affiche
-     les informations réellement disponibles sur le compte connecté, plutôt
-     que des champs fictifs qu'il faudrait défaire ensuite. */
-  .cpt-wrap { max-width: 760px; margin: 0 auto; padding: 2.4rem 1.2rem 4rem; }
+  .cpt-wrap { max-width: 780px; margin: 0 auto; padding: 2.4rem 1.2rem 4rem; }
   .cpt-tete h1 { font-family: var(--serif); font-size: 2.4rem; margin: 0 0 .3rem; }
   .cpt-tete em { color: var(--accent); font-style: italic; }
   .cpt-sous { color: var(--muted); font-family: var(--sans); margin-bottom: 2rem; }
@@ -19,21 +16,49 @@
   .cpt-bloc { border: 1px solid var(--border); border-radius: 12px;
               background: var(--surface2); padding: 1.2rem 1.3rem; margin-bottom: 1rem; }
   .cpt-bloc h2 { font-family: var(--sans); font-size: .78rem; letter-spacing: .1em;
-                 text-transform: uppercase; color: var(--muted); margin: 0 0 .9rem; }
-  .cpt-ligne { display: flex; justify-content: space-between; align-items: baseline;
-               padding: .45rem 0; border-top: 1px solid var(--border);
-               font-family: var(--sans); font-size: .92rem; }
-  .cpt-ligne:first-of-type { border-top: none; }
-  .cpt-val { font-family: var(--mono); color: var(--text); }
-  .cpt-vide { color: var(--muted); font-style: italic; }
+                 text-transform: uppercase; color: var(--muted); margin: 0 0 1rem; }
 
-  .cpt-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.4rem; }
-  .cpt-lien { display: inline-block; padding: .55rem 1rem; border-radius: 999px;
-              border: 1px solid var(--border2); color: var(--muted);
-              font-family: var(--sans); font-size: .85rem; text-decoration: none;
-              transition: color .2s, border-color .2s; }
-  .cpt-lien:hover { color: var(--text); border-color: var(--accent); }
+  .cpt-champ { display: flex; align-items: center; gap: .8rem; padding: .45rem 0; }
+  .cpt-champ label { flex: 0 0 150px; font-family: var(--sans); font-size: .88rem;
+                     color: var(--muted); }
+  .cpt-champ input { flex: 1; background: var(--surface3); border: 1px solid var(--border);
+                     border-radius: 8px; padding: .5rem .7rem; color: var(--text);
+                     font-family: var(--sans); font-size: .9rem; }
+  .cpt-champ input:focus { outline: none; border-color: var(--accent); }
+
+  /* Tirelire : le solde domine, les mouvements se lisent en dessous. */
+  .tire-solde { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .3rem; }
+  .tire-n { font-family: var(--serif); font-size: 2.6rem; color: var(--accent); }
+  .tire-u { color: var(--muted); font-family: var(--sans); }
+  .tire-bas { color: var(--danger); }
+  .tire-note { color: var(--muted); font-size: .82rem; font-family: var(--sans);
+               margin: .4rem 0 1rem; line-height: 1.5; }
+  .tire-mvt { display: flex; gap: .8rem; align-items: baseline; padding: .4rem 0;
+              border-top: 1px solid var(--border); font-size: .85rem;
+              font-family: var(--sans); }
+  .tire-mvt-d { flex: 1; color: var(--muted); }
+  .tire-delta { font-family: var(--mono); min-width: 3rem; }
+  .tire-plus { color: var(--accent2); }
+  .tire-moins { color: var(--muted); }
+  .tire-date { color: var(--muted); font-family: var(--mono); font-size: .74rem; }
+
+  .cpt-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.1rem; }
+  .cpt-btn { padding: .55rem 1.1rem; border-radius: 999px; border: 1px solid var(--border2);
+             background: none; color: var(--muted); font-family: var(--sans);
+             font-size: .85rem; text-decoration: none; display: inline-block;
+             transition: color .2s, border-color .2s; }
+  .cpt-btn:hover { color: var(--text); border-color: var(--accent); }
+  .cpt-btn-fort { border-color: var(--accent); color: var(--accent); }
+  .cpt-danger { color: rgba(230,130,110,.8); border-color: rgba(230,130,110,.35); }
   .cpt-danger:hover { color: var(--danger); border-color: var(--danger); }
+
+  .cpt-msg { margin-top: .9rem; font-family: var(--sans); font-size: .86rem; }
+  .cpt-ok { color: var(--accent2); }
+  .cpt-ko { color: var(--danger); }
+  .cpt-vide { color: var(--muted); font-style: italic; font-family: var(--sans); }
+
+  .zone-danger { border-color: rgba(230,130,110,.28); }
+  .zone-danger h2 { color: rgba(230,130,110,.85); }
 </style>
 </head>
 <body>
@@ -44,80 +69,218 @@
     <p class="cpt-sous" id="cpt-sous">Chargement…</p>
   </div>
 
+  <!-- ── TIRELIRE ────────────────────────────────────────────────────── -->
   <div class="cpt-bloc">
-    <h2>Élève</h2>
-    <div id="cpt-ident"></div>
+    <h2>Tirelire</h2>
+    <div id="tire-corps"><span class="cpt-vide">Chargement…</span></div>
   </div>
 
+  <!-- ── INFORMATIONS ────────────────────────────────────────────────── -->
   <div class="cpt-bloc">
-    <h2>Travail effectué</h2>
-    <div id="cpt-travail"></div>
+    <h2>Mes informations</h2>
+    <div class="cpt-champ"><label for="f-pseudo">Pseudo</label><input id="f-pseudo" type="text"></div>
+    <div class="cpt-champ"><label for="f-email">Adresse e-mail</label><input id="f-email" type="email"></div>
+    <div class="cpt-champ"><label for="f-classe">Classe</label><input id="f-classe" type="text" placeholder="3e, 2nde…"></div>
+    <div class="cpt-actions">
+      <button class="cpt-btn cpt-btn-fort" id="btn-enregistrer">Enregistrer</button>
+    </div>
+    <div class="cpt-msg" id="msg-infos"></div>
+  </div>
+
+  <!-- ── MOT DE PASSE ────────────────────────────────────────────────── -->
+  <div class="cpt-bloc">
+    <h2>Mot de passe</h2>
+    <div class="cpt-champ"><label for="f-mdp-actuel">Actuel</label><input id="f-mdp-actuel" type="password" autocomplete="current-password"></div>
+    <div class="cpt-champ"><label for="f-mdp-neuf">Nouveau</label><input id="f-mdp-neuf" type="password" autocomplete="new-password"></div>
+    <div class="cpt-actions">
+      <button class="cpt-btn" id="btn-mdp">Changer le mot de passe</button>
+    </div>
+    <div class="cpt-msg" id="msg-mdp"></div>
+  </div>
+
+  <!-- ── SUPPRESSION ─────────────────────────────────────────────────── -->
+  <div class="cpt-bloc zone-danger">
+    <h2>Supprimer mon compte</h2>
+    <p class="tire-note">Cette action est définitive : ta progression, tes crédits et
+      tes résultats seront effacés et ne pourront pas être rétablis.</p>
+    <div class="cpt-champ"><label for="f-mdp-supp">Ton mot de passe</label><input id="f-mdp-supp" type="password" autocomplete="current-password"></div>
+    <div class="cpt-actions">
+      <button class="cpt-btn cpt-danger" id="btn-supprimer">Supprimer définitivement</button>
+    </div>
+    <div class="cpt-msg" id="msg-supp"></div>
   </div>
 
   <div class="cpt-actions">
-    <a class="cpt-lien" href="tableau-de-bord.html">Tableau de bord →</a>
-    <a class="cpt-lien" href="app.html">Retour à l'espace</a>
-    <a class="cpt-lien cpt-danger" href="#" id="cpt-logout">Se déconnecter</a>
+    <a class="cpt-btn" href="tableau-de-bord.html">Tableau de bord →</a>
+    <a class="cpt-btn" href="app.html">Retour à l'espace</a>
+    <a class="cpt-btn" href="#" id="cpt-logout">Se déconnecter</a>
   </div>
 </div>
 
 <script src="matiere.js"></script>
 <script src="auth.js" data-protect></script>
+<script src="curseur.js"></script>
 <script src="ui.js" defer></script>
 <script>
 (function () {
   "use strict";
 
+  const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
     c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  function ligne(libelle, valeur) {
-    const v = (valeur === null || valeur === undefined || valeur === "")
-      ? '<span class="cpt-vide">non renseigné</span>' : esc(valeur);
-    return '<div class="cpt-ligne"><span>' + libelle + '</span>'
-         + '<span class="cpt-val">' + v + '</span></div>';
+  function dire(cible, texte, ok) {
+    const el = $(cible);
+    el.className = "cpt-msg " + (ok ? "cpt-ok" : "cpt-ko");
+    el.textContent = texte;
   }
 
-  async function charger() {
-    const sous = document.getElementById("cpt-sous");
-    const u = (window.MB_AUTH && MB_AUTH.user()) || null;
+  async function lireErreur(res) {
+    try { const d = await res.json(); return d.error || d.message || ("Erreur " + res.status); }
+    catch (e) { return "Erreur " + res.status; }
+  }
 
-    if (!u) {
-      sous.textContent = "Aucun compte connecté.";
-      document.getElementById("cpt-ident").innerHTML =
-        '<div class="cpt-vide">Connecte-toi pour voir tes informations.</div>';
-      return;
-    }
+  /* ── Tirelire ─────────────────────────────────────────────────────── */
+  const LIBELLE = {
+    recharge: "Recharge", correction: "Correction d'un exercice",
+    offert: "Crédits offerts", annale: "Correction d'annale",
+  };
 
-    sous.textContent = "Tes informations et ton activité.";
-    document.getElementById("cpt-ident").innerHTML =
-        ligne("Pseudo", u.pseudo)
-      + ligne("Adresse e-mail", u.email)
-      + ligne("Classe", u.classe)
-      + (u.role ? ligne("Rôle", u.role) : "");
+  function mouvement(m) {
+    const d = new Date(m.created_at);
+    const date = isNaN(d) ? "" : d.toLocaleDateString("fr-FR",
+      { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    const plus = m.delta > 0;
+    return '<div class="tire-mvt">'
+      + '<span class="tire-delta ' + (plus ? "tire-plus" : "tire-moins") + '">'
+      +   (plus ? "+" : "") + m.delta + '</span>'
+      + '<span class="tire-mvt-d">' + esc(LIBELLE[m.motif] || m.motif)
+      +   (m.detail ? " — " + esc(m.detail) : "") + '</span>'
+      + '<span class="tire-date">' + date + '</span></div>';
+  }
 
-    /* Le compteur de travail vient de la même source que le tableau de bord :
-       une seule vérité, pas deux chiffres qui divergeraient. */
-    const trav = document.getElementById("cpt-travail");
+  async function chargerTirelire() {
+    const corps = $("tire-corps");
     try {
-      const mat = (window.MB_MAT && MB_MAT.id) || "mathematiques";
-      const res = await MB_AUTH.apiFetch("/progression/stats?matiere=" + encodeURIComponent(mat));
-      if (!res.ok) throw new Error("Erreur " + res.status);
+      const res = await MB_AUTH.apiFetch("/credits");
+      if (!res.ok) throw new Error(await lireErreur(res));
       const d = await res.json();
-      trav.innerHTML =
-          ligne("Exercices faits", d.total.tentatives)
-        + ligne("Exercices réussis", d.total.reussies)
-        + ligne("Taux de réussite", d.total.taux + " %")
-        + ligne("Chapitres abordés", d.chapitres.length);
+
+      const bas = d.solde <= 10;
+      let html = '<div class="tire-solde">'
+        + '<span class="tire-n' + (bas ? " tire-bas" : "") + '">' + d.solde + '</span>'
+        + '<span class="tire-u">crédits disponibles</span></div>';
+
+      html += '<p class="tire-note">Une correction d\'exercice coûte '
+        + d.tarifs.correction + ' crédit' + (d.tarifs.correction > 1 ? "s" : "")
+        + ', une correction d\'annale ' + d.tarifs.correction_avec_image
+        + ' — les pages du sujet y sont analysées en image, ce qui coûte davantage.'
+        + (bas ? ' <strong>Ta tirelire est presque vide.</strong>' : '') + '</p>';
+
+      html += d.mouvements.length
+        ? d.mouvements.map(mouvement).join("")
+        : '<div class="cpt-vide">Aucun mouvement pour le moment.</div>';
+
+      /* Le bouton n'apparaît que si une recharge est réellement possible :
+         promettre un paiement qui n'existe pas serait pire que de se taire. */
+      const u = MB_AUTH.user();
+      if (u && u.role === "admin") {
+        html += '<div class="cpt-actions">'
+          + '<button class="cpt-btn cpt-btn-fort" id="btn-recharge">Ajouter 100 crédits</button></div>';
+      } else {
+        html += '<p class="tire-note">Le rechargement en ligne n\'est pas encore ouvert : '
+          + 'aucun moyen de paiement n\'est relié au site pour l\'instant.</p>';
+      }
+      corps.innerHTML = html;
+
+      const br = $("btn-recharge");
+      if (br) br.onclick = async () => {
+        br.disabled = true;
+        try {
+          const r = await MB_AUTH.apiFetch("/credits/recharge",
+            { method: "POST", body: JSON.stringify({ montant: 100 }) });
+          if (!r.ok) throw new Error(await lireErreur(r));
+          chargerTirelire();
+        } catch (e) { br.disabled = false; alert(e.message); }
+      };
     } catch (e) {
-      trav.innerHTML = '<div class="cpt-vide">Activité indisponible pour l\'instant.</div>';
+      corps.innerHTML = '<div class="cpt-vide">Tirelire indisponible : ' + esc(e.message) + '</div>';
     }
+  }
+
+  /* ── Informations ─────────────────────────────────────────────────── */
+  function remplir(u) {
+    $("f-pseudo").value = u.pseudo || "";
+    $("f-email").value  = u.email  || "";
+    $("f-classe").value = u.classe || "";
+  }
+
+  async function enregistrer() {
+    const b = $("btn-enregistrer");
+    b.disabled = true;
+    try {
+      const res = await MB_AUTH.apiFetch("/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          pseudo: $("f-pseudo").value.trim(),
+          email:  $("f-email").value.trim(),
+          classe: $("f-classe").value.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error(await lireErreur(res));
+      const u = await res.json();
+      remplir(u);
+      dire("msg-infos", "Informations enregistrées.", true);
+    } catch (e) { dire("msg-infos", e.message, false); }
+    b.disabled = false;
+  }
+
+  async function changerMdp() {
+    const b = $("btn-mdp");
+    const actuel = $("f-mdp-actuel").value, neuf = $("f-mdp-neuf").value;
+    if (!actuel || !neuf) return dire("msg-mdp", "Remplis les deux champs.", false);
+    b.disabled = true;
+    try {
+      const res = await MB_AUTH.apiFetch("/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({ mot_de_passe_actuel: actuel, nouveau_mot_de_passe: neuf }),
+      });
+      if (!res.ok) throw new Error(await lireErreur(res));
+      $("f-mdp-actuel").value = ""; $("f-mdp-neuf").value = "";
+      dire("msg-mdp", "Mot de passe modifié.", true);
+    } catch (e) { dire("msg-mdp", e.message, false); }
+    b.disabled = false;
+  }
+
+  /* ── Suppression ──────────────────────────────────────────────────── */
+  async function supprimer() {
+    const mdp = $("f-mdp-supp").value;
+    if (!mdp) return dire("msg-supp", "Saisis ton mot de passe pour confirmer.", false);
+    if (!confirm("Supprimer définitivement ton compte ?\n\n"
+      + "Ta progression, tes crédits et tes résultats seront effacés.\n"
+      + "Cette action ne peut pas être annulée.")) return;
+    const b = $("btn-supprimer");
+    b.disabled = true;
+    try {
+      const res = await MB_AUTH.apiFetch("/auth/me", {
+        method: "DELETE", body: JSON.stringify({ mot_de_passe: mdp }),
+      });
+      if (!res.ok) throw new Error(await lireErreur(res));
+      alert("Ton compte a été supprimé.");
+      MB_AUTH.logout();
+    } catch (e) { dire("msg-supp", e.message, false); b.disabled = false; }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    charger();
-    const out = document.getElementById("cpt-logout");
-    if (out) out.onclick = e => { e.preventDefault(); MB_AUTH.logout(); };
+    const u = (window.MB_AUTH && MB_AUTH.user()) || null;
+    if (!u) { $("cpt-sous").textContent = "Aucun compte connecté."; return; }
+    $("cpt-sous").textContent = "Tes informations, ta tirelire et ton activité.";
+    remplir(u);
+    chargerTirelire();
+    $("btn-enregistrer").onclick = enregistrer;
+    $("btn-mdp").onclick         = changerMdp;
+    $("btn-supprimer").onclick   = supprimer;
+    $("cpt-logout").onclick      = e => { e.preventDefault(); MB_AUTH.logout(); };
   });
 })();
 </script>
