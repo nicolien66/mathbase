@@ -2149,6 +2149,103 @@ app.get("/progression/stats", auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ── LISTE DES CLASSES ──
+   Tirée des exercices eux-mêmes plutôt que d'une liste écrite en dur : elle
+   reste juste quand le contenu évolue, et ne propose jamais une classe pour
+   laquelle il n'existe rien à travailler. */
+app.get("/programme/classes", async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT classe, count(*)::int AS n
+         FROM exercises
+        WHERE classe IS NOT NULL AND classe <> ''
+          AND COALESCE(matiere,'mathematiques') = $1
+        GROUP BY classe ORDER BY classe`,
+      [req.query.matiere || "mathematiques"]);
+    res.json({ classes: rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ── PROGRAMME DE LA CLASSE, AVEC LA PROGRESSION ──
+   Renvoie l'arbre complet chapitre → famille pour la classe demandée, y
+   compris ce qui n'a jamais été travaillé : le tableau de bord doit montrer
+   ce qui RESTE à faire autant que ce qui est fait. Les statistiques y sont
+   greffées quand elles existent, sinon la famille apparaît à zéro.
+
+   La classe vient du compte par défaut ; le paramètre ?classe= permet de
+   consulter une autre année, par exemple pour réviser. */
+app.get("/progression/programme", auth, async (req, res) => {
+  const matiere = req.query.matiere || "mathematiques";
+  try {
+    let classe = req.query.classe;
+    if (!classe) {
+      const { rows } = await pool.query("SELECT classe FROM users WHERE id = $1", [req.user.id]);
+      classe = rows.length ? rows[0].classe : null;
+    }
+
+    const parClasse = classe ? "AND classe = $2" : "";
+    const args = classe ? [matiere, classe] : [matiere];
+    const { rows: prog } = await pool.query(
+      `SELECT chapitre,
+              COALESCE(famille,'(sans famille)') AS famille,
+              count(*)::int AS total
+         FROM exercises
+        WHERE COALESCE(matiere,'mathematiques') = $1 ${parClasse}
+          AND chapitre IS NOT NULL
+        GROUP BY chapitre, COALESCE(famille,'(sans famille)')
+        ORDER BY chapitre, famille`, args);
+
+    const { rows: stats } = await pool.query(
+      `SELECT chapitre, COALESCE(famille,'(sans famille)') AS famille,
+              count(*)::int                                          AS tentatives,
+              count(*) FILTER (WHERE reussi)::int                    AS reussies,
+              count(DISTINCT exercise_id)::int                       AS exercices_vus,
+              count(DISTINCT exercise_id) FILTER (WHERE reussi)::int AS exercices_reussis,
+              max(created_at)                                        AS derniere
+         FROM progression
+        WHERE user_id = $1 AND COALESCE(matiere,'mathematiques') = $2
+        GROUP BY chapitre, COALESCE(famille,'(sans famille)')`,
+      [req.user.id, matiere]);
+    const cle = x => x.chapitre + "\u0000" + x.famille;
+    const vu = new Map(stats.map(x => [cle(x), x]));
+
+    const chapitres = new Map();
+    for (const f of prog) {
+      const st = vu.get(cle(f)) || {
+        tentatives: 0, reussies: 0, exercices_vus: 0, exercices_reussis: 0, derniere: null };
+      const famille = {
+        famille: f.famille, total: f.total,
+        tentatives: st.tentatives, reussies: st.reussies,
+        exercices_vus: st.exercices_vus, exercices_reussis: st.exercices_reussis,
+        derniere: st.derniere,
+        /* Deux mesures distinctes : le taux dit la qualité des réponses,
+           l'avancement dit la couverture du programme. */
+        taux: st.tentatives ? Math.round(100 * st.reussies / st.tentatives) : null,
+        avancement: f.total ? Math.round(100 * st.exercices_reussis / f.total) : 0,
+        bouclee: f.total > 0 && st.exercices_reussis >= f.total,
+      };
+      if (!chapitres.has(f.chapitre))
+        chapitres.set(f.chapitre, { chapitre: f.chapitre, familles: [] });
+      chapitres.get(f.chapitre).familles.push(famille);
+    }
+
+    const liste = [...chapitres.values()].map(c => {
+      const t  = c.familles.reduce((a, f) => a + f.tentatives, 0);
+      const r  = c.familles.reduce((a, f) => a + f.reussies, 0);
+      const er = c.familles.reduce((a, f) => a + f.exercices_reussis, 0);
+      const to = c.familles.reduce((a, f) => a + f.total, 0);
+      return Object.assign(c, {
+        total: to, tentatives: t, reussies: r, exercices_reussis: er,
+        taux: t ? Math.round(100 * r / t) : null,
+        avancement: to ? Math.round(100 * er / to) : 0,
+        familles_bouclees: c.familles.filter(f => f.bouclee).length,
+      });
+    }).sort((a, b) => a.chapitre.localeCompare(b.chapitre, "fr"));
+
+    res.json({ matiere, classe: classe || null, chapitres: liste });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ── RÉINITIALISER ──
    Sans chapitre : tout. Avec : ce chapitre seulement. Utile quand l'élève veut
    refaire une famille qu'il a bouclée il y a longtemps. */
