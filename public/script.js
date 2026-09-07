@@ -270,13 +270,31 @@ let seanceMode = "exercice";
    séance lancée depuis le menu ordinaire ne traîne pas le filtre précédent. */
 function seanceCiblee(opts) {
   const o = opts || {};
+  setSeanceMode("exercice");
+
+  /* ORDRE CRITIQUE : showView("seance") appelle resetSeanceWelcome, qui
+     reconstruit la liste des chapitres et se termine par selectChapitre("").
+     Poser le ciblage AVANT reviendrait à le faire effacer aussitôt — c'est
+     ce qui renvoyait l'élève sur l'écran de configuration. */
+  showView("seance", "entrainement");
+
   seanceChapitre = o.chapitre || "";
   seanceFamille  = o.famille  || "";
   seanceClasse   = o.classe   || "";
-  setSeanceMode("exercice");
-  showView("seance", "entrainement");
+
+  /* La liste déroulante ne contient que les chapitres du niveau courant : si
+     le chapitre visé n'y figure pas, on l'y ajoute plutôt que de laisser
+     l'élève devant un menu qui contredit la séance qu'il vient de lancer. */
   const sel = document.getElementById("seance-chapitre");
-  if (sel && seanceChapitre) sel.value = seanceChapitre;
+  if (sel && seanceChapitre) {
+    if (![...sel.options].some(x => x.value === seanceChapitre)) {
+      const opt = document.createElement("option");
+      opt.value = opt.textContent = seanceChapitre;
+      sel.appendChild(opt);
+    }
+    sel.value = seanceChapitre;
+  }
+
   /* Un ciblage explicite vaut consentement : on démarre sans faire repasser
      l'élève par l'écran de configuration qu'il vient justement de contourner. */
   if (seanceChapitre || seanceFamille) startSeance();
@@ -2495,7 +2513,8 @@ async function startSeance() {
         (ex.type || "exercice") === seanceMode &&
         (!seanceLevel || ex.level === seanceLevel) &&
         (!seanceChapitre || ex.chapitre === seanceChapitre) &&
-        (!seanceFamille  || ex.famille  === seanceFamille) &&
+        (!seanceFamille  || (seanceFamille === "(sans famille)"
+                             ? !ex.famille : ex.famille === seanceFamille)) &&
         (!seanceClasse   || ex.classe   === seanceClasse) &&
         (!seanceDiff  || ex.difficulty === seanceDiff));
     }
@@ -2506,10 +2525,15 @@ async function startSeance() {
     }
 
     if (!data.length) {
+      /* Un ciblage venu du tableau de bord mérite un message précis : dire
+         « aucun exercice » alors que l'élève voyait un compteur non nul
+         donnerait l'impression d'une panne. */
+      const cadre = seanceClasse ? " en " + seanceClasse : "";
       showToast(seanceFamille
-        ? "Tu as déjà réussi tous les exercices de « " + seanceFamille + " »."
+        ? "Tu as déjà réussi tous les exercices de « " + seanceFamille + " »" + cadre + "."
         : seanceChapitre
-        ? "Aucun exercice dans « " + seanceChapitre + " » pour ces filtres."
+        ? "Rien à travailler dans « " + seanceChapitre + " »" + cadre
+          + " : tout est déjà réussi, ou aucun exercice n'y est rattaché."
         : "Aucun exercice trouvé pour ces filtres.", "error");
       return;
     }

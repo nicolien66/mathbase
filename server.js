@@ -1905,7 +1905,14 @@ app.get("/exercises", auth, async (req, res) => {
   /* Famille et classe : le tableau de bord lance des séances ciblées
      (« travailler cette famille », « travailler ce chapitre pour ma classe »),
      ce que les filtres existants ne permettaient pas d'exprimer. */
-  if (famille)    { query += ` AND famille = $${i++}`;    params.push(famille); }
+  /* « (sans famille) » est l'étiquette que le tableau de bord donne aux
+     exercices dont la famille est nulle : envoyée telle quelle, elle ne
+     correspondrait à aucune ligne et la séance paraîtrait vide. */
+  if (famille === "(sans famille)") {
+    query += ` AND (famille IS NULL OR famille = '')`;
+  } else if (famille) {
+    query += ` AND famille = $${i++}`; params.push(famille);
+  }
   if (classe)     { query += ` AND classe = $${i++}`;     params.push(classe); }
 
   /* ── Mémoire de l'élève ────────────────────────────────────────────────
@@ -1921,11 +1928,15 @@ app.get("/exercises", auth, async (req, res) => {
         id IN (SELECT exercise_id FROM progression
                 WHERE user_id = $${i} AND reussi = TRUE)
         AND EXISTS (
-          -- il reste au moins un exercice non réussi dans la même famille
+          -- il reste au moins un exercice non réussi dans la même famille.
+          -- La classe entre dans la comparaison : une famille enseignée sur
+          -- deux années serait sinon jugée inachevée à cause d'exercices
+          -- d'une autre classe, que l'élève n'a aucune raison de voir.
           SELECT 1 FROM exercises f
            WHERE COALESCE(f.matiere,'mathematiques') = COALESCE(exercises.matiere,'mathematiques')
              AND f.chapitre IS NOT DISTINCT FROM exercises.chapitre
              AND f.famille  IS NOT DISTINCT FROM exercises.famille
+             AND f.classe   IS NOT DISTINCT FROM exercises.classe
              AND f.id NOT IN (SELECT exercise_id FROM progression
                                WHERE user_id = $${i} AND reussi = TRUE)
         )
