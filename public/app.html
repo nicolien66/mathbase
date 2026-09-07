@@ -24,13 +24,22 @@
        ══════════════════════════════════ -->
   <div id="view-home" class="view active">
     <div class="home-page">
+      <!-- Le héros occupe deux colonnes : le titre à gauche, le suivi personnel
+           à droite. Le tableau de bord n'est pas une rubrique parmi d'autres,
+           il répond au titre — d'où sa place hors de la grille. -->
       <div class="home-hero">
-        <p class="hero-tag" id="home-tag">Polymates · Mathématiques</p>
-        <h1>Espace<br><em id="home-matiere">Mathématiques.</em></h1>
-        <!-- Accès au suivi personnel, placé contre le titre : c'est le pendant
-             de l'espace de travail, pas une rubrique de plus dans la grille. -->
-        <a class="hero-bord" href="tableau-de-bord.html">Tableau de bord →</a>
-        <p class="hero-sub">Que veux-tu faire aujourd'hui ?</p>
+        <div class="home-hero-txt">
+          <p class="hero-tag" id="home-tag">Polymates · Mathématiques</p>
+          <h1>Espace<br><em id="home-matiere">Mathématiques.</em></h1>
+          <p class="hero-sub">Que veux-tu faire aujourd'hui ?</p>
+        </div>
+        <a class="hero-bord" href="tableau-de-bord.html">
+          <div class="hero-bord-icon">◴</div>
+          <div class="hero-bord-titre">Tableau de bord</div>
+          <div class="hero-bord-desc">Ton programme chapitre par chapitre : ce que tu
+            maîtrises, ce qu'il te reste à voir, et où reprendre.</div>
+          <div class="hero-bord-go">Consulter →</div>
+        </a>
       </div>
       <div class="home-grid">
         <a class="home-card" href="tree.html" style="--hc:var(--facile)">

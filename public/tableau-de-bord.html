@@ -61,6 +61,18 @@
   .fiche-note { color: var(--muted); font-size: .82rem; font-family: var(--sans);
                 line-height: 1.55; margin-top: 1.2rem; }
 
+  /* Bouton d'action : il lance un travail, il doit donc se distinguer des
+     lignes de navigation, qui ne font que descendre d'un niveau. */
+  .go-seance { display: inline-flex; align-items: center; gap: .5rem;
+               padding: .7rem 1.3rem; margin-bottom: .5rem;
+               border: 1px solid var(--accent); border-radius: 999px;
+               background: rgba(200,185,122,.08); color: var(--accent);
+               font-family: var(--sans); font-size: .9rem; cursor: pointer;
+               transition: background .2s, transform .2s; }
+  .go-seance:hover { background: rgba(200,185,122,.16); transform: translateY(-1px); }
+  .go-note { color: var(--muted); font-family: var(--sans); font-size: .8rem;
+             margin: 0 0 1.4rem; }
+
   .bord-vide { text-align: center; color: var(--muted); padding: 2.6rem 1rem;
                font-family: var(--sans); line-height: 1.6; }
   .bord-vide a { color: var(--accent); }
@@ -162,7 +174,15 @@
   /* ── Niveau 2 : les familles du chapitre ──────────────────────────── */
   function vueFamilles() {
     const ch = chapitreOuvert;
-    return '<div class="bord-cles">'
+    /* Le bouton précède les chiffres : à ce niveau, l'élève vient surtout
+       pour travailler, la statistique n'est qu'un repère. */
+    const bouton = ch.total
+      ? '<button class="go-seance" data-go="chapitre">\u25b6 S\'entraîner sur ce chapitre</button>'
+        + '<p class="go-note">Séance tirée dans les ' + ch.familles.length + ' famille'
+        + (ch.familles.length > 1 ? 's' : '') + ' de ce chapitre'
+        + (DATA.classe ? ', au programme de ' + esc(DATA.classe) : '') + '.</p>'
+      : '';
+    return bouton + '<div class="bord-cles">'
       + carte(ch.familles.length, "familles")
       + carte(ch.tentatives, "exercices faits")
       + carte(ch.taux === null ? "—" : ch.taux + "%", "de réussite")
@@ -206,7 +226,16 @@
            + "ceux que tu as déjà réussis ne te seront pas reproposés.";
     }
 
-    return '<div class="fiche"><h2>' + esc(f.famille) + '</h2>'
+    const reste = f.total - f.exercices_reussis;
+    const bouton = f.total
+      ? '<button class="go-seance" data-go="famille">\u25b6 S\'entraîner sur cette famille</button>'
+        + '<p class="go-note">' + (reste > 0
+            ? reste + ' exercice' + (reste > 1 ? 's' : '') + ' encore à réussir.'
+            : 'Famille bouclée : les exercices redeviennent disponibles pour réviser.')
+        + '</p>'
+      : '';
+
+    return bouton + '<div class="fiche"><h2>' + esc(f.famille) + '</h2>'
       + l("Exercices de la famille", f.total)
       + l("Exercices réussis", f.exercices_reussis + " / " + f.total)
       + l("Avancement", f.avancement + " %")
@@ -234,6 +263,18 @@
     corps.querySelectorAll("[data-fam]").forEach(b => b.onclick = () => {
       familleOuverte = chapitreOuvert.familles[+b.dataset.fam];
       rendre();
+    });
+
+    /* Le ciblage voyage dans l'URL : cette page ne peut pas appeler une
+       fonction de app.html, qui vit dans un autre document. */
+    corps.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+      const p = new URLSearchParams();
+      p.set("chapitre", chapitreOuvert.chapitre);
+      if (b.dataset.go === "famille" && familleOuverte)
+        p.set("famille", familleOuverte.famille);
+      if (DATA.classe) p.set("classe", DATA.classe);
+      const base = (window.MB_MAT && MB_MAT.lien) ? MB_MAT.lien("app.html") : "app.html";
+      window.location.href = base + "#entrainement?" + p.toString();
     });
   }
 

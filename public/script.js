@@ -263,7 +263,39 @@ function showView(name, tabName) {
 
 /* ── SÉANCE : deux modes — entraînement (exercices) ou problèmes ── */
 let seanceMode = "exercice";
+/* Lance une séance ciblée. Appelé par le tableau de bord au moyen d'un lien
+   app.html#entrainement?chapitre=…&famille=…&classe=… : une page distincte ne
+   peut pas appeler une fonction de celle-ci, l'URL est le seul canal.
+   Le ciblage est volontairement remis à zéro à chaque appel, pour qu'une
+   séance lancée depuis le menu ordinaire ne traîne pas le filtre précédent. */
+function seanceCiblee(opts) {
+  const o = opts || {};
+  seanceChapitre = o.chapitre || "";
+  seanceFamille  = o.famille  || "";
+  seanceClasse   = o.classe   || "";
+  setSeanceMode("exercice");
+  showView("seance", "entrainement");
+  const sel = document.getElementById("seance-chapitre");
+  if (sel && seanceChapitre) sel.value = seanceChapitre;
+  /* Un ciblage explicite vaut consentement : on démarre sans faire repasser
+     l'élève par l'écran de configuration qu'il vient justement de contourner. */
+  if (seanceChapitre || seanceFamille) startSeance();
+}
+
+/* Lecture du ciblage éventuel présent dans l'URL, au chargement. */
+function lireCiblageUrl() {
+  const h = window.location.hash || "";
+  const q = h.indexOf("?");
+  if (q === -1) return null;
+  const p = new URLSearchParams(h.slice(q + 1));
+  if (!p.get("chapitre") && !p.get("famille")) return null;
+  return { chapitre: p.get("chapitre") || "", famille: p.get("famille") || "",
+           classe: p.get("classe") || "" };
+}
+
 function openSeance(mode) {
+  /* Une ouverture ordinaire efface tout ciblage résiduel. */
+  seanceFamille = ""; seanceClasse = "";
   // Le type se choisit désormais dans l'écran de configuration.
   setSeanceMode(mode === "probleme" ? "probleme" : "exercice");
   showView("seance", "entrainement");
@@ -1665,7 +1697,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = document.getElementById("empty-add-btn");
     if (b) b.textContent = "Ajouter une annale →";
   }
-  ouvrirDepuisUrl();
+  /* Séance lancée depuis le tableau de bord : le ciblage voyage dans l'URL.
+     Différé d'un tour de boucle pour que le catalogue et les filtres soient
+     construits avant que startSeance ne les lise. */
+  const cible = lireCiblageUrl();
+  if (cible) setTimeout(() => seanceCiblee(cible), 0);
+  else ouvrirDepuisUrl();
 });
 
 /* L'arbre des connaissances renvoie ici avec ?vue=… et parfois ?chapitre=…
@@ -2354,6 +2391,10 @@ function escapeHtml(str) {
 let seanceLevel  = "";
 let seanceDiff   = "";
 let seanceChapitre = "";
+/* Ciblage venu du tableau de bord : « travailler ce chapitre », « travailler
+   cette famille ». Vides en usage normal, ils ne changent alors rien. */
+let seanceFamille = "";
+let seanceClasse  = "";
 let seanceExercises  = [];
 let seanceIndex      = 0;
 let seanceCorrect    = 0;
@@ -2435,6 +2476,8 @@ async function startSeance() {
     if (seanceLevel) params.append("level", seanceLevel);
     if (seanceDiff)  params.append("difficulty", seanceDiff);
     if (seanceChapitre) params.append("chapitre", seanceChapitre);
+    if (seanceFamille)  params.append("famille",  seanceFamille);
+    if (seanceClasse)   params.append("classe",   seanceClasse);
     /* On ne veut que ce qui reste à travailler : le serveur écarte les
        exercices déjà réussis, sauf si toute leur famille l'est. */
     params.append("nonReussis", "1");
@@ -2452,6 +2495,8 @@ async function startSeance() {
         (ex.type || "exercice") === seanceMode &&
         (!seanceLevel || ex.level === seanceLevel) &&
         (!seanceChapitre || ex.chapitre === seanceChapitre) &&
+        (!seanceFamille  || ex.famille  === seanceFamille) &&
+        (!seanceClasse   || ex.classe   === seanceClasse) &&
         (!seanceDiff  || ex.difficulty === seanceDiff));
     }
 
@@ -2461,7 +2506,9 @@ async function startSeance() {
     }
 
     if (!data.length) {
-      showToast(seanceChapitre
+      showToast(seanceFamille
+        ? "Tu as déjà réussi tous les exercices de « " + seanceFamille + " »."
+        : seanceChapitre
         ? "Aucun exercice dans « " + seanceChapitre + " » pour ces filtres."
         : "Aucun exercice trouvé pour ces filtres.", "error");
       return;
