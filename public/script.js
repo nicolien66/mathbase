@@ -281,6 +281,7 @@ function seanceCiblee(opts) {
   seanceChapitre = o.chapitre || "";
   seanceFamille  = o.famille  || "";
   seanceClasse   = o.classe   || "";
+  seanceCible    = true;
 
   /* La liste déroulante ne contient que les chapitres du niveau courant : si
      le chapitre visé n'y figure pas, on l'y ajoute plutôt que de laisser
@@ -313,7 +314,7 @@ function lireCiblageUrl() {
 
 function openSeance(mode) {
   /* Une ouverture ordinaire efface tout ciblage résiduel. */
-  seanceFamille = ""; seanceClasse = "";
+  seanceFamille = ""; seanceClasse = ""; seanceCible = false;
   // Le type se choisit désormais dans l'écran de configuration.
   setSeanceMode(mode === "probleme" ? "probleme" : "exercice");
   showView("seance", "entrainement");
@@ -2413,6 +2414,11 @@ let seanceChapitre = "";
    cette famille ». Vides en usage normal, ils ne changent alors rien. */
 let seanceFamille = "";
 let seanceClasse  = "";
+/* Vrai quand la séance vient du tableau de bord. Elle doit alors couvrir tout
+   ce que le tableau de bord affichait, sans les filtres incidents de l'écran
+   de configuration — type, niveau, difficulté — que l'élève n'a pas choisis
+   pour cette séance-là. */
+let seanceCible   = false;
 let seanceExercises  = [];
 let seanceIndex      = 0;
 let seanceCorrect    = 0;
@@ -2489,10 +2495,15 @@ async function startSeance() {
   try {
     let url = "/exercises";
     const params = new URLSearchParams();
-    params.append("type", seanceMode);
     params.append("matiere", matiereCourante());
-    if (seanceLevel) params.append("level", seanceLevel);
-    if (seanceDiff)  params.append("difficulty", seanceDiff);
+    /* Séance ciblée : ni type, ni niveau, ni difficulté. Le tableau de bord
+       compte exercices ET problèmes, sans distinction de niveau ; filtrer ici
+       ferait apparaître moins d'exercices que le compteur n'en annonçait. */
+    if (!seanceCible) {
+      params.append("type", seanceMode);
+      if (seanceLevel) params.append("level", seanceLevel);
+      if (seanceDiff)  params.append("difficulty", seanceDiff);
+    }
     if (seanceChapitre) params.append("chapitre", seanceChapitre);
     if (seanceFamille)  params.append("famille",  seanceFamille);
     if (seanceClasse)   params.append("classe",   seanceClasse);
@@ -2510,16 +2521,16 @@ async function startSeance() {
     } catch {
       DEMO_MODE = true;
       data = (demoDispo() ? DEMO_EXERCISES : []).filter(ex =>
-        (ex.type || "exercice") === seanceMode &&
-        (!seanceLevel || ex.level === seanceLevel) &&
+        (seanceCible || (ex.type || "exercice") === seanceMode) &&
+        (seanceCible || !seanceLevel || ex.level === seanceLevel) &&
         (!seanceChapitre || ex.chapitre === seanceChapitre) &&
         (!seanceFamille  || (seanceFamille === "(sans famille)"
                              ? !ex.famille : ex.famille === seanceFamille)) &&
         (!seanceClasse   || ex.classe   === seanceClasse) &&
-        (!seanceDiff  || ex.difficulty === seanceDiff));
+        (seanceCible || !seanceDiff || ex.difficulty === seanceDiff));
     }
 
-    if (!data.length && seanceMode === "probleme") {
+    if (!data.length && !seanceCible && seanceMode === "probleme") {
       showToast("Aucun problème disponible pour ces filtres — ajoute-en depuis l'onglet Ajouter !", "error");
       return;
     }
