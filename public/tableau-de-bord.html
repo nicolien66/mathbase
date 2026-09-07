@@ -8,41 +8,62 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* L'architecture de cette page reste à développer : ce premier jet montre
-     déjà les données réelles pour qu'on puisse en juger sur pièce plutôt que
-     sur une maquette vide. */
   .bord-wrap { max-width: 940px; margin: 0 auto; padding: 2.4rem 1.2rem 4rem; }
-  .bord-tete { margin-bottom: 2rem; }
   .bord-tete h1 { font-family: var(--serif); font-size: 2.4rem; margin: 0 0 .3rem; }
   .bord-tete em { color: var(--accent); font-style: italic; }
   .bord-sous { color: var(--muted); font-family: var(--sans); }
 
-  .bord-cles { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.2rem; }
-  .bord-cle { flex: 1 1 160px; background: var(--surface2); border: 1px solid var(--border);
-              border-radius: 12px; padding: 1rem 1.1rem; }
-  .bord-cle-n { font-family: var(--serif); font-size: 2rem; color: var(--accent); }
-  .bord-cle-l { color: var(--muted); font-size: .8rem; font-family: var(--sans);
+  /* Fil d'Ariane : à trois niveaux, l'élève doit toujours savoir où il est
+     et pouvoir remonter d'un cran. */
+  .fil { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+         margin: 1.6rem 0 1.2rem; font-family: var(--sans); font-size: .86rem; }
+  .fil a { color: var(--muted); text-decoration: none; border-bottom: 1px solid transparent; }
+  .fil a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .fil span { color: var(--muted); }
+  .fil b { color: var(--text); font-weight: 500; }
+
+  .bord-cles { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 1.8rem; }
+  .bord-cle { flex: 1 1 150px; background: var(--surface2); border: 1px solid var(--border);
+              border-radius: 12px; padding: .9rem 1.1rem; }
+  .bord-cle-n { font-family: var(--serif); font-size: 1.9rem; color: var(--accent); }
+  .bord-cle-l { color: var(--muted); font-size: .78rem; font-family: var(--sans);
                 letter-spacing: .03em; }
 
-  .bord-chap { border: 1px solid var(--border); border-radius: 12px;
-               margin-bottom: 1rem; overflow: hidden; }
-  .bord-chap-tete { display: flex; align-items: center; gap: .9rem; padding: .9rem 1.1rem;
-                    background: var(--surface2); cursor: pointer; }
-  .bord-chap-nom { flex: 1; font-family: var(--sans); }
-  .bord-chap-taux { font-family: var(--mono); color: var(--accent); }
-  .bord-fams { padding: .3rem 1.1rem 1rem; display: none; }
-  .bord-chap.ouvert .bord-fams { display: block; }
-  .bord-fam { display: flex; align-items: center; gap: .8rem; padding: .5rem 0;
-              border-top: 1px solid var(--border); font-size: .88rem; }
-  .bord-fam-nom { flex: 1; font-family: var(--sans); }
-  .bord-fam-avance { color: var(--muted); font-family: var(--mono); font-size: .78rem; }
+  /* Une ligne cliquable, même dessin pour un chapitre et pour une famille :
+     la hiérarchie se lit dans le fil d'Ariane, pas dans deux styles distincts. */
+  .item { display: flex; align-items: center; gap: .9rem; width: 100%;
+          text-align: left; background: var(--surface2); border: 1px solid var(--border);
+          border-radius: 12px; padding: .95rem 1.1rem; margin-bottom: .6rem;
+          font-family: var(--sans); color: var(--text); font-size: .95rem;
+          transition: border-color .2s, background .2s; }
+  .item:hover { border-color: var(--accent); background: var(--surface3); }
+  .item-nom { flex: 1; }
+  .item-sous { display: block; color: var(--muted); font-size: .76rem; margin-top: .18rem; }
+  .item-fleche { color: var(--muted); }
+  .item-bouclee { color: var(--accent2); font-size: .8rem; }
 
-  .jauge { width: 120px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.09);
+  .jauge { width: 110px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.09);
            overflow: hidden; flex: none; }
   .jauge i { display: block; height: 100%; background: var(--accent2); }
+  .jauge-vide i { background: rgba(255,255,255,.18); }
+  .pct { font-family: var(--mono); color: var(--accent); min-width: 3.2rem;
+         text-align: right; font-size: .88rem; }
+  .pct-neuf { color: var(--muted); }
 
-  .bord-vide { text-align: center; color: var(--muted); padding: 3rem 1rem;
-               font-family: var(--sans); }
+  .fiche { background: var(--surface2); border: 1px solid var(--border);
+           border-radius: 12px; padding: 1.3rem 1.4rem; }
+  .fiche h2 { font-family: var(--serif); font-size: 1.5rem; margin: 0 0 1.2rem; }
+  .fiche-ligne { display: flex; justify-content: space-between; align-items: baseline;
+                 padding: .55rem 0; border-top: 1px solid var(--border);
+                 font-family: var(--sans); font-size: .92rem; }
+  .fiche-ligne:first-of-type { border-top: none; }
+  .fiche-val { font-family: var(--mono); color: var(--text); }
+  .fiche-note { color: var(--muted); font-size: .82rem; font-family: var(--sans);
+                line-height: 1.55; margin-top: 1.2rem; }
+
+  .bord-vide { text-align: center; color: var(--muted); padding: 2.6rem 1rem;
+               font-family: var(--sans); line-height: 1.6; }
+  .bord-vide a { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -52,9 +73,8 @@
     <h1>Tableau de <em>bord.</em></h1>
     <p class="bord-sous" id="bord-sous">Chargement de ta progression…</p>
   </div>
-
-  <div class="bord-cles" id="bord-cles"></div>
-  <div id="bord-liste"></div>
+  <div class="fil" id="fil"></div>
+  <div id="bord-corps"></div>
 </div>
 
 <script src="matiere.js"></script>
@@ -65,70 +85,174 @@
 (function () {
   "use strict";
 
+  const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
     c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  const matiere = () => (window.MB_MAT && MB_MAT.id) || "mathematiques";
+  /* Trois niveaux : chapitres → familles → fiche d'une famille.
+     L'état tient en deux variables, ce qui suffit et évite un routeur. */
+  let DATA = null;          // { classe, chapitres: [...] }
+  let chapitreOuvert = null;
+  let familleOuverte  = null;
 
+  function jauge(pct, neuf) {
+    return '<div class="jauge' + (neuf ? " jauge-vide" : "") + '">'
+         + '<i style="width:' + Math.max(0, Math.min(100, pct)) + '%"></i></div>';
+  }
+  function pourcent(v) {
+    return v === null
+      ? '<div class="pct pct-neuf">—</div>'
+      : '<div class="pct">' + v + '%</div>';
+  }
   function carte(n, libelle) {
     return '<div class="bord-cle"><div class="bord-cle-n">' + n
          + '</div><div class="bord-cle-l">' + libelle + '</div></div>';
   }
 
-  function ligneFamille(f) {
-    /* Deux mesures distinctes, volontairement affichées ensemble :
-       le TAUX dit la qualité des réponses, l'AVANCEMENT dit ce qui reste à
-       faire. Une famille peut être réussie à 100 % et n'être couverte qu'au
-       quart — ne montrer que l'un des deux tromperait. */
-    const avance = f.total_famille
-      ? f.exercices_reussis + " / " + f.total_famille + " exercices"
-      : f.exercices_reussis + " exercice(s)";
-    return '<div class="bord-fam">'
-      + '<div class="bord-fam-nom">' + esc(f.famille) + '</div>'
-      + '<div class="jauge"><i style="width:' + f.taux + '%"></i></div>'
-      + '<div class="bord-chap-taux">' + f.taux + '%</div>'
-      + '<div class="bord-fam-avance">' + avance + '</div>'
-      + '</div>';
+  /* ── Fil d'Ariane ─────────────────────────────────────────────────── */
+  function fil() {
+    const f = $("fil");
+    let h = '<a href="#" data-n="0">Chapitres</a>';
+    if (chapitreOuvert) h += ' <span>›</span> ' + (familleOuverte
+      ? '<a href="#" data-n="1">' + esc(chapitreOuvert.chapitre) + '</a>'
+      : '<b>' + esc(chapitreOuvert.chapitre) + '</b>');
+    if (familleOuverte) h += ' <span>›</span> <b>' + esc(familleOuverte.famille) + '</b>';
+    f.innerHTML = h;
+    f.querySelectorAll("a").forEach(a => a.onclick = e => {
+      e.preventDefault();
+      if (a.dataset.n === "0") { chapitreOuvert = null; familleOuverte = null; }
+      else familleOuverte = null;
+      rendre();
+    });
   }
 
-  function blocChapitre(c) {
-    return '<div class="bord-chap" onclick="this.classList.toggle(\'ouvert\')">'
-      + '<div class="bord-chap-tete">'
-      +   '<div class="bord-chap-nom">' + esc(c.chapitre) + '</div>'
-      +   '<div class="jauge"><i style="width:' + c.taux + '%"></i></div>'
-      +   '<div class="bord-chap-taux">' + c.taux + '%</div>'
-      + '</div>'
-      + '<div class="bord-fams">' + c.familles.map(ligneFamille).join("") + '</div>'
+  /* ── Niveau 1 : les chapitres de la classe ────────────────────────── */
+  function vueChapitres() {
+    const c = DATA.chapitres;
+    if (!c.length) return '<div class="bord-vide">'
+      + 'Aucun chapitre pour cette classe.<br>'
+      + 'Renseigne ta classe depuis <a href="compte.html">ton compte</a> '
+      + 'pour voir ton programme.</div>';
+
+    const tent = c.reduce((a, x) => a + x.tentatives, 0);
+    const reus = c.reduce((a, x) => a + x.reussies, 0);
+    const tot  = c.reduce((a, x) => a + x.total, 0);
+    const er   = c.reduce((a, x) => a + x.exercices_reussis, 0);
+
+    const cles = '<div class="bord-cles">'
+      + carte(c.length, "chapitres au programme")
+      + carte(tent, "exercices faits")
+      + carte(tent ? Math.round(100 * reus / tent) + "%" : "—", "de réussite")
+      + carte(tot ? Math.round(100 * er / tot) + "%" : "0%", "du programme couvert")
       + '</div>';
+
+    return cles + c.map((ch, i) =>
+      '<button class="item" data-ch="' + i + '">'
+      + '<span class="item-nom">' + esc(ch.chapitre)
+      +   '<span class="item-sous">' + ch.familles.length + ' famille'
+      +   (ch.familles.length > 1 ? "s" : "")
+      +   (ch.familles_bouclees ? ' · ' + ch.familles_bouclees + ' bouclée'
+          + (ch.familles_bouclees > 1 ? "s" : "") : "")
+      +   ' · ' + ch.exercices_reussis + ' / ' + ch.total + ' exercices réussis</span></span>'
+      + jauge(ch.avancement, !ch.tentatives)
+      + pourcent(ch.taux)
+      + '<span class="item-fleche">→</span></button>').join("");
+  }
+
+  /* ── Niveau 2 : les familles du chapitre ──────────────────────────── */
+  function vueFamilles() {
+    const ch = chapitreOuvert;
+    return '<div class="bord-cles">'
+      + carte(ch.familles.length, "familles")
+      + carte(ch.tentatives, "exercices faits")
+      + carte(ch.taux === null ? "—" : ch.taux + "%", "de réussite")
+      + carte(ch.avancement + "%", "du chapitre couvert")
+      + '</div>'
+      + ch.familles.map((f, i) =>
+        '<button class="item" data-fam="' + i + '">'
+        + '<span class="item-nom">' + esc(f.famille)
+        +   '<span class="item-sous">' + f.exercices_reussis + ' / ' + f.total
+        +   ' exercices réussis'
+        +   (f.bouclee ? ' · <span class="item-bouclee">famille bouclée</span>' : '')
+        +   '</span></span>'
+        + jauge(f.avancement, !f.tentatives)
+        + pourcent(f.taux)
+        + '<span class="item-fleche">→</span></button>').join("");
+  }
+
+  /* ── Niveau 3 : la fiche d'une famille ────────────────────────────── */
+  function vueFiche() {
+    const f = familleOuverte;
+    const manques = f.tentatives - f.reussies;
+    const date = f.derniere ? new Date(f.derniere) : null;
+    const quand = date && !isNaN(date)
+      ? date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+      : "jamais travaillée";
+
+    const l = (k, v) => '<div class="fiche-ligne"><span>' + k
+      + '</span><span class="fiche-val">' + v + '</span></div>';
+
+    let note;
+    if (!f.tentatives) {
+      note = "Tu n'as pas encore travaillé cette famille. Lance une séance "
+           + "d'entraînement sur ce chapitre pour la découvrir.";
+    } else if (f.bouclee) {
+      note = "Tu as réussi tous les exercices de cette famille : ils redeviennent "
+           + "disponibles à l'entraînement, pour entretenir ce que tu sais.";
+    } else {
+      note = "Il te reste " + (f.total - f.exercices_reussis) + " exercice"
+           + (f.total - f.exercices_reussis > 1 ? "s" : "")
+           + " à réussir dans cette famille. Tant qu'elle n'est pas bouclée, "
+           + "ceux que tu as déjà réussis ne te seront pas reproposés.";
+    }
+
+    return '<div class="fiche"><h2>' + esc(f.famille) + '</h2>'
+      + l("Exercices de la famille", f.total)
+      + l("Exercices réussis", f.exercices_reussis + " / " + f.total)
+      + l("Avancement", f.avancement + " %")
+      + l("Tentatives", f.tentatives)
+      + l("Réponses justes", f.reussies)
+      + l("Réponses manquées", manques)
+      + l("Taux de réussite", f.taux === null ? "—" : f.taux + " %")
+      + l("Dernier passage", quand)
+      + '<p class="fiche-note">' + note + '</p></div>';
+  }
+
+  /* ── Rendu ────────────────────────────────────────────────────────── */
+  function rendre() {
+    fil();
+    const corps = $("bord-corps");
+    corps.innerHTML = familleOuverte ? vueFiche()
+                    : chapitreOuvert ? vueFamilles()
+                    : vueChapitres();
+
+    corps.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => {
+      chapitreOuvert = DATA.chapitres[+b.dataset.ch];
+      familleOuverte = null;
+      rendre();
+    });
+    corps.querySelectorAll("[data-fam]").forEach(b => b.onclick = () => {
+      familleOuverte = chapitreOuvert.familles[+b.dataset.fam];
+      rendre();
+    });
   }
 
   async function charger() {
-    const sous  = document.getElementById("bord-sous");
-    const cles  = document.getElementById("bord-cles");
-    const liste = document.getElementById("bord-liste");
+    const sous = $("bord-sous");
     try {
-      const res = await MB_AUTH.apiFetch("/progression/stats?matiere=" + encodeURIComponent(matiere()));
+      const mat = (window.MB_MAT && MB_MAT.id) || "mathematiques";
+      const res = await MB_AUTH.apiFetch(
+        "/progression/programme?matiere=" + encodeURIComponent(mat));
       if (!res.ok) throw new Error("Erreur " + res.status);
-      const d = await res.json();
+      DATA = await res.json();
 
-      if (!d.chapitres.length) {
-        sous.textContent = "Rien à afficher pour le moment.";
-        liste.innerHTML = '<div class="bord-vide">Fais une séance d\'entraînement :'
-          + ' tes résultats apparaîtront ici, chapitre par chapitre.</div>';
-        return;
-      }
-
-      sous.textContent = "Ce que tu as travaillé, et ce qu'il te reste à voir.";
-      cles.innerHTML = carte(d.total.tentatives, "exercices faits")
-                     + carte(d.total.reussies,   "réussis")
-                     + carte(d.total.taux + "%", "de réussite")
-                     + carte(d.chapitres.length, "chapitres abordés");
-      liste.innerHTML = d.chapitres
-        .sort((a, b) => b.tentatives - a.tentatives)
-        .map(blocChapitre).join("");
+      sous.textContent = DATA.classe
+        ? "Programme de " + DATA.classe + " — ce que tu as travaillé, et ce qu'il te reste."
+        : "Renseigne ta classe depuis ton compte pour n'afficher que ton programme.";
+      rendre();
     } catch (e) {
       sous.textContent = "Progression indisponible pour l'instant.";
-      liste.innerHTML = '<div class="bord-vide">' + esc(e.message) + '</div>';
+      $("bord-corps").innerHTML = '<div class="bord-vide">' + esc(e.message) + '</div>';
     }
   }
 

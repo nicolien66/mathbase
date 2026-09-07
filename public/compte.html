@@ -24,7 +24,16 @@
   .cpt-champ input { flex: 1; background: var(--surface3); border: 1px solid var(--border);
                      border-radius: 8px; padding: .5rem .7rem; color: var(--text);
                      font-family: var(--sans); font-size: .9rem; }
-  .cpt-champ input:focus { outline: none; border-color: var(--accent); }
+  .cpt-champ input:focus, .cpt-champ select:focus { outline: none; border-color: var(--accent); }
+  /* Le select reprend l'apparence des champs : sans cela le navigateur impose
+     un gris système qui jure avec le reste de la page. */
+  .cpt-champ select { flex: 1; background: var(--surface3); border: 1px solid var(--border);
+                      border-radius: 8px; padding: .5rem .7rem; color: var(--text);
+                      font-family: var(--sans); font-size: .9rem; appearance: none;
+                      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                                        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+                      background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%;
+                      background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
 
   /* Tirelire : le solde domine, les mouvements se lisent en dessous. */
   .tire-solde { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .3rem; }
@@ -80,7 +89,7 @@
     <h2>Mes informations</h2>
     <div class="cpt-champ"><label for="f-pseudo">Pseudo</label><input id="f-pseudo" type="text"></div>
     <div class="cpt-champ"><label for="f-email">Adresse e-mail</label><input id="f-email" type="email"></div>
-    <div class="cpt-champ"><label for="f-classe">Classe</label><input id="f-classe" type="text" placeholder="3e, 2nde…"></div>
+    <div class="cpt-champ"><label for="f-classe">Classe</label><select id="f-classe"><option value="">Choisis ta classe…</option></select></div>
     <div class="cpt-actions">
       <button class="cpt-btn cpt-btn-fort" id="btn-enregistrer">Enregistrer</button>
     </div>
@@ -209,6 +218,27 @@
   }
 
   /* ── Informations ─────────────────────────────────────────────────── */
+
+  /* Les classes proposées viennent des exercices existants, pas d'une liste
+     écrite en dur : on n'offre jamais une classe pour laquelle il n'y aurait
+     rien à travailler. La classe déjà enregistrée est ajoutée d'office, même
+     si elle a disparu du catalogue, pour ne pas l'effacer en silence. */
+  async function remplirClasses(actuelle) {
+    const sel = $("f-classe");
+    let classes = [];
+    try {
+      const mat = (window.MB_MAT && MB_MAT.id) || "mathematiques";
+      const res = await fetch("/programme/classes?matiere=" + encodeURIComponent(mat));
+      if (res.ok) classes = (await res.json()).classes.map(c => c.classe);
+    } catch (e) { /* liste de secours ci-dessous */ }
+    if (!classes.length) classes = ["6ème", "5ème", "4ème", "3ème", "2nde", "1ère", "Terminale"];
+    if (actuelle && !classes.includes(actuelle)) classes.unshift(actuelle);
+
+    sel.innerHTML = '<option value="">Choisis ta classe…</option>'
+      + classes.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join("");
+    sel.value = actuelle || "";
+  }
+
   function remplir(u) {
     $("f-pseudo").value = u.pseudo || "";
     $("f-email").value  = u.email  || "";
@@ -276,6 +306,7 @@
     if (!u) { $("cpt-sous").textContent = "Aucun compte connecté."; return; }
     $("cpt-sous").textContent = "Tes informations, ta tirelire et ton activité.";
     remplir(u);
+    remplirClasses(u.classe);
     chargerTirelire();
     $("btn-enregistrer").onclick = enregistrer;
     $("btn-mdp").onclick         = changerMdp;
