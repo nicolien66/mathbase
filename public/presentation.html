@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — réviser le collège et le lycée, une matière à la fois</title>
+<meta name="description" content="Cours animés, tutoriels interactifs, exercices corrigés par intelligence artificielle et annales du brevet. Mathématiques, physique-chimie, français, histoire et géographie, du collège au lycée.">
+<meta property="og:title" content="Polymates — l'école, une matière à la fois">
+<meta property="og:description" content="Cours, tutoriels, exercices corrigés et annales du brevet, du collège au lycée.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12100c; --surface:rgba(255,255,255,.028); --surface2:rgba(255,255,255,.05);
+  --text:#f0ece0; --muted:rgba(240,236,224,.56); --faint:rgba(240,236,224,.22);
+  --accent:#c8b97a; --accent-dim:rgba(200,185,122,.34); --vert:#7ac8a0;
+  --border:rgba(255,255,255,.10); --border2:rgba(255,255,255,.18);
+  --serif:'Playfair Display',Georgia,serif; --sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--sans); font-weight:300; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:980px; margin:0 auto; padding:0 1.4rem}
+a{color:var(--accent)}
+
+/* ── BANDEAU ──────────────────────────────────────────────────────────── */
+.tete{
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:1rem 1.4rem; background:rgba(18,16,12,.86);
+  backdrop-filter:blur(14px); border-bottom:1px solid var(--border);
+}
+.tete .marque{font-family:var(--serif); font-size:1.15rem; text-decoration:none; color:var(--text)}
+.tete .marque em{font-style:italic; color:var(--accent)}
+.entrer{
+  padding:.5rem 1.1rem; border:1px solid var(--accent-dim); border-radius:999px;
+  color:var(--accent); text-decoration:none; font-size:.86rem;
+  transition:background .2s, border-color .2s;
+}
+.entrer:hover{background:rgba(200,185,122,.1); border-color:var(--accent)}
+
+/* ── OUVERTURE ────────────────────────────────────────────────────────── */
+.ouverture{padding:5rem 0 4rem; border-bottom:1px solid var(--border)}
+.ouverture h1{
+  font-family:var(--serif); font-weight:400; margin:0 0 1.4rem;
+  font-size:clamp(2.1rem,5.4vw,3.5rem); line-height:1.12; letter-spacing:-.01em;
+}
+.ouverture h1 em{font-style:italic; color:var(--accent)}
+.chapo{font-size:clamp(1rem,2vw,1.15rem); color:var(--muted); max-width:60ch; margin:0 0 2.2rem}
+
+.chiffres{display:flex; flex-wrap:wrap; gap:2.6rem; margin-top:2.8rem}
+.chiffre b{
+  display:block; font-family:var(--serif); font-weight:400;
+  font-size:2.1rem; color:var(--accent); line-height:1;
+}
+.chiffre span{font-size:.82rem; color:var(--muted)}
+
+/* ── SECTIONS ─────────────────────────────────────────────────────────── */
+section{padding:4.2rem 0; border-bottom:1px solid var(--border)}
+h2{
+  font-family:var(--serif); font-weight:400; font-size:clamp(1.6rem,3.4vw,2.1rem);
+  margin:0 0 .8rem; line-height:1.2;
+}
+.intro{color:var(--muted); max-width:62ch; margin:0 0 2.4rem}
+
+.grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:1.1rem}
+.bloc{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:1.5rem 1.4rem;
+}
+.bloc h3{font-family:var(--serif); font-weight:400; font-size:1.18rem; margin:0 0 .5rem}
+.bloc p{margin:0; font-size:.9rem; color:var(--muted)}
+
+/* Les matières : celles qui sont ouvertes et celles qui viendront. */
+.matieres{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.8rem}
+.matiere{
+  display:flex; align-items:center; gap:.9rem;
+  padding:.95rem 1.1rem; border:1px solid var(--border);
+  border-radius:12px; background:var(--surface);
+}
+.matiere .puce{width:8px; height:8px; border-radius:50%; flex:none; background:var(--vert)}
+.matiere.plus-tard{opacity:.5}
+.matiere.plus-tard .puce{background:var(--faint)}
+.matiere b{font-weight:400; font-size:.96rem}
+.matiere small{display:block; color:var(--muted); font-size:.76rem}
+
+/* Le parcours d'un exercice : un vrai enchaînement, donc numéroté. */
+.etapes{counter-reset:e; display:grid; gap:1.4rem; max-width:62ch}
+.etape{display:flex; gap:1.2rem; align-items:flex-start}
+.etape::before{
+  counter-increment:e; content:counter(e);
+  flex:none; width:30px; height:30px; border-radius:50%;
+  border:1px solid var(--accent-dim); color:var(--accent);
+  font-family:var(--serif); font-size:.9rem;
+  display:flex; align-items:center; justify-content:center;
+}
+.etape h3{margin:.2rem 0 .3rem; font-family:var(--serif); font-weight:400; font-size:1.1rem}
+.etape p{margin:0; color:var(--muted); font-size:.9rem}
+
+.final{padding:4.6rem 0 5.4rem; text-align:center; border-bottom:none}
+.final h2{margin-bottom:1rem}
+.final p{color:var(--muted); max-width:52ch; margin:0 auto 2rem}
+.bouton{
+  display:inline-block; padding:.85rem 2.2rem; background:var(--accent);
+  color:#17120c; border-radius:999px; text-decoration:none;
+  font-size:.98rem; font-weight:500; transition:opacity .2s, transform .2s;
+}
+.bouton:hover{opacity:.9; transform:translateY(-1px)}
+
+.pied{padding:2.2rem 0 3rem; color:var(--faint); font-size:.8rem;
+      display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem}
+.pied a{color:var(--muted); text-decoration:none}
+.pied a:hover{color:var(--accent)}
+
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+@media (max-width:640px){
+  .ouverture{padding:3.4rem 0 2.8rem}
+  .chiffres{gap:1.8rem}
+}
+</style>
+</head>
+<body>
+
+<header class="tete">
+  <a class="marque" href="index.html">Poly<em>mates</em></a>
+  <a class="entrer" href="index.html">Entrer</a>
+</header>
+
+<main class="page">
+
+  <div class="ouverture">
+    <h1>Réviser sans se perdre,<br>du collège au <em>lycée</em>.</h1>
+    <p class="chapo">Polymates rassemble au même endroit les cours, les tutoriels
+      interactifs, les exercices et les annales du brevet. Chaque réponse est
+      corrigée et commentée, et le site retient ce que tu as déjà réussi pour ne
+      te proposer que ce qu'il te reste à travailler.</p>
+
+    <div class="chiffres">
+      <div class="chiffre"><b>5</b><span>matières ouvertes</span></div>
+      <div class="chiffre"><b>66</b><span>chapitres au programme</span></div>
+      <div class="chiffre"><b>280</b><span>sujets d'annales corrigés</span></div>
+      <div class="chiffre"><b>32</b><span>tutoriels interactifs</span></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Les matières</h2>
+    <p class="intro">Chaque matière a son espace, sa progression et ses exercices.
+      Deux autres ouvriront bientôt.</p>
+    <div class="matieres">
+      <div class="matiere"><span class="puce"></span><div><b>Mathématiques</b>
+        <small>Nombres, algèbre, géométrie, fonctions, probabilités</small></div></div>
+      <div class="matiere"><span class="puce"></span><div><b>Physique-Chimie</b>
+        <small>Matière, mouvements, énergie et signaux</small></div></div>
+      <div class="matiere"><span class="puce"></span><div><b>Français</b>
+        <small>Cours, dictées corrigées, conjugueur, mémento</small></div></div>
+      <div class="matiere"><span class="puce"></span><div><b>Histoire</b>
+        <small>Frises, fiches de révision et quiz</small></div></div>
+      <div class="matiere"><span class="puce"></span><div><b>Géographie</b>
+        <small>Ressources, mondialisation, territoires</small></div></div>
+      <div class="matiere plus-tard"><span class="puce"></span><div><b>Anglais et SVT</b>
+        <small>Bientôt disponibles</small></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce que tu y trouves</h2>
+    <p class="intro">Six manières d'aborder un même chapitre, selon que tu
+      découvres une notion, que tu la travailles ou que tu te prépares à
+      l'épreuve.</p>
+    <div class="grille">
+      <div class="bloc"><h3>L'arbre des connaissances</h3>
+        <p>Le programme entier d'un seul regard, chapitre par chapitre, pour
+           voir ce qui dépend de quoi et par où commencer.</p></div>
+      <div class="bloc"><h3>Cours animés</h3>
+        <p>Chaque notion expliquée pas à pas, avec ses définitions, ses méthodes
+           et les erreurs qu'on fait le plus souvent.</p></div>
+      <div class="bloc"><h3>Tutoriels interactifs</h3>
+        <p>Trente-deux modules où l'on manipule au lieu de lire : on déplace, on
+           trace, on essaie, et la figure répond.</p></div>
+      <div class="bloc"><h3>Séances d'entraînement</h3>
+        <p>Une série d'exercices sur le chapitre de ton choix, corrigés au fur et
+           à mesure, avec le détail de ce qui va et de ce qui manque.</p></div>
+      <div class="bloc"><h3>Annales du brevet</h3>
+        <p>Des sujets officiels découpés question par question, chacune avec son
+           espace de réponse et sa correction.</p></div>
+      <div class="bloc"><h3>Tableau de bord</h3>
+        <p>Ta progression par chapitre et par famille d'exercices : ce que tu
+           maîtrises, ce qu'il te reste, et où reprendre.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Comment se passe un exercice</h2>
+    <p class="intro">La correction ne se contente pas d'un vrai ou faux : elle
+      dit où le raisonnement s'écarte, et pourquoi.</p>
+    <div class="etapes">
+      <div class="etape"><div>
+        <h3>Tu choisis un chapitre</h3>
+        <p>Ou tu pars de ton tableau de bord, qui te renvoie directement vers ce
+           que tu n'as pas encore réussi.</p></div></div>
+      <div class="etape"><div>
+        <h3>Tu rédiges ta réponse</h3>
+        <p>Comme sur ta copie. Pour les exercices qui demandent une figure, un
+           tableau ou un graphique, l'espace de réponse devient un plateau que
+           tu remplis directement à l'écran.</p></div></div>
+      <div class="etape"><div>
+        <h3>La correction arrive</h3>
+        <p>Une note, un verdict et une explication : ce qui est juste, ce qui
+           manque, et la démarche attendue.</p></div></div>
+      <div class="etape"><div>
+        <h3>Le site s'en souvient</h3>
+        <p>Un exercice réussi ne revient pas tant que le reste de sa famille
+           n'est pas travaillé. Tu ne refais pas ce que tu sais déjà.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Les figures se manipulent</h2>
+    <p class="intro">Huit plateaux remplacent la feuille quand l'exercice
+      l'exige : quadrillage pour les symétries et les translations, droite
+      graduée, tableaux de valeurs, diagrammes, solides en perspective,
+      figures codées, repère de fonctions et zone de tracé libre.
+      Le quadrillage se lit en noir, la figure en blanc : on ne confond
+      jamais son tracé avec le support.</p>
+  </section>
+
+  <div class="final">
+    <h2>Commence par une matière</h2>
+    <p>La création d'un compte prend une minute, et tes premières corrections
+      sont offertes.</p>
+    <a class="bouton" href="index.html">Créer mon compte</a>
+  </div>
+
+  <footer class="pied">
+    <span>Polymates — l'école, une matière à la fois.</span>
+    <span><a href="index.html">Connexion</a> · <a href="mailto:contact@polymates.fr">contact@polymates.fr</a></span>
+  </footer>
+
+</main>
+</body>
+</html>

@@ -10,10 +10,11 @@
   domaine vérifié. Le jour où polymates.fr sera branché, il faudra déclarer une
   nouvelle propriété, puis remplacer le domaine ici et dans robots.txt.
 
-  Ce fichier ne contient qu'une entrée, et ce n'est pas un oubli : toutes les
-  autres pages du site sont derrière une authentification, donc inaccessibles
-  à un robot d'indexation. Les déclarer ferait remonter des erreurs dans la
-  Search Console sans apporter la moindre visibilité.
+  Seules les pages réellement publiques figurent ici. Les espaces de travail
+  sont derrière une authentification : les déclarer ferait remonter des erreurs
+  dans la Search Console sans apporter la moindre visibilité.
+  presentation.html porte le contenu indexable du site ; c'est la page par
+  laquelle un moteur comprendra ce qu'est Polymates.
 
   Pense à mettre à jour <lastmod> quand la page change réellement : une date
   fausse apprend à Google à ignorer le champ.
@@ -27,8 +28,15 @@
     <priority>1.0</priority>
   </url>
 
+  <url>
+    <loc>https://mathbase-production.up.railway.app/presentation.html</loc>
+    <lastmod>2026-09-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!--
-    À ajouter au fur et à mesure que tu créeras de vraies pages publiques.
+    À ajouter au fur et à mesure que tu créeras d'autres pages publiques.
     Ce sont elles qui feront ton référencement, pas ce fichier :
 
     <url><loc>https://mathbase-production.up.railway.app/mathematiques.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>

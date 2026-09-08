@@ -125,6 +125,8 @@ body{
 @media (prefers-reduced-motion:reduce){
   .fond{display:none}
   .titre span,.accroche,.acces{opacity:1!important; transform:none!important; animation:none!important}
+  .vers-presentation,.vers-presentation .fleche{animation:none!important}
+  .vers-presentation .mot{max-width:9rem; opacity:1}
   .filet{width:min(260px,72%)!important; animation:none!important}
   .scene{transform:none!important; animation:none!important}
 }
@@ -194,6 +196,47 @@ select{appearance:none; cursor:pointer}
   border:1px solid var(--accent-dim); border-radius:9px;
 }
 .pied{margin-top:1.6rem; font-size:.76rem; color:var(--faint); text-align:center}
+
+/* ── PASSAGE VERS LA PRÉSENTATION ───────────────────────────────────────
+   Contre le bord droit, à mi-hauteur. Discret par défaut, il se déploie au
+   survol : quelqu'un qui vient se connecter ne doit pas être détourné, mais
+   un visiteur curieux doit le trouver du regard. */
+.vers-presentation{
+  position:fixed; right:0; top:50%; transform:translateY(-50%);
+  z-index:2; display:flex; align-items:center; gap:.6rem;
+  padding:1.1rem .95rem 1.1rem 1.2rem; text-decoration:none;
+  color:var(--muted); font-family:var(--sans); font-size:.86rem;
+  background:rgba(255,255,255,.03); border:1px solid var(--border);
+  border-right:none; border-radius:14px 0 0 14px;
+  backdrop-filter:blur(10px);
+  transition:color .3s, background .3s, border-color .3s, padding-right .3s;
+}
+.vers-presentation:hover,.vers-presentation:focus-visible{
+  color:var(--accent); background:rgba(200,185,122,.08);
+  border-color:var(--accent-dim); padding-right:1.4rem;
+}
+.vers-presentation .mot{
+  max-width:0; overflow:hidden; white-space:nowrap; opacity:0;
+  transition:max-width .35s cubic-bezier(.22,1,.36,1), opacity .3s;
+}
+.vers-presentation:hover .mot,.vers-presentation:focus-visible .mot{max-width:9rem; opacity:1}
+.vers-presentation svg{flex:none; display:block}
+
+/* Un appel discret : la flèche avance de trois pixels, puis revient. */
+@keyframes appel{0%,88%,100%{transform:translateX(0)} 94%{transform:translateX(3px)}}
+.anime .vers-presentation,.direct .vers-presentation{animation:surgir 1s ease 5.4s backwards}
+@keyframes surgir{from{opacity:0; transform:translate(28px,-50%)} to{opacity:1; transform:translateY(-50%)}}
+.vers-presentation .fleche{animation:appel 5s ease-in-out infinite 7s}
+
+@media (max-width:640px){
+  .vers-presentation{
+    top:auto; bottom:0; right:50%; transform:translateX(50%);
+    border-radius:14px 14px 0 0; border:1px solid var(--border); border-bottom:none;
+    padding:.7rem 1.2rem;
+  }
+  .vers-presentation .mot{max-width:9rem; opacity:1}
+  @keyframes surgir{from{opacity:0} to{opacity:1}}
+}
 .hidden{display:none}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 </style>
@@ -238,6 +281,14 @@ select{appearance:none; cursor:pointer}
     <path class="trait" d="M0 125 Q60 20 200 55"/>
   </svg>
 </div>
+
+<a class="vers-presentation" href="presentation.html">
+  <span class="mot">Découvrir Polymates</span>
+  <svg class="fleche" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M4 10h11M11 6l4 4-4 4" fill="none" stroke="currentColor"
+          stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</a>
 
 <div class="scene">
   <h1 class="titre" id="titre" aria-label="Polymates">
