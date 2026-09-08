@@ -3,165 +3,306 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polymates — Connexion</title>
+<title>Polymates — l'école, une matière à la fois</title>
+<meta name="description" content="Cours, tutoriels, exercices et annales corrigées, du collège au lycée. Mathématiques, physique-chimie, français, histoire et géographie.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0b0b09; --panel:#14130f; --line:rgba(245,242,232,.1); --cream:#f0ece0;
-         --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;
-    display:flex;align-items:center;justify-content:center;padding:2rem 1rem;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-    background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.09), transparent);}
+:root{
+  --bg:#12100c; --bg2:#191610; --surface:rgba(255,255,255,.028);
+  --text:#f0ece0; --muted:rgba(240,236,224,.56); --faint:rgba(240,236,224,.20);
+  --accent:#c8b97a; --accent-dim:rgba(200,185,122,.34);
+  --ok:#7ac8a0; --err:#e6826e;
+  --border:rgba(255,255,255,.10); --border2:rgba(255,255,255,.18);
+  --serif:'Playfair Display',Georgia,serif; --sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+  display:flex; align-items:center; justify-content:center;
+  padding:2rem 1.2rem; overflow-x:hidden;
+}
 
-  /* ── décor : glyphe géant + halos + particules (identité de l'ancien écran d'ouverture) ── */
-  .decor{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
-  .glyph{position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);
-    font-family:'Playfair Display',Georgia,serif;font-weight:700;line-height:1;
-    font-size:min(26rem,62vw);color:rgba(200,185,122,.035);user-select:none;
-    transition:opacity .6s ease;}
-  .halo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    border-radius:50%;border:1px solid rgba(200,185,122,.11);
-    width:340px;height:340px;animation:haloPulse 5s ease-in-out infinite;}
-  .halo.h2{width:520px;height:520px;border-color:rgba(200,185,122,.06);animation-delay:-2.5s;}
-  @keyframes haloPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.45;}
-                       50%{transform:translate(-50%,-50%) scale(1.07);opacity:.12;}}
-  .spark{position:absolute;border-radius:50%;background:var(--gold);opacity:0;}
-  @keyframes sparkAnim{0%{opacity:0;transform:translate(0,0) scale(1);}
-                       15%{opacity:.7;}
-                       100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0);}}
+/* ── FOND ───────────────────────────────────────────────────────────────
+   Un champ de constructions géométriques qui dérivent lentement : cercles,
+   arcs de compas, polygones inscrits. La matière du site sert de décor,
+   plutôt qu'un motif abstrait interchangeable. Les durées sont longues
+   (90 à 240 s) pour que le mouvement se devine sans jamais attirer l'œil. */
+.fond{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none}
+.fond svg{position:absolute; overflow:visible}
+.fond .trait{fill:none; stroke:var(--accent); stroke-width:.7; opacity:.10}
+.fond .trait-fin{fill:none; stroke:var(--text); stroke-width:.5; opacity:.05}
+.fond .pt{fill:var(--accent); opacity:.16}
 
-  .box{width:min(430px,100%);position:relative;z-index:1;
-    opacity:0;transform:translateY(18px);animation:rise .9s cubic-bezier(.22,1,.36,1) .15s forwards;}
-  @keyframes rise{to{opacity:1;transform:none;}}
+@keyframes derive{
+  from{transform:translate3d(0,0,0) rotate(0deg)}
+  to  {transform:translate3d(0,-40px,0) rotate(360deg)}
+}
+@keyframes respire{
+  0%,100%{opacity:.10; transform:scale(1)}
+  50%    {opacity:.22; transform:scale(1.06)}
+}
+@keyframes halo{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%    {transform:translate(4vw,-3vh) scale(1.15)}
+}
+.g1{top:-6vh;  left:-4vw;  animation:derive 210s linear infinite}
+.g2{top:52vh;  left:74vw;  animation:derive 260s linear infinite reverse}
+.g3{top:66vh;  left:6vw;   animation:derive 180s linear infinite}
+.g4{top:8vh;   left:78vw;  animation:respire 26s ease-in-out infinite}
+.g5{top:34vh;  left:44vw;  animation:respire 34s ease-in-out infinite 4s}
 
-  .brand{text-align:center;margin-bottom:2rem;}
-  .brand h1{font-family:'Playfair Display',Georgia,serif;font-size:2.3rem;font-weight:500;letter-spacing:-.02em;}
-  .brand h1 em{font-style:italic;color:var(--gold);}
-  .brand .rule{height:1px;width:190px;margin:.9rem auto 0;
-    background:linear-gradient(to right,transparent,rgba(200,185,122,.55),transparent);}
-  .brand p{color:var(--muted);font-size:.85rem;margin-top:.85rem;line-height:1.6;}
+.lueur{
+  position:absolute; border-radius:50%; filter:blur(90px);
+  background:radial-gradient(circle, rgba(200,185,122,.13), transparent 70%);
+}
+.l1{width:52vw; height:52vw; top:-14vh; left:-10vw; animation:halo 46s ease-in-out infinite}
+.l2{width:44vw; height:44vw; bottom:-18vh; right:-8vw;
+    background:radial-gradient(circle, rgba(122,200,160,.09), transparent 70%);
+    animation:halo 62s ease-in-out infinite reverse}
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:2rem;
-    box-shadow:0 30px 80px -30px rgba(0,0,0,.8);}
-  .tabs{display:flex;gap:.4rem;background:rgba(245,242,232,.04);border-radius:999px;padding:.3rem;margin-bottom:1.6rem;}
-  .tabs button{flex:1;background:none;border:none;color:var(--muted);font:inherit;font-size:.88rem;
-    padding:.55rem;border-radius:999px;cursor:pointer;transition:.25s;}
-  .tabs button.on{background:var(--gold);color:#0b0b09;font-weight:500;}
-  label{display:block;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.12em;
-    text-transform:uppercase;color:var(--muted);margin:1rem 0 .35rem;}
-  input,select{width:100%;background:rgba(245,242,232,.05);border:1px solid var(--line);border-radius:10px;
-    color:var(--cream);font:inherit;font-size:.95rem;padding:.7rem .9rem;outline:none;transition:border-color .25s;}
-  input:focus,select:focus{border-color:rgba(200,185,122,.55);}
-  select option{background:#14130f;}
-  .pw{position:relative;}
-  .pw input{padding-right:3.4rem;}
-  .pw button{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;
-    color:var(--muted);font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;
-    text-transform:uppercase;cursor:pointer;padding:.35rem .5rem;border-radius:6px;transition:color .2s;}
-  .pw button:hover{color:var(--gold);}
-  .submit{width:100%;margin-top:1.5rem;background:var(--gold);color:#0b0b09;border:none;border-radius:999px;
-    padding:.8rem;font:inherit;font-size:.95rem;font-weight:600;cursor:pointer;transition:.25s;}
-  .submit:hover{transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(200,185,122,.5);}
-  .submit:disabled{opacity:.5;cursor:wait;transform:none;}
-  .msg{margin-top:1rem;font-size:.85rem;line-height:1.5;border-radius:10px;padding:.7rem .9rem;display:none;}
-  .msg.err{display:block;color:var(--coral);background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);}
-  .msg.ok{display:block;color:var(--green);background:rgba(130,210,160,.08);border:1px solid rgba(130,210,160,.3);}
-  .demo-banner{display:none;margin-bottom:1.4rem;font-size:.8rem;color:var(--coral);
-    border:1px dashed rgba(230,130,110,.4);border-radius:10px;padding:.7rem .9rem;line-height:1.5;}
+/* ── SCÈNE ──────────────────────────────────────────────────────────────
+   Le titre occupe d'abord le centre exact de l'écran, puis remonte pour
+   dégager la place du formulaire. Une seule translation, pas d'effets
+   dispersés : c'est le seul moment orchestré de la page. */
+.scene{position:relative; z-index:1; width:100%; max-width:420px; text-align:center}
 
-  /* ── panneau « session déjà ouverte » ── */
-  .resume{text-align:center;}
-  .resume .avatar{width:56px;height:56px;border-radius:50%;margin:0 auto 1rem;
-    display:flex;align-items:center;justify-content:center;
-    background:rgba(200,185,122,.12);border:1px solid rgba(200,185,122,.4);
-    font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;color:var(--gold);}
-  .resume h2{font-family:'Playfair Display',Georgia,serif;font-weight:500;font-size:1.3rem;}
-  .resume h2 em{font-style:italic;color:var(--gold);}
-  .resume p{color:var(--muted);font-size:.85rem;margin-top:.4rem;line-height:1.6;}
-  .resume .ghost{width:100%;margin-top:.7rem;background:none;color:var(--muted);
-    border:1px solid var(--line);border-radius:999px;padding:.7rem;font:inherit;font-size:.88rem;
-    cursor:pointer;transition:.25s;}
-  .resume .ghost:hover{color:var(--cream);border-color:rgba(200,185,122,.45);}
+.titre{
+  font-family:var(--serif); font-weight:400;
+  font-size:clamp(2.6rem,10vw,4.4rem); line-height:1;
+  letter-spacing:.06em; margin:0; white-space:nowrap;
+}
+.titre span{display:inline-block; opacity:0; transform:translateY(.42em)}
+.titre .m{font-style:italic; color:var(--accent)}
 
-  .foot{text-align:center;margin-top:1.4rem;font-size:.78rem;color:var(--muted);line-height:1.6;}
-  .hidden{display:none;}
-  @media (prefers-reduced-motion:reduce){
-    .box{animation:none;opacity:1;transform:none;} .halo{animation:none;} .spark{display:none;}
-  }
+.filet{
+  height:1px; width:0; margin:1.5rem auto 0;
+  background:linear-gradient(90deg,transparent,var(--accent-dim),transparent);
+}
+.accroche{
+  margin:1.1rem 0 0; color:var(--muted); font-size:.94rem;
+  font-weight:300; letter-spacing:.02em; opacity:0;
+}
+
+/* Le bloc de connexion n'occupe l'espace qu'une fois révélé : sans cela il
+   décalerait le centrage du titre dès le premier rendu. */
+.acces{opacity:0; transform:translateY(18px); margin-top:2.6rem}
+
+/* ── SÉQUENCE ───────────────────────────────────────────────────────────
+   0,4 s   les lettres se composent, de gauche à droite
+   2,4 s   le filet se tire
+   3,0 s   l'accroche paraît
+   3,8 s   la scène remonte
+   4,6 s   le formulaire monte à sa place
+   La page est utilisable à 5,4 s ; un clic n'importe où abrège l'attente. */
+.anime .titre span{animation:lettre .85s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes lettre{to{opacity:1; transform:translateY(0)}}
+
+.anime .filet{animation:tirer 1.5s cubic-bezier(.22,1,.36,1) 2.4s forwards}
+@keyframes tirer{to{width:min(260px,72%)}}
+
+.anime .accroche{animation:paraitre 1.1s ease 3s forwards}
+@keyframes paraitre{to{opacity:1}}
+
+/* Le décalage initial vaut la moitié de la hauteur du bloc de connexion : le
+   titre tombe alors sur le centre EXACT de l'écran, quelle que soit la taille
+   de la carte ou de la fenêtre. Mesuré en JS, faute de pouvoir l'exprimer en
+   CSS seul. */
+.scene{transform:translateY(var(--decalage,12vh))}
+.anime .scene{animation:remonter 1.3s cubic-bezier(.22,1,.36,1) 3.8s forwards}
+@keyframes remonter{from{transform:translateY(var(--decalage,12vh))} to{transform:translateY(0)}}
+
+.anime .acces{animation:monter 1.1s cubic-bezier(.22,1,.36,1) 4.6s forwards}
+@keyframes monter{to{opacity:1; transform:translateY(0)}}
+
+/* Intro abrégée, ou refusée : tout est en place, sans transition. */
+.direct .titre span,.direct .accroche,.direct .acces{opacity:1; transform:none; animation:none}
+.direct .filet{width:min(260px,72%); animation:none}
+.direct .scene{transform:none; animation:none}
+
+@media (prefers-reduced-motion:reduce){
+  .fond{display:none}
+  .titre span,.accroche,.acces{opacity:1!important; transform:none!important; animation:none!important}
+  .filet{width:min(260px,72%)!important; animation:none!important}
+  .scene{transform:none!important; animation:none!important}
+}
+
+/* ── CARTE ─────────────────────────────────────────────────────────────── */
+.carte{
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:1.5rem 1.4rem; text-align:left;
+  backdrop-filter:blur(12px);
+}
+.onglets{display:flex; gap:.4rem; margin-bottom:1.3rem}
+.onglets button{
+  flex:1; padding:.55rem; background:none; border:none; cursor:pointer;
+  color:var(--muted); font-family:var(--sans); font-size:.88rem;
+  border-bottom:1px solid var(--border); transition:color .25s, border-color .25s;
+}
+.onglets button.on{color:var(--accent); border-bottom-color:var(--accent)}
+
+label{display:block; font-size:.78rem; color:var(--muted); margin:.9rem 0 .35rem}
+label:first-of-type{margin-top:0}
+input,select{
+  width:100%; padding:.66rem .8rem; background:rgba(0,0,0,.22);
+  border:1px solid var(--border); border-radius:9px; color:var(--text);
+  font-family:var(--sans); font-size:.92rem; transition:border-color .2s;
+}
+input:focus,select:focus{outline:none; border-color:var(--accent)}
+select{appearance:none; cursor:pointer}
+.pw{position:relative}
+.pw input{padding-right:4.2rem}
+.pw button{
+  position:absolute; right:.5rem; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:var(--muted); cursor:pointer;
+  font-family:var(--sans); font-size:.76rem; padding:.25rem .4rem;
+}
+.pw button:hover{color:var(--accent)}
+
+.valider{
+  width:100%; margin-top:1.4rem; padding:.78rem;
+  background:var(--accent); border:none; border-radius:999px;
+  color:#17120c; font-family:var(--sans); font-size:.94rem; font-weight:500;
+  cursor:pointer; transition:opacity .2s, transform .2s;
+}
+.valider:hover{opacity:.9; transform:translateY(-1px)}
+.valider:disabled{opacity:.45; cursor:default; transform:none}
+.fantome{
+  width:100%; margin-top:.6rem; padding:.6rem; background:none;
+  border:1px solid var(--border2); border-radius:999px; color:var(--muted);
+  font-family:var(--sans); font-size:.85rem; cursor:pointer;
+}
+.fantome:hover{color:var(--text); border-color:var(--accent)}
+
+.reprise{text-align:center}
+.avatar{
+  width:52px; height:52px; margin:0 auto .9rem; border-radius:50%;
+  background:var(--accent-dim); color:var(--accent); font-family:var(--serif);
+  font-size:1.5rem; display:flex; align-items:center; justify-content:center;
+}
+.reprise h2{font-family:var(--serif); font-weight:400; font-size:1.3rem; margin:0 0 .3rem}
+.reprise h2 em{color:var(--accent); font-style:italic}
+.reprise p{color:var(--muted); font-size:.85rem; margin:0 0 1.2rem}
+
+.msg{margin-top:.9rem; font-size:.85rem; min-height:1.1em; text-align:center}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+.demo{
+  display:none; padding:.7rem .85rem; margin-bottom:1rem; font-size:.78rem;
+  line-height:1.5; color:var(--muted); background:rgba(200,185,122,.07);
+  border:1px solid var(--accent-dim); border-radius:9px;
+}
+.pied{margin-top:1.6rem; font-size:.76rem; color:var(--faint); text-align:center}
+.hidden{display:none}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 </style>
 </head>
 <body>
 
-<div class="decor" aria-hidden="true">
-  <div class="halo"></div>
-  <div class="halo h2"></div>
-  <div class="glyph" id="glyph">∑</div>
+<div class="fond" aria-hidden="true">
+  <div class="lueur l1"></div>
+  <div class="lueur l2"></div>
+
+  <svg class="g1" width="320" height="320" viewBox="0 0 320 320">
+    <circle class="trait" cx="160" cy="160" r="150"/>
+    <circle class="trait-fin" cx="160" cy="160" r="106"/>
+    <polygon class="trait" points="160,10 290,235 30,235"/>
+    <circle class="pt" cx="160" cy="10" r="3"/>
+    <circle class="pt" cx="290" cy="235" r="3"/>
+    <circle class="pt" cx="30" cy="235" r="3"/>
+  </svg>
+
+  <svg class="g2" width="260" height="260" viewBox="0 0 260 260">
+    <circle class="trait" cx="130" cy="130" r="120"/>
+    <polygon class="trait-fin" points="130,10 214,74 182,174 78,174 46,74"/>
+    <path class="trait" d="M10 130 A120 120 0 0 1 250 130"/>
+  </svg>
+
+  <svg class="g3" width="220" height="220" viewBox="0 0 220 220">
+    <rect class="trait-fin" x="30" y="30" width="160" height="160"/>
+    <path class="trait" d="M30 190 L190 30"/>
+    <path class="trait" d="M30 110 A80 80 0 0 1 110 30"/>
+    <circle class="pt" cx="110" cy="110" r="3"/>
+  </svg>
+
+  <svg class="g4" width="180" height="180" viewBox="0 0 180 180">
+    <circle class="trait" cx="90" cy="90" r="80"/>
+    <path class="trait-fin" d="M10 90 H170 M90 10 V170"/>
+    <path class="trait" d="M20 140 Q90 20 160 100"/>
+  </svg>
+
+  <svg class="g5" width="200" height="140" viewBox="0 0 200 140">
+    <path class="trait-fin" d="M0 20 H200 M0 55 H200 M0 90 H200 M0 125 H200"/>
+    <path class="trait-fin" d="M25 0 V140 M75 0 V140 M125 0 V140 M175 0 V140"/>
+    <path class="trait" d="M0 125 Q60 20 200 55"/>
+  </svg>
 </div>
 
-<div class="box">
-  <div class="brand">
-    <h1>Poly<em>mates</em></h1>
-    <div class="rule"></div>
-    <p id="brand-sub">Toutes tes matières au même endroit — cours, tutoriels et exercices.</p>
-  </div>
+<div class="scene">
+  <h1 class="titre" id="titre" aria-label="Polymates">
+    <span>P</span><span>o</span><span>l</span><span>y</span><span class="m">m</span><span class="m">a</span><span class="m">t</span><span class="m">e</span><span class="m">s</span>
+  </h1>
+  <div class="filet"></div>
+  <p class="accroche" id="brand-sub">Toutes tes matières au même endroit — cours, tutoriels et exercices.</p>
 
-  <div class="card">
-    <!-- ÉTAT A : session déjà ouverte -->
-    <div class="resume hidden" id="resume">
-      <div class="avatar" id="resume-initial">P</div>
-      <h2>Content de te revoir, <em id="resume-name">…</em></h2>
-      <p id="resume-note">Ta session est toujours ouverte.</p>
-      <button class="submit" id="resume-go">Continuer →</button>
-      <button class="ghost" id="resume-switch">Changer de compte</button>
-    </div>
+  <div class="acces" id="acces">
+    <div class="carte">
 
-    <!-- ÉTAT B : connexion / inscription -->
-    <div id="auth-pane">
-      <div class="demo-banner" id="demo-banner">
-        <strong>Mode démo</strong> — aucun serveur détecté : la connexion est simulée localement.
-        Entre n'importe quels identifiants (un e-mail commençant par « admin » donne l'accès administrateur).
-      </div>
-      <div class="tabs">
-        <button id="tab-login" class="on" type="button">Connexion</button>
-        <button id="tab-register" type="button">Inscription</button>
+      <div class="reprise hidden" id="resume">
+        <div class="avatar" id="resume-initial">P</div>
+        <h2>Content de te revoir, <em id="resume-name">…</em></h2>
+        <p id="resume-note">Ta session est toujours ouverte.</p>
+        <button class="valider" id="resume-go">Continuer</button>
+        <button class="fantome" id="resume-switch">Changer de compte</button>
       </div>
 
-      <form id="form-login">
-        <label for="l-email">Adresse e-mail</label>
-        <input type="email" id="l-email" required autocomplete="email" placeholder="vous@exemple.fr">
-        <label for="l-password">Mot de passe</label>
-        <div class="pw">
-          <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••">
-          <button type="button" data-toggle="l-password">Voir</button>
+      <div id="auth-pane">
+        <div class="demo" id="demo-banner">
+          <strong>Mode démo</strong> — aucun serveur détecté, la connexion est simulée
+          sur cet appareil. Entre n'importe quels identifiants.
         </div>
-        <button class="submit" type="submit">Se connecter</button>
-      </form>
 
-      <form id="form-register" class="hidden">
-        <label for="r-pseudo">Pseudo</label>
-        <input type="text" id="r-pseudo" required minlength="2" placeholder="Comment t'appelles-tu ?">
-        <label for="r-email">Adresse e-mail</label>
-        <input type="email" id="r-email" required autocomplete="email" placeholder="vous@exemple.fr">
-        <label for="r-password">Mot de passe (6 caractères min)</label>
-        <div class="pw">
-          <input type="password" id="r-password" required minlength="6" autocomplete="new-password" placeholder="••••••••">
-          <button type="button" data-toggle="r-password">Voir</button>
+        <div class="onglets">
+          <button id="tab-login" class="on" type="button">Connexion</button>
+          <button id="tab-register" type="button">Inscription</button>
         </div>
-        <label for="r-classe">Classe</label>
-        <select id="r-classe">
-          <option value="">— facultatif —</option>
-          <option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option><option>Autre</option>
-        </select>
-        <button class="submit" type="submit">Créer mon compte</button>
-      </form>
 
-      <div class="msg" id="msg"></div>
+        <form id="form-login">
+          <label for="l-email">Adresse e-mail</label>
+          <input type="email" id="l-email" required autocomplete="email" placeholder="vous@exemple.fr">
+          <label for="l-password">Mot de passe</label>
+          <div class="pw">
+            <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••">
+            <button type="button" data-toggle="l-password">Voir</button>
+          </div>
+          <button class="valider" type="submit">Se connecter</button>
+        </form>
+
+        <form id="form-register" class="hidden">
+          <label for="r-pseudo">Pseudo</label>
+          <input type="text" id="r-pseudo" required minlength="2" placeholder="Comment t'appelles-tu ?">
+          <label for="r-email">Adresse e-mail</label>
+          <input type="email" id="r-email" required autocomplete="email" placeholder="vous@exemple.fr">
+          <label for="r-password">Mot de passe (6 caractères minimum)</label>
+          <div class="pw">
+            <input type="password" id="r-password" required minlength="6" autocomplete="new-password" placeholder="••••••••">
+            <button type="button" data-toggle="r-password">Voir</button>
+          </div>
+          <label for="r-classe">Classe</label>
+          <select id="r-classe">
+            <option value="">— facultatif —</option>
+            <option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option><option>Autre</option>
+          </select>
+          <button class="valider" type="submit">Créer mon compte</button>
+        </form>
+
+        <div class="msg" id="msg"></div>
+      </div>
+
     </div>
+    <div class="pied">L'école, une matière à la fois.</div>
   </div>
-
-  <div class="foot">Polymates — l'école, une matière à la fois.</div>
 </div>
 
 <script src="auth.js"></script>
@@ -171,35 +312,43 @@
   const next = new URLSearchParams(location.search).get('next') || 'matieres.html';
   let demo = false;
 
-  /* ── décor animé (purement esthétique : isolé pour ne jamais
-        empêcher la connexion en cas d'erreur) ──────────────── */
-  function decorer(){
-  const GLYPHS = ['∑','π','∫','Ω','√','α'];
-  let gi = 0;
-  const glyphEl = $('glyph');
-  setInterval(() => {
-    glyphEl.style.opacity = '0';
-    setTimeout(() => { gi = (gi + 1) % GLYPHS.length; glyphEl.textContent = GLYPHS[gi];
-                       glyphEl.style.opacity = '1'; }, 600);
-  }, 4200);
+  /* ── MISE EN SCÈNE ────────────────────────────────────────────────────
+     Purement esthétique, et isolée : une erreur ici ne doit jamais empêcher
+     quelqu'un de se connecter. En cas de pépin, on bascule sur l'affichage
+     direct plutôt que de laisser la page à moitié révélée. */
+  function scener(){
+    const reduit = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    /* On ne rejoue pas l'intro à chaque aller-retour dans la même session :
+       spectaculaire une fois, agaçant la troisième. */
+    let revu = false;
+    try { revu = sessionStorage.getItem('mb_intro') === '1'; } catch(e){}
 
-  const decor = document.querySelector('.decor');
-  const reduce = typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if (!reduce) setInterval(() => {
-    const s = document.createElement('div');
-    s.className = 'spark';
-    const size = .8 + Math.random() * 1.6;
-    s.style.width = s.style.height = size + 'px';
-    s.style.left = (innerWidth / 2 + (Math.random() - .5) * 90) + 'px';
-    s.style.top  = (innerHeight / 2 + (Math.random() - .5) * 70) + 'px';
-    const a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 220, dur = 2 + Math.random() * 2;
-    s.style.setProperty('--tx', Math.cos(a) * d + 'px');
-    s.style.setProperty('--ty', Math.sin(a) * d + 'px');
-    s.style.animation = `sparkAnim ${dur}s ease forwards`;
-    decor.appendChild(s);
-    setTimeout(() => s.remove(), dur * 1000);
-  }, 260);
+    if (reduit || revu) { document.body.classList.add('direct'); return; }
+
+    /* Centrage exact du titre pendant l'intro : on descend la scène de la
+       moitié de ce que mesure le bloc de connexion, marge comprise. */
+    const acces = document.getElementById('acces');
+    const h = acces.offsetHeight + parseFloat(getComputedStyle(acces).marginTop || 0);
+    document.documentElement.style.setProperty('--decalage', Math.round(h / 2) + 'px');
+
+    document.body.classList.add('anime');
+    document.querySelectorAll('.titre span').forEach((s,i) => {
+      s.style.animationDelay = (0.4 + i * 0.11) + 's';
+    });
+    try { sessionStorage.setItem('mb_intro','1'); } catch(e){}
+
+    /* Impatience : un clic, une touche ou un défilement abrège l'attente.
+       On ne force jamais quelqu'un à regarder une animation. */
+    const abreger = () => {
+      document.body.classList.remove('anime');
+      document.body.classList.add('direct');
+      retirer();
+    };
+    const retirer = () => ['pointerdown','keydown','wheel','touchstart']
+      .forEach(e => removeEventListener(e, abreger));
+    ['pointerdown','keydown','wheel','touchstart']
+      .forEach(e => addEventListener(e, abreger, { once:true, passive:true }));
+    setTimeout(retirer, 6000);
   }
 
   /* ── état de session : on N'AUTO-REDIRIGE JAMAIS ──────────
@@ -295,8 +444,8 @@
     }, e.submitter);
   };
 
-  // le décor vient en dernier : une erreur ici ne doit rien casser
-  try { decorer(); } catch (e) { /* décor indisponible : sans conséquence */ }
+  // la mise en scène vient en dernier : une erreur ici ne doit rien casser
+  try { scener(); } catch (e) { document.body.classList.add('direct'); }
 })();
 </script>
 </body>
