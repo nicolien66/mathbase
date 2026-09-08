@@ -1,0 +1,44 @@
+# Polymates — consignes aux robots d'indexation.
+# À placer dans public/, à côté de sitemap.xml.
+
+User-agent: *
+
+# Espaces de travail : inaccessibles sans compte, inutile d'y envoyer un robot.
+Disallow: /app.html
+Disallow: /compte.html
+Disallow: /tableau-de-bord.html
+Disallow: /admin.html
+Disallow: /matieres.html
+Disallow: /cours.html
+Disallow: /tree.html
+Disallow: /tutoriel.html
+Disallow: /tutoriels.html
+Disallow: /humanites.html
+Disallow: /histoire.html
+Disallow: /geographie.html
+Disallow: /francais.html
+Disallow: /francais-cours.html
+Disallow: /francais-exercices.html
+Disallow: /francais-dictee.html
+Disallow: /francais-conjugueur.html
+Disallow: /francais-memento.html
+
+# Pages d'aperçu servant au développement : elles n'ont pas vocation à être
+# trouvées par un élève, et un contenu de test mal indexé nuit à l'image du site.
+Disallow: /apercu-axe.html
+Disallow: /apercu-francais.html
+Disallow: /quadrillage.html
+
+# Sujets d'annales : ce sont des documents officiels de l'Éducation nationale,
+# déjà publiés ailleurs. Les faire indexer ici n'apporte rien et alourdirait
+# fortement le passage des robots — 341 PDF.
+Disallow: /annales-pdf/
+
+# Les routes de l'API ne renvoient que du JSON.
+Disallow: /exercises
+Disallow: /annales
+Disallow: /progression
+Disallow: /credits
+Disallow: /auth
+
+Sitemap: https://mathbase-production.up.railway.app/sitemap.xml

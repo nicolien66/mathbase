@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Polymates — plan du site pour les moteurs de recherche.
+
+  À placer dans public/ : Express le sert alors à
+  https://mathbase-production.up.railway.app/sitemap.xml
+
+  IMPORTANT — le domaine doit correspondre EXACTEMENT à la propriété déclarée
+  dans la Search Console. Google refuse tout sitemap dont les URL sortent du
+  domaine vérifié. Le jour où polymates.fr sera branché, il faudra déclarer une
+  nouvelle propriété, puis remplacer le domaine ici et dans robots.txt.
+
+  Ce fichier ne contient qu'une entrée, et ce n'est pas un oubli : toutes les
+  autres pages du site sont derrière une authentification, donc inaccessibles
+  à un robot d'indexation. Les déclarer ferait remonter des erreurs dans la
+  Search Console sans apporter la moindre visibilité.
+
+  Pense à mettre à jour <lastmod> quand la page change réellement : une date
+  fausse apprend à Google à ignorer le champ.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://mathbase-production.up.railway.app/</loc>
+    <lastmod>2026-09-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!--
+    À ajouter au fur et à mesure que tu créeras de vraies pages publiques.
+    Ce sont elles qui feront ton référencement, pas ce fichier :
+
+    <url><loc>https://mathbase-production.up.railway.app/mathematiques.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+    <url><loc>https://mathbase-production.up.railway.app/francais.html</loc>      <changefreq>monthly</changefreq><priority>0.8</priority></url>
+    <url><loc>https://mathbase-production.up.railway.app/annales-brevet.html</loc> <changefreq>weekly</changefreq> <priority>0.9</priority></url>
+    <url><loc>https://mathbase-production.up.railway.app/tarifs.html</loc>         <changefreq>yearly</changefreq> <priority>0.6</priority></url>
+    <url><loc>https://mathbase-production.up.railway.app/mentions-legales.html</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  -->
+
+</urlset>
