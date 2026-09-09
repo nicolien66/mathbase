@@ -191,7 +191,11 @@ function auth(req, res, next) {
   next();
 }
 function requireAdmin(req, res, next) {
-  if (req.user.role !== "admin") return res.status(403).json({ error: "Accès administrateur requis." });
+  /* req.user peut manquer si la route est câblée sans `auth` en amont : on
+     refuse alors, plutôt que de lever une exception qui renverrait un 500 —
+     une erreur serveur laisse croire à un incident, pas à un refus. */
+  if (!req.user || req.user.role !== "admin")
+    return res.status(403).json({ error: "Accès administrateur requis." });
   next();
 }
 
@@ -2283,9 +2287,21 @@ app.get("/exercises/:id", auth, async (req, res) => {
 });
 
 /* ── SUPPRIMER UN EXERCICE ── */
-app.delete("/exercises/:id", async (req, res) => {
+/* ── SUPPRIMER UN EXERCICE ──
+   Réservé aux administrateurs. Cette route était ouverte à tous, sans même
+   exiger d'être connecté : n'importe quelle requête pouvait vider la banque
+   d'exercices. La protection se pose ici, au serveur, et non dans l'interface
+   — masquer un bouton n'empêche personne d'appeler l'adresse directement. */
+app.delete("/exercises/:id", auth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: "Identifiant invalide." });
   try {
-    const result = await pool.query("DELETE FROM exercises WHERE id = $1", [req.params.id]);
+    /* Les signalements sont détachés plutôt que supprimés : un retour d'élève
+       garde sa valeur même quand l'exercice visé disparaît. */
+    await pool.query("UPDATE signalements SET exercise_id = NULL WHERE exercise_id = $1", [id]);
+    await pool.query("DELETE FROM progression WHERE exercise_id = $1", [id]);
+    const result = await pool.query("DELETE FROM exercises WHERE id = $1", [id]);
+    console.log(`[admin] exercice ${id} supprimé par ${req.user.email || req.user.id}`);
     res.json({ deleted: result.rowCount });
   } catch (err) {
     res.status(500).json({ error: err.message });

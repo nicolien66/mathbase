@@ -1836,7 +1836,7 @@ function openModal(ex) {
     ${classHtml}
     <div class="modal-section"><div class="modal-section-label">Énoncé</div><div class="modal-section-text">${escapeHtml(ex.content)}</div></div>
     ${solutionHtml}
-    <div class="modal-delete-zone"><button class="btn-delete" onclick="deleteExercise(${ex.id})">Supprimer cet exercice</button></div>`;
+    ${estAdmin() ? `<div class="modal-delete-zone"><button class="btn-delete" onclick="deleteExercise(${ex.id})" title="R\u00e9serv\u00e9 aux administrateurs">Supprimer cet exercice</button></div>` : ""}`;
   document.getElementById("modal-overlay").classList.add("open");
   apercuInteractif(ex);
 }
@@ -2378,13 +2378,23 @@ async function deleteAnnale(id) {
   }
 }
 
+/* Suppression d'un exercice : action d'administrateur. Le contrôle réel est
+   au serveur ; ce qui suit ne fait qu'éviter d'afficher une action vouée à
+   échouer, et remonte le motif exact quand elle échoue tout de même. */
 async function deleteExercise(id) {
-  if (!confirm("Supprimer définitivement cet exercice ?")) return;
+  if (!estAdmin()) { showToast("Action r\u00e9serv\u00e9e aux administrateurs.", "error"); return; }
+  if (!confirm("Supprimer d\u00e9finitivement cet exercice ?\n\nIl dispara\u00eetra de la banque et des s\u00e9ances. Cette action est irr\u00e9versible.")) return;
   try {
-    const res = await fetch("/exercises/" + id, { method:"DELETE" });
-    if (!res.ok) throw new Error();
-    closeModal(); showToast("Exercice supprimé.", "success"); loadExercises();
-  } catch { showToast("Erreur lors de la suppression.", "error"); }
+    /* apiFetch et non fetch : sans le jeton, le serveur refuse désormais. */
+    const res = await MB_AUTH.apiFetch("/exercises/" + id, { method: "DELETE" });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.error || ("HTTP " + res.status));
+    }
+    closeModal(); showToast("Exercice supprim\u00e9.", "success"); loadExercises();
+  } catch (e) {
+    showToast("Suppression impossible" + (e && e.message ? " : " + e.message : "."), "error");
+  }
 }
 
 function closeModal() { document.getElementById("modal-overlay").classList.remove("open"); }
