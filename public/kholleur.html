@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Le Khôlleur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── Le Khôlleur : une page à part, sur la même toile sombre que app.html ── */
+  .kh-wrap { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1.4rem 5rem; }
+
+  /* ── Catalogue ─────────────────────────────────────────────────────── */
+  .kh-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 2rem;
+             flex-wrap: wrap; margin-bottom: 2.2rem; }
+  .kh-hero h1 { font-family: var(--serif); font-size: 3rem; line-height: 1.05; margin: .3rem 0 .8rem; }
+  .kh-hero h1 em { color: var(--accent); font-style: italic; }
+  .kh-hero .hero-sub { color: var(--muted); max-width: 560px; line-height: 1.7; margin: 0; }
+  .kh-badge { text-align: right; }
+  .kh-badge b { display: block; font-family: var(--serif); font-size: 2.6rem; color: var(--accent); line-height: 1; }
+  .kh-badge span { font-family: var(--mono); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+  .kh-etapes { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem; margin-bottom: 2.2rem; }
+  .kh-etape { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+              padding: 1.1rem 1.2rem; position: relative; overflow: hidden; }
+  .kh-etape::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+                      background: linear-gradient(to right, var(--kc, var(--accent)), transparent); }
+  .kh-etape-n { font-family: var(--mono); font-size: .62rem; letter-spacing: .14em; color: var(--kc, var(--accent)); }
+  .kh-etape-t { font-family: var(--serif); font-size: 1.15rem; margin: .3rem 0 .35rem; }
+  .kh-etape-d { color: var(--muted); font-size: .84rem; line-height: 1.55; }
+
+  .kh-filtres { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.6rem; }
+  .kh-filtre { background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+               border-radius: 999px; padding: .45rem 1rem; font-family: var(--sans); font-size: .84rem;
+               cursor: none; transition: .2s; }
+  .kh-filtre:hover { color: var(--text); border-color: var(--border2); }
+  .kh-filtre.active { color: var(--text); border-color: var(--accent); background: rgba(200,185,122,.08); }
+  .kh-filtre-cible { margin-left: auto; color: var(--muted); font-size: .82rem; }
+  .kh-filtre-cible a { color: var(--accent); text-decoration: none; }
+
+  .kh-theme { margin-bottom: 1.8rem; }
+  .kh-theme-t { display: flex; align-items: center; gap: .7rem; font-family: var(--mono); font-size: .66rem;
+                letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: .7rem; }
+  .kh-theme-t i { width: 8px; height: 8px; border-radius: 50%; background: var(--tc, var(--accent)); }
+  .kh-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: .7rem; }
+  .kh-carte { display: flex; flex-direction: column; gap: .35rem; text-align: left; width: 100%;
+              background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+              padding: 1rem 1.1rem; color: var(--text); font-family: var(--sans); cursor: none;
+              transition: border-color .2s, background .2s, transform .2s; }
+  .kh-carte:hover { border-color: var(--tc, var(--accent)); background: var(--surface3); transform: translateY(-1px); }
+  .kh-carte.kh-avenir { opacity: .55; cursor: none; }
+  .kh-carte.kh-avenir:hover { transform: none; border-color: var(--border); background: var(--surface2); }
+  .kh-carte-chap { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .kh-carte-titre { font-family: var(--serif); font-size: 1.12rem; line-height: 1.3; }
+  .kh-carte-pied { display: flex; align-items: center; gap: .7rem; margin-top: .3rem; font-size: .78rem; color: var(--muted); }
+  .kh-etat { margin-left: auto; font-family: var(--mono); font-size: .62rem; letter-spacing: .08em;
+             text-transform: uppercase; padding: .2rem .55rem; border-radius: 999px; border: 1px solid var(--border2); }
+  .kh-etat-reflexion { color: var(--primaire); border-color: rgba(122,180,200,.4); }
+  .kh-etat-valide    { color: var(--accent);   border-color: rgba(200,185,122,.5); }
+  .kh-etat-redige    { color: var(--accent2);  border-color: rgba(122,200,160,.5); }
+  .kh-etat-redige.kh-faible { color: var(--danger); border-color: rgba(200,122,122,.5); }
+
+  /* ── Séance ────────────────────────────────────────────────────────── */
+  .kh-seance-tete { margin-bottom: 1.6rem; }
+  .kh-retour { background: none; border: none; color: var(--muted); font-family: var(--sans); font-size: .84rem;
+               cursor: none; padding: 0; margin-bottom: .8rem; }
+  .kh-retour:hover { color: var(--accent); }
+  .kh-seance-tete h1 { font-family: var(--serif); font-size: 2.2rem; margin: 0 0 .5rem; line-height: 1.15; }
+  .kh-meta { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+  .kh-chip { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+             color: var(--muted); border: 1px solid var(--border2); border-radius: 999px; padding: .22rem .6rem; }
+  .kh-chrono { margin-left: auto; font-family: var(--mono); font-size: .95rem; color: var(--accent); }
+  .kh-chrono.kh-depasse { color: var(--danger); }
+
+  .kh-cols { display: grid; grid-template-columns: 5fr 7fr; gap: 1.2rem; align-items: start; }
+  .kh-gauche { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 1rem; }
+  .kh-droite { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+  .kh-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.4rem 1.5rem;
+             position: relative; }
+  .kh-card-t { font-family: var(--mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+               color: var(--muted); margin-bottom: .9rem; display: flex; align-items: center; gap: .6rem; }
+  .kh-enonce { white-space: pre-wrap; line-height: 1.75; font-size: .95rem; font-weight: 300; }
+  .kh-notions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+  .kh-notion { font-size: .72rem; color: var(--muted); background: var(--surface2); border-radius: 6px; padding: .2rem .5rem; }
+
+  /* Thermomètre : la seule chose qu'on montre de la « distance » à la solution. */
+  .kh-thermo-ligne { display: flex; align-items: center; gap: .9rem; }
+  .kh-thermo-mot { font-family: var(--serif); font-size: 1.25rem; min-width: 5.5rem; }
+  .kh-jauge { flex: 1; height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .kh-jauge i { display: block; height: 100%; width: 0; transition: width .6s ease, background .6s;
+                background: linear-gradient(to right, var(--primaire), var(--accent)); }
+  .kh-thermo-sous { display: flex; justify-content: space-between; color: var(--muted); font-size: .78rem; margin-top: .7rem; }
+
+  /* Chat */
+  .kh-chat-fil { display: flex; flex-direction: column; gap: .7rem; max-height: 52vh; overflow-y: auto;
+                 padding-right: .3rem; scroll-behavior: smooth; }
+  .kh-msg { max-width: 88%; padding: .75rem 1rem; border-radius: 14px; line-height: 1.6; font-size: .92rem;
+            white-space: pre-wrap; font-weight: 300; }
+  .kh-msg-eleve { align-self: flex-end; background: rgba(200,185,122,.12); border: 1px solid rgba(200,185,122,.25);
+                  border-bottom-right-radius: 4px; }
+  .kh-msg-kholleur { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border);
+                     border-bottom-left-radius: 4px; }
+  .kh-msg-indice { border-color: rgba(122,180,200,.5); }
+  .kh-msg-tag { display: block; font-family: var(--mono); font-size: .58rem; letter-spacing: .12em;
+                text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+  .kh-msg-indice .kh-msg-tag { color: var(--primaire); }
+  .kh-msg-attente { color: var(--muted); font-style: italic; }
+  .kh-msg-systeme { align-self: center; color: var(--muted); font-size: .8rem; text-align: center; max-width: 100%; }
+  .kh-msg-valide { align-self: center; color: var(--accent); border: 1px dashed rgba(200,185,122,.5);
+                   border-radius: 10px; padding: .6rem 1rem; text-align: center; font-size: .86rem; }
+  .kh-saisie { display: flex; gap: .6rem; margin-top: 1rem; align-items: flex-end; }
+  .kh-saisie textarea { min-height: 64px; max-height: 200px; }
+  .kh-envoyer { flex: none; height: 44px; padding: 0 1.2rem; }
+  .kh-suggestions { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+  .kh-sugg { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 999px;
+             padding: .3rem .75rem; font-size: .76rem; font-family: var(--sans); cursor: none; transition: .2s; }
+  .kh-sugg:hover { color: var(--text); border-color: var(--border2); }
+
+  /* Rédaction : verrouillée tant que le plan n'est pas validé. */
+  .kh-redaction.kh-verrou > :not(.kh-verrou-voile) { filter: blur(2px); opacity: .45; pointer-events: none; }
+  .kh-verrou-voile { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+                     justify-content: center; gap: .4rem; text-align: center; padding: 1.4rem; z-index: 2; }
+  .kh-verrou-voile b { font-family: var(--serif); font-size: 1.15rem; font-weight: 400; }
+  .kh-verrou-voile span { color: var(--muted); font-size: .84rem; max-width: 380px; line-height: 1.55; }
+  .kh-redaction textarea { min-height: 260px; font-family: var(--sans); line-height: 1.6; }
+  .kh-redaction-pied { display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+                       flex-wrap: wrap; margin-top: .9rem; }
+  .kh-redaction-pied small { color: var(--muted); font-size: .8rem; }
+
+  /* Copie corrigée */
+  .kh-note { display: flex; align-items: baseline; gap: .6rem; margin-bottom: 1rem; }
+  .kh-note b { font-family: var(--serif); font-size: 3rem; line-height: 1; }
+  .kh-note span { color: var(--muted); font-size: .9rem; }
+  .kh-note-correct b { color: var(--accent2); }
+  .kh-note-partial b { color: var(--accent); }
+  .kh-note-incorrect b { color: var(--danger); }
+  .kh-bareme { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin-bottom: 1.2rem; }
+  .kh-bareme div { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; }
+  .kh-bareme b { font-family: var(--mono); color: var(--accent); }
+  .kh-bareme span { display: block; color: var(--muted); font-size: .72rem; margin-top: .2rem; }
+  .kh-bloc { margin-top: 1.1rem; }
+  .kh-bloc-t { font-family: var(--mono); font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+  .kh-bloc p, .kh-bloc li { line-height: 1.65; font-size: .92rem; font-weight: 300; margin: 0; }
+  .kh-bloc ul { margin: 0; padding-left: 1.2rem; }
+  .kh-bloc-erreur li { color: var(--danger); }
+  .kh-corrige { white-space: pre-wrap; background: var(--surface2); border: 1px solid var(--border);
+                border-radius: 10px; padding: 1rem 1.1rem; margin-top: .5rem; line-height: 1.7; font-size: .9rem; }
+  details.kh-details summary { cursor: none; color: var(--accent); font-size: .88rem; margin-top: 1rem; }
+  .kh-actions { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.4rem; }
+  .kh-btn-sec { background: none; border: 1px solid var(--border2); color: var(--muted); border-radius: 8px;
+                padding: .7rem 1.3rem; font-family: var(--sans); font-size: .86rem; cursor: none; transition: .2s; }
+  .kh-btn-sec:hover { color: var(--text); border-color: var(--accent); }
+  .kh-erreur { color: var(--danger); font-size: .84rem; margin-top: .6rem; }
+  .kh-erreur a { color: var(--accent); }
+  .kh-vide { text-align: center; color: var(--muted); padding: 3rem 1rem; line-height: 1.7; }
+
+  @media (max-width: 900px) {
+    .kh-cols { grid-template-columns: 1fr; }
+    .kh-gauche { position: static; }
+    .kh-etapes, .kh-bareme { grid-template-columns: 1fr; }
+    .kh-hero h1 { font-size: 2.2rem; }
+    .kh-chat-fil { max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="kh-wrap">
+
+  <!-- ══════════════ CATALOGUE ══════════════ -->
+  <section id="vue-catalogue">
+    <div class="kh-hero">
+      <div>
+        <p class="hero-tag">Khôlle · <span id="kh-hero-matiere">Mathématiques</span></p>
+        <h1>Le <em>Khôlleur.</em></h1>
+        <p class="hero-sub">Un seul problème, difficile, à chercher pendant vingt à trente minutes. Tu exposes ton raisonnement au khôlleur, qui te guide sans jamais donner la réponse ; une fois ton plan validé, tu rédiges ta copie et elle est notée sur 20.</p>
+      </div>
+      <div class="kh-badge"><b id="kh-total">—</b><span>khôlles</span></div>
+    </div>
+
+    <div class="kh-etapes">
+      <div class="kh-etape" style="--kc:var(--primaire)">
+        <div class="kh-etape-n">① RÉFLÉCHIR</div>
+        <div class="kh-etape-t">Expose ta démarche</div>
+        <div class="kh-etape-d">Dis au khôlleur par où tu comptes commencer et pourquoi. Il te dit si tu es froid, tiède ou chaud, et peut lâcher jusqu'à trois indices.</div>
+      </div>
+      <div class="kh-etape" style="--kc:var(--accent)">
+        <div class="kh-etape-n">② FAIRE VALIDER</div>
+        <div class="kh-etape-t">Un plan complet et juste</div>
+        <div class="kh-etape-d">Quand toutes les étapes de ton raisonnement tiennent, le khôlleur le valide. Avant cela, la rédaction reste verrouillée.</div>
+      </div>
+      <div class="kh-etape" style="--kc:var(--accent2)">
+        <div class="kh-etape-n">③ RÉDIGER</div>
+        <div class="kh-etape-t">Rends ta copie</div>
+        <div class="kh-etape-d">Tu rédiges seul, avec les calculs. La copie est notée sur 20 : raisonnement, rédaction et regard critique.</div>
+      </div>
+    </div>
+
+    <div class="kh-filtres" id="kh-filtres">
+      <button class="kh-filtre active" data-niveau="">Tous les niveaux</button>
+      <button class="kh-filtre" data-niveau="college">Collège</button>
+      <button class="kh-filtre" data-niveau="lycee">Lycée</button>
+      <span class="kh-filtre-cible" id="kh-filtre-cible" hidden></span>
+    </div>
+
+    <div id="kh-catalogue"><div class="kh-vide">Chargement des khôlles…</div></div>
+  </section>
+
+  <!-- ══════════════ SÉANCE ══════════════ -->
+  <section id="vue-seance" hidden>
+    <div class="kh-seance-tete">
+      <button class="kh-retour" id="kh-retour">← Toutes les khôlles</button>
+      <h1 id="kh-titre">—</h1>
+      <div class="kh-meta">
+        <span class="kh-chip" id="kh-chip-chap"></span>
+        <span class="kh-chip" id="kh-chip-classe"></span>
+        <span class="kh-chip" id="kh-chip-duree"></span>
+        <span class="kh-chrono" id="kh-chrono" title="Temps écoulé depuis le début de la khôlle">00:00</span>
+      </div>
+    </div>
+
+    <div class="kh-cols">
+      <aside class="kh-gauche">
+        <div class="kh-card">
+          <div class="kh-card-t">Le problème</div>
+          <div class="kh-enonce" id="kh-enonce"></div>
+          <div class="kh-notions" id="kh-notions"></div>
+        </div>
+        <div class="kh-card">
+          <div class="kh-card-t">Où en es-tu ?</div>
+          <div class="kh-thermo-ligne">
+            <span class="kh-thermo-mot" id="kh-thermo-mot">—</span>
+            <div class="kh-jauge"><i id="kh-jauge"></i></div>
+          </div>
+          <div class="kh-thermo-sous">
+            <span id="kh-indices">Indices : 0 / 3</span>
+            <span id="kh-etat-txt">Pas encore commencé</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="kh-droite">
+        <div class="kh-card">
+          <div class="kh-card-t">🎓 Le khôlleur <span style="margin-left:auto;font-family:var(--sans);letter-spacing:0;text-transform:none;font-size:.74rem" id="kh-cout"></span></div>
+          <div class="kh-chat-fil" id="kh-fil"></div>
+          <div class="kh-saisie" id="kh-saisie">
+            <textarea id="kh-message" placeholder="Explique ton raisonnement : par quoi commencer, quelle propriété utiliser, pourquoi…"></textarea>
+            <button class="btn-ai kh-envoyer" id="kh-envoyer"><span class="ai-icon">✦</span> Envoyer</button>
+          </div>
+          <div class="kh-suggestions" id="kh-suggestions">
+            <button class="kh-sugg" data-txt="Voici comment je compte m'y prendre : ">Exposer mon plan</button>
+            <button class="kh-sugg" data-txt="Je pense que la première étape est ">Ma première étape</button>
+            <button class="kh-sugg" data-txt="Je bloque, peux-tu me donner un indice ?">Un indice ?</button>
+            <button class="kh-sugg" data-txt="Je pense avoir un plan complet, peux-tu le valider ? ">Valider mon plan</button>
+          </div>
+          <div class="kh-erreur" id="kh-chat-erreur" hidden></div>
+        </div>
+
+        <div class="kh-card kh-redaction kh-verrou" id="kh-redaction">
+          <div class="kh-verrou-voile" id="kh-verrou">
+            <b>🔒 Rédaction verrouillée</b>
+            <span>Expose d'abord ton plan complet au khôlleur. Quand il le valide, tu pourras rédiger ta copie ici.</span>
+          </div>
+          <div class="kh-card-t">✍️ Ta copie</div>
+          <textarea id="kh-copie" placeholder="Rédige ta solution complète : chaque étape, les calculs, les unités, une phrase de conclusion. Termine par une vérification de ton résultat."></textarea>
+          <div class="kh-redaction-pied">
+            <small id="kh-copie-aide">Tu rédiges seul : le khôlleur ne relit pas ta copie avant la correction.</small>
+            <button class="btn-ai" id="kh-rendre"><span class="ai-icon">✦</span> Rendre ma copie</button>
+          </div>
+          <div class="kh-erreur" id="kh-copie-erreur" hidden></div>
+        </div>
+
+        <div class="kh-card" id="kh-resultat" hidden></div>
+      </main>
+    </div>
+  </section>
+
+</div>
+
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect></script>
+<script src="curseur.js"></script>
+<script src="ui.js" defer></script>
+<script src="contenu.js"></script>
+<script src="contenu-physique-chimie.js"></script>
+<script src="kholleur.js"></script>
+</body>
+</html>

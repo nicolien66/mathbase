@@ -2927,13 +2927,23 @@ function restartSeance() {
   resetSeanceWelcome();
 }
 
+/* ── Le Khôlleur ──────────────────────────────────────────────────────────
+   Les anciens accès « Problèmes » (barre de navigation, séance, chapitre)
+   mènent désormais à kholleur.html. Le chapitre courant est transmis pour que
+   la page n'affiche que ses khôlles. */
+function ouvrirKholleur(chapitre) {
+  let href = "kholleur.html";
+  if (chapitre) href += "?chapitre=" + encodeURIComponent(chapitre);
+  location.href = window.MB_MAT ? MB_MAT.lien(href) : href;
+}
+
 /* ── Liens profonds : app.html#vue ouvre directement une section ── */
 function routeFromHash() {
   const h = (location.hash || "").replace("#", "");
   switch (h) {
     case "entrainement": openSeance("exercice"); break;
     case "probleme":
-    case "problemes":    openSeance("probleme"); break;
+    case "problemes":    ouvrirKholleur(); break;   // les « Problèmes » sont devenus le Khôlleur
     case "examen":       openExamen(); break;
     case "annales":      showView("annales"); break;
     case "exercices":

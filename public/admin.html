@@ -88,6 +88,21 @@
     </div>
   </div>
 
+  <!-- ── KHÔLLES : couverture des chapitres et génération ── -->
+  <div class="panel" style="margin-bottom:1.6rem">
+    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <span>Khôlleur — une khôlle par chapitre</span>
+      <button class="act" id="kh-etat">Voir la couverture</button>
+      <button class="act" id="kh-gen-maths">Générer les manquantes — Maths</button>
+      <button class="act" id="kh-gen-pc">Générer les manquantes — Physique-Chimie</button>
+      <button class="act" id="kh-stop" style="display:none">Arrêter</button>
+    </div>
+    <div id="kh-body" class="empty">
+      Chaque chapitre de mathématiques et de physique-chimie doit avoir sa khôlle. La génération se fait chapitre par chapitre
+      (une dizaine de secondes chacun) ; pour tout remplir d'un coup, lancez plutôt <code>node seed-kholles.js</code> sur le serveur.
+    </div>
+  </div>
+
   <div class="panel" style="margin-bottom:1.6rem">
     <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
       <span>Diagnostic des figures — le correcteur voit-il les sujets ?</span>
@@ -176,6 +191,69 @@
       tb.appendChild(tr);
     });
   }
+
+
+  /* ── KHÔLLES ─────────────────────────────────────────────────────────── */
+  let khArret = false;
+  async function khCouverture(){
+    const body = $('kh-body');
+    body.classList.remove('empty'); body.innerHTML = 'Lecture…';
+    try {
+      const res = await MB_AUTH.apiFetch('/admin/kholles/couverture');
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+      const parMat = {};
+      d.chapitres.forEach(c => (parMat[c.matiere] = parMat[c.matiere] || []).push(c));
+      let h = '<div style="color:var(--muted);font-size:.82rem;margin-bottom:.8rem">Modèle de génération : <code>' + escapeHtml(d.modele) + '</code></div>';
+      for (const m of Object.keys(parMat)) {
+        const l = parMat[m], faits = l.filter(c => c.n > 0).length;
+        h += '<div style="margin:.6rem 0 .3rem;font-weight:500">' + escapeHtml(m) + ' — ' + faits + ' / ' + l.length + ' chapitres couverts</div>';
+        h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.3rem .8rem;font-size:.8rem">';
+        l.forEach(c => {
+          h += '<div style="display:flex;gap:.5rem;align-items:baseline;color:' + (c.n ? 'inherit' : 'var(--muted)') + '">'
+             + '<span style="font-family:monospace">' + (c.n ? '●' : '○') + '</span>'
+             + '<span style="flex:1">' + escapeHtml(c.chapitre) + (c.n ? ' <span style="color:var(--muted)">(' + c.n + ')</span>' : '') + '</span>'
+             + '<button class="act" style="padding:.1rem .5rem;font-size:.72rem" data-kh-gen="' + escapeHtml(m) + '|' + escapeHtml(c.chapitre) + '">+1</button></div>';
+        });
+        h += '</div>';
+      }
+      body.innerHTML = h;
+      body.querySelectorAll('[data-kh-gen]').forEach(b => b.onclick = async () => {
+        const [matiere, chapitre] = b.dataset.khGen.split('|');
+        b.disabled = true; b.textContent = '…';
+        try { await khGenererUn(matiere, chapitre); b.textContent = 'ok'; }
+        catch (e) { b.textContent = 'échec'; alert(e.message); }
+      });
+    } catch (e) { body.innerHTML = '<span style="color:var(--coral)">' + escapeHtml(e.message) + '</span>'; }
+  }
+  async function khGenererUn(matiere, chapitre){
+    const res = await MB_AUTH.apiFetch('/admin/kholles/generer', { method:'POST', body: JSON.stringify({ matiere, chapitre }) });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
+    return d;
+  }
+  async function khGenererManquantes(matiere){
+    khArret = false;
+    $('kh-stop').style.display = '';
+    const body = $('kh-body'); body.classList.remove('empty');
+    const journal = document.createElement('div');
+    journal.style.cssText = 'font-family:monospace;font-size:.78rem;white-space:pre-wrap;margin-top:.8rem';
+    body.prepend(journal);
+    let n = 0;
+    while (!khArret) {
+      try {
+        const d = await khGenererUn(matiere, null);
+        if (!d.fait) { journal.textContent += '\n' + d.message; break; }
+        n++; journal.textContent += '\n✓ ' + d.chapitre + ' — « ' + d.titre + ' » (#' + d.id + ')';
+      } catch (e) { journal.textContent += '\n✗ ' + e.message; break; }
+    }
+    journal.textContent += '\nTerminé : ' + n + ' khôlle(s) générée(s).';
+    $('kh-stop').style.display = 'none';
+  }
+  $('kh-etat').onclick = khCouverture;
+  $('kh-gen-maths').onclick = () => khGenererManquantes('mathematiques');
+  $('kh-gen-pc').onclick = () => khGenererManquantes('physique-chimie');
+  $('kh-stop').onclick = () => { khArret = true; };
 
   async function load(){
     demo = !(await MB_AUTH.hasBackend()) || MB_AUTH.isDemo();

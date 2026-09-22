@@ -63,8 +63,14 @@
         <div class="home-card" onclick="openSeance()" style="--hc:var(--accent2)">
           <div class="home-card-icon">✏️</div>
           <div class="home-card-title">Entraînement</div>
-          <div class="home-card-desc">Exercices d'application ou problèmes, au choix — l'IA corrige chacune de tes réponses.</div>
+          <div class="home-card-desc">Des exercices d'application courts — l'IA corrige chacune de tes réponses.</div>
           <div class="home-card-go">S'entraîner →</div>
+        </div>
+        <div class="home-card" onclick="ouvrirKholleur()" style="--hc:var(--accent)">
+          <div class="home-card-icon">🎓</div>
+          <div class="home-card-title">Khôlleur</div>
+          <div class="home-card-desc">Un problème de 20 à 30 minutes par chapitre : expose ton raisonnement à l'examinateur, fais valider ton plan, puis rédige.</div>
+          <div class="home-card-go">Chercher →</div>
         </div>
         <div class="home-card" onclick="openExamen()" style="--hc:var(--accent2)">
           <div class="home-card-icon">⏱️</div>
@@ -154,9 +160,12 @@
         <button id="chapswitch-ex" class="chapter-switch-btn active" onclick="setChapterMode('exercice')">
           ✏️ Entraînement <span id="chapcount-ex" class="chapter-switch-count">0</span>
         </button>
-        <button id="chapswitch-pb" class="chapter-switch-btn" onclick="setChapterMode('probleme')">
-          🧩 Problèmes <span id="chapcount-pb" class="chapter-switch-count">0</span>
-        </button>
+        <!-- Le Khôlleur remplace les « Problèmes » : un problème long par chapitre,
+             travaillé avec un examinateur IA sur sa propre page. L'identifiant
+             est conservé pour script.js, qui le manipule encore. -->
+        <a id="chapswitch-pb" class="chapter-switch-btn" href="#" onclick="ouvrirKholleur(currentChapter); return false;">
+          🎓 Khôlleur <span id="chapcount-pb" class="chapter-switch-count" style="display:none">0</span>
+        </a>
       </div>
       <div id="chapter-list" class="exercise-grid"></div>
     </div>
@@ -273,10 +282,10 @@
               <span class="st-lab">Exercices d'application</span>
               <span class="st-sub">Énoncés courts, une technique à la fois</span>
             </button>
-            <button class="seance-type" id="st-probleme" onclick="setSeanceMode('probleme')">
-              <span class="st-ico">🧩</span>
-              <span class="st-lab">Problèmes</span>
-              <span class="st-sub">Énoncés longs, plusieurs étapes à enchaîner</span>
+            <button class="seance-type" id="st-probleme" onclick="ouvrirKholleur()">
+              <span class="st-ico">🎓</span>
+              <span class="st-lab">Khôlleur</span>
+              <span class="st-sub">Un problème long, guidé par un examinateur IA</span>
             </button>
           </div>
         </div>

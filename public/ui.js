@@ -17,7 +17,7 @@
     { label: "Exercices",    href: "app.html#exercices",    hashes: ["exercices", "browse"] },
     { label: "Annales",      href: "app.html#annales",      hashes: ["annales"] },
     { label: "Entraînement", href: "app.html#entrainement", hashes: ["entrainement", "seance"] },
-    { label: "Problèmes",    href: "app.html#problemes",    hashes: ["probleme", "problemes"] },
+    { label: "Khôlleur",     href: "kholleur.html",         pages:  ["kholleur.html"] },
     { label: "Examen",       href: "app.html#examen",       hashes: ["examen"] },
     { label: "Ajouter",      href: "app.html#add",          hashes: ["add", "ajouter"] },
     { label: "Cours animés", href: "cours.html",            pages:  ["cours.html"] },

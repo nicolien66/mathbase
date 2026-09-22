@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const path       = require("path");
 const crypto     = require("crypto");
 const fs         = require("fs");
+const KHOLLES    = require("./kholles");   // le Khôlleur : génération, chat, correction
 
 /* ── LECTURE TOLÉRANTE DU JSON RENVOYÉ PAR LE MODÈLE ──────────────────────
    Les modèles insèrent souvent de vrais retours à la ligne à l'intérieur des
@@ -353,7 +354,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-08-17-signalements";
+const SERVEUR_VERSION = "2026-09-22-kholleur";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -373,6 +374,10 @@ const pubUser = (u) => ({ id: u.id, email: u.email, pseudo: u.pseudo, role: u.ro
 const CREDITS_BIENVENUE  = Number(process.env.CREDITS_BIENVENUE  || 100);
 const COUT_CORRECTION    = Number(process.env.COUT_CORRECTION    || 1);
 const COUT_CORRECTION_IMG = Number(process.env.COUT_CORRECTION_IMG || 3);
+/* Khôlleur : chaque message envoyé au khôlleur, puis la correction de la
+   rédaction finale. Une khôlle de 20-30 min coûte typiquement 10 à 20 crédits. */
+const COUT_KHOLLE_MESSAGE   = Number(process.env.COUT_KHOLLE_MESSAGE   || 1);
+const COUT_KHOLLE_REDACTION = Number(process.env.COUT_KHOLLE_REDACTION || 2);
 
 /* Solde courant : somme du grand livre. */
 async function soldeCredits(userId) {
@@ -883,6 +888,35 @@ async function initDB() {
      et la réponse attendue. La route /exercises fait un SELECT *, la colonne
      est donc servie sans autre modification. */
   await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS interactif JSONB`);
+  /* ── KHÔLLES ──
+     Un type d'exercice à part : un seul problème long, que l'élève travaille
+     avec le khôlleur (chat) avant de rédiger. Le champ `kholle` contient le
+     dossier confidentiel de l'examinateur (réponse finale, étapes clés,
+     indices, pièges) : il ne sort JAMAIS vers le navigateur, pas plus que
+     `solution`. Les routes /kholles s'en chargent ; /exercises exclut le type. */
+  await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS kholle JSONB`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_exercises_type ON exercises (type)`);
+  /* Une session par (élève, khôlle) : l'historique du chat, l'état
+     (reflexion → valide → redige), la rédaction et sa correction. Recommencer
+     une khôlle efface la session ; l'historique des tentatives reste dans
+     `progression`, comme pour les autres exercices. */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS kholle_sessions (
+      id             SERIAL PRIMARY KEY,
+      user_id        INTEGER NOT NULL,
+      exercise_id    INTEGER NOT NULL,
+      etat           TEXT NOT NULL DEFAULT 'reflexion',   -- reflexion | valide | redige
+      messages       JSONB NOT NULL DEFAULT '[]'::jsonb,  -- [{ role, texte, t }]
+      proximite      INTEGER NOT NULL DEFAULT 0,
+      indices_donnes INTEGER NOT NULL DEFAULT 0,
+      reponse        TEXT,
+      correction     JSONB,
+      note           NUMERIC,
+      created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (user_id, exercise_id)
+    )
+  `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
@@ -1901,6 +1935,10 @@ app.get("/exercises", auth, async (req, res) => {
      ce qui garde le comportement d'origine pour tout appel existant. */
   query += ` AND COALESCE(matiere, 'mathematiques') = $${i++}`;
   params.push(matiere || "mathematiques");
+  /* Les khôlles ont leurs propres routes (/kholles), qui ne servent jamais la
+     solution. Ici, un SELECT * la servirait : on les exclut toujours. */
+  if (type === "kholle") return res.status(400).json({ error: "Les khôlles se consultent via /kholles." });
+  query += ` AND COALESCE(type, 'exercice') <> 'kholle'`;
   if (type)       { query += ` AND COALESCE(type, 'exercice') = $${i++}`; params.push(type); }
   if (level)      { query += ` AND level = $${i++}`;      params.push(level); }
   if (subject)    { query += ` AND subject = $${i++}`;    params.push(subject); }
@@ -2280,7 +2318,9 @@ app.get("/exercises/:id", auth, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM exercises WHERE id = $1", [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: "Exercice introuvable." });
-    res.json(result.rows[0]);
+    const ex = result.rows[0];
+    if (ex.type === "kholle") return res.status(403).json({ error: "Les khôlles se consultent via /kholles." });
+    res.json(ex);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -2304,6 +2344,260 @@ app.delete("/exercises/:id", auth, requireAdmin, async (req, res) => {
     console.log(`[admin] exercice ${id} supprimé par ${req.user.email || req.user.id}`);
     res.json({ deleted: result.rowCount });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE KHÔLLEUR
+   Un problème long par chapitre, travaillé en trois temps :
+     ① réflexion — l'élève expose son raisonnement au khôlleur (chat), qui
+        guide, situe (froid / tiède / chaud) et distribue au plus trois
+        indices, sans jamais donner la réponse ;
+     ② validation — quand le plan est complet et juste, le khôlleur l'annonce
+        et la rédaction se déverrouille ;
+     ③ rédaction — l'élève rédige seul, et la copie est notée sur 20.
+   Principe de sécurité : `solution` et `kholle` (le dossier de l'examinateur)
+   ne quittent jamais le serveur avant que la copie soit rendue.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ce que le navigateur a le droit de voir d'une khôlle. */
+function kholleVisible(ex) {
+  const k = ex.kholle || {};
+  return {
+    id: ex.id, title: ex.title, content: ex.content,
+    chapitre: ex.chapitre, matiere: ex.matiere, level: ex.level,
+    classe: ex.classe, theme: ex.subject,
+    duree: k.duree || 25, notions: k.notions || [],
+    nb_indices: (k.indices || []).length,
+  };
+}
+function sessionVisible(s) {
+  if (!s) return null;
+  return {
+    etat: s.etat, messages: s.messages || [], proximite: s.proximite,
+    indices_donnes: s.indices_donnes, reponse: s.reponse, correction: s.correction,
+    note: s.note == null ? null : Number(s.note),
+    created_at: s.created_at, updated_at: s.updated_at,
+  };
+}
+async function chargerKholle(id) {
+  const { rows } = await pool.query(
+    "SELECT * FROM exercises WHERE id = $1 AND type = 'kholle'", [Number(id)]);
+  return rows[0] || null;
+}
+async function chargerSession(userId, exerciseId) {
+  const { rows } = await pool.query(
+    "SELECT * FROM kholle_sessions WHERE user_id = $1 AND exercise_id = $2", [userId, exerciseId]);
+  return rows[0] || null;
+}
+
+/* ── CATALOGUE : les khôlles d'une matière, avec l'état de l'élève ── */
+app.get("/kholles", auth, async (req, res) => {
+  const matiere  = req.query.matiere || "mathematiques";
+  const chapitre = req.query.chapitre || null;
+  try {
+    const params = [req.user.id, matiere];
+    let sql = `
+      SELECT e.id, e.title, e.chapitre, e.classe, e.level, e.subject AS theme,
+             COALESCE((e.kholle->>'duree')::int, 25) AS duree,
+             s.etat, s.note, s.proximite, s.updated_at
+        FROM exercises e
+        LEFT JOIN kholle_sessions s ON s.exercise_id = e.id AND s.user_id = $1
+       WHERE e.type = 'kholle' AND COALESCE(e.matiere,'mathematiques') = $2`;
+    if (chapitre) { sql += " AND e.chapitre = $3"; params.push(chapitre); }
+    sql += " ORDER BY e.chapitre, e.id";
+    const { rows } = await pool.query(sql, params);
+    res.json(rows.map(r => ({ ...r, note: r.note == null ? null : Number(r.note) })));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ── UNE KHÔLLE ET LA SESSION DE L'ÉLÈVE ── */
+app.get("/kholles/:id", auth, async (req, res) => {
+  try {
+    const ex = await chargerKholle(req.params.id);
+    if (!ex) return res.status(404).json({ error: "Khôlle introuvable." });
+    const s = await chargerSession(req.user.id, ex.id);
+    const out = { kholle: kholleVisible(ex), session: sessionVisible(s) };
+    /* Le corrigé n'est révélé qu'une fois la copie rendue. */
+    if (s && s.etat === "redige") out.corrige = ex.solution;
+    res.json(out);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ── (RE)COMMENCER : efface la session ── */
+app.post("/kholles/:id/reset", auth, async (req, res) => {
+  try {
+    const ex = await chargerKholle(req.params.id);
+    if (!ex) return res.status(404).json({ error: "Khôlle introuvable." });
+    await pool.query("DELETE FROM kholle_sessions WHERE user_id = $1 AND exercise_id = $2",
+      [req.user.id, ex.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ── UN TOUR DE CHAT AVEC LE KHÔLLEUR ── */
+app.post("/kholles/:id/chat", auth, async (req, res) => {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+  const texte = String((req.body && req.body.message) || "").trim().slice(0, 3000);
+  if (!texte) return res.status(400).json({ error: "Message vide." });
+  try {
+    const ex = await chargerKholle(req.params.id);
+    if (!ex) return res.status(404).json({ error: "Khôlle introuvable." });
+
+    const facture = req.user.role !== "admin";
+    if (facture) {
+      const solde = await soldeCredits(req.user.id);
+      if (solde < COUT_KHOLLE_MESSAGE) return res.status(402).json({
+        error: "Crédits insuffisants.", solde, cout: COUT_KHOLLE_MESSAGE,
+        message: "Ta tirelire est vide : recharge-la depuis ton compte pour continuer.",
+      });
+    }
+
+    let s = await chargerSession(req.user.id, ex.id);
+    if (!s) {
+      const ins = await pool.query(
+        "INSERT INTO kholle_sessions (user_id, exercise_id) VALUES ($1,$2) RETURNING *",
+        [req.user.id, ex.id]);
+      s = ins.rows[0];
+    }
+    if (s.etat === "redige")
+      return res.status(409).json({ error: "Cette khôlle est terminée. Recommence-la pour en discuter à nouveau." });
+
+    const historique = Array.isArray(s.messages) ? s.messages : [];
+    if (historique.length >= 80)
+      return res.status(429).json({ error: "La khôlle est longue : passe à la rédaction, ou recommence-la." });
+
+    const tour = await KHOLLES.tourDeKholle({ key, exercice: ex, session: s, historique, nouveauMessage: texte });
+
+    const maintenant = new Date().toISOString();
+    const messages = historique.concat(
+      { role: "eleve",    texte, t: maintenant },
+      { role: "khôlleur", texte: tour.message, t: maintenant,
+        proximite: tour.proximite, indice: tour.indice_donne });
+    const indices = (Number(s.indices_donnes) || 0) + (tour.indice_donne ? 1 : 0);
+    /* Une validation acquise ne se perd pas : l'élève peut continuer à
+       discuter sans que le bouton de rédaction se reverrouille. */
+    const etat = (s.etat === "valide" || tour.raisonnement_valide) ? "valide" : "reflexion";
+
+    const upd = await pool.query(
+      `UPDATE kholle_sessions
+          SET messages = $3, proximite = $4, indices_donnes = $5, etat = $6, updated_at = NOW()
+        WHERE user_id = $1 AND exercise_id = $2 RETURNING *`,
+      [req.user.id, ex.id, JSON.stringify(messages), tour.proximite, indices, etat]);
+
+    const solde = facture
+      ? await debiterCredits(req.user.id, COUT_KHOLLE_MESSAGE, "kholle", "Khôlle #" + ex.id + " : message")
+      : null;
+
+    res.json({ session: sessionVisible(upd.rows[0]), solde });
+  } catch (err) {
+    console.error("[kholle] chat :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ── RENDRE SA COPIE ── */
+app.post("/kholles/:id/reponse", auth, async (req, res) => {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+  const redaction = String((req.body && req.body.reponse) || "").trim().slice(0, 12000);
+  if (redaction.length < 30) return res.status(400).json({ error: "Rédaction trop courte." });
+  try {
+    const ex = await chargerKholle(req.params.id);
+    if (!ex) return res.status(404).json({ error: "Khôlle introuvable." });
+    const s = await chargerSession(req.user.id, ex.id);
+    if (!s || s.etat !== "valide")
+      return res.status(403).json({ error: "Ton raisonnement doit d'abord être validé par le khôlleur." });
+
+    const facture = req.user.role !== "admin";
+    if (facture) {
+      const solde = await soldeCredits(req.user.id);
+      if (solde < COUT_KHOLLE_REDACTION) return res.status(402).json({
+        error: "Crédits insuffisants.", solde, cout: COUT_KHOLLE_REDACTION,
+        message: "Ta tirelire est vide : recharge-la depuis ton compte pour continuer.",
+      });
+    }
+
+    const correction = await KHOLLES.corrigerRedaction({ key, exercice: ex, redaction });
+    const upd = await pool.query(
+      `UPDATE kholle_sessions
+          SET etat = 'redige', reponse = $3, correction = $4, note = $5, updated_at = NOW()
+        WHERE user_id = $1 AND exercise_id = $2 RETURNING *`,
+      [req.user.id, ex.id, redaction, JSON.stringify(correction), correction.note]);
+
+    /* La khôlle compte dans la progression comme n'importe quel exercice :
+       réussie à partir de 10/20. */
+    await pool.query(
+      `INSERT INTO progression (user_id, exercise_id, matiere, chapitre, famille, type, difficulty, reussi, note)
+       VALUES ($1,$2,$3,$4,$5,'kholle',$6,$7,$8)`,
+      [req.user.id, ex.id, ex.matiere || "mathematiques", ex.chapitre, ex.famille || "Khôlle",
+       ex.difficulty, correction.note >= 10, correction.note]);
+
+    const solde = facture
+      ? await debiterCredits(req.user.id, COUT_KHOLLE_REDACTION, "kholle", "Khôlle #" + ex.id + " : correction")
+      : null;
+
+    res.json({ session: sessionVisible(upd.rows[0]), corrige: ex.solution, solde });
+  } catch (err) {
+    console.error("[kholle] correction :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ── ADMINISTRATION : état de la couverture, génération ──
+   Une génération par appel (une dizaine de secondes chacune) : l'admin lance
+   « générer les manquantes » et la page enchaîne les appels jusqu'à épuisement.
+   Le remplissage complet d'un coup se fait avec seed-kholles.js. */
+app.get("/admin/kholles/couverture", auth, requireAdmin, async (req, res) => {
+  try {
+    const chapitres = KHOLLES.chargerChapitres(path.join(__dirname, "public"));
+    const { rows } = await pool.query(
+      `SELECT COALESCE(matiere,'mathematiques') AS matiere, chapitre, count(*)::int AS n, array_agg(title) AS titres
+         FROM exercises WHERE type = 'kholle' GROUP BY 1, 2`);
+    const existants = {};
+    rows.forEach(r => { existants[r.matiere + "|" + r.chapitre] = r; });
+    res.json({
+      modele: KHOLLES.MODELE_GENERATION,
+      chapitres: chapitres.map(c => {
+        const e = existants[c.matiere + "|" + c.chapitre];
+        return { ...c, n: e ? e.n : 0, titres: e ? e.titres : [] };
+      }),
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/admin/kholles/generer", auth, requireAdmin, async (req, res) => {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+  const { matiere, chapitre } = req.body || {};
+  try {
+    const chapitres = KHOLLES.chargerChapitres(path.join(__dirname, "public"))
+      .filter(c => (!matiere || c.matiere === matiere) && (!chapitre || c.chapitre === chapitre));
+    if (!chapitres.length) return res.status(404).json({ error: "Aucun chapitre ne correspond." });
+
+    /* Sans chapitre précis : le premier qui n'a encore aucune khôlle. */
+    let cible = null, existants = [];
+    for (const c of chapitres) {
+      const { rows } = await pool.query(
+        `SELECT title FROM exercises WHERE type = 'kholle'
+          AND COALESCE(matiere,'mathematiques') = $1 AND chapitre = $2`, [c.matiere, c.chapitre]);
+      if (chapitre || !rows.length) { cible = c; existants = rows.map(r => r.title); break; }
+    }
+    if (!cible) return res.json({ fait: false, message: "Tous les chapitres ont déjà une khôlle." });
+
+    const k = await KHOLLES.genererKholle({ key, ...cible, existants });
+    const ins = await pool.query(
+      `INSERT INTO exercises (title, content, level, subject, difficulty, solution, classe, chapitre,
+                              matiere, type, famille, kholle)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'kholle','Khôlle',$10) RETURNING id`,
+      [k.title, k.content, k.level, k.subject, k.difficulty, k.solution, k.classe, k.chapitre,
+       k.matiere, JSON.stringify(k.kholle)]);
+    console.log(`[kholle] générée #${ins.rows[0].id} — ${cible.matiere} / ${cible.chapitre} : ${k.title}`);
+    res.json({ fait: true, id: ins.rows[0].id, matiere: cible.matiere, chapitre: cible.chapitre, titre: k.title });
+  } catch (err) {
+    console.error("[kholle] génération :", err.message);
     res.status(500).json({ error: err.message });
   }
 });
