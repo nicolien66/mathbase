@@ -9,6 +9,10 @@
 <link rel="stylesheet" href="style.css">
 <style>
   /* ── Le Khôlleur : une page à part, sur la même toile sombre que app.html ── */
+  /* L'attribut `hidden` ne pèse rien face à une règle `display` de la feuille
+     de style : sans cette ligne, le voile de verrouillage (display:flex)
+     restait affiché par-dessus la copie une fois le plan validé. */
+  [hidden] { display: none !important; }
   .kh-wrap { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1.4rem 5rem; }
 
   /* ── Catalogue ─────────────────────────────────────────────────────── */

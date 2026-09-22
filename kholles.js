@@ -248,7 +248,7 @@ Réponds UNIQUEMENT en JSON valide, les champs dans cet ordre (c'est l'ordre dan
   "proximite": nombre entier de 0 à 100,
   "indice_donne": ${prochainIndice ? `true si et seulement si tu délivres l'indice n° ${indicesDonnes + 1} dans ton message, sinon false` : "false"},
   "raisonnement_valide": true seulement si le plan de l'élève couvre correctement TOUTES les étapes clés, sinon false,
-  "message": "Ce que tu dis à l'élève. Court. Termine par une question, sauf si tu valides : dans ce cas dis-lui clairement qu'il peut passer à la rédaction."
+  "message": "Ce que tu dis à l'élève. Court. Termine par une question, sauf si tu valides. Si et seulement si raisonnement_valide vaut true, écris la phrase exacte « Tu peux passer à la rédaction. » ; sinon n'emploie jamais ces mots."
 }`;
 }
 
@@ -308,7 +308,11 @@ async function tourDeKholle({ key, exercice, session, historique, nouveauMessage
   /* Cohérence : on ne valide pas un plan que le modèle juge lui-même éloigné. */
   /* Un tour où le modèle a lâché le résultat ne vaut pas validation : si
      l'élève n'a fait qu'annoncer une valeur, son plan n'est pas exposé. */
-  const valide = !fuite && !!r.raisonnement_valide && proximite >= 80;
+  /* Le message affiché fait foi autant que le drapeau : un petit modèle écrit
+     parfois « tu peux passer à la rédaction » en laissant raisonnement_valide
+     à false. L'élève lirait une validation sans que la copie se déverrouille. */
+  const annonceValidation = /tu peux (maintenant |donc |désormais )?(passer [àa] (la )?r[ée]daction|r[ée]diger)/i.test(message);
+  const valide = !fuite && (!!r.raisonnement_valide || annonceValidation) && proximite >= 60;
   return { message, proximite: valide ? Math.max(proximite, 95) : proximite,
            indice_donne: indiceDonne, raisonnement_valide: valide, analyse: r.analyse || "" };
 }
