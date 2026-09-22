@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polymates — Analyse des compétences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  [hidden] { display: none !important; }
+  .an-wrap { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1.4rem 5rem; }
+
+  /* ── Accueil ─────────────────────────────────────────────────────── */
+  .an-hero h1 { font-family: var(--serif); font-size: 3rem; line-height: 1.05; margin: .3rem 0 .8rem; }
+  .an-hero h1 em { color: var(--primaire); font-style: italic; }
+  .an-hero p { color: var(--muted); max-width: 620px; line-height: 1.7; margin: 0 0 2rem; }
+  .an-grille { display: grid; grid-template-columns: 3fr 2fr; gap: 1.2rem; align-items: start; }
+  .an-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.4rem 1.5rem; position: relative; }
+  .an-card-t { font-family: var(--mono); font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: .9rem; display: flex; align-items: center; gap: .6rem; }
+  .an-demarrer label { display: block; color: var(--muted); font-size: .84rem; margin-bottom: .4rem; }
+  .an-demarrer select { width: 100%; max-width: 260px; margin-bottom: 1rem; }
+  .an-demarrer .an-perim { color: var(--muted); font-size: .84rem; line-height: 1.6; margin-bottom: 1rem; }
+  .an-demarrer .an-perim b { color: var(--text); font-weight: 500; }
+  .an-comment { display: grid; gap: .7rem; }
+  .an-comment div { display: flex; gap: .8rem; align-items: flex-start; font-size: .86rem; line-height: 1.55; color: var(--muted); }
+  .an-comment i { font-style: normal; font-family: var(--mono); color: var(--primaire); font-size: .7rem; padding-top: .2rem; }
+  .an-fiches { display: flex; flex-direction: column; gap: .5rem; }
+  .an-fiche-l { display: flex; align-items: center; gap: .8rem; width: 100%; text-align: left; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: .75rem 1rem; color: var(--text); font-family: var(--sans); cursor: none; transition: .2s; }
+  .an-fiche-l:hover { border-color: var(--primaire); }
+  .an-fiche-l b { font-family: var(--serif); font-weight: 400; }
+  .an-fiche-l small { color: var(--muted); font-size: .76rem; margin-left: auto; white-space: nowrap; }
+  .an-pastilles { display: flex; gap: .3rem; }
+  .an-pastilles i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .an-reprise { border-color: rgba(122,180,200,.5); }
+  .an-reprise p { margin: 0 0 .8rem; color: var(--muted); font-size: .88rem; line-height: 1.6; }
+  .an-actions { display: flex; gap: .7rem; flex-wrap: wrap; }
+  .an-btn-sec { background: none; border: 1px solid var(--border2); color: var(--muted); border-radius: 8px; padding: .7rem 1.3rem; font-family: var(--sans); font-size: .86rem; cursor: none; transition: .2s; }
+  .an-btn-sec:hover { color: var(--text); border-color: var(--primaire); }
+  .an-erreur { color: var(--danger); font-size: .84rem; margin-top: .6rem; }
+  .an-erreur a { color: var(--accent); }
+  .an-vide { text-align: center; color: var(--muted); padding: 3rem 1rem; line-height: 1.7; }
+
+  /* ── Séance ─────────────────────────────────────────────────────── */
+  .an-tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+  .an-tete h1 { font-family: var(--serif); font-size: 2rem; margin: 0; line-height: 1.15; }
+  .an-retour { background: none; border: none; color: var(--muted); font-family: var(--sans); font-size: .84rem; cursor: none; padding: 0; margin-bottom: .6rem; display: block; }
+  .an-retour:hover { color: var(--primaire); }
+  .an-cols { display: grid; grid-template-columns: 4fr 8fr; gap: 1.2rem; align-items: start; }
+  .an-gauche { position: sticky; top: 80px; }
+  .an-prog { margin-bottom: 1rem; }
+  .an-prog-l { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
+  .an-prog-b { height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .an-prog-b i { display: block; height: 100%; width: 0; background: var(--primaire); transition: width .5s; }
+  .an-legende { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .72rem; color: var(--muted); margin-bottom: 1rem; }
+  .an-legende span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .35rem; background: var(--lc); }
+  .an-theme { margin-bottom: .8rem; }
+  .an-theme-t { font-family: var(--mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .35rem; }
+  .an-comps { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .an-comp { width: 14px; height: 14px; border-radius: 4px; background: rgba(255,255,255,.08); border: 1px solid transparent; position: relative; }
+  .an-comp[title] { cursor: none; }
+  .an-comp.acquis     { background: var(--accent2); }
+  .an-comp.fragile    { background: var(--accent); }
+  .an-comp.non_acquis { background: var(--danger); }
+  .an-comp.a_confirmer{ background: transparent; border-color: var(--accent); }
+  .an-comp.suspect    { background: transparent; border-color: var(--primaire); border-style: dashed; }
+  .an-comp.cible      { box-shadow: 0 0 0 2px var(--primaire); }
+  .an-cible-txt { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; line-height: 1.55; }
+  .an-cible-txt b { color: var(--text); font-weight: 500; }
+
+  .an-fil { display: flex; flex-direction: column; gap: .7rem; max-height: 58vh; overflow-y: auto; padding-right: .3rem; scroll-behavior: smooth; }
+  .an-msg { max-width: 90%; padding: .75rem 1rem; border-radius: 14px; line-height: 1.6; font-size: .92rem; white-space: pre-wrap; font-weight: 300; }
+  .an-msg-eleve { align-self: flex-end; background: rgba(122,180,200,.12); border: 1px solid rgba(122,180,200,.3); border-bottom-right-radius: 4px; }
+  .an-msg-ia { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .an-msg-tag { display: block; font-family: var(--mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
+  .an-msg-tag.juste { color: var(--accent2); } .an-msg-tag.partiel { color: var(--accent); } .an-msg-tag.faux { color: var(--danger); }
+  .an-msg .an-visuel { margin-top: .6rem; color: var(--text); }
+  .an-msg .an-visuel svg { max-width: 100%; height: auto; }
+  .an-msg-attente { color: var(--muted); font-style: italic; }
+  .an-msg-fin { align-self: center; color: var(--primaire); border: 1px dashed rgba(122,180,200,.5); border-radius: 10px; padding: .6rem 1rem; text-align: center; font-size: .86rem; }
+  .an-saisie { display: flex; gap: .6rem; margin-top: 1rem; align-items: flex-end; }
+  .an-saisie textarea { min-height: 60px; max-height: 180px; }
+  .an-envoyer { flex: none; height: 44px; padding: 0 1.2rem; }
+  .an-pied { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: .8rem; }
+  .an-pied small { color: var(--muted); font-size: .76rem; }
+  .an-sugg { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: .3rem .75rem; font-size: .76rem; font-family: var(--sans); cursor: none; }
+  .an-sugg:hover { color: var(--text); border-color: var(--border2); }
+
+  /* ── Fiche ──────────────────────────────────────────────────────── */
+  .an-fiche-tete { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+  .an-fiche-tete h1 { font-family: var(--serif); font-size: 2.4rem; margin: 0; line-height: 1.1; }
+  .an-fiche-tete h1 em { color: var(--primaire); font-style: italic; }
+  .an-fiche-tete p { margin: .3rem 0 0; color: var(--muted); font-size: .86rem; }
+  .an-compte { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; margin-bottom: 1.2rem; }
+  .an-compte div { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; }
+  .an-compte b { font-family: var(--serif); font-size: 1.6rem; }
+  .an-compte span { display: block; color: var(--muted); font-size: .72rem; margin-top: .1rem; }
+  .an-compte .c-acquis b { color: var(--accent2); } .an-compte .c-fragile b { color: var(--accent); } .an-compte .c-non b { color: var(--danger); }
+  .an-synthese { line-height: 1.75; font-size: .95rem; font-weight: 300; }
+  .an-priorites { margin: 1rem 0 0; padding-left: 1.2rem; }
+  .an-priorites li { line-height: 1.6; font-size: .92rem; margin-bottom: .3rem; }
+  .an-themes { display: grid; gap: 1rem; margin-top: 1.2rem; }
+  .an-theme-card { border-left: 3px solid var(--tc, var(--border2)); }
+  .an-theme-card.solide { --tc: var(--accent2); } .an-theme-card.correct { --tc: var(--primaire); }
+  .an-theme-card.fragile { --tc: var(--accent); } .an-theme-card.prioritaire { --tc: var(--danger); }
+  .an-theme-h { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .6rem; }
+  .an-theme-h h2 { font-family: var(--serif); font-size: 1.35rem; margin: 0; font-weight: 400; }
+  .an-niveau { font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--tc); }
+  .an-theme-c { color: var(--muted); font-size: .88rem; line-height: 1.6; margin-bottom: .8rem; }
+  .an-bloc-t { font-family: var(--mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; margin: .8rem 0 .4rem; }
+  .an-bloc-t.faible { color: var(--danger); } .an-bloc-t.force { color: var(--accent2); }
+  .an-item { padding: .6rem .8rem; border-radius: 8px; background: var(--surface2); margin-bottom: .4rem; font-size: .88rem; line-height: 1.55; }
+  .an-item b { font-weight: 500; display: block; }
+  .an-item .an-etat { font-family: var(--mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; margin-left: .5rem; }
+  .an-item .an-etat.non_acquis { color: var(--danger); } .an-item .an-etat.fragile { color: var(--accent); }
+  .an-item .an-conseil { color: var(--muted); display: block; margin-top: .2rem; }
+  .an-item .an-conseil::before { content: '→ '; color: var(--primaire); }
+  .an-rien { color: var(--muted); font-size: .84rem; }
+
+  @media (max-width: 900px) {
+    .an-grille, .an-cols { grid-template-columns: 1fr; }
+    .an-gauche { position: static; }
+    .an-hero h1 { font-size: 2.2rem; }
+    .an-compte { grid-template-columns: repeat(2, 1fr); }
+    .an-fil { max-height: none; }
+  }
+</style>
+</head>
+<body>
+<div class="an-wrap">
+
+  <!-- ══════════ ACCUEIL ══════════ -->
+  <section id="vue-accueil">
+    <div class="an-hero">
+      <p class="hero-tag">Analyse · <span id="an-hero-matiere">Mathématiques</span></p>
+      <h1>Analyse des <em>compétences.</em></h1>
+      <p>Une série de questions rapides, de cours, d'exercice ou de petit problème, sur tout ce que tu es censé maîtriser des classes précédentes. L'IA repère les automatismes fragiles, les vérifie par un exercice ciblé, puis rédige ta fiche par grand thème : d'abord ce qu'il faut consolider, ensuite tes points d'appui.</p>
+    </div>
+    <div class="an-grille">
+      <div>
+        <div class="an-card an-reprise" id="an-reprise" hidden>
+          <div class="an-card-t">Analyse en cours</div>
+          <p id="an-reprise-txt"></p>
+          <div class="an-actions">
+            <button class="btn-ai" id="an-reprendre"><span class="ai-icon">✦</span> Reprendre</button>
+            <button class="an-btn-sec" id="an-abandonner">Abandonner</button>
+          </div>
+        </div>
+        <div class="an-card an-demarrer" id="an-demarrer">
+          <div class="an-card-t">Nouvelle analyse</div>
+          <label for="an-classe">Ta classe cette année</label>
+          <select id="an-classe"></select>
+          <div class="an-perim" id="an-perim"></div>
+          <div class="an-comment">
+            <div><i>01</i>Réponds dans le chat, comme à l'oral : un résultat et une justification en une ligne. Pas de rédaction.</div>
+            <div><i>02</i>Si l'IA repère une difficulté cachée, elle la vérifie par un autre exercice avant de conclure.</div>
+            <div><i>03</i>Tu peux t'arrêter quand tu veux : la fiche est établie sur ce qui a été évalué. Une analyse complète prend 30 à 45 minutes, en une ou plusieurs fois.</div>
+          </div>
+          <div class="an-actions" style="margin-top:1.2rem">
+            <button class="btn-ai" id="an-commencer"><span class="ai-icon">✦</span> Commencer l'analyse</button>
+          </div>
+          <div class="an-erreur" id="an-accueil-erreur" hidden></div>
+        </div>
+      </div>
+      <div class="an-card">
+        <div class="an-card-t">Mes fiches</div>
+        <div class="an-fiches" id="an-fiches"><span class="an-rien">Aucune fiche pour l'instant.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ SÉANCE ══════════ -->
+  <section id="vue-seance" hidden>
+    <div>
+      <button class="an-retour" id="an-retour">← Accueil de l'analyse</button>
+      <div class="an-tete">
+        <h1 id="an-titre">Analyse en cours</h1>
+        <button class="an-btn-sec" id="an-terminer">Terminer et voir ma fiche</button>
+      </div>
+    </div>
+    <div class="an-cols">
+      <aside class="an-gauche an-card">
+        <div class="an-card-t">Compétences évaluées</div>
+        <div class="an-prog"><div class="an-prog-l"><span id="an-prog-txt">0 / 0</span><span id="an-nbq">0 question</span></div><div class="an-prog-b"><i id="an-prog-b"></i></div></div>
+        <div class="an-legende">
+          <span style="--lc:var(--accent2)">acquis</span><span style="--lc:var(--accent)">fragile</span>
+          <span style="--lc:var(--danger)">non acquis</span><span style="--lc:var(--primaire)">à vérifier</span>
+        </div>
+        <div id="an-carte"></div>
+        <div class="an-cible-txt" id="an-cible-txt"></div>
+      </aside>
+      <main class="an-card">
+        <div class="an-card-t">🩺 L'examinateur <span style="margin-left:auto;font-family:var(--sans);letter-spacing:0;text-transform:none;font-size:.74rem" id="an-cout"></span></div>
+        <div class="an-fil" id="an-fil"></div>
+        <div class="an-saisie" id="an-saisie">
+          <textarea id="an-message" placeholder="Ta réponse, avec ta justification en une ligne…"></textarea>
+          <button class="btn-ai an-envoyer" id="an-envoyer"><span class="ai-icon">✦</span> Répondre</button>
+        </div>
+        <div class="an-pied">
+          <small>Ctrl + Entrée pour envoyer</small>
+          <button class="an-sugg" id="an-jsp">Je ne sais pas</button>
+        </div>
+        <div class="an-erreur" id="an-chat-erreur" hidden></div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ══════════ FICHE ══════════ -->
+  <section id="vue-fiche" hidden>
+    <button class="an-retour" id="an-retour-2">← Accueil de l'analyse</button>
+    <div class="an-fiche-tete">
+      <div><h1>Ta <em>fiche.</em></h1><p id="an-fiche-sous"></p></div>
+      <div class="an-actions"><button class="an-btn-sec" id="an-nouvelle">Nouvelle analyse</button></div>
+    </div>
+    <div class="an-compte" id="an-compte"></div>
+    <div class="an-card"><div class="an-card-t">Synthèse</div><p class="an-synthese" id="an-synthese"></p>
+      <div class="an-bloc-t faible" style="margin-top:1.2rem">Priorités de travail</div><ol class="an-priorites" id="an-priorites"></ol></div>
+    <div class="an-themes" id="an-themes"></div>
+  </section>
+
+</div>
+
+<script src="matiere.js"></script>
+<script src="auth.js" data-protect></script>
+<script src="curseur.js"></script>
+<script src="ui.js" defer></script>
+<script src="axe.js"></script>
+<script src="analyse.js"></script>
+</body>
+</html>

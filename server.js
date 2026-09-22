@@ -5,6 +5,7 @@ const path       = require("path");
 const crypto     = require("crypto");
 const fs         = require("fs");
 const KHOLLES    = require("./kholles");   // le Khôlleur : génération, chat, correction
+const COMPETENCES = require("./competences"); // l'Analyse des compétences : référentiel, tours, bilan
 
 /* ── LECTURE TOLÉRANTE DU JSON RENVOYÉ PAR LE MODÈLE ──────────────────────
    Les modèles insèrent souvent de vrais retours à la ligne à l'intérieur des
@@ -354,7 +355,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-09-22-kholleur";
+const SERVEUR_VERSION = "2026-09-22-analyse";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -917,6 +918,27 @@ async function initDB() {
       UNIQUE (user_id, exercise_id)
     )
   `);
+  /* ── ANALYSE DES COMPÉTENCES ──
+     Une session par analyse : l'historique du chat, l'état de chaque
+     compétence du référentiel ({ etat, a_confirmer, suspect, preuves }),
+     la compétence visée par la dernière question, puis la fiche (bilan). */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS analyse_sessions (
+      id           SERIAL PRIMARY KEY,
+      user_id      INTEGER NOT NULL,
+      matiere      TEXT NOT NULL DEFAULT 'mathematiques',
+      classe       TEXT NOT NULL,
+      etat         TEXT NOT NULL DEFAULT 'en_cours',     -- en_cours | terminee
+      messages     JSONB NOT NULL DEFAULT '[]'::jsonb,
+      competences  JSONB NOT NULL DEFAULT '{}'::jsonb,
+      cible        TEXT,
+      nb_questions INTEGER NOT NULL DEFAULT 0,
+      bilan        JSONB,
+      created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_analyse_user ON analyse_sessions (user_id, matiere, etat)`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
@@ -2600,6 +2622,179 @@ app.post("/admin/kholles/generer", auth, requireAdmin, async (req, res) => {
     console.error("[kholle] génération :", err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ANALYSE DES COMPÉTENCES
+   Une IA interroge l'élève par questions rapides (cours, exercice, petit
+   problème) sur les compétences des classes antérieures à la sienne, repère
+   les automatismes fragiles, les confirme par un exercice ciblé, puis rédige
+   une fiche par thème : faiblesses d'abord, forces ensuite.
+   La logique (référentiel, règles de confirmation, consignes) est dans
+   competences.js ; ici, la persistance et la facturation.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const COUT_ANALYSE_TOUR  = Number(process.env.COUT_ANALYSE_TOUR  || 1);
+const COUT_ANALYSE_BILAN = Number(process.env.COUT_ANALYSE_BILAN || 3);
+
+function analyseVisible(s, perim) {
+  return {
+    id: s.id, matiere: s.matiere, classe: s.classe, etat: s.etat,
+    messages: s.messages || [], competences: s.competences || {},
+    cible: s.cible, nb_questions: s.nb_questions, bilan: s.bilan,
+    perimetre: perim, created_at: s.created_at, updated_at: s.updated_at,
+  };
+}
+async function chargerAnalyse(userId, id) {
+  const { rows } = await pool.query("SELECT * FROM analyse_sessions WHERE id = $1 AND user_id = $2", [Number(id), userId]);
+  return rows[0] || null;
+}
+async function verifierCredits(req, res, cout) {
+  if (req.user.role === "admin") return true;
+  const solde = await soldeCredits(req.user.id);
+  if (solde >= cout) return true;
+  res.status(402).json({ error: "Crédits insuffisants.", solde, cout,
+    message: "Ta tirelire est vide : recharge-la depuis ton compte pour continuer." });
+  return false;
+}
+
+/* ── ACCUEIL : analyse en cours et fiches passées ── */
+app.get("/analyse", auth, async (req, res) => {
+  const matiere = req.query.matiere || "mathematiques";
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, classe, etat, nb_questions, bilan, created_at, updated_at
+         FROM analyse_sessions WHERE user_id = $1 AND matiere = $2 ORDER BY updated_at DESC`,
+      [req.user.id, matiere]);
+    const enCours = rows.find(r => r.etat === "en_cours") || null;
+    res.json({
+      classes: COMPETENCES.CLASSES.slice(1),               // le CM2 n'est qu'un périmètre, pas une classe d'élève
+      classe_profil: req.user.classe || null,
+      en_cours: enCours ? { id: enCours.id, classe: enCours.classe, nb_questions: enCours.nb_questions, updated_at: enCours.updated_at } : null,
+      fiches: rows.filter(r => r.etat === "terminee").map(r => ({
+        id: r.id, classe: r.classe, nb_questions: r.nb_questions, created_at: r.created_at, updated_at: r.updated_at,
+        compte: r.bilan && r.bilan.compte || null })),
+      referentiel: COMPETENCES.REFERENTIEL[matiere] ? Object.keys(COMPETENCES.REFERENTIEL[matiere]) : [],
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ── DÉMARRER (ou reprendre) ── */
+app.post("/analyse/demarrer", auth, async (req, res) => {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+  const matiere = (req.body && req.body.matiere) || "mathematiques";
+  const classe  = String((req.body && req.body.classe) || req.user.classe || "").trim();
+  if (!COMPETENCES.REFERENTIEL[matiere]) return res.status(400).json({ error: "Matière sans référentiel." });
+  if (COMPETENCES.rangClasse(classe) < 1) return res.status(400).json({ error: "Indique ta classe (de la 6ème à la Terminale)." });
+  try {
+    const existante = await pool.query(
+      "SELECT * FROM analyse_sessions WHERE user_id = $1 AND matiere = $2 AND etat = 'en_cours' ORDER BY updated_at DESC LIMIT 1",
+      [req.user.id, matiere]);
+    if (existante.rows[0]) {
+      const s = existante.rows[0];
+      return res.json({ session: analyseVisible(s, COMPETENCES.perimetre(matiere, s.classe)), reprise: true });
+    }
+    const perim = COMPETENCES.perimetre(matiere, classe);
+    if (!perim.length) return res.status(400).json({ error: "Aucune compétence antérieure à évaluer pour cette classe." });
+    if (!(await verifierCredits(req, res, COUT_ANALYSE_TOUR))) return;
+
+    const tour = await COMPETENCES.tourAnalyse({ key, matiere, classe, perim, etats: {}, cible: null, nbQuestions: 0,
+      historique: [], nouveauMessage: "(L'élève est prêt. Pose ta première question.)" });
+    const messages = [{ role: "ia", texte: tour.message, question: tour.question, visuel: tour.visuel, t: new Date().toISOString() }];
+    const ins = await pool.query(
+      `INSERT INTO analyse_sessions (user_id, matiere, classe, messages, competences, cible, nb_questions)
+       VALUES ($1,$2,$3,$4,'{}'::jsonb,$5,1) RETURNING *`,
+      [req.user.id, matiere, classe, JSON.stringify(messages), tour.question ? tour.question.competence : null]);
+    if (classe && classe !== req.user.classe)
+      await pool.query("UPDATE users SET classe = $1 WHERE id = $2 AND (classe IS NULL OR classe = '')", [classe, req.user.id]);
+    const solde = req.user.role === "admin" ? null
+      : await debiterCredits(req.user.id, COUT_ANALYSE_TOUR, "analyse", "Analyse #" + ins.rows[0].id + " : question");
+    res.json({ session: analyseVisible(ins.rows[0], perim), reprise: false, solde });
+  } catch (err) {
+    console.error("[analyse] démarrage :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/analyse/:id", auth, async (req, res) => {
+  try {
+    const s = await chargerAnalyse(req.user.id, req.params.id);
+    if (!s) return res.status(404).json({ error: "Analyse introuvable." });
+    res.json({ session: analyseVisible(s, COMPETENCES.perimetre(s.matiere, s.classe)) });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ── UN TOUR : l'élève répond, l'IA juge et pose la suite ── */
+app.post("/analyse/:id/tour", auth, async (req, res) => {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+  const texte = String((req.body && req.body.message) || "").trim().slice(0, 2000);
+  if (!texte) return res.status(400).json({ error: "Message vide." });
+  try {
+    const s = await chargerAnalyse(req.user.id, req.params.id);
+    if (!s) return res.status(404).json({ error: "Analyse introuvable." });
+    if (s.etat !== "en_cours") return res.status(409).json({ error: "Cette analyse est terminée." });
+    if (!(await verifierCredits(req, res, COUT_ANALYSE_TOUR))) return;
+
+    const perim = COMPETENCES.perimetre(s.matiere, s.classe);
+    const historique = Array.isArray(s.messages) ? s.messages : [];
+    const tour = await COMPETENCES.tourAnalyse({ key, matiere: s.matiere, classe: s.classe, perim,
+      etats: s.competences || {}, cible: s.cible, nbQuestions: s.nb_questions, historique, nouveauMessage: texte });
+
+    const etats = COMPETENCES.appliquerMisesAJour(s.competences || {}, perim, tour, s.cible);
+    const finie = tour.terminee || !tour.question || COMPETENCES.estTerminee(etats, perim, s.nb_questions + 1);
+    const t = new Date().toISOString();
+    const messages = historique.concat(
+      { role: "eleve", texte, t },
+      { role: "ia", texte: tour.message, evaluation: tour.evaluation, question: finie ? null : tour.question,
+        visuel: finie ? null : tour.visuel, t });
+    const upd = await pool.query(
+      `UPDATE analyse_sessions
+          SET messages = $2, competences = $3, cible = $4, nb_questions = nb_questions + 1, updated_at = NOW()
+        WHERE id = $1 RETURNING *`,
+      [s.id, JSON.stringify(messages), JSON.stringify(etats), finie ? null : tour.question.competence]);
+    const solde = req.user.role === "admin" ? null
+      : await debiterCredits(req.user.id, COUT_ANALYSE_TOUR, "analyse", "Analyse #" + s.id + " : question");
+    res.json({ session: analyseVisible(upd.rows[0], perim), pret_pour_bilan: finie, solde });
+  } catch (err) {
+    console.error("[analyse] tour :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ── TERMINER : la fiche ── */
+app.post("/analyse/:id/terminer", auth, async (req, res) => {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) return res.status(500).json({ error: "Clé MISTRAL_KEY manquante." });
+  try {
+    const s = await chargerAnalyse(req.user.id, req.params.id);
+    if (!s) return res.status(404).json({ error: "Analyse introuvable." });
+    if (s.etat !== "en_cours") return res.status(409).json({ error: "Cette analyse est déjà terminée." });
+    const etats = s.competences || {};
+    if (!Object.keys(etats).length) return res.status(400).json({ error: "Réponds au moins à quelques questions avant de demander le bilan." });
+    if (!(await verifierCredits(req, res, COUT_ANALYSE_BILAN))) return;
+
+    const perim = COMPETENCES.perimetre(s.matiere, s.classe);
+    const bilan = await COMPETENCES.bilanAnalyse({ key, matiere: s.matiere, classe: s.classe, perim, etats });
+    const upd = await pool.query(
+      "UPDATE analyse_sessions SET etat = 'terminee', bilan = $2, updated_at = NOW() WHERE id = $1 RETURNING *",
+      [s.id, JSON.stringify(bilan)]);
+    const solde = req.user.role === "admin" ? null
+      : await debiterCredits(req.user.id, COUT_ANALYSE_BILAN, "analyse", "Analyse #" + s.id + " : bilan");
+    res.json({ session: analyseVisible(upd.rows[0], perim), solde });
+  } catch (err) {
+    console.error("[analyse] bilan :", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ── ABANDONNER une analyse en cours ── */
+app.delete("/analyse/:id", auth, async (req, res) => {
+  try {
+    const r = await pool.query("DELETE FROM analyse_sessions WHERE id = $1 AND user_id = $2 AND etat = 'en_cours'",
+      [Number(req.params.id), req.user.id]);
+    res.json({ ok: r.rowCount > 0 });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 /* ── LANCEMENT ── */

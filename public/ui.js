@@ -18,6 +18,7 @@
     { label: "Annales",      href: "app.html#annales",      hashes: ["annales"] },
     { label: "Entraînement", href: "app.html#entrainement", hashes: ["entrainement", "seance"] },
     { label: "Khôlleur",     href: "kholleur.html",         pages:  ["kholleur.html"] },
+    { label: "Analyse",      href: "analyse.html",          pages:  ["analyse.html"] },
     { label: "Examen",       href: "app.html#examen",       hashes: ["examen"] },
     { label: "Ajouter",      href: "app.html#add",          hashes: ["add", "ajouter"] },
     { label: "Cours animés", href: "cours.html",            pages:  ["cours.html"] },
