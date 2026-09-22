@@ -74,6 +74,7 @@
   .an-msg-ia { align-self: flex-start; background: var(--surface2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
   .an-msg-tag { display: block; font-family: var(--mono); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .3rem; }
   .an-msg-tag.juste { color: var(--accent2); } .an-msg-tag.partiel { color: var(--accent); } .an-msg-tag.faux { color: var(--danger); }
+  .an-msg .an-enonce { margin-top: .6rem; padding: .6rem .8rem; border-left: 2px solid var(--primaire); background: rgba(122,180,200,.07); border-radius: 0 8px 8px 0; }
   .an-msg .an-visuel { margin-top: .6rem; color: var(--text); }
   .an-msg .an-visuel svg { max-width: 100%; height: auto; }
   .an-msg-attente { color: var(--muted); font-style: italic; }
@@ -134,7 +135,7 @@
     <div class="an-hero">
       <p class="hero-tag">Analyse · <span id="an-hero-matiere">Mathématiques</span></p>
       <h1>Analyse des <em>compétences.</em></h1>
-      <p>Une série de questions rapides, de cours, d'exercice ou de petit problème, sur tout ce que tu es censé maîtriser des classes précédentes. L'IA repère les automatismes fragiles, les vérifie par un exercice ciblé, puis rédige ta fiche par grand thème : d'abord ce qu'il faut consolider, ensuite tes points d'appui.</p>
+      <p>Une série de questions rapides, de cours, d'exercice ou de petit problème, sur tout ce que tu es censé maîtriser du programme de ta classe, comme si l'année était terminée. L'IA repère les automatismes fragiles, les vérifie par un exercice ciblé, puis rédige ta fiche par grand thème : d'abord ce qu'il faut consolider, ensuite tes points d'appui.</p>
     </div>
     <div class="an-grille">
       <div>
@@ -154,7 +155,7 @@
           <div class="an-comment">
             <div><i>01</i>Réponds dans le chat, comme à l'oral : un résultat et une justification en une ligne. Pas de rédaction.</div>
             <div><i>02</i>Si l'IA repère une difficulté cachée, elle la vérifie par un autre exercice avant de conclure.</div>
-            <div><i>03</i>Tu peux t'arrêter quand tu veux : la fiche est établie sur ce qui a été évalué. Une analyse complète prend 30 à 45 minutes, en une ou plusieurs fois.</div>
+            <div><i>03</i>Tu peux t'arrêter quand tu veux : la fiche est établie sur ce qui a été évalué. Une analyse complète prend 15 à 25 minutes, en une ou plusieurs fois.</div>
           </div>
           <div class="an-actions" style="margin-top:1.2rem">
             <button class="btn-ai" id="an-commencer"><span class="ai-icon">✦</span> Commencer l'analyse</button>

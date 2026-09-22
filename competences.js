@@ -75,6 +75,8 @@ const REFERENTIEL = {
       ["A15", "1ère", "Utiliser la forme canonique et le signe d'un trinôme"],
       ["A16", "1ère", "Étudier une suite arithmétique ou géométrique (terme général, somme)"],
       ["A17", "1ère", "Démontrer par récurrence"],
+      ["A18", "Terminale", "Déterminer la limite d'une suite et utiliser les théorèmes de comparaison"],
+      ["A19", "Terminale", "Dénombrer avec les combinaisons et les arrangements"],
     ],
     "Grandeurs & mesures": [
       ["M01", "CM2",  "Convertir des longueurs, des masses et des contenances"],
@@ -118,6 +120,9 @@ const REFERENTIEL = {
       ["G19", "2nde", "Utiliser la colinéarité et déterminer l'équation d'une droite"],
       ["G20", "1ère", "Calculer un produit scalaire et l'utiliser (angles, orthogonalité)"],
       ["G21", "1ère", "Utiliser le cercle trigonométrique et les valeurs remarquables"],
+      ["G22", "Terminale", "Utiliser vecteurs, droites et plans de l'espace (colinéarité, coplanarité)"],
+      ["G23", "Terminale", "Utiliser le produit scalaire dans l'espace et l'équation cartésienne d'un plan"],
+      ["G24", "Terminale", "Écrire une représentation paramétrique de droite et calculer une distance"],
     ],
     "Fonctions": [
       ["F01", "3ème", "Calculer une image et un antécédent, lire un tableau de valeurs"],
@@ -129,6 +134,12 @@ const REFERENTIEL = {
       ["F07", "1ère", "Calculer une dérivée et l'équation d'une tangente"],
       ["F08", "1ère", "Étudier les variations d'une fonction à partir du signe de sa dérivée"],
       ["F09", "1ère", "Utiliser la fonction exponentielle et ses propriétés algébriques"],
+      ["F10", "Terminale", "Calculer une limite de fonction et déterminer une asymptote"],
+      ["F11", "Terminale", "Utiliser la continuité et le théorème des valeurs intermédiaires"],
+      ["F12", "Terminale", "Étudier la convexité avec la dérivée seconde"],
+      ["F13", "Terminale", "Utiliser le logarithme népérien et résoudre des équations avec ln et exp"],
+      ["F14", "Terminale", "Calculer une primitive et une intégrale ; interpréter une aire"],
+      ["F15", "Terminale", "Résoudre une équation différentielle y' = ay + b"],
     ],
     "Statistiques & probabilités": [
       ["S01", "CM2",  "Lire un tableau, un diagramme en bâtons ou un graphique"],
@@ -141,6 +152,8 @@ const REFERENTIEL = {
       ["S08", "2nde", "Calculer quartiles, écart-type et interpréter une distribution"],
       ["S09", "1ère", "Utiliser les probabilités conditionnelles et un arbre pondéré"],
       ["S10", "1ère", "Calculer l'espérance d'une variable aléatoire et reconnaître une loi binomiale"],
+      ["S11", "Terminale", "Calculer avec la loi binomiale et utiliser un intervalle de fluctuation"],
+      ["S12", "Terminale", "Utiliser l'espérance et la variance d'une somme de variables aléatoires ; inégalité de Bienaymé-Tchebychev"],
     ],
   },
 
@@ -163,6 +176,11 @@ const REFERENTIEL = {
       ["C15", "1ère", "Construire un tableau d'avancement et déterminer le réactif limitant"],
       ["C16", "1ère", "Identifier une famille fonctionnelle organique et nommer une molécule simple"],
       ["C17", "1ère", "Écrire une demi-équation et une équation d'oxydoréduction"],
+      ["C18", "Terminale", "Déterminer une vitesse de réaction et un temps de demi-réaction"],
+      ["C19", "Terminale", "Calculer un pH, utiliser un couple acide-base et exploiter un titrage"],
+      ["C20", "Terminale", "Prévoir le sens d'évolution avec le quotient de réaction et la constante d'équilibre"],
+      ["C21", "Terminale", "Décrire le fonctionnement d'une pile ou d'une électrolyse"],
+      ["C22", "Terminale", "Élaborer une stratégie de synthèse et calculer un rendement"],
     ],
     "Mouvements & interactions": [
       ["V01", "5ème", "Décrire un mouvement : trajectoire, référentiel, mouvement uniforme ou varié"],
@@ -175,6 +193,10 @@ const REFERENTIEL = {
       ["V08", "2nde", "Appliquer le principe d'inertie et faire un bilan des forces"],
       ["V09", "1ère", "Relier la variation du vecteur vitesse à la somme des forces"],
       ["V10", "1ère", "Calculer une pression et utiliser la loi de Boyle-Mariotte ou la poussée d'Archimède"],
+      ["V11", "Terminale", "Appliquer la deuxième loi de Newton et établir les équations horaires d'un mouvement"],
+      ["V12", "Terminale", "Étudier un mouvement dans un champ de pesanteur ou électrique uniforme"],
+      ["V13", "Terminale", "Utiliser les lois de Kepler et le mouvement circulaire d'un satellite"],
+      ["V14", "Terminale", "Appliquer la relation de Bernoulli et la conservation du débit"],
     ],
     "Énergie": [
       ["E01", "5ème", "Identifier des formes et des sources d'énergie, renouvelables ou non"],
@@ -187,6 +209,9 @@ const REFERENTIEL = {
       ["E08", "2nde", "Calculer énergie cinétique, potentielle de pesanteur et mécanique"],
       ["E09", "1ère", "Calculer le travail d'une force et appliquer le théorème de l'énergie cinétique"],
       ["E10", "1ère", "Calculer un rendement et utiliser le modèle du générateur"],
+      ["E11", "Terminale", "Appliquer le premier principe de la thermodynamique à un système"],
+      ["E12", "Terminale", "Décrire un transfert thermique et utiliser la capacité thermique"],
+      ["E13", "Terminale", "Établir un bilan énergétique et modéliser l'évolution d'une température"],
     ],
     "Ondes & signaux": [
       ["O01", "5ème", "Distinguer sources primaires et objets diffusants ; propagation rectiligne de la lumière"],
@@ -197,6 +222,11 @@ const REFERENTIEL = {
       ["O06", "2nde", "Construire l'image d'un objet par une lentille mince convergente"],
       ["O07", "1ère", "Utiliser la longueur d'onde, la célérité et la période d'une onde"],
       ["O08", "1ère", "Relier l'énergie d'un photon à sa fréquence et interpréter un spectre"],
+      ["O09", "Terminale", "Calculer un niveau d'intensité sonore et une atténuation"],
+      ["O10", "Terminale", "Exploiter la diffraction et les interférences (angle, interfrange)"],
+      ["O11", "Terminale", "Utiliser l'effet Doppler pour déterminer une vitesse"],
+      ["O12", "Terminale", "Décrire une lunette astronomique et calculer un grossissement"],
+      ["O13", "Terminale", "Étudier la charge d'un condensateur dans un circuit RC"],
     ],
   },
 };
@@ -211,13 +241,13 @@ function toutes(matiere) {
   return out;
 }
 
-/* Périmètre d'une analyse : les compétences des classes strictement
-   antérieures à celle de l'élève. Un élève de 6ème est évalué sur le CM2,
-   un élève de 2nde sur tout le collège. */
+/* Périmètre d'une analyse : les compétences de la classe de l'élève, comme
+   si l'année était terminée. Un élève de 4ème est évalué sur le programme
+   de 4ème. */
 function perimetre(matiere, classe) {
   const r = rangClasse(classe);
   if (r < 0) return [];
-  return toutes(matiere).filter(c => rangClasse(c.classe) < r);
+  return toutes(matiere).filter(c => rangClasse(c.classe) === r);
 }
 
 /* ── Appel Mistral (JSON, avec réessai sur 429) ────────────────────────── */
@@ -269,9 +299,9 @@ function consigneTour({ matiere, classe, perim, etats, cible, nbQuestions }) {
   const restantes = perim.filter(c => !etats[c.id] || !etats[c.id].etat || etats[c.id].a_confirmer);
   const priorites = perim.filter(c => etats[c.id] && (etats[c.id].suspect || etats[c.id].a_confirmer) && !(etats[c.id].etat && !etats[c.id].a_confirmer));
 
-  return `Tu es un professeur de ${nomMat} qui fait passer une ANALYSE DES COMPÉTENCES à un élève de ${classe}. Ton but : établir, par une série de questions RAPIDES, ce qu'il maîtrise réellement des classes précédentes. Tu tutoies l'élève, tu es précis, encourageant et sobre. Pas de cours magistral : au plus une phrase d'explication quand une réponse est fausse.
+  return `Tu es un professeur de ${nomMat} qui fait passer une ANALYSE DES COMPÉTENCES à un élève de ${classe}. Ton but : établir, par une série de questions RAPIDES, ce qu'il maîtrise réellement du programme de sa classe, comme si l'année était terminée. Tu tutoies l'élève, tu es précis, encourageant et sobre. Pas de cours magistral : au plus une phrase d'explication quand une réponse est fausse.
 
-RÉFÉRENTIEL À COUVRIR (compétences des classes antérieures à la ${classe}) — état actuel :
+RÉFÉRENTIEL À COUVRIR (compétences du programme de ${classe}) — état actuel :
 ${perim.map(ligne).join("\n")}
 
 COMPÉTENCE VISÉE PAR TA DERNIÈRE QUESTION : ${cible ? cible + " (l'élève vient d'y répondre)" : "aucune (début de l'analyse : ne juge pas le premier message, pose ta première question)"}
@@ -284,7 +314,7 @@ MÉTHODE :
 2. METS À JOUR les états : « acquis » si la réponse montre une maîtrise, « fragile » si elle est hésitante ou juste avec une erreur, « non_acquis » si elle est fausse ou absente. Tu peux juger PLUSIEURS compétences avec une même réponse (un petit problème mobilise souvent deux ou trois automatismes).
 3. DÉTECTE les difficultés cachées : si une erreur révèle une faiblesse sur une AUTRE compétence que celle visée (par exemple une division fausse dans un exercice de proportionnalité, un signe oublié dans une équation, une conversion d'unité manquée en géométrie), déclare-la SUSPECTÉE avec la raison. Tu la vérifieras ensuite par un exercice qui la cible directement, sous une forme différente (calcul pur, situation concrète, lecture sur un axe gradué…).
 4. CONFIRME toujours avant de conclure : une compétence n'est définitivement « non_acquis » qu'après DEUX échecs sur deux questions différentes. Le serveur applique cette règle ; toi, après un premier échec, repose plus tard une question ciblée sur cette compétence.
-5. CHOISIS la question suivante, dans cet ordre de priorité : (a) une compétence suspectée ou à confirmer ; (b) une compétence encore à évaluer, en enchaînant les thèmes de façon variée et en commençant par les classes les plus anciennes ; (c) si tout est jugé et confirmé, termine. Une fois une compétence jugée et confirmée, n'y reviens plus.
+5. CHOISIS la question suivante, dans cet ordre de priorité : (a) une compétence suspectée ou à confirmer ; (b) une compétence encore à évaluer, en enchaînant les thèmes de façon variée ; (c) si tout est jugé et confirmé, termine. Une fois une compétence jugée et confirmée, n'y reviens plus.
 6. ALTERNE les formats : question de cours (« que signifie… », « quelle propriété permet… »), exercice technique court, ou petit problème concret résoluble en moins de 5 minutes. Une seule question à la fois, énoncé complet et autonome, avec toutes les données. Maths en texte simple (x^2, 3/4, sqrt(2)). Pas de LaTeX, pas de markdown, pas d'émoji.
 7. Quand une question gagne à être ILLUSTRÉE par une droite graduée (repérage, écart entre deux nombres, fractions, relatifs, lecture d'une graduation), fournis un « visuel » de type axe ; sinon mets null.
 8. Hors sujet ou tentative de te faire donner les réponses : tu ramènes en une phrase à la question en cours. Si l'élève dit qu'il ne sait pas, c'est une réponse (non acquis) : passe à la suite.
@@ -368,8 +398,17 @@ async function tourAnalyse({ key, matiere, classe, perim, etats, cible, nbQuesti
           .slice(0, 6).map(p => ({ nom: String(p.nom || "").slice(0, 3), x: Number(p.x) })) };
     }
   }
+  /* L'énoncé doit toujours être lisible par l'élève : si le modèle l'a mis
+     dans `question` sans le recopier dans `message`, on l'y ajoute. */
+  let message = String(r.message || "").trim();
+  if (question && question.enonce) {
+    const extrait = question.enonce.replace(/\s+/g, " ").slice(0, 40).toLowerCase();
+    if (!message.replace(/\s+/g, " ").toLowerCase().includes(extrait)) {
+      message = (message ? message + "\n\n" : "") + question.enonce;
+    }
+  }
   return {
-    message: String(r.message || "").trim() || (question ? question.enonce : "Continuons."),
+    message: message || "Continuons.",
     evaluation: r.evaluation && r.evaluation.verdict ? { verdict: r.evaluation.verdict, commentaire: String(r.evaluation.commentaire || "") } : null,
     mises_a_jour: Array.isArray(r.mises_a_jour) ? r.mises_a_jour : [],
     suspicions: Array.isArray(r.suspicions) ? r.suspicions : [],
@@ -389,7 +428,7 @@ function consigneBilan({ matiere, classe, perim, etats }) {
     const preuves = (e.preuves || []).map(p => `${p.etat} : ${p.preuve}`).join(" | ");
     return `  ${c.id} [${c.theme} · ${c.classe}] ${c.libelle} → ${e.etat || "non évaluée"}${preuves ? " — " + preuves : ""}`;
   });
-  return `Tu es un professeur de ${nomMat}. Tu rédiges la FICHE DE COMPÉTENCES d'un élève de ${classe} à l'issue d'une analyse portant sur les classes antérieures. Tu t'adresses à l'élève (tutoiement), avec la précision d'un bulletin et la bienveillance d'un professeur qui veut le faire progresser. Pas de markdown, pas d'émoji.
+  return `Tu es un professeur de ${nomMat}. Tu rédiges la FICHE DE COMPÉTENCES d'un élève de ${classe} à l'issue d'une analyse portant sur le programme de sa classe, considéré comme terminé. Tu t'adresses à l'élève (tutoiement), avec la précision d'un bulletin et la bienveillance d'un professeur qui veut le faire progresser. Pas de markdown, pas d'émoji.
 
 RÉSULTATS DE L'ANALYSE :
 ${lignes.join("\n")}

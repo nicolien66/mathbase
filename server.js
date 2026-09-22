@@ -2695,7 +2695,7 @@ app.post("/analyse/demarrer", auth, async (req, res) => {
       return res.json({ session: analyseVisible(s, COMPETENCES.perimetre(matiere, s.classe)), reprise: true });
     }
     const perim = COMPETENCES.perimetre(matiere, classe);
-    if (!perim.length) return res.status(400).json({ error: "Aucune compétence antérieure à évaluer pour cette classe." });
+    if (!perim.length) return res.status(400).json({ error: "Aucune compétence à évaluer pour cette classe dans cette matière." });
     if (!(await verifierCredits(req, res, COUT_ANALYSE_TOUR))) return;
 
     const tour = await COMPETENCES.tourAnalyse({ key, matiere, classe, perim, etats: {}, cible: null, nbQuestions: 0,

@@ -71,8 +71,8 @@
     const ordre = ["CM2", "6ème", "5ème", "4ème", "3ème", "2nde", "1ère", "Terminale"];
     const i = ordre.indexOf(c);
     $("an-perim").innerHTML = i > 0
-      ? "L'analyse portera sur les compétences de <b>" + ordre.slice(0, i).join(", ") + "</b>."
-      : "Choisis ta classe : l'analyse porte sur les classes précédentes.";
+      ? "L'analyse portera sur le programme de <b>" + esc(c) + "</b>, comme si l'année était terminée."
+      : "Choisis ta classe : l'analyse porte sur le programme de l'année.";
   }
   $("an-classe").onchange = perimetreTexte;
 
@@ -141,7 +141,13 @@
     if (m.visuel && m.visuel.widget === "axe" && window.MB_AXE) {
       try { MB_AXE.injecterStyles && MB_AXE.injecterStyles(); visuel = '<div class="an-visuel">' + MB_AXE.apercu(m.visuel) + "</div>"; } catch (_) {}
     }
-    return '<div class="an-msg an-msg-ia"><span class="an-msg-tag ' + esc(ev || "") + '">' + tag + "</span>" + esc(m.texte) + visuel + "</div>";
+    /* Sessions anciennes : l'énoncé pouvait manquer dans le texte. */
+    let enonce = "";
+    if (m.question && m.question.enonce) {
+      const extrait = m.question.enonce.replace(/\s+/g, " ").slice(0, 40).toLowerCase();
+      if (!String(m.texte || "").replace(/\s+/g, " ").toLowerCase().includes(extrait)) enonce = '<div class="an-enonce">' + esc(m.question.enonce) + "</div>";
+    }
+    return '<div class="an-msg an-msg-ia"><span class="an-msg-tag ' + esc(ev || "") + '">' + tag + "</span>" + esc(m.texte) + enonce + visuel + "</div>";
   }
   function rendreFil() {
     const fil = $("an-fil");
