@@ -13,7 +13,8 @@
      --par-chapitre=2                            viser N khôlles par chapitre (défaut 1)
      --niveau=college | lycee                    ne traiter qu'un niveau
      --dry-run                                   générer et afficher sans rien écrire
-     --modele=mistral-large-latest               modèle de génération
+     --modele=mistral-small-latest               modèle de génération
+     --pause=4000                                attente entre deux chapitres, en ms (défaut 4000)
 
    Le script est idempotent : il ne génère que pour les chapitres qui n'ont
    pas encore atteint le nombre voulu. Il peut être relancé après une coupure.
@@ -37,6 +38,7 @@ if (!url && !args["dry-run"]) { console.error("DATABASE_URL manquante."); proces
 const parChapitre = Math.max(1, Number(args["par-chapitre"]) || 1);
 const modele      = args.modele || KHOLLES.MODELE_GENERATION;
 const dryRun      = !!args["dry-run"];
+const pauseMs     = Math.max(0, Number(args.pause) || 4000);
 const pause       = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
@@ -55,7 +57,7 @@ const pause       = ms => new Promise(r => setTimeout(r, ms));
     await pool.query(`ALTER TABLE exercises ADD COLUMN IF NOT EXISTS famille TEXT`);
   }
 
-  console.log(`${chapitres.length} chapitre(s) — objectif ${parChapitre} khôlle(s) par chapitre — modèle ${modele}${dryRun ? " — DRY RUN" : ""}`);
+  console.log(`${chapitres.length} chapitre(s) — objectif ${parChapitre} khôlle(s) par chapitre — modèle ${modele} — pause ${pauseMs} ms${dryRun ? " — DRY RUN" : ""}`);
   let generees = 0, echecs = 0, dejaOk = 0;
 
   for (const c of chapitres) {
@@ -90,7 +92,7 @@ const pause       = ms => new Promise(r => setTimeout(r, ms));
         echecs++;
         console.log("ÉCHEC : " + e.message);
       }
-      await pause(800);   // ménage le quota de l'API
+      await pause(pauseMs);   // ménage le quota de l'API (limite de requêtes par minute)
     }
   }
 

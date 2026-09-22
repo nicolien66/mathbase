@@ -18,8 +18,8 @@ const fs   = require("fs");
 const path = require("path");
 const vm   = require("vm");
 
-const MODELE_GENERATION = process.env.MISTRAL_MODEL_KHOLLE_GEN || "mistral-large-latest";
-const MODELE_KHOLLEUR   = process.env.MISTRAL_MODEL_KHOLLE     || "mistral-large-latest";
+const MODELE_GENERATION = process.env.MISTRAL_MODEL_KHOLLE_GEN || "mistral-small-latest";
+const MODELE_KHOLLEUR   = process.env.MISTRAL_MODEL_KHOLLE     || "mistral-small-latest";
 const NB_INDICES_MAX    = 3;
 
 const NOMS_MATIERES = { "mathematiques": "mathématiques", "physique-chimie": "physique-chimie" };
@@ -78,24 +78,39 @@ function chargerChapitres(dossierPublic) {
   return liste;
 }
 
-/* ── Appel Mistral générique, réponse JSON ─────────────────────────────── */
-async function appelMistral({ key, model, messages, maxTokens, temperature }) {
-  const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-    body: JSON.stringify({
-      model, messages,
-      response_format: { type: "json_object" },
-      temperature: temperature == null ? 0.3 : temperature,
-      max_tokens: maxTokens || 1800,
-    }),
-  });
-  if (!r.ok) throw new Error("Mistral " + r.status + " : " + (await r.text()).slice(0, 300));
-  const d = await r.json();
-  const brut = (d.choices && d.choices[0] && d.choices[0].message.content) || "";
-  const parsed = parseJsonTolerant(brut);
-  if (!parsed) throw new Error("Réponse non-JSON du modèle : " + brut.slice(0, 200));
-  return parsed;
+/* ── Appel Mistral générique, réponse JSON ─────────────────────────────
+   Sur un 429 (quota dépassé), on attend puis on réessaie : l'en-tête
+   Retry-After s'il est fourni, sinon 2 s, 4 s, 8 s… `essais` borne le nombre
+   de tentatives — élevé pour le remplissage en ligne de commande, bas pour
+   le chat, où l'élève attend devant son écran. */
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+async function appelMistral({ key, model, messages, maxTokens, temperature, essais }) {
+  const max = essais || 6;
+  for (let essai = 1; ; essai++) {
+    const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+      body: JSON.stringify({
+        model, messages,
+        response_format: { type: "json_object" },
+        temperature: temperature == null ? 0.3 : temperature,
+        max_tokens: maxTokens || 1800,
+      }),
+    });
+    if ((r.status === 429 || r.status >= 500) && essai < max) {
+      const ra = Number(r.headers.get("retry-after"));
+      const attente = ra > 0 ? ra * 1000 : Math.min(60000, 2000 * 2 ** (essai - 1));
+      console.warn(`[mistral] ${r.status} — nouvel essai dans ${Math.round(attente / 1000)} s (${essai}/${max - 1})`);
+      await dormir(attente);
+      continue;
+    }
+    if (!r.ok) throw new Error("Mistral " + r.status + " : " + (await r.text()).slice(0, 300));
+    const d = await r.json();
+    const brut = (d.choices && d.choices[0] && d.choices[0].message.content) || "";
+    const parsed = parseJsonTolerant(brut);
+    if (!parsed) throw new Error("Réponse non-JSON du modèle : " + brut.slice(0, 200));
+    return parsed;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -274,7 +289,7 @@ async function tourDeKholle({ key, exercice, session, historique, nouveauMessage
   messages.push({ role: "user", content: String(nouveauMessage) });
 
   const r = await appelMistral({
-    key, model: model || MODELE_KHOLLEUR, messages, maxTokens: 900, temperature: 0.4,
+    key, model: model || MODELE_KHOLLEUR, messages, maxTokens: 900, temperature: 0.4, essais: 3,
   });
   let message = String(r.message || "").trim();
   if (!message) message = "Continue : explique-moi ta prochaine étape.";
