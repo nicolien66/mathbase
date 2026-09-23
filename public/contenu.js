@@ -588,7 +588,7 @@ const THEME_CONTENT = {
 },
 
 "Équations": {
-  tuto:"equation1", cours:"Équations du 1er degré",
+  tuto:"equation1", cours:"Équations",
   lecon:{
     definitions:[
       "Une équation est une égalité contenant un nombre inconnu, noté x : 3x + 5 = 20.",
@@ -1179,7 +1179,7 @@ const THEME_CONTENT = {
 },
 
 "Volumes et solides": {
-  tuto:"volumes", cours:null,
+  tuto:"volumes", cours:"Volumes et solides",
   lecon:{
     definitions:[
       "L'espace contient les solides : polyèdres (faces planes : cube, pavé, prisme, pyramide) et solides de révolution (cylindre, cône, boule).",
@@ -1364,7 +1364,7 @@ const THEME_CONTENT = {
 /* ═══════════ PROBABILITÉS ═══════════ */
 
 "Bases des probabilités": {
-  tuto:"proba-simple", cours:"Probabilités simples",
+  tuto:"proba-simple", cours:"Bases des probabilités",
   lecon:{
     definitions:[
       "Une expérience aléatoire a plusieurs issues possibles, sans qu'on puisse prédire laquelle.",
@@ -1458,7 +1458,7 @@ const THEME_CONTENT = {
 },
 
 "Statistiques": {
-  tuto:"stats-position", cours:"Indicateurs de position",
+  tuto:"stats-position", cours:"Statistiques",
   lecon:{
     definitions:[
       "Les indicateurs de position résument toute une série par une seule valeur.",
