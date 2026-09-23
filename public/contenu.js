@@ -1179,7 +1179,7 @@ const THEME_CONTENT = {
 },
 
 "Volumes et solides": {
-  tuto:null, cours:null,
+  tuto:"volumes", cours:null,
   lecon:{
     definitions:[
       "L'espace contient les solides : polyèdres (faces planes : cube, pavé, prisme, pyramide) et solides de révolution (cylindre, cône, boule).",

@@ -32,6 +32,12 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .progress-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:4px;position:relative;}
 .progress-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s ease;}
 .progress-label{font-family:var(--mono);font-size:.7rem;color:var(--muted);white-space:nowrap;}
+.parts{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin:-.2rem 0 1.1rem;}
+.part-chip{font-family:var(--sans);font-size:.74rem;color:var(--muted);border:1px solid var(--border2);border-radius:999px;
+  padding:.28rem .75rem;background:none;cursor:pointer;transition:.2s;}
+.part-chip:hover{color:var(--text);border-color:var(--accent);}
+.part-chip.active{color:var(--accent);border-color:var(--accent);background:rgba(200,185,122,.08);}
+.part-chip.done{color:rgba(130,214,160,.85);border-color:rgba(130,214,160,.45);}
 #canvas-host{border-radius:14px;overflow:hidden;box-shadow:0 30px 70px -25px rgba(0,0,0,.8),0 0 0 1px var(--border2);}
 #canvas-host canvas{display:block;width:100%;height:auto;}
 .controls{display:flex;gap:.7rem;margin-top:1.2rem;justify-content:center;}
@@ -55,6 +61,8 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
     <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
     <span class="progress-label" id="progress-label">Étape 1 / 1</span>
   </div>
+  <!-- Une puce par compétence : cliquer saute à la première étape de la partie. -->
+  <div class="parts" id="parts"></div>
   <div id="canvas-host"></div>
   <div class="controls">
     <button class="ctrl" id="btn-restart" onclick="window.__restart()">↺ Recommencer</button>
@@ -1383,6 +1391,797 @@ TUT['stats-graphiques'] = { title:'Représentations graphiques', steps:[
 ]};
 
 
+
+/* ════════════════════════════════════════════════════════════
+   LES TUTORIELS PAR COMPÉTENCE
+   Chaque chapitre est découpé en PARTIES : une par compétence
+   travaillée dans les familles d'exercices du site. Les étapes
+   dessinées à la main plus haut sont réutilisées (OLD.x.steps[i]),
+   les autres sont des QCM, des multi-sélections, des droites
+   graduées ou des barres.
+   part(nom, ...étapes) étiquette les étapes avec la compétence.
+   ════════════════════════════════════════════════════════════ */
+const OLD = Object.assign({}, TUT);
+function part(nom){
+  const out = [];
+  for (let i = 1; i < arguments.length; i++){
+    const st = arguments[i];
+    if (!st) continue;
+    out.push(Object.assign({}, st, { part: nom }));
+  }
+  return out;
+}
+
+/* ───────── NOMBRES ───────── */
+
+(function(){ const D = OLD.decimaux.steps;
+TUT.decimaux = { title:'Entiers & décimaux', steps:[
+  ...part('Lire et écrire les nombres',
+    qcm('Chiffre ou nombre ?', "Dans 68 754, le CHIFFRE des centaines est 7. Mais le NOMBRE de centaines, c'est combien de paquets de 100 il contient : 68 754 = 687 × 100 + 54.",
+      'Nombre de centaines de 68 754 ?', [{label:'7',ok:false},{label:'687',ok:true},{label:'68',ok:false}]),
+    qcm('En chiffres', "Quatre millions trois cent mille cinquante : on écrit les classes (millions · mille · unités) et on complète avec des zéros.",
+      '4 000 000 + 300 000 + 50 = ?', [{label:'4 300 050',ok:true},{label:'4 030 050',ok:false},{label:'4 300 500',ok:false}]),
+    D[0]),
+  ...part('Comparer et ranger des décimaux',
+    qcm('Comparer', "On compare d'abord les parties entières, puis les dixièmes, puis les centièmes. 3,7 c'est 3,70 !",
+      '3,7 ? 3,68', [{label:'3,7 > 3,68',ok:true},{label:'3,7 < 3,68',ok:false},{label:'3,7 = 3,68',ok:false}]),
+    qcm('Ranger', "Dans l'ordre croissant : du plus petit au plus grand.",
+      '0,5 · 0,45 · 0,52', [{label:'0,45 < 0,5 < 0,52',ok:true},{label:'0,5 < 0,45 < 0,52',ok:false},{label:'0,52 < 0,5 < 0,45',ok:false}]),
+    qcm('Intercaler', "Entre deux décimaux, il y a TOUJOURS d'autres décimaux : il suffit d'ajouter un chiffre.",
+      'Entre 2,3 et 2,4 ?', [{label:'2,35',ok:true},{label:'2,5',ok:false},{label:'2,25',ok:false}])),
+  ...part('Encadrer et arrondir',
+    qcm('Encadrer', "Encadrer 7,83 entre deux entiers consécutifs : le plus grand entier en dessous, le plus petit au-dessus.",
+      '? < 7,83 < ?', [{label:'7 < 7,83 < 8',ok:true},{label:'7,8 < 7,83 < 7,9',ok:false},{label:'6 < 7,83 < 8',ok:false}]),
+    qcm('Arrondir au dixième', "On regarde le chiffre SUIVANT (les centièmes) : 5 ou plus, on monte ; moins de 5, on garde.",
+      '7,86 arrondi au dixième ?', [{label:'7,8',ok:false},{label:'7,9',ok:true},{label:'8',ok:false}])),
+  ...part('Multiplier et diviser par 10, 100, 1000', D[1], D[2], D[3]),
+  ...part('Poser une addition ou une soustraction',
+    qcm('Addition posée', "On aligne les VIRGULES, on complète avec des zéros, puis on additionne colonne par colonne.",
+      '12,5 + 3,78 = ?', [{label:'16,28',ok:true},{label:'15,83',ok:false},{label:'16,18',ok:false}]),
+    qcm('Soustraction posée', "Même règle : virgules alignées. 20,4 devient 20,40.",
+      '20,4 − 7,65 = ?', [{label:'12,75',ok:true},{label:'13,25',ok:false},{label:'12,85',ok:false}])),
+  ...part('Multiplier des décimaux',
+    qcm('Placer la virgule', "On multiplie sans les virgules (24 × 3 = 72), puis on replace autant de décimales qu'il y en a EN TOUT dans les facteurs.",
+      '2,4 × 0,3 = ?', [{label:'0,72',ok:true},{label:'7,2',ok:false},{label:'72',ok:false}]),
+    qcm('Ordre de grandeur', "Avant de calculer, estime : 5,9 × 4,1 c'est proche de 6 × 4.",
+      '5,9 × 4,1 ≈ ?', [{label:'24',ok:true},{label:'2,4',ok:false},{label:'240',ok:false}])),
+  ...part('Diviser un décimal',
+    qcm('Division décimale', "On pose la division et on continue APRÈS la virgule en ajoutant des zéros au dividende.",
+      '7,5 ÷ 6 = ?', [{label:'1,25',ok:true},{label:'1,5',ok:false},{label:'12,5',ok:false}]),
+    qcm('Valeur approchée', "10 ÷ 3 = 3,333… Une valeur approchée au centième :",
+      '10 ÷ 3 ≈ ?', [{label:'3,33',ok:true},{label:'3,3',ok:false},{label:'3,34',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('La monnaie du libraire', "Un livre coûte 12,35 €. Tu paies avec 20 €. Le libraire te rend…",
+      '20 − 12,35 = ?', [{label:'7,65 €',ok:true},{label:'8,65 €',ok:false},{label:'7,75 €',ok:false}]),
+    qcm('Le plein de carburant', "38,5 L à 1,80 € le litre. Prix du plein ?",
+      '38,5 × 1,80 = ?', [{label:'69,30 €',ok:true},{label:'59,30 €',ok:false},{label:'693 €',ok:false}])),
+  finish("Lire, ranger, arrondir, poser les quatre opérations : les décimaux n'ont plus de mystère. Retiens : virgules alignées pour + et −, décimales comptées pour ×.")
+]}; })();
+
+(function(){ const F = OLD.fractions.steps;
+TUT.fractions = { title:'Fractions', steps:[
+  ...part("Comprendre une fraction", F[0], F[1],
+    qcm('Le gâteau partagé', "Un gâteau coupé en 8 parts égales ; on en mange 3. Quelle fraction du gâteau reste-t-il ?",
+      'Reste = ?', [{label:'5/8',ok:true},{label:'3/8',ok:false},{label:'5/3',ok:false}])),
+  ...part("Prendre une fraction d'une quantité",
+    qcm('Fraction d\'une quantité', "3/4 de 20 : on divise par le dénominateur (20 ÷ 4 = 5), puis on multiplie par le numérateur.",
+      '3/4 de 20 = ?', [{label:'15',ok:true},{label:'12',ok:false},{label:'5',ok:false}]),
+    qcm('La jauge du réservoir', "Un réservoir de 45 L est rempli aux 2/3. Combien de litres contient-il ?",
+      '2/3 de 45 L = ?', [{label:'30 L',ok:true},{label:'15 L',ok:false},{label:'27 L',ok:false}])),
+  ...part("Écriture décimale et encadrement",
+    qcm('Écriture décimale', "Une fraction est une division : 3/4 = 3 ÷ 4.",
+      '3/4 = ?', [{label:'0,75',ok:true},{label:'0,34',ok:false},{label:'1,33',ok:false}]),
+    qcm('Encadrer', "17/5 = 15/5 + 2/5 = 3 + 2/5. Donc 17/5 est entre…",
+      '? < 17/5 < ?', [{label:'3 et 4',ok:true},{label:'2 et 3',ok:false},{label:'17 et 18',ok:false}])),
+  ...part("Fractions égales et simplification",
+    qcm('Fractions égales', "Multiplier (ou diviser) le numérateur ET le dénominateur par le même nombre ne change pas la fraction.",
+      '2/3 = ?/12', [{label:'8/12',ok:true},{label:'6/12',ok:false},{label:'11/12',ok:false}]),
+    F[2],
+    qcm('Simplifier au maximum', "On cherche le plus grand diviseur commun : 12 et 18 sont tous deux divisibles par 6.",
+      '12/18 = ?', [{label:'2/3',ok:true},{label:'6/9',ok:false},{label:'3/4',ok:false}])),
+  ...part("Comparer des fractions",
+    qcm('Même dénominateur', "Quand les dénominateurs sont égaux, la plus grande fraction a le plus grand numérateur.",
+      '5/7 ? 4/7', [{label:'5/7 > 4/7',ok:true},{label:'5/7 < 4/7',ok:false},{label:'égales',ok:false}]),
+    qcm('Même numérateur', "Quand les numérateurs sont égaux, plus le dénominateur est grand, plus les parts sont PETITES.",
+      '2/5 ? 2/9', [{label:'2/5 > 2/9',ok:true},{label:'2/5 < 2/9',ok:false},{label:'égales',ok:false}])),
+  ...part("Additionner et soustraire des fractions",
+    qcm('Même dénominateur', "On additionne les numérateurs, le dénominateur ne change pas.",
+      '2/9 + 5/9 = ?', [{label:'7/9',ok:true},{label:'7/18',ok:false},{label:'10/9',ok:false}]),
+    qcm('Dénominateurs multiples', "6 est un multiple de 3 : on écrit 1/3 = 2/6, puis on additionne.",
+      '1/3 + 1/6 = ?', [{label:'1/2',ok:true},{label:'2/9',ok:false},{label:'1/9',ok:false}]),
+    qcm('Dénominateurs quelconques', "Ni 4 ni 6 ne divise l'autre : on passe au dénominateur commun 12.",
+      '3/4 − 1/6 = ?', [{label:'7/12',ok:true},{label:'2/2',ok:false},{label:'1/12',ok:false}]),
+    qcm('Avec un relatif', "Les règles des relatifs s'appliquent aussi aux fractions : −1/2 + 3/4 = −2/4 + 3/4.",
+      '−1/2 + 3/4 = ?', [{label:'1/4',ok:true},{label:'−1/4',ok:false},{label:'2/6',ok:false}])),
+  ...part("Multiplier des fractions",
+    qcm('Produit de fractions', "Numérateurs entre eux, dénominateurs entre eux. Pense à simplifier avant !",
+      '2/3 × 5/7 = ?', [{label:'10/21',ok:true},{label:'7/10',ok:false},{label:'10/10',ok:false}]),
+    qcm("Fraction d'une fraction", "« Les 2/3 de la moitié » : le mot « de » se traduit par ×.",
+      '2/3 de 1/2 = ?', [{label:'1/3',ok:true},{label:'7/6',ok:false},{label:'4/3',ok:false}]),
+    qcm('Avec un signe', "Règle des signes d'abord, puis le calcul : −3/4 × 2/5.",
+      '−3/4 × 2/5 = ?', [{label:'−3/10',ok:true},{label:'3/10',ok:false},{label:'−5/9',ok:false}])),
+  ...part("Inverse et division",
+    qcm("L'inverse", "L'inverse de a/b est b/a : leur produit vaut 1.",
+      'Inverse de 3/5 ?', [{label:'5/3',ok:true},{label:'−3/5',ok:false},{label:'1/3',ok:false}]),
+    qcm('Diviser par une fraction', "Diviser par une fraction, c'est MULTIPLIER par son inverse.",
+      '2/3 ÷ 4/5 = ?', [{label:'10/12 = 5/6',ok:true},{label:'8/15',ok:false},{label:'2/4',ok:false}])),
+  ...part("Priorités et parenthèses",
+    qcm('Priorités', "Les priorités valent aussi pour les fractions : × avant +.",
+      '1/2 + 1/2 × 3 = ?', [{label:'2',ok:true},{label:'3',ok:false},{label:'5/2',ok:false}]),
+    qcm('Parenthèses', "(1/2 + 1/4) × 4 : d'abord la parenthèse = 3/4.",
+      '(1/2 + 1/4) × 4 = ?', [{label:'3',ok:true},{label:'2,5',ok:false},{label:'4/3',ok:false}])),
+  ...part("Résoudre un problème",
+    qcm('La randonnée', "Une randonnée de 12 km : 1/3 le matin, 1/4 l'après-midi. Quelle fraction reste-t-il ?",
+      '1 − 1/3 − 1/4 = ?', [{label:'5/12',ok:true},{label:'7/12',ok:false},{label:'1/12',ok:false}]),
+    qcm('Les sachets de café', "Un sac de 5/2 kg est réparti en sachets de 1/4 kg. Combien de sachets ?",
+      '5/2 ÷ 1/4 = ?', [{label:'10',ok:true},{label:'5/8',ok:false},{label:'20',ok:false}])),
+  finish("Partager, simplifier, comparer, additionner, multiplier, diviser : tu sais tout faire avec une fraction. Retiens : même dénominateur pour + et −, inverse pour ÷.")
+]}; })();
+
+(function(){ const R = OLD.relatifs.steps;
+TUT.relatifs = { title:'Nombres relatifs', steps:[
+  ...part('Repérer et ranger des relatifs', R[0], R[1],
+    qcm('Ranger', "Plus un négatif est loin de zéro, plus il est PETIT. Ordre croissant ?",
+      '−3 · 2 · −7 · 0', [{label:'−7 < −3 < 0 < 2',ok:true},{label:'−3 < −7 < 0 < 2',ok:false},{label:'0 < −3 < −7 < 2',ok:false}]),
+    qcm('La température du congélateur', "Il fait −18 °C dans le congélateur et 4 °C dans le frigo. Quel est l'écart ?",
+      'Écart = ?', [{label:'22 °C',ok:true},{label:'14 °C',ok:false},{label:'−14 °C',ok:false}])),
+  ...part('Distance entre deux points',
+    qcm('Signes contraires', "A(−4,2) et B(3,3). Abscisses de signes contraires : on ADDITIONNE les distances à zéro.",
+      'AB = ?', [{label:'7,5',ok:true},{label:'0,9',ok:false},{label:'−0,9',ok:false}]),
+    qcm('Même signe', "A(−8) et B(−3). Même signe : on SOUSTRAIT les distances à zéro.",
+      'AB = ?', [{label:'5',ok:true},{label:'11',ok:false},{label:'−5',ok:false}])),
+  ...part('Additionner et soustraire', R[2], R[3],
+    qcm('Simplifier une soustraction', "Soustraire, c'est ajouter l'opposé : (−7) − (−3) = (−7) + (+3).",
+      '(−7) − (−3) = ?', [{label:'−4',ok:true},{label:'−10',ok:false},{label:'4',ok:false}]),
+    qcm('Une suite de calculs', "On simplifie l'écriture puis on regroupe positifs et négatifs : 5 − 8 + 2 − 4.",
+      '5 − 8 + 2 − 4 = ?', [{label:'−5',ok:true},{label:'5',ok:false},{label:'−9',ok:false}])),
+  ...part('Multiplier et diviser', R[4],
+    qcm('Quotient', "Même règle des signes pour la division : signes différents → résultat négatif.",
+      '(−24) ÷ 6 = ?', [{label:'−4',ok:true},{label:'4',ok:false},{label:'−18',ok:false}]),
+    qcm('Signes en chaîne', "Compte les facteurs négatifs : nombre PAIR → +, IMPAIR → −. Ici 3 négatifs.",
+      '(−2) × (−3) × (−1) × 4 = ?', [{label:'−24',ok:true},{label:'24',ok:false},{label:'−10',ok:false}])),
+  ...part('Priorités avec des relatifs',
+    qcm('× avant +', "3 − 2 × (−4) : la multiplication d'abord, elle donne −8.",
+      '3 − 2 × (−4) = ?', [{label:'11',ok:true},{label:'−5',ok:false},{label:'−4',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('La dette partagée', "Une dette de 48 € (−48) partagée entre 4 amis : chacun doit…",
+      '(−48) ÷ 4 = ?', [{label:'−12 €',ok:true},{label:'12 €',ok:false},{label:'−44 €',ok:false}]),
+    qcm('Les points du quiz', "Bonne réponse : +3, mauvaise : −2. Léa a 6 bonnes et 5 mauvaises réponses. Score ?",
+      '6×3 + 5×(−2) = ?', [{label:'8',ok:true},{label:'28',ok:false},{label:'−4',ok:false}])),
+  finish("Repérer, ranger, calculer une distance, additionner, multiplier : les relatifs sont domptés. Retiens : soustraire = ajouter l'opposé, et compte les signes −.")
+]}; })();
+
+(function(){ const P = OLD.puissances.steps;
+TUT.puissances = { title:'Puissances', steps:[
+  ...part('Calculer une puissance', P[0],
+    qcm('Ne pas confondre', "3⁴, c'est 3 × 3 × 3 × 3, pas 3 × 4 !",
+      '3⁴ = ?', [{label:'81',ok:true},{label:'12',ok:false},{label:'64',ok:false}])),
+  ...part('Puissances de 10 et écriture scientifique', P[1],
+    qcm('Écriture scientifique', "a × 10ⁿ avec 1 ≤ a < 10. Pour 45 000, on déplace la virgule de 4 rangs.",
+      '45 000 = ?', [{label:'4,5 × 10⁴',ok:true},{label:'45 × 10³',ok:false},{label:'4,5 × 10³',ok:false}])),
+  ...part('Exposant négatif',
+    qcm("L'inverse", "10⁻² = 1/10² = 1/100.",
+      '10⁻² = ?', [{label:'0,01',ok:true},{label:'−100',ok:false},{label:'0,1',ok:false}]),
+    qcm('Avec une autre base', "a⁻ⁿ = 1/aⁿ. Donc 2⁻³ = 1/2³.",
+      '2⁻³ = ?', [{label:'1/8',ok:true},{label:'−8',ok:false},{label:'−6',ok:false}])),
+  ...part('Produit et quotient de puissances', P[2], P[3],
+    qcm('Quotient', "Même base : on SOUSTRAIT les exposants. 10⁷ ÷ 10⁴ = 10⁷⁻⁴.",
+      '10⁷ ÷ 10⁴ = ?', [{label:'10³',ok:true},{label:'10¹¹',ok:false},{label:'1³',ok:false}])),
+  ...part('Puissances et parenthèses',
+    qcm('Exposant pair', "(−2)⁴ = (−2)(−2)(−2)(−2) : quatre facteurs négatifs → positif.",
+      '(−2)⁴ = ?', [{label:'16',ok:true},{label:'−16',ok:false},{label:'−8',ok:false}]),
+    qcm('Sans parenthèses', "−2⁴ signifie −(2⁴) : le signe − n'est pas dans la puissance.",
+      '−2⁴ = ?', [{label:'−16',ok:true},{label:'16',ok:false},{label:'−8',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Les bactéries qui doublent', "Une bactérie se dédouble chaque heure. Combien y en a-t-il après 6 heures ?",
+      '2⁶ = ?', [{label:'64',ok:true},{label:'12',ok:false},{label:'36',ok:false}]),
+    qcm("L'étoile à 4 années-lumière", "1 année-lumière ≈ 9,5 × 10¹² km. Distance de l'étoile ?",
+      '4 × 9,5 × 10¹² = ?', [{label:'3,8 × 10¹³ km',ok:true},{label:'3,8 × 10¹² km',ok:false},{label:'9,5 × 10¹⁶ km',ok:false}])),
+  finish("aⁿ = a répété n fois · aᵐ × aⁿ = aᵐ⁺ⁿ · aᵐ ÷ aⁿ = aᵐ⁻ⁿ · a⁻ⁿ = 1/aⁿ · a⁰ = 1. Et l'écriture scientifique pour les très grands et très petits nombres.")
+]}; })();
+
+(function(){ const PR = OLD.proportionnalite.steps;
+TUT.proportionnalite = { title:'Proportionnalité', steps:[
+  ...part('Reconnaître une situation de proportionnalité', PR[2],
+    qcm('Le tarif est-il proportionnel ?', "2 places coûtent 16 €, 5 places coûtent 40 €. Pour être proportionnel, il faut le MÊME coefficient : 16 ÷ 2 et 40 ÷ 5.",
+      'Proportionnel ?', [{label:'Oui : 8 € la place',ok:true},{label:'Non',ok:false},{label:'Impossible à dire',ok:false}])),
+  ...part('Compléter un tableau de proportionnalité', PR[0], PR[1],
+    qcm('La méthode additive', "Si 2 kg → 5 € et 3 kg → 7,50 €, alors 5 kg (= 2 + 3) →",
+      '5 € + 7,50 € = ?', [{label:'12,50 €',ok:true},{label:'12 €',ok:false},{label:'15 €',ok:false}]),
+    qcm('Le coefficient', "4 cahiers → 6 €. Le coefficient de proportionnalité (prix ÷ quantité) vaut 1,5. Pour 10 cahiers :",
+      '10 × 1,5 = ?', [{label:'15 €',ok:true},{label:'14 €',ok:false},{label:'16 €',ok:false}])),
+  ...part('Le produit en croix', PR[3],
+    qcm('Encore un', "7 → 21 et x → 33. Produit en croix : 7 × 33 = 21 × x.",
+      'x = 231 ÷ 21 = ?', [{label:'11',ok:true},{label:'9',ok:false},{label:'13',ok:false}])),
+  ...part('Échelles et agrandissements',
+    qcm("L'échelle de la carte", "Échelle 1/50 000 : 1 cm sur la carte = 50 000 cm dans la réalité. 3 cm représentent…",
+      '3 × 50 000 cm = ?', [{label:'1,5 km',ok:true},{label:'150 m',ok:false},{label:'15 km',ok:false}]),
+    qcm('La photo agrandie', "Une photo 10 × 15 cm est agrandie : sa largeur passe à 30 cm. Sa longueur devient…",
+      'coefficient 3 → 15 × 3 = ?', [{label:'45 cm',ok:true},{label:'35 cm',ok:false},{label:'30 cm',ok:false}])),
+  ...part('Partager selon un ratio',
+    qcm('Les parts', "Partager 63 € selon le ratio 2 : 5, c'est faire 2 + 5 = 7 parts égales.",
+      '63 ÷ 7 = ?', [{label:'9 € par part',ok:true},{label:'7 € par part',ok:false},{label:'12,60 € par part',ok:false}]),
+    qcm('Conclure', "Une part vaut 9 €. Celui qui a 5 parts reçoit…",
+      '5 × 9 = ?', [{label:'45 €',ok:true},{label:'18 €',ok:false},{label:'35 €',ok:false}])),
+  ...part('Vitesse, distance et durée',
+    qcm('Vitesse moyenne', "v = d ÷ t. 150 km en 2 h :",
+      '150 ÷ 2 = ?', [{label:'75 km/h',ok:true},{label:'300 km/h',ok:false},{label:'50 km/h',ok:false}]),
+    qcm('Calculer une distance', "d = v × t. À 90 km/h pendant 1 h 30 (= 1,5 h) :",
+      '90 × 1,5 = ?', [{label:'135 km',ok:true},{label:'117 km',ok:false},{label:'60 km',ok:false}]),
+    qcm('Calculer une durée', "t = d ÷ v. 20 km à 8 km/h (le coureur régulier) :",
+      '20 ÷ 8 = ?', [{label:'2 h 30',ok:true},{label:'2 h 50',ok:false},{label:'2 h 08',ok:false}])),
+  ...part('Débit et masse volumique',
+    qcm('Débit', "Un robinet remplit 60 L en 4 min. Débit = volume ÷ durée.",
+      '60 ÷ 4 = ?', [{label:'15 L/min',ok:true},{label:'240 L/min',ok:false},{label:'6 L/min',ok:false}]),
+    qcm('Masse volumique', "ρ = m ÷ V. Un bloc de 540 g pour 200 cm³ :",
+      '540 ÷ 200 = ?', [{label:'2,7 g/cm³',ok:true},{label:'0,37 g/cm³',ok:false},{label:'27 g/cm³',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('La recette pour 9 personnes', "Pour 6 personnes il faut 300 g de farine. Pour 9 personnes ?",
+      '300 ÷ 6 × 9 = ?', [{label:'450 g',ok:true},{label:'400 g',ok:false},{label:'350 g',ok:false}]),
+    qcm('Le sirop à diluer', "1 dose de sirop pour 7 doses d'eau. Avec 5 cL de sirop, il faut…",
+      '5 × 7 = ?', [{label:'35 cL d\'eau',ok:true},{label:'12 cL d\'eau',ok:false},{label:'40 cL d\'eau',ok:false}])),
+  finish("Reconnaître, compléter, produit en croix, échelle, ratio, vitesse, débit : la proportionnalité est partout, et tu la maîtrises.")
+]}; })();
+
+(function(){ const Po = OLD.pourcentages.steps;
+TUT.pourcentages = { title:'Pourcentages', steps:[
+  ...part('Exprimer une proportion en pourcentage', Po[0],
+    qcm('De la fraction au %', "12 élèves sur 30 portent des lunettes. 12/30 = 0,4 = 40/100.",
+      '12/30 = ? %', [{label:'40 %',ok:true},{label:'12 %',ok:false},{label:'30 %',ok:false}])),
+  ...part('Appliquer un pourcentage', Po[1], Po[2]),
+  ...part('Calculer une augmentation ou une remise', Po[3],
+    qcm('La hausse du ticket', "Un ticket à 1,60 € augmente de 25 %. Hausse : 1,60 × 25/100 = 0,40 €. Nouveau prix ?",
+      '1,60 + 0,40 = ?', [{label:'2 €',ok:true},{label:'1,85 €',ok:false},{label:'2,40 €',ok:false}])),
+  ...part('Les coefficients multiplicateurs',
+    qcm('Hausse', "Augmenter de 35 %, c'est multiplier par 1 + 0,35.",
+      'Coefficient pour +35 % ?', [{label:'1,35',ok:true},{label:'0,35',ok:false},{label:'35',ok:false}]),
+    qcm('Baisse', "Baisser de 12 %, c'est multiplier par 1 − 0,12.",
+      'Coefficient pour −12 % ?', [{label:'0,88',ok:true},{label:'0,12',ok:false},{label:'1,12',ok:false}]),
+    qcm('Du HT au TTC', "TVA 20 % : le prix TTC = prix HT × 1,20. Un article à 50 € HT coûte…",
+      '50 × 1,20 = ?', [{label:'60 € TTC',ok:true},{label:'70 € TTC',ok:false},{label:'52 € TTC',ok:false}])),
+  ...part("Calculer un taux d'évolution",
+    qcm('Le taux', "Un prix passe de 80 € à 92 €. Taux = (92 − 80) ÷ 80 = 12 ÷ 80.",
+      '12 ÷ 80 = ? %', [{label:'+15 %',ok:true},{label:'+12 %',ok:false},{label:'+13 %',ok:false}]),
+    qcm('Retrouver le prix initial', "Après une hausse de 25 %, un article coûte 50 €. Prix initial = 50 ÷ 1,25.",
+      '50 ÷ 1,25 = ?', [{label:'40 €',ok:true},{label:'37,50 €',ok:false},{label:'45 €',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Le comparateur de soldes', "Article A : 60 € à −30 % → 42 €. Article B : 55 € à −20 % → ?",
+      '55 × 0,80 = ?', [{label:'44 €, donc A est moins cher',ok:true},{label:'35 €, donc B est moins cher',ok:false},{label:'50 €',ok:false}])),
+  finish("t % de N = N × t/100 · hausse : × (1 + t/100) · baisse : × (1 − t/100) · taux d'évolution = variation ÷ valeur de départ.")
+]}; })();
+
+(function(){ const L = OLD.longueur.steps;
+TUT.longueur = { title:'Longueur', steps:[
+  ...part('Convertir des longueurs', L[0], L[1]),
+  ...part('Comparer des longueurs',
+    qcm('Même unité d\'abord', "Pour comparer 0,8 km, 750 m et 82 000 cm, on convertit tout en mètres : 800 m, 750 m, 820 m.",
+      'Le plus long ?', [{label:'82 000 cm',ok:true},{label:'0,8 km',ok:false},{label:'750 m',ok:false}])),
+  ...part('Convertir et comparer des surfaces',
+    qcm('Un rang = × 100', "Pour les aires, chaque rang de la table vaut 100 (et non 10) : 1 m² = 100 dm² = 10 000 cm².",
+      '2,5 m² = ? cm²', [{label:'25 000 cm²',ok:true},{label:'250 cm²',ok:false},{label:'2 500 cm²',ok:false}]),
+    qcm('Comparer', "3 200 cm² et 0,3 m² : 0,3 m² = 3 000 cm².",
+      'Le plus grand ?', [{label:'3 200 cm²',ok:true},{label:'0,3 m²',ok:false},{label:'égaux',ok:false}])),
+  ...part('Convertir et comparer des volumes',
+    qcm('Un rang = × 1000', "Pour les volumes, chaque rang vaut 1000 : 1 dm³ = 1000 cm³. Et 1 dm³ = 1 L !",
+      '8,434 dm³ = ? cm³', [{label:'8 434 cm³',ok:true},{label:'843,4 cm³',ok:false},{label:'84 340 cm³',ok:false}]),
+    qcm('Litres et cm³', "1 L = 1 dm³ = 1000 cm³. Une bouteille de 1,5 L contient…",
+      '1,5 L = ? cm³', [{label:'1 500 cm³',ok:true},{label:'150 cm³',ok:false},{label:'15 000 cm³',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Le ruban à partager', "Un ruban de 2,4 m est coupé en morceaux de 30 cm. Combien de morceaux ?",
+      '240 ÷ 30 = ?', [{label:'8',ok:true},{label:'80',ok:false},{label:'12',ok:false}])),
+  finish("Longueurs : un rang = ×10 · aires : un rang = ×100 · volumes : un rang = ×1000, et 1 L = 1 dm³. Convertis toujours dans la même unité avant de comparer.")
+]}; })();
+
+(function(){ const A = OLD.aires.steps;
+TUT.aires = { title:'Aires et figures', steps:[
+  ...part('Reconnaître une figure',
+    multi('Les quadrilatères', "Clique sur les DEUX figures qui ont quatre angles droits.",
+      [{label:'carré',ok:true},{label:'losange',ok:false},{label:'rectangle',ok:true},{label:'triangle',ok:false}], { perRow:4, w:150 }),
+    qcm('Le cercle', "La distance du centre à n'importe quel point du cercle s'appelle…",
+      'Cette distance = ?', [{label:'le rayon',ok:true},{label:'le diamètre',ok:false},{label:'la corde',ok:false}])),
+  ...part('Aire et périmètre du carré',
+    qcm('Périmètre', "Carré de côté 6 cm : le périmètre est 4 × côté.",
+      'P = 4 × 6 = ?', [{label:'24 cm',ok:true},{label:'36 cm',ok:false},{label:'12 cm',ok:false}]),
+    qcm('Aire', "Même carré : l'aire est côté × côté.",
+      'A = 6 × 6 = ?', [{label:'36 cm²',ok:true},{label:'24 cm²',ok:false},{label:'12 cm²',ok:false}])),
+  ...part('Aire et périmètre du rectangle', A[0], A[1],
+    qcm('Périmètre', "Rectangle 7 × 3 : P = 2 × (L + l).",
+      'P = 2 × (7 + 3) = ?', [{label:'20 cm',ok:true},{label:'21 cm',ok:false},{label:'10 cm',ok:false}])),
+  ...part('Aire et périmètre du triangle', A[2],
+    qcm('Triangle rectangle', "Un triangle rectangle est un demi-rectangle : A = (côtés de l'angle droit) ÷ 2. Côtés 5 et 4 :",
+      'A = 5 × 4 ÷ 2 = ?', [{label:'10 cm²',ok:true},{label:'20 cm²',ok:false},{label:'9 cm²',ok:false}]),
+    qcm('Périmètre du triangle', "Le périmètre, c'est toujours la somme des côtés : 5 + 4 + 3.",
+      'P = ?', [{label:'12 cm',ok:true},{label:'6 cm',ok:false},{label:'60 cm',ok:false}])),
+  ...part('Aire et périmètre du cercle',
+    qcm('Le périmètre', "P = 2 × π × r. Rayon 3 cm, avec π ≈ 3,14 :",
+      '2 × 3,14 × 3 ≈ ?', [{label:'18,84 cm',ok:true},{label:'9,42 cm',ok:false},{label:'28,26 cm',ok:false}]),
+    qcm("L'aire", "A = π × r². Rayon 3 cm :",
+      '3,14 × 3² ≈ ?', [{label:'28,26 cm²',ok:true},{label:'18,84 cm²',ok:false},{label:'9,42 cm²',ok:false}])),
+  ...part('Les unités', A[3]),
+  ...part('Résoudre un problème',
+    qcm('La chambre à moquette', "Une chambre de 4 m × 3,5 m. La moquette coûte 12 € le m². Prix total ?",
+      '4 × 3,5 × 12 = ?', [{label:'168 €',ok:true},{label:'180 €',ok:false},{label:'90 €',ok:false}])),
+  finish("Carré : c² · rectangle : L × l · triangle : (b × h) ÷ 2 · disque : π × r². Périmètre en cm, aire en cm² : deux questions différentes.")
+]}; })();
+
+(function(){ const Du = OLD.durees.steps;
+TUT.durees = { title:'Repérage temps & durées', steps:[
+  ...part('Les unités de temps', Du[2], Du[3],
+    qcm('Convertir', "1 h = 60 min, donc 150 min = 2 × 60 + 30.",
+      '150 min = ?', [{label:'2 h 30',ok:true},{label:'1 h 50',ok:false},{label:'2 h 50',ok:false}])),
+  ...part('Calculer une durée', Du[1],
+    qcm('Encore une', "De 14 h 25 à 16 h 10 : jusqu'à 15 h il y a 35 min, puis 1 h 10.",
+      'Durée = ?', [{label:'1 h 45',ok:true},{label:'2 h 15',ok:false},{label:'1 h 35',ok:false}])),
+  ...part("Calculer une heure d'arrivée", Du[0],
+    qcm("L'arrivée du bus", "Le bus part à 8 h 50 et roule 1 h 25. Il arrive à…",
+      '8 h 50 + 1 h 25 = ?', [{label:'10 h 15',ok:true},{label:'9 h 75',ok:false},{label:'10 h 05',ok:false}])),
+  ...part('Heures décimales',
+    qcm('Le piège', "2,4 h, ce n'est pas 2 h 40 ! 0,4 h = 0,4 × 60 min.",
+      '2,4 h = ?', [{label:'2 h 24',ok:true},{label:'2 h 40',ok:false},{label:'2 h 04',ok:false}]),
+    qcm('Dans l\'autre sens', "1 h 45 en heures décimales : 45 min = 45/60 h.",
+      '1 h 45 = ?', [{label:'1,75 h',ok:true},{label:'1,45 h',ok:false},{label:'1,6 h',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Le marathon en relais', "Trois coureurs mettent 1 h 12, 58 min et 1 h 05. Temps total ?",
+      '1 h 12 + 58 min + 1 h 05 = ?', [{label:'3 h 15',ok:true},{label:'3 h 05',ok:false},{label:'2 h 75',ok:false}])),
+  finish("1 h = 60 min · 1 min = 60 s · pour une durée, on découpe le trajet en morceaux simples · 0,5 h = 30 min, pas 50 !")
+]}; })();
+
+(function(){ const Ar = OLD.arithmetique.steps;
+TUT.arithmetique = { title:'Arithmétique', steps:[
+  ...part('La division euclidienne',
+    qcm('Le vocabulaire', "194 = 12 × 16 + 2. Le nombre qu'on divise est le DIVIDENDE ; 12 est le diviseur ; 16 le quotient ; 2 le reste.",
+      'Le dividende = ?', [{label:'194',ok:true},{label:'12',ok:false},{label:'16',ok:false}]),
+    qcm('Poser la division', "87 ÷ 7 : 7 × 12 = 84, il reste 3. Le reste est TOUJOURS plus petit que le diviseur.",
+      '87 = 7 × ? + ?', [{label:'7 × 12 + 3',ok:true},{label:'7 × 11 + 10',ok:false},{label:'7 × 13 − 4',ok:false}])),
+  ...part('Les critères de divisibilité',
+    multi('Divisible par 3 ?', "Un nombre est divisible par 3 si la somme de ses chiffres l'est. Clique sur les DEUX multiples de 3.",
+      [{label:'123',ok:true},{label:'124',ok:false},{label:'315',ok:true},{label:'400',ok:false}], { perRow:4, w:140 }),
+    qcm('Par 2, 5, 10', "Un nombre divisible par 5 se termine par 0 ou 5 ; par 10, il se termine par 0.",
+      '345 est divisible par…', [{label:'5 et 3',ok:true},{label:'2 et 5',ok:false},{label:'10',ok:false}])),
+  ...part('Diviseurs et multiples communs', Ar[0],
+    qcm('Plus petit multiple commun', "Multiples de 4 : 4, 8, 12, 16… Multiples de 6 : 6, 12, 18… Le premier commun :",
+      'PPCM(4 ; 6) = ?', [{label:'12',ok:true},{label:'24',ok:false},{label:'2',ok:false}]),
+    qcm('Les guirlandes synchronisées', "Une guirlande clignote toutes les 4 s, l'autre toutes les 6 s. Elles clignotent ensemble toutes les…",
+      'toutes les ? s', [{label:'12 s',ok:true},{label:'10 s',ok:false},{label:'24 s',ok:false}])),
+  ...part('Les nombres premiers', Ar[1],
+    qcm('Premier ou non ?', "51 : est-il premier ? Vérifie la divisibilité par 3 (5 + 1 = 6).",
+      '51 est…', [{label:'divisible par 3, donc pas premier',ok:true},{label:'premier',ok:false},{label:'divisible par 7',ok:false}])),
+  ...part('Décomposer en facteurs premiers', Ar[2],
+    qcm('Encore une', "60 = 2 × 30 = 2 × 2 × 15 = …",
+      '60 = ?', [{label:'2² × 3 × 5',ok:true},{label:'2 × 3 × 10',ok:false},{label:'4 × 15',ok:false}])),
+  ...part('PGCD et fraction irréductible', Ar[3],
+    qcm('Fraction irréductible', "Avec les décompositions : 60 = 2² × 3 × 5 et 84 = 2² × 3 × 7. PGCD = 2² × 3 = 12.",
+      '60/84 = ?', [{label:'5/7',ok:true},{label:'15/21',ok:false},{label:'10/14',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Les cars du voyage scolaire', "157 élèves, des cars de 45 places. 157 = 45 × 3 + 22. Combien de cars faut-il ?",
+      'Nombre de cars ?', [{label:'4',ok:true},{label:'3',ok:false},{label:'22',ok:false}]),
+    qcm('Les lots identiques', "48 stylos et 36 gommes en lots identiques, sans reste. Le nombre maximal de lots est PGCD(48 ; 36).",
+      'PGCD(48 ; 36) = ?', [{label:'12',ok:true},{label:'6',ok:false},{label:'24',ok:false}])),
+  finish("Division euclidienne, critères, diviseurs, multiples, nombres premiers, décomposition, PGCD : les briques de l'arithmétique sont toutes posées.")
+]}; })();
+
+/* ───────── ALGÈBRE ───────── */
+
+(function(){ const Op = OLD.operations.steps;
+TUT.operations = { title:"Enchaînement d'opérations", steps:[
+  ...part('Priorité de la multiplication et de la division', Op[3],
+    qcm('Sans parenthèses', "× et ÷ passent avant + et −, même s'ils sont à droite : 18 − 12 ÷ 4.",
+      '18 − 12 ÷ 4 = ?', [{label:'15',ok:true},{label:'1,5',ok:false},{label:'6',ok:false}]),
+    qcm('De gauche à droite', "Entre deux opérations de même priorité, on va de gauche à droite : 24 ÷ 4 × 2.",
+      '24 ÷ 4 × 2 = ?', [{label:'12',ok:true},{label:'3',ok:false},{label:'48',ok:false}])),
+  ...part('Calculer avec des parenthèses', Op[0], Op[1], Op[2],
+    qcm('Parenthèses imbriquées', "On commence par les parenthèses les plus INTÉRIEURES : 2 × (10 − (3 + 4)).",
+      '2 × (10 − (3 + 4)) = ?', [{label:'6',ok:true},{label:'22',ok:false},{label:'26',ok:false}])),
+  ...part('Traduire une phrase par une expression',
+    qcm('Le produit d\'une somme', "« Le produit de 5 par la somme de 3 et 4 » : la somme doit être calculée d'abord → parenthèses.",
+      'Expression ?', [{label:'5 × (3 + 4)',ok:true},{label:'5 × 3 + 4',ok:false},{label:'(5 × 3) + 4',ok:false}]),
+    qcm('La différence d\'un produit', "« La différence entre le produit de 6 par 2 et 5 » :",
+      'Expression ?', [{label:'6 × 2 − 5',ok:true},{label:'6 × (2 − 5)',ok:false},{label:'5 − 6 × 2',ok:false}]),
+    qcm('Lire une expression', "Comment lit-on 20 ÷ (4 + 1) ?",
+      '20 ÷ (4 + 1) se lit…', [{label:'le quotient de 20 par la somme de 4 et 1',ok:true},{label:'la somme du quotient de 20 par 4 et de 1',ok:false},{label:'le quotient de 20 par 4, plus 1',ok:false}])),
+  finish("Parenthèses → × et ÷ → + et −, de gauche à droite. Et une phrase se traduit en expression en repérant l'opération FINALE.")
+]}; })();
+
+(function(){ const Li = OLD.litteral.steps;
+TUT.litteral = { title:'Calcul littéral', steps:[
+  ...part('Le programme de calcul',
+    qcm('Traduire', "« Choisir un nombre, le multiplier par 3, puis ajouter 5. » Avec x comme nombre de départ :",
+      'Expression ?', [{label:'3x + 5',ok:true},{label:'3(x + 5)',ok:false},{label:'x + 15',ok:false}]),
+    qcm('Tester', "Avec le programme 3x + 5 et x = 4, on obtient…",
+      '3 × 4 + 5 = ?', [{label:'17',ok:true},{label:'27',ok:false},{label:'12',ok:false}]),
+    Li[2]),
+  ...part('Réduire une expression', Li[0], Li[1], Li[3],
+    qcm('Avec des x²', "4x² + 3x − x² + 2x : les x² ensemble, les x ensemble.",
+      '= ?', [{label:'3x² + 5x',ok:true},{label:'8x²',ok:false},{label:'3x² + x',ok:false}])),
+  ...part('Développer : la distributivité', Li[4],
+    qcm('Double distributivité', "(x + 2)(x + 3) : chaque terme du premier facteur multiplie chaque terme du second.",
+      '(x + 2)(x + 3) = ?', [{label:'x² + 5x + 6',ok:true},{label:'x² + 6',ok:false},{label:'2x + 5',ok:false}]),
+    qcm('Avec un signe −', "(2x − 1)(x + 4) = 2x² + 8x − x − 4.",
+      '= ?', [{label:'2x² + 7x − 4',ok:true},{label:'2x² + 9x − 4',ok:false},{label:'2x² − 4',ok:false}])),
+  ...part('Factoriser avec un facteur commun', Li[5],
+    qcm('Repérer le facteur commun', "6x² + 9x : 3x divise les deux termes.",
+      '6x² + 9x = ?', [{label:'3x(2x + 3)',ok:true},{label:'3(2x + 3)',ok:false},{label:'x(6x + 9)',ok:false}])),
+  ...part('Les identités remarquables', Li[6],
+    qcm('(a − b)²', "(a − b)² = a² − 2ab + b². Développe (x − 3)².",
+      '(x − 3)² = ?', [{label:'x² − 6x + 9',ok:true},{label:'x² − 9',ok:false},{label:'x² + 6x + 9',ok:false}]),
+    qcm('(a + b)(a − b)', "(a + b)(a − b) = a² − b². Développe (x + 5)(x − 5).",
+      '(x + 5)(x − 5) = ?', [{label:'x² − 25',ok:true},{label:'x² − 10x − 25',ok:false},{label:'x² + 25',ok:false}]),
+    Li[7]),
+  ...part('Le calcul malin',
+    qcm('Sans poser', "102 × 98 = (100 + 2)(100 − 2). Une identité remarquable fait le travail.",
+      '102 × 98 = ?', [{label:'9 996',ok:true},{label:'10 004',ok:false},{label:'9 900',ok:false}]),
+    qcm('Un carré', "31² = (30 + 1)² = 900 + 60 + 1.",
+      '31² = ?', [{label:'961',ok:true},{label:'901',ok:false},{label:'931',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm("L'aire du panneau", "Un panneau rectangulaire mesure (x + 3) sur x. Son aire est…",
+      'Aire = ?', [{label:'x² + 3x',ok:true},{label:'2x + 3',ok:false},{label:'x² + 3',ok:false}])),
+  finish("Réduire (x + x = 2x, x × x = x²), développer pour étaler, factoriser pour compacter, et trois identités remarquables à connaître par cœur.")
+]}; })();
+TUT.developpement = TUT.litteral;
+
+(function(){ const E = OLD.equation1.steps;
+TUT.equation1 = { title:'Équations', steps:[
+  ...part('Vérifier une solution',
+    qcm('Tester un nombre', "2 est-il solution de −3x + 10 = 1 ? On remplace x par 2 dans CHAQUE membre : −3 × 2 + 10 = 4.",
+      '4 = 1 ?', [{label:'Non : 2 n\'est pas solution',ok:true},{label:'Oui',ok:false},{label:'On ne peut pas savoir',ok:false}]),
+    qcm('Un autre', "3 est-il solution de 4x − 5 = 7 ? 4 × 3 − 5 = 7.",
+      '7 = 7 ?', [{label:'Oui : 3 est solution',ok:true},{label:'Non',ok:false},{label:'Seulement si x > 0',ok:false}])),
+  ...part('Résoudre une équation simple', E[0], E[1]),
+  ...part('Des x des deux côtés', E[2],
+    qcm('Encore une', "5x + 2 = 2x + 14 : −2x des deux côtés, puis −2.",
+      'x = ?', [{label:'4',ok:true},{label:'3',ok:false},{label:'16/3',ok:false}])),
+  ...part('Équations avec parenthèses',
+    qcm('Développer d\'abord', "3(x − 2) = 12 : on développe → 3x − 6 = 12, ou on divise par 3 → x − 2 = 4.",
+      'x = ?', [{label:'6',ok:true},{label:'4',ok:false},{label:'2',ok:false}]),
+    qcm('Des deux côtés', "2(x + 1) = 5x − 7 → 2x + 2 = 5x − 7.",
+      'x = ?', [{label:'3',ok:true},{label:'−3',ok:false},{label:'5/3',ok:false}])),
+  ...part('Équations avec des x²',
+    qcm('Isoler x²', "5x² = 80 → x² = 16. Attention : DEUX nombres ont pour carré 16.",
+      'Solutions ?', [{label:'4 et −4',ok:true},{label:'4 seulement',ok:false},{label:'8 et −8',ok:false}]),
+    qcm('Produit nul', "(x − 3)(x + 7) = 0 : un produit est nul si l'un des facteurs est nul.",
+      'Solutions ?', [{label:'3 et −7',ok:true},{label:'−3 et 7',ok:false},{label:'3 et 7',ok:false}])),
+  finish("Une équation est une balance : on isole x en agissant des deux côtés, on développe les parenthèses, on n'oublie pas la solution négative de x² = a, et on VÉRIFIE.")
+]}; })();
+
+/* ───────── GÉOMÉTRIE ───────── */
+
+(function(){ const G = OLD.geometrie.steps;
+TUT.geometrie = { title:'Géométrie', steps:[
+  ...part('Droite, segment, demi-droite',
+    qcm('Les notations', "(AB) désigne la droite, [AB] le segment, [AB) la demi-droite. Lequel a UNE seule extrémité ?",
+      'Une seule extrémité ?', [{label:'[AB)',ok:true},{label:'(AB)',ok:false},{label:'[AB]',ok:false}]),
+    qcm('La longueur', "AB sans crochets ni parenthèses désigne…",
+      'AB = ?', [{label:'la longueur du segment',ok:true},{label:'la droite',ok:false},{label:'le milieu',ok:false}])),
+  ...part('Perpendiculaires et parallèles',
+    qcm('Perpendiculaires', "Deux droites perpendiculaires se coupent en formant…",
+      '(d) ⊥ (d′) → angle ?', [{label:'un angle droit (90°)',ok:true},{label:'un angle de 45°',ok:false},{label:'aucun angle',ok:false}]),
+    qcm('La propriété clé', "Si (d1) ⊥ (Δ) et (d2) ⊥ (Δ), alors (d1) et (d2) sont…",
+      '(d1) et (d2) sont…', [{label:'parallèles',ok:true},{label:'perpendiculaires',ok:false},{label:'confondues',ok:false}])),
+  ...part('Le vocabulaire des figures', G[0], G[2],
+    qcm('Le losange', "Un quadrilatère dont les quatre côtés ont la même longueur est…",
+      'C\'est un…', [{label:'losange',ok:true},{label:'rectangle',ok:false},{label:'trapèze',ok:false}])),
+  finish("(AB) droite · [AB] segment · [AB) demi-droite · ⊥ et ∥ · codage des figures. Le vocabulaire est la base de toute la géométrie.")
+]}; })();
+
+(function(){ const SA = OLD['symetrie-axiale'].steps;
+TUT['symetrie-axiale'] = { title:'Symétrie axiale', steps:[
+  ...part("Construire le symétrique d'un point", SA[0],
+    qcm('La méthode', "Pour construire le symétrique de A, on trace la perpendiculaire à l'axe passant par A, puis on reporte…",
+      'On reporte…', [{label:'la distance de A à l\'axe, de l\'autre côté',ok:true},{label:'la longueur de l\'axe',ok:false},{label:'le double de la distance',ok:false}])),
+  ...part('Les propriétés de la symétrie axiale', SA[1], SA[2],
+    qcm('Sur l\'axe', "Un point situé SUR l'axe de symétrie a pour symétrique…",
+      'Son symétrique = ?', [{label:'lui-même',ok:true},{label:'le point O',ok:false},{label:'aucun point',ok:false}])),
+  finish("Un pliage-miroir : chaque point et son image sont à égale distance de l'axe, sur une perpendiculaire à l'axe. Longueurs, angles et aires sont conservés.")
+]}; })();
+
+(function(){ const SC = OLD['symetrie-centrale'].steps;
+TUT['symetrie-centrale'] = { title:'Symétrie centrale', steps:[
+  ...part("Construire le symétrique d'un point", SC[0],
+    qcm('La méthode', "Pour construire le symétrique de A par rapport à O, on trace la droite (AO) puis on reporte…",
+      'On reporte…', [{label:'la longueur OA de l\'autre côté de O',ok:true},{label:'la longueur OA du même côté',ok:false},{label:'un angle droit en O',ok:false}])),
+  ...part('Les propriétés de la symétrie centrale', SC[1], SC[2],
+    qcm('Les droites', "L'image d'une droite par une symétrie centrale est une droite…",
+      'Une droite…', [{label:'parallèle à la première',ok:true},{label:'perpendiculaire',ok:false},{label:'passant par O',ok:false}])),
+  finish("Un demi-tour (180°) autour de O : O est le milieu de chaque segment [AA′], les droites deviennent parallèles, et tout est conservé.")
+]}; })();
+
+(function(){ const An = OLD.angles.steps;
+TUT.angles = { title:'Angles et parallélisme', steps:[
+  ...part('Angles opposés par le sommet',
+    qcm('La propriété', "Deux droites qui se coupent forment quatre angles. Ceux qui sont face à face sont…",
+      'Opposés par le sommet →', [{label:'égaux',ok:true},{label:'supplémentaires',ok:false},{label:'droits',ok:false}])),
+  ...part('Angles complémentaires et supplémentaires',
+    qcm('Complémentaires', "Deux angles sont complémentaires si leur somme fait 90°. Le complémentaire de 37° :",
+      '90 − 37 = ?', [{label:'53°',ok:true},{label:'143°',ok:false},{label:'63°',ok:false}]),
+    qcm('Supplémentaires', "Deux angles sont supplémentaires si leur somme fait 180°. Le supplémentaire de 131° :",
+      '180 − 131 = ?', [{label:'49°',ok:true},{label:'59°',ok:false},{label:'229°',ok:false}])),
+  ...part('Angles alternes-internes', An[0], An[1]),
+  ...part('Angles correspondants',
+    qcm('Repérer', "Deux angles correspondants sont du même côté de la sécante et du même côté de chaque parallèle. Si les droites sont parallèles, ils sont…",
+      'Correspondants →', [{label:'égaux',ok:true},{label:'complémentaires',ok:false},{label:'opposés',ok:false}])),
+  ...part('Déduire un angle', An[2],
+    qcm('En chaîne', "Deux parallèles et une sécante : un angle mesure 131°. Son correspondant mesure 131°, et le supplémentaire de celui-ci…",
+      '180 − 131 = ?', [{label:'49°',ok:true},{label:'131°',ok:false},{label:'41°',ok:false}])),
+  finish("Opposés par le sommet : égaux · complémentaires : 90° · supplémentaires : 180° · parallèles + sécante : alternes-internes et correspondants égaux, et la réciproque prouve le parallélisme.")
+]}; })();
+
+(function(){ const T = OLD.triangle.steps;
+TUT.triangle = { title:'Géométrie du triangle', steps:[
+  ...part('Les types de triangle',
+    multi('Reconnaître', "Clique sur les DEUX affirmations vraies.",
+      [{label:'isocèle : 2 côtés égaux',ok:true},{label:'équilatéral : 2 angles égaux',ok:false},{label:'rectangle : un angle droit',ok:true},{label:'quelconque : 3 côtés égaux',ok:false}],
+      { perRow:2, w:280 })),
+  ...part('Un triangle est-il constructible ?', T[1],
+    qcm('Encore un', "Côtés 5, 7 et 11 : le plus grand (11) doit être plus petit que la somme des deux autres (5 + 7 = 12).",
+      'Constructible ?', [{label:'Oui : 11 < 12',ok:true},{label:'Non',ok:false},{label:'Seulement s\'il est rectangle',ok:false}])),
+  ...part('Le triangle quelconque : somme des angles', T[0]),
+  ...part('Le triangle isocèle',
+    qcm('Les angles à la base', "Dans un triangle isocèle, les deux angles à la base sont égaux. Angle au sommet 40° :",
+      'Angles à la base = ?', [{label:'70° chacun',ok:true},{label:'140° chacun',ok:false},{label:'40° chacun',ok:false}])),
+  ...part('Le triangle rectangle',
+    qcm('Les angles aigus', "Dans un triangle rectangle, les deux angles aigus sont complémentaires. L'un mesure 35°, l'autre :",
+      '90 − 35 = ?', [{label:'55°',ok:true},{label:'145°',ok:false},{label:'65°',ok:false}])),
+  finish("Somme des angles = 180° · inégalité triangulaire · isocèle : angles à la base égaux · rectangle : angles aigus complémentaires.")
+]}; })();
+
+(function(){ const Py = OLD.pythagore.steps;
+TUT.pythagore = { title:'Théorème de Pythagore', steps:[
+  ...part("Repérer l'hypoténuse et énoncer le théorème", Py[0], Py[1]),
+  ...part("Calculer l'hypoténuse", Py[2],
+    qcm('Le fil du mât', "Un mât de 4 m, un fil fixé au sol à 3 m du pied. Longueur du fil ?",
+      '√(4² + 3²) = ?', [{label:'5 m',ok:true},{label:'7 m',ok:false},{label:'25 m',ok:false}])),
+  ...part("Calculer un côté de l'angle droit",
+    qcm('Soustraire', "Hypoténuse 13, un côté 5 : AC² = 13² − 5² = 169 − 25.",
+      'AC = √144 = ?', [{label:'12',ok:true},{label:'8',ok:false},{label:'√194',ok:false}]),
+    qcm('Valeur approchée', "Hypoténuse 10, un côté 6 : l'autre côté vaut √(100 − 36) = √64.",
+      '√64 = ?', [{label:'8',ok:true},{label:'4',ok:false},{label:'√136',ok:false}])),
+  ...part('Réciproque et contraposée', Py[3],
+    qcm('La contraposée', "Côtés 4, 6, 8 : 8² = 64 et 4² + 6² = 52. Les nombres sont différents, donc…",
+      'Conclusion ?', [{label:'le triangle n\'est pas rectangle',ok:true},{label:'le triangle est rectangle',ok:false},{label:'on ne peut pas conclure',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm("La diagonale de l'écran", "Un écran de 40 cm sur 30 cm. Sa diagonale (annoncée en pouces) mesure…",
+      '√(40² + 30²) = ?', [{label:'50 cm',ok:true},{label:'70 cm',ok:false},{label:'35 cm',ok:false}])),
+  finish("BC² = AB² + AC² pour CALCULER (on ajoute pour l'hypoténuse, on soustrait pour un autre côté) · la réciproque pour PROUVER un angle droit · la contraposée pour prouver qu'il n'y en a pas.")
+]}; })();
+
+(function(){ const Th = OLD.thales.steps;
+TUT.thales = { title:'Théorème de Thalès', steps:[
+  ...part('Triangles imbriqués', Th[0], Th[1], Th[2]),
+  ...part('Triangles opposés (le papillon)',
+    qcm('Repérer', "B, A, M alignés et C, A, N alignés, avec (BC) ∥ (MN) : les triangles ABC et AMN sont opposés par le sommet A. Les rapports égaux :",
+      'Rapports ?', [{label:'AM/AB = AN/AC = MN/BC',ok:true},{label:'AM/AB = BC/MN',ok:false},{label:'AB/AM = MN/BC',ok:false}]),
+    qcm('Calculer', "AB = 10, AM = 8, BC = 10 : MN/BC = AM/AB = 8/10.",
+      'MN = ?', [{label:'8 cm',ok:true},{label:'12,5 cm',ok:false},{label:'10 cm',ok:false}])),
+  ...part('La réciproque de Thalès', Th[3],
+    qcm('Appliquer', "AM/AB = 3/9 et AN/AC = 2/6. Les rapports valent tous deux 1/3 et les points sont dans le même ordre, donc…",
+      'Conclusion ?', [{label:'(MN) ∥ (BC)',ok:true},{label:'(MN) ⊥ (BC)',ok:false},{label:'on ne peut pas conclure',ok:false}])),
+  ...part('Triangles semblables',
+    qcm('Définition', "Deux triangles sont semblables quand ils ont les mêmes…",
+      'Les mêmes…', [{label:'angles',ok:true},{label:'longueurs',ok:false},{label:'aires',ok:false}]),
+    qcm('Le rapport', "Deux triangles semblables de rapport 2 : les côtés du grand sont doubles, et son aire est…",
+      'Aire × ?', [{label:'× 4',ok:true},{label:'× 2',ok:false},{label:'× 8',ok:false}])),
+  finish("AM/AB = AN/AC = MN/BC, en configuration imbriquée ou papillon · la réciproque prouve un parallélisme · triangles semblables : mêmes angles, côtés proportionnels.")
+]}; })();
+
+(function(){ const Tr = OLD.trigonometrie.steps;
+TUT.trigonometrie = { title:'Trigonométrie', steps:[
+  ...part('Repérer les côtés par rapport à un angle', Tr[0],
+    qcm("L'hypoténuse", "Quel que soit l'angle choisi, l'hypoténuse est toujours…",
+      "L'hypoténuse est…", [{label:'le côté opposé à l\'angle droit',ok:true},{label:'le plus petit côté',ok:false},{label:'le côté adjacent',ok:false}])),
+  ...part('Le cosinus', Tr[1], Tr[2],
+    qcm('Calculer un côté', "cos(60°) = 0,5 et hypoténuse = 12. Adjacent = hypoténuse × cos.",
+      '12 × 0,5 = ?', [{label:'6',ok:true},{label:'24',ok:false},{label:'10,4',ok:false}])),
+  ...part('Le sinus', Tr[3],
+    qcm('Calculer un angle', "sin(x) = opposé/hypoténuse = 3/6 = 0,5. Quel angle a pour sinus 0,5 ?",
+      'x = ?', [{label:'30°',ok:true},{label:'60°',ok:false},{label:'45°',ok:false}])),
+  ...part('La tangente',
+    qcm('Calculer une longueur', "tan(x) = opposé/adjacent. tan(45°) = 1 et adjacent = 7 : l'opposé vaut…",
+      '7 × 1 = ?', [{label:'7',ok:true},{label:'14',ok:false},{label:'3,5',ok:false}]),
+    qcm('Calculer un angle', "Opposé 5, adjacent 5 : tan(x) = 1. Donc x = ?",
+      'x = ?', [{label:'45°',ok:true},{label:'30°',ok:false},{label:'60°',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm("L'angle de la rampe", "Une rampe monte de 1 m pour 10 m au sol : tan(x) = 1/10 = 0,1. L'angle x est proche de…",
+      'x ≈ ?', [{label:'6°',ok:true},{label:'10°',ok:false},{label:'45°',ok:false}])),
+  finish("SOH-CAH-TOA : sin = opp/hyp, cos = adj/hyp, tan = opp/adj. Toujours dans un triangle RECTANGLE, et l'angle se retrouve avec cos⁻¹, sin⁻¹ ou tan⁻¹.")
+]}; })();
+
+(function(){ const Ho = OLD.homotheties.steps;
+TUT.homotheties = { title:'Homothéties', steps:[
+  ...part("Construire l'image par une homothétie", Ho[0],
+    qcm('La construction', "Homothétie de centre O et de rapport 3 : l'image A′ de A est sur la demi-droite [OA) avec…",
+      'OA′ = ?', [{label:'3 × OA',ok:true},{label:'OA + 3',ok:false},{label:'OA ÷ 3',ok:false}])),
+  ...part('Les propriétés', Ho[1], Ho[2],
+    qcm('Les aires', "Rapport k = 3 : les longueurs sont triplées, et l'aire est multipliée par…",
+      'Aire × ?', [{label:'9',ok:true},{label:'3',ok:false},{label:'6',ok:false}])),
+  finish("OM′ = k × OM : k > 1 agrandit, 0 < k < 1 réduit, k < 0 retourne. Longueurs × |k|, aires × k², angles et alignements conservés.")
+]}; })();
+
+(function(){ const Tl = OLD.translation.steps;
+TUT.translation = { title:'Translation et rotation', steps:[
+  ...part('La translation', Tl[0],
+    qcm('Le vecteur', "Une translation est définie par…",
+      'Définie par…', [{label:'une direction, un sens, une longueur',ok:true},{label:'un centre et un angle',ok:false},{label:'un axe',ok:false}])),
+  ...part('La rotation', Tl[2],
+    qcm('Un quart de tour', "Rotation de centre O et d'angle 90° : l'image A′ de A vérifie OA′ = OA et…",
+      'Et l\'angle AOA′ = ?', [{label:'90°',ok:true},{label:'180°',ok:false},{label:'45°',ok:false}])),
+  ...part('Ce qui est conservé', Tl[1]),
+  finish("Translation = glissement selon un vecteur · rotation = pivotement autour d'un centre. Longueurs, angles, aires et parallélisme conservés.")
+]}; })();
+
+(function(){ const Pr = OLD.prisme.steps, Pyr = OLD.pyramides.steps;
+TUT.volumes = { title:'Volumes et solides', steps:[
+  ...part('Reconnaître un solide',
+    multi('Les solides pointus', "Clique sur les DEUX solides qui ont un sommet (une pointe).",
+      [{label:'cube',ok:false},{label:'pyramide',ok:true},{label:'cylindre',ok:false},{label:'cône',ok:true}], { perRow:4, w:150 }),
+    qcm('Le pavé droit', "Un pavé droit a 6 faces, 12 arêtes et…",
+      'Combien de sommets ?', [{label:'8',ok:true},{label:'6',ok:false},{label:'12',ok:false}])),
+  ...part('Volume du cube et du pavé droit',
+    qcm('Le cube', "V = c³. Arête 4 cm :",
+      '4³ = ?', [{label:'64 cm³',ok:true},{label:'12 cm³',ok:false},{label:'16 cm³',ok:false}]),
+    qcm('Le pavé droit', "V = L × l × h. Pavé 5 × 3 × 2 :",
+      '5 × 3 × 2 = ?', [{label:'30 cm³',ok:true},{label:'10 cm³',ok:false},{label:'62 cm³',ok:false}])),
+  ...part('Volume du prisme et du cylindre', Pr[0], Pr[1],
+    qcm('Le prisme', "Prisme droit à base triangulaire d'aire 12 cm², hauteur 5 cm :",
+      '12 × 5 = ?', [{label:'60 cm³',ok:true},{label:'20 cm³',ok:false},{label:'17 cm³',ok:false}])),
+  ...part('Volume de la pyramide et du cône', Pyr[0], Pyr[1],
+    qcm('Le cône', "Cône de rayon 3 et de hauteur 4 : base = π × 9. V = (1/3) × 9π × 4.",
+      'V = ?', [{label:'12π cm³',ok:true},{label:'36π cm³',ok:false},{label:'4π cm³',ok:false}])),
+  ...part('Volume de la boule',
+    qcm('La formule', "Le volume d'une boule de rayon r est…",
+      'V = ?', [{label:'(4/3) × π × r³',ok:true},{label:'4 × π × r²',ok:false},{label:'π × r³',ok:false}]),
+    qcm('Calculer', "Boule de rayon 3 cm : V = (4/3) × π × 27.",
+      'V = ?', [{label:'36π cm³',ok:true},{label:'12π cm³',ok:false},{label:'108π cm³',ok:false}])),
+  finish("Cube : c³ · pavé : L × l × h · prisme et cylindre : base × h · pyramide et cône : (1/3) × base × h · boule : (4/3) × π × r³.")
+]}; })();
+
+/* ───────── FONCTIONS ───────── */
+
+(function(){ const Fn = OLD['fonctions-notion'].steps;
+TUT['fonctions-notion'] = { title:'Notions de fonctions', steps:[
+  ...part('La notation « flèche »', Fn[0],
+    qcm('Lire la notation', "f : x ↦ 3x − 2 se lit « à x, f associe 3x − 2 ». Ici, f(x) = ?",
+      'f(x) = ?', [{label:'3x − 2',ok:true},{label:'x',ok:false},{label:'3 − 2x',ok:false}])),
+  ...part('Calculer une image', Fn[1],
+    qcm("Image d'un nombre négatif", "f(x) = 3x − 2. Pour x = −4, attention aux signes : 3 × (−4) − 2.",
+      'f(−4) = ?', [{label:'−14',ok:true},{label:'−10',ok:false},{label:'10',ok:false}]),
+    qcm('Une fonction avec un carré', "g(x) = x² + 1. Pour x = −3 : (−3)² = 9.",
+      'g(−3) = ?', [{label:'10',ok:true},{label:'−8',ok:false},{label:'−10',ok:false}])),
+  ...part('Déterminer un antécédent', Fn[2],
+    qcm('Avec un carré', "g(x) = x² + 1. Quels nombres ont pour image 10 ? x² = 9.",
+      'Antécédents de 10 ?', [{label:'3 et −3',ok:true},{label:'3 seulement',ok:false},{label:'9',ok:false}])),
+  ...part('Lire un tableau de valeurs',
+    qcm('Le tableau mystère', "Un tableau donne h(1) = 4 et h(3) = 4. Le nombre 4 a donc…",
+      '4 a…', [{label:'deux antécédents : 1 et 3',ok:true},{label:'deux images',ok:false},{label:'une seule image : 1',ok:false}]),
+    qcm('La règle', "Par une fonction, un nombre a…",
+      'Un nombre a…', [{label:'une seule image, mais peut avoir plusieurs antécédents',ok:true},{label:'plusieurs images',ok:false},{label:'un seul antécédent',ok:false}]),
+    Fn[3]),
+  finish("x ↦ f(x) : image = sortie (une seule), antécédent = entrée (parfois plusieurs). Attention aux signes avec les nombres négatifs et les carrés.")
+]}; })();
+
+(function(){ const Fl = OLD['fonction-lineaire'].steps;
+TUT['fonction-lineaire'] = { title:'Fonction linéaire', steps:[
+  ...part('Reconnaître une fonction linéaire', Fl[0], Fl[1],
+    qcm('Laquelle ?', "Une fonction linéaire s'écrit f(x) = ax, sans terme ajouté.",
+      'Linéaire ?', [{label:'f(x) = −2x',ok:true},{label:'g(x) = 3x + 1',ok:false},{label:'h(x) = x²',ok:false}])),
+  ...part('Image et antécédent',
+    qcm('Image', "f(x) = −2x. Calcule f(5).",
+      'f(5) = ?', [{label:'−10',ok:true},{label:'3',ok:false},{label:'10',ok:false}]),
+    qcm('Antécédent', "f(x) = 4x. Quel nombre a pour image 22 ? On résout 4x = 22.",
+      'x = ?', [{label:'5,5',ok:true},{label:'88',ok:false},{label:'18',ok:false}])),
+  ...part('Déterminer le coefficient', Fl[2],
+    qcm('Avec un point', "f est linéaire et f(4) = 6. Alors a = 6 ÷ 4.",
+      'a = ?', [{label:'1,5',ok:true},{label:'2',ok:false},{label:'24',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Le taux de change', "1 € = 1,10 $. La fonction qui convertit x euros en dollars est…",
+      'f(x) = ?', [{label:'1,10x',ok:true},{label:'x + 1,10',ok:false},{label:'x ÷ 1,10',ok:false}]),
+    qcm('Convertir', "Avec f(x) = 1,10x, 50 € valent…",
+      'f(50) = ?', [{label:'55 $',ok:true},{label:'45 $',ok:false},{label:'51,10 $',ok:false}])),
+  finish("f(x) = ax = la proportionnalité en version fonction. Droite par l'origine, a = f(1), et a = f(x) ÷ x pour n'importe quel point.")
+]}; })();
+
+(function(){ const Fa = OLD['fonction-affine'].steps;
+TUT['fonction-affine'] = { title:'Fonction affine', steps:[
+  ...part('Identifier a et b', Fa[0], Fa[1], Fa[3],
+    qcm('Lire a et b', "f(x) = −3x + 7. Le coefficient directeur a et l'ordonnée à l'origine b sont…",
+      'a et b ?', [{label:'a = −3, b = 7',ok:true},{label:'a = 7, b = −3',ok:false},{label:'a = 3, b = 7',ok:false}])),
+  ...part('Calculer des images', Fa[2],
+    qcm('Avec un négatif', "f(x) = −3x + 7. Calcule f(−2).",
+      'f(−2) = ?', [{label:'13',ok:true},{label:'1',ok:false},{label:'−13',ok:false}])),
+  ...part('Déterminer un antécédent',
+    qcm('Résoudre', "f(x) = 2x + 1. L'antécédent de 9 est la solution de 2x + 1 = 9.",
+      'x = ?', [{label:'4',ok:true},{label:'5',ok:false},{label:'19',ok:false}])),
+  ...part('Déterminer une fonction affine',
+    qcm('Le coefficient', "f est affine, f(1) = 5 et f(3) = 11. a = (11 − 5) ÷ (3 − 1).",
+      'a = ?', [{label:'3',ok:true},{label:'6',ok:false},{label:'2',ok:false}]),
+    qcm('Puis b', "a = 3 et f(1) = 5 : 3 × 1 + b = 5.",
+      'b = ?', [{label:'2',ok:true},{label:'8',ok:false},{label:'5',ok:false}])),
+  ...part('Résoudre un problème',
+    qcm('Le forfait téléphonique', "Abonnement 10 € par mois, plus 0,05 € par minute. Le prix pour x minutes est…",
+      'f(x) = ?', [{label:'0,05x + 10',ok:true},{label:'10x + 0,05',ok:false},{label:'10,05x',ok:false}])),
+  finish("f(x) = ax + b : a = variation de f ÷ variation de x, b = f(0). Une droite qui coupe l'axe des ordonnées en b ; si b = 0, elle redevient linéaire.")
+]}; })();
+
+/* ───────── PROBABILITÉS ───────── */
+
+(function(){ const Pv = OLD['proba-vocab'].steps, Pb = OLD['proba-simple'].steps;
+TUT['proba-simple'] = { title:'Bases des probabilités', steps:[
+  ...part("Les issues d'une expérience", Pv[0], Pv[1]),
+  ...part("L'échelle des probabilités", Pb[2],
+    qcm('Situer', "Une probabilité de 0,9 correspond à un événement…",
+      'P = 0,9 →', [{label:'très probable',ok:true},{label:'impossible',ok:false},{label:'certain',ok:false}]),
+    qcm('La somme des probabilités', "Une roue a trois secteurs : rouge (P = 0,5), bleu (P = 0,3) et vert. La somme de toutes les probabilités vaut 1, donc P(vert) =",
+      '1 − 0,5 − 0,3 = ?', [{label:'0,2',ok:true},{label:'0,8',ok:false},{label:'0,3',ok:false}])),
+  ...part("Calculer la probabilité d'un événement", Pb[0], Pb[1],
+    qcm('Tirage dans une urne', "Une urne contient 3 boules rouges et 7 bleues. Probabilité de tirer une rouge ?",
+      'P(rouge) = ?', [{label:'3/10',ok:true},{label:'3/7',ok:false},{label:'7/10',ok:false}]),
+    qcm('Le jeu de 32 cartes', "Dans un jeu de 32 cartes, il y a 4 as. Probabilité de tirer un as ?",
+      'P(as) = 4/32 = ?', [{label:'1/8',ok:true},{label:'1/4',ok:false},{label:'4/28',ok:false}])),
+  ...part("L'événement contraire", Pb[3],
+    qcm('Appliquer', "Dans le jeu de 32 cartes, P(as) = 1/8. La probabilité de NE PAS tirer un as :",
+      '1 − 1/8 = ?', [{label:'7/8',ok:true},{label:'1/8',ok:false},{label:'31/32',ok:false}])),
+  ...part('De la fréquence à la probabilité',
+    qcm('Un grand nombre de lancers', "On lance une punaise 1000 fois ; elle tombe pointe en l'air 380 fois. On estime P(pointe en l'air) ≈",
+      '380/1000 = ?', [{label:'0,38',ok:true},{label:'0,5',ok:false},{label:'380',ok:false}]),
+    qcm('Pourquoi ça marche', "Plus on répète l'expérience, plus la fréquence…",
+      'La fréquence…', [{label:'se rapproche de la probabilité',ok:true},{label:'s\'éloigne de la probabilité',ok:false},{label:'devient égale à 1',ok:false}])),
+  ...part('Une expérience à deux épreuves',
+    qcm('Dé et pièce', "On lance un dé puis une pièce. Nombre d'issues : 6 × 2 = 12. Probabilité de « 6 et pile » ?",
+      'P = ?', [{label:'1/12',ok:true},{label:'1/8',ok:false},{label:'2/6',ok:false}]),
+    qcm('Deux pièces', "On lance deux pièces. Issues : PP, PF, FP, FF. Probabilité d'obtenir exactement un pile ?",
+      'P = ?', [{label:'2/4 = 1/2',ok:true},{label:'1/4',ok:false},{label:'3/4',ok:false}]),
+    qcm('Tirages avec remise', "Urne : 2 rouges, 3 bleues. On tire une boule, on la remet, on retire. P(rouge puis rouge) = 2/5 × 2/5.",
+      'P = ?', [{label:'4/25',ok:true},{label:'4/5',ok:false},{label:'2/25',ok:false}])),
+  finish("P = favorables/total (équiprobabilité) · 0 ≤ P ≤ 1 · la somme des probabilités vaut 1 · P(contraire) = 1 − P · deux épreuves : on compte les couples d'issues.")
+]}; })();
+
+/* ───────── STATISTIQUES ───────── */
+
+(function(){ const So = OLD['stats-organisation'].steps, Sg = OLD['stats-graphiques'].steps;
+TUT['stats-organisation'] = { title:'Organisation des données', steps:[
+  ...part('Analyser des données', So[0], So[1],
+    qcm('Le total', "Bus : 10 · Vélo : 6 · À pied : 16 · Voiture : 14. Combien d'élèves en tout ?",
+      'Effectif total = ?', [{label:'46',ok:true},{label:'40',ok:false},{label:'36',ok:false}]),
+    qcm('Lire un diagramme circulaire', "Un secteur occupe un quart du disque. Il représente…",
+      'Un quart = ?', [{label:'25 % de l\'effectif',ok:true},{label:'90 élèves',ok:false},{label:'4 % de l\'effectif',ok:false}])),
+  ...part('Construire un diagramme', So[2],
+    qcm('Le diagramme en bâtons', "Pour un diagramme en bâtons, chaque bâton a une hauteur égale à…",
+      'Hauteur = ?', [{label:'l\'effectif de la catégorie',ok:true},{label:'la fréquence × 360',ok:false},{label:'le total',ok:false}]),
+    Sg[0],
+    qcm('Choisir l\'échelle', "Effectif maximal 16, axe vertical de 8 cm : 1 cm pour 2 élèves. Le bâton « Bus » (10 élèves) mesure…",
+      '10 ÷ 2 = ?', [{label:'5 cm',ok:true},{label:'10 cm',ok:false},{label:'2 cm',ok:false}])),
+  finish("Effectif = combien · fréquence = effectif/total · bâtons pour comparer, circulaire pour des parts d'un tout (100 % = 360°).")
+]}; })();
+
+(function(){ const Sp = OLD['stats-position'].steps;
+TUT['stats-position'] = { title:'Statistiques', steps:[
+  ...part('La fréquence',
+    qcm('Calculer', "18 élèves sur 30 pratiquent un sport. Fréquence = effectif ÷ total.",
+      '18 ÷ 30 = ?', [{label:'0,6 soit 60 %',ok:true},{label:'0,18',ok:false},{label:'1,67',ok:false}]),
+    qcm('La somme', "Les fréquences de toutes les catégories ont pour somme…",
+      'Somme = ?', [{label:'1 (100 %)',ok:true},{label:'l\'effectif total',ok:false},{label:'0',ok:false}])),
+  ...part('La moyenne', Sp[0],
+    qcm('Encore une', "Températures : 12 ; 15 ; 9 ; 16. Moyenne = 52 ÷ 4.",
+      'Moyenne = ?', [{label:'13',ok:true},{label:'12',ok:false},{label:'14',ok:false}])),
+  ...part('La moyenne pondérée',
+    qcm('Avec des coefficients', "8 (coefficient 1) et 14 (coefficient 3). Moyenne = (8 × 1 + 14 × 3) ÷ (1 + 3).",
+      '50 ÷ 4 = ?', [{label:'12,5',ok:true},{label:'11',ok:false},{label:'22',ok:false}]),
+    qcm('Avec des effectifs', "Notes : 10 (5 élèves), 14 (10 élèves), 18 (5 élèves). Moyenne = (50 + 140 + 90) ÷ 20.",
+      '280 ÷ 20 = ?', [{label:'14',ok:true},{label:'12',ok:false},{label:'15',ok:false}])),
+  ...part('La médiane', Sp[1],
+    qcm('Série paire', "Série ordonnée de 6 valeurs : 3 ; 5 ; 8 ; 10 ; 12 ; 20. La médiane est la moyenne des deux valeurs du milieu.",
+      '(8 + 10) ÷ 2 = ?', [{label:'9',ok:true},{label:'8',ok:false},{label:'10',ok:false}]),
+    qcm('Ordonner d\'abord !', "Série : 7 ; 2 ; 9 ; 4 ; 5. Avant de chercher la médiane, on range : 2 ; 4 ; 5 ; 7 ; 9.",
+      'Médiane = ?', [{label:'5',ok:true},{label:'9',ok:false},{label:'7',ok:false}])),
+  ...part("L'étendue",
+    qcm('Calculer', "L'étendue mesure la dispersion : valeur maximale − valeur minimale. Série 3 ; 5 ; 8 ; 10 ; 12 ; 20.",
+      '20 − 3 = ?', [{label:'17',ok:true},{label:'23',ok:false},{label:'9',ok:false}])),
+  finish("Fréquence = effectif/total · moyenne = somme/nombre (pondérée avec les coefficients) · médiane = valeur du milieu de la série ORDONNÉE · étendue = max − min.")
+]}; })();
+
+/* Chapitres du site sans famille en base : les tutoriels d'origine restent
+   tels quels (inequations, systemes, parallelogrammes, perimetres, prisme,
+   pyramides, triangles-semblables, proba-vocab, stats-graphiques). */
+
 /* ════════════════════════════════════════════════════════════
    LE MOTEUR
    ════════════════════════════════════════════════════════════ */
@@ -1405,6 +2204,27 @@ const placeholder = {
 
 const tut = TUT[chId] || placeholder;
 document.getElementById('tut-title').textContent = tut.title;
+
+/* Les compétences (parties) du tutoriel, dans l'ordre d'apparition. */
+const PARTS = [];
+tut.steps.forEach((st, i) => {
+  if (st.part && !PARTS.some(pt => pt.nom === st.part)) PARTS.push({ nom: st.part, debut: i });
+});
+(function(){
+  const host = document.getElementById('parts');
+  if (!PARTS.length) { host.style.display = 'none'; return; }
+  PARTS.forEach((pt, k) => {
+    const b = document.createElement('button');
+    b.className = 'part-chip'; b.textContent = (k + 1) + '. ' + pt.nom; b.title = pt.nom;
+    b.addEventListener('click', () => { if (window.__goto) window.__goto(pt.debut); });
+    pt.el = b; host.appendChild(b);
+  });
+})();
+function partIndexOf(i){
+  let k = -1;
+  PARTS.forEach((pt, j) => { if (i >= pt.debut) k = j; });
+  return k;
+}
 
 const sketch = (p) => {
   let stepIndex = 0;
@@ -1470,8 +2290,20 @@ const sketch = (p) => {
   function updateProgress(){
     const total = tut.steps.length;
     document.getElementById('progress-fill').style.width = ((stepIndex)/total*100)+'%';
-    document.getElementById('progress-label').textContent = `Étape ${stepIndex+1} / ${total}`;
+    const k = partIndexOf(stepIndex);
+    document.getElementById('progress-label').textContent =
+      `Étape ${stepIndex+1} / ${total}` + (k >= 0 ? ` · compétence ${k+1} / ${PARTS.length}` : '');
+    PARTS.forEach((pt, j) => {
+      pt.el.classList.toggle('active', j === k);
+      pt.el.classList.toggle('done', j < k);
+    });
   }
+
+  /* Sauter à une étape (puces des compétences). */
+  window.__goto = (i) => {
+    if (celebrate > 0 || i < 0 || i >= tut.steps.length) return;
+    stepIndex = i; S = {}; enterStep();
+  };
 
   p.draw = () => {
     // fond tableau sombre
@@ -1490,6 +2322,12 @@ const sketch = (p) => {
     p.push();
     p.textAlign(p.CENTER, p.TOP);
     p.fill(200,185,122); p.textFont('DM Mono'); p.textSize(Math.max(11,p.width*0.014));
+    if (st.part){
+      const k = partIndexOf(stepIndex);
+      p.fill(240,236,224,110); p.textSize(Math.max(10,p.width*0.012));
+      p.text(('Compétence '+(k+1)+' / '+PARTS.length+' — '+st.part).toUpperCase(), p.width/2, p.height*0.012);
+      p.fill(200,185,122); p.textSize(Math.max(11,p.width*0.014));
+    }
     p.text(('Étape '+(stepIndex+1)+' · '+st.title).toUpperCase(), p.width/2, p.height*0.05);
     p.fill(240,236,224,210); p.textFont('DM Sans'); p.textSize(Math.max(14,p.width*0.020));
     wrapText(p, st.hint, p.width/2, p.height*0.105, p.width*0.84, p.width*0.028);
