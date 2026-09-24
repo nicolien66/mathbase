@@ -253,3 +253,57 @@ body { background: var(--ivoire); background-image: none !important; color: var(
   .car-carte.centre { padding: 1.2rem 1.3rem; min-height: 0; }
   .car-carte.centre .car-nom { font-size: 1.9rem; }
 }
+
+/* ═══ L'accueil : le carrousel seul, grand ═══ */
+.accueil-periodes { padding-top: 2.2rem; padding-bottom: 2.6rem; }
+.car-consigne { font-family: var(--ui); font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--encre-claire); text-align: center; margin: 0 0 1.2rem; }
+.accueil-periodes .car-piste { min-height: 20rem; }
+.accueil-periodes .car-carte.centre { min-height: 20rem; padding: 2rem 2.4rem 2rem; }
+.accueil-periodes .car-carte.centre .car-nom { font-size: 3.2rem; }
+.car-selectionner { align-self: flex-start; margin-top: 1rem; }
+.accueil-periodes .car-points { margin-bottom: 0; }
+
+/* ═══ La page de la période ═══ */
+.hn-titre-section { font-family: var(--titre); font-size: 1.55rem; font-weight: 600; margin: 2.2rem 0 .9rem; padding-bottom: .4rem; border-bottom: 1px solid var(--page-ombre); }
+.tuiles-periode { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin-top: 1.6rem; }
+.tuile-periode { display: flex; flex-direction: column; gap: .3rem; padding: 1.1rem 1.2rem 1.15rem; background: var(--page); border: 1px solid var(--page-ombre); border-top: 3px solid var(--page-ombre); text-align: left; font-family: var(--texte); color: var(--encre); cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.tuile-periode:hover { border-color: var(--or); border-top-color: var(--teinte); box-shadow: 3px 3px 0 var(--or); }
+.tuile-periode.actif { border-color: var(--teinte); border-top-color: var(--teinte); box-shadow: 3px 3px 0 var(--or); }
+.tuile-periode-nom { font-family: var(--titre); font-size: 1.35rem; font-weight: 600; }
+.tuile-periode-nom::after { content: ''; display: block; width: 1.8rem; height: 1px; background: var(--or); margin-top: .35rem; }
+.tuile-periode-chiffre { font-family: var(--ui); font-size: .72rem; font-weight: 500; letter-spacing: .04em; color: var(--teinte); }
+.tuile-periode-texte { font-size: .92rem; color: var(--encre-pale); line-height: 1.45; }
+@media (max-width: 900px) {
+  .tuiles-periode { grid-template-columns: 1fr; }
+  .accueil-periodes .car-piste, .accueil-periodes .car-carte.centre { min-height: 0; }
+  .accueil-periodes .car-carte.centre .car-nom { font-size: 2.1rem; }
+  .car-selectionner { align-self: stretch; justify-content: center; }
+}
+
+/* ═══ L'accueil plein écran : rien d'autre que le carrousel ═══ */
+body.accueil { overflow: hidden; }
+body.accueil .hn-nav, body.accueil .hn-sommaire, body.accueil .hn-som-mobile, body.accueil .colophon { display: none !important; }
+body.accueil .hn-cadre { grid-template-columns: 1fr; max-width: none; margin: 0; padding: 0; height: calc(100vh - 4.6rem); }
+body.accueil .hn-cadre > div { height: 100%; }
+body.accueil .accueil-periodes { height: 100%; margin: 0; border: none; box-shadow: none; background: transparent; padding: 1.5rem 3rem 2rem;
+  display: flex; flex-direction: column; justify-content: center; }
+body.accueil .car-consigne { font-size: .8rem; margin-bottom: 1.6rem; }
+body.accueil .car { grid-template-columns: 4rem 1fr 4rem; gap: 1.2rem; max-width: 92rem; width: 100%; margin: 0 auto; }
+body.accueil .car-fleche { width: 4rem; height: 4rem; font-size: 1.6rem; }
+body.accueil .car-piste { grid-template-columns: 1fr 2.2fr 1fr; gap: 1.4rem; min-height: min(30rem, 62vh); }
+body.accueil .car-carte.centre { min-height: min(30rem, 62vh); padding: 2.6rem 3rem; justify-content: center; }
+body.accueil .car-carte.centre .car-nom { font-size: clamp(2.6rem, 5vw, 4.4rem); }
+body.accueil .car-carte.centre .car-resume { font-size: 1.15rem; max-width: 34rem; }
+body.accueil .car-carte.cote { min-height: min(18rem, 40vh); padding: 1.4rem 1.6rem; }
+body.accueil .car-carte.cote .car-nom { font-size: 1.8rem; }
+body.accueil .car-points { margin-top: 1.6rem; gap: .8rem; }
+body.accueil .car-point { width: .7rem; height: .7rem; }
+@media (max-width: 900px) {
+  body.accueil { overflow: auto; }
+  body.accueil .hn-cadre { height: auto; min-height: calc(100vh - 4.6rem); }
+  body.accueil .accueil-periodes { padding: 1.2rem 1rem 2rem; }
+  body.accueil .car { grid-template-columns: 2.6rem 1fr 2.6rem; gap: .5rem; }
+  body.accueil .car-fleche { width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
+  body.accueil .car-piste, body.accueil .car-carte.centre { min-height: 0; }
+  body.accueil .car-carte.centre { padding: 1.5rem 1.4rem; }
+}

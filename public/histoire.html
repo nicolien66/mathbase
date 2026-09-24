@@ -261,18 +261,17 @@
   /* ══════════════════════════════════════════════════════════════
      Accueil
      ══════════════════════════════════════════════════════════════ */
-  /* ── L'accueil : choisir sa période, puis ce qu'on veut en faire ──
-     Un carrousel : la période choisie au centre, la précédente et la
-     suivante sur les côtés, des flèches. Dessous, les onglets de la
-     période : chapitres, frise, révision. ── */
-  let ongletPeriode = "chapitres";
-  function rendreAccueil(p, onglet) {
+  /* ── L'accueil : le carrousel des périodes ──
+     La période choisie au centre, la précédente et la suivante sur
+     les côtés, des flèches, et un bouton « Sélectionner » qui ouvre
+     la page de la période. ── */
+  function rendreCarrousel(p) {
     const idx = Math.max(0, H.periodes.findIndex(x => x.id === (p ? p.id : Memoire.periode())));
     p = H.periodes[idx];
-    ongletPeriode = onglet || ongletPeriode;
     Memoire.periode(p.id);
-    const f = el("main", "feuille large");
+    const f = el("main", "feuille large accueil-periodes");
     f.style.setProperty("--teinte", p.teinte);
+    f.appendChild(el("p", "car-consigne", "Choisissez une période"));
 
     const car = el("section", "car");
     const prev = H.periodes[idx - 1], next = H.periodes[idx + 1];
@@ -281,15 +280,15 @@
       b.type = "button"; b.disabled = !cible;
       b.setAttribute("aria-label", sens === "gauche" ? "Période précédente" : "Période suivante");
       b.innerHTML = sens === "gauche" ? "&#8592;" : "&#8594;";
-      if (cible) b.onclick = () => aller("#/p/" + cible.id + "/" + ongletPeriode);
+      if (cible) b.onclick = () => { Memoire.periode(cible.id); rendre(); };
       return b;
     };
     car.appendChild(fleche("gauche", prev));
     const piste = el("div", "car-piste");
     [prev, p, next].forEach((x, i) => {
-      const carte = el(x ? "button" : "div", "car-carte " + (i === 1 ? "centre" : "cote"));
+      const carte = el(i === 1 ? "div" : (x ? "button" : "div"), "car-carte " + (i === 1 ? "centre" : "cote"));
       if (!x) { carte.classList.add("vide"); piste.appendChild(carte); return; }
-      carte.type = "button"; carte.style.setProperty("--teinte", x.teinte);
+      carte.style.setProperty("--teinte", x.teinte);
       const cp = retenus(x.chapitres), v = cp.filter(c => Memoire.vu(c.id)).length;
       carte.appendChild(el("div", "car-dates", x.dates));
       carte.appendChild(el("div", "car-nom", x.nom));
@@ -300,9 +299,13 @@
         if (cp.length) pied.appendChild(el("span", null, v + " / " + cp.length + " revus"));
         carte.appendChild(pied);
         const jauge = el("div", "jauge"); const ji = el("i"); ji.style.width = (cp.length ? 100 * v / cp.length : 0) + "%"; jauge.appendChild(ji); carte.appendChild(jauge);
+        const sel = el("button", "btn plein grand car-selectionner", "Sélectionner cette période →");
+        sel.type = "button"; sel.onclick = () => aller("#/p/" + x.id);
+        carte.appendChild(sel);
       } else {
+        carte.type = "button";
         carte.appendChild(el("div", "car-pied", cp.length + " chap."));
-        carte.onclick = () => aller("#/p/" + x.id + "/" + ongletPeriode);
+        carte.onclick = () => { Memoire.periode(x.id); rendre(); };
       }
       piste.appendChild(carte);
     });
@@ -313,39 +316,54 @@
     H.periodes.forEach((x, i) => {
       const d = el("button", "car-point" + (i === idx ? " actif" : "")); d.type = "button";
       d.title = x.nom; d.setAttribute("aria-label", x.nom); d.style.setProperty("--teinte", x.teinte);
-      d.onclick = () => aller("#/p/" + x.id + "/" + ongletPeriode);
+      d.onclick = () => { Memoire.periode(x.id); rendre(); };
       points.appendChild(d);
     });
     f.appendChild(points);
+    return f;
+  }
 
-    const cp = retenus(p.chapitres);
-    const ong = el("div", "onglets periode-onglets");
-    [["chapitres", "Chapitres" + (cp.length ? " · " + cp.length : "")], ["frise", "Frise"], ["reviser", "Réviser"]].forEach(([id, nom]) => {
-      const b = el("button", "onglet", nom); b.type = "button";
-      b.setAttribute("aria-selected", ongletPeriode === id ? "true" : "false");
-      b.onclick = () => aller("#/p/" + p.id + "/" + id);
-      ong.appendChild(b);
+  /* ── La page d'une période : sa frise en haut, puis ce qu'on peut faire ── */
+  function rendrePeriode(p, onglet) {
+    Memoire.periode(p.id);
+    const f = el("main", "feuille large");
+    f.style.setProperty("--teinte", p.teinte);
+    const cp = retenus(p.chapitres), vus = cp.filter(c => Memoire.vu(c.id)).length;
+    f.appendChild(entete(p.titre, p.dates + " — " + p.resume,
+      [{ nom:"↔ Changer de période", classe:"discret", onclick: () => aller("#/") }],
+      [{ nom:"Périodes", href:"#/" }, { nom: p.nom }]));
+
+    /* La frise, en haut */
+    f.appendChild(friseDePeriode(p));
+    f.appendChild(el("p", "mention", "Les repères de la période, dans l'ordre. Cliquez un repère rattaché à un chapitre pour l'ouvrir."));
+
+    /* Ce qu'on peut faire */
+    const actions = el("div", "tuiles-periode");
+    [
+      { id:"chapitres", nom:"Les chapitres", chiffre: cp.length ? vus + " / " + cp.length + " revus" : "aucun pour cette classe", texte:"Les fiches de cours : le récit, les dates, les notions, les personnages, et un quiz." },
+      { id:"reviser", nom:"Quiz", chiffre: cp.reduce((n, c) => n + (c.quiz || []).length, 0) + " questions", texte:"Des questions tirées au sort dans les chapitres de la période." },
+      { id:"dates", nom:"Cartes de dates", chiffre: H.reperes.filter(r => r.periodeId === p.id).length + " repères", texte:"Retourner une carte, deviner l'année, cocher ce qu'on sait." },
+    ].forEach(x => {
+      const b = el("button", "tuile-periode" + (onglet === x.id ? " actif" : "")); b.type = "button";
+      b.innerHTML = '<span class="tuile-periode-nom">' + x.nom + '</span><span class="tuile-periode-chiffre">' + x.chiffre + '</span><span class="tuile-periode-texte">' + x.texte + '</span>';
+      b.onclick = () => aller("#/p/" + p.id + (x.id === "chapitres" ? "" : "/" + x.id));
+      actions.appendChild(b);
     });
-    f.appendChild(ong);
+    f.appendChild(actions);
 
-    if (ongletPeriode === "frise") {
-      f.appendChild(el("p", "mention", "Les repères de la période, dans l'ordre. Cliquez un repère rattaché à un chapitre pour l'ouvrir."));
-      f.appendChild(friseDePeriode(p));
-    } else if (ongletPeriode === "reviser") {
+    if (onglet === "reviser") {
       periodeFiltre = p.id;
-      f.appendChild(el("p", "mention", "Quiz et cartes de dates tirés dans les chapitres de " + p.nom + (Memoire.classe() === "tous" ? "" : " pour la " + nomClasse(Memoire.classe())) + "."));
-      const so = el("div", "onglets");
-      [["quiz", "Quiz"], ["dates", "Cartes de dates"]].forEach(([id, nom]) => {
-        const b = el("button", "onglet", nom); b.type = "button"; b.setAttribute("aria-selected", ongletRevision === id ? "true" : "false");
-        b.onclick = () => { ongletRevision = id; rendre(); }; so.appendChild(b);
-      });
-      f.appendChild(so);
-      f.appendChild(ongletRevision === "quiz" ? quizAuHasard() : cartesDeDates(p.id));
+      f.appendChild(el("h2", "hn-titre-section", "Quiz de la période"));
+      f.appendChild(quizAuHasard());
       periodeFiltre = null;
+    } else if (onglet === "dates") {
+      f.appendChild(el("h2", "hn-titre-section", "Cartes de dates"));
+      f.appendChild(cartesDeDates(p.id));
     } else {
       const dernier = Memoire.dernier() && H.chapitre(Memoire.dernier());
       const prochain = cp.find(c => !Memoire.vu(c.id));
       const cible = (dernier && dernier.periodeId === p.id && !Memoire.vu(dernier.id)) ? dernier : prochain;
+      f.appendChild(el("h2", "hn-titre-section", "Les chapitres"));
       if (cible) {
         const cont = el("section", "continuer");
         const g = el("div");
@@ -1038,7 +1056,7 @@
 
     if (parts[0] === "p" && H.periode(parts[1])) {
       const p = H.periode(parts[1]);
-      vue = rendreAccueil(p, ["chapitres", "frise", "reviser"].includes(parts[2]) ? parts[2] : "chapitres");
+      vue = rendrePeriode(p, ["reviser", "dates"].includes(parts[2]) ? parts[2] : "chapitres");
       titre = p.nom;
       filDAriane([{ nom: "Histoire", href: "#/" }, { nom: p.nom }]);
     } else if (parts[0] === "c" && H.chapitre(parts[1])) {
@@ -1057,13 +1075,15 @@
       titre = "Révision";
       filDAriane([{ nom: "Histoire", href: "#/" }, { nom: "Révision" }]);
     } else {
-      vue = rendreAccueil();
+      vue = rendreCarrousel();
       filDAriane([{ nom: "Histoire" }]);
     }
 
     page.innerHTML = "";
     page.appendChild(vue);
     document.title = "Polymates — " + titre;
+    /* À l'accueil, le carrousel occupe tout l'écran sous le cartouche : ni barre, ni sommaire. */
+    document.body.classList.toggle("accueil", !parts.length);
     const routeNav = parts[0] === "frise" ? "#/frise" : parts[0] === "reviser" ? "#/reviser" : (parts[0] === "p" || !parts.length) ? "#/" : null;
     document.querySelectorAll(".hn-onglet[data-route]").forEach(b => { if (b.dataset.route === routeNav) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     dessinerSommaire("#" + "/" + parts.join("/"));
@@ -1075,8 +1095,9 @@
     if ((e.target && e.target.matches && e.target.matches("input, select, textarea")) || document.getElementById("voile").classList.contains("ouvert")) return;
     if (!document.querySelector(".car")) return;
     const idx = H.periodes.findIndex(x => x.id === Memoire.periode());
-    if (e.key === "ArrowLeft" && idx > 0) aller("#/p/" + H.periodes[idx - 1].id + "/" + ongletPeriode);
-    if (e.key === "ArrowRight" && idx < H.periodes.length - 1) aller("#/p/" + H.periodes[idx + 1].id + "/" + ongletPeriode);
+    if (e.key === "ArrowLeft" && idx > 0) { Memoire.periode(H.periodes[idx - 1].id); rendre(); }
+    if (e.key === "ArrowRight" && idx < H.periodes.length - 1) { Memoire.periode(H.periodes[idx + 1].id); rendre(); }
+    if (e.key === "Enter") aller("#/p/" + H.periodes[idx].id);
   });
   let toucheX = null;
   document.addEventListener("touchstart", e => { const c = e.target.closest(".car"); toucheX = c ? e.touches[0].clientX : null; }, { passive: true });
@@ -1085,8 +1106,8 @@
     const dx = e.changedTouches[0].clientX - toucheX; toucheX = null;
     if (Math.abs(dx) < 50) return;
     const idx = H.periodes.findIndex(x => x.id === Memoire.periode());
-    if (dx > 0 && idx > 0) aller("#/p/" + H.periodes[idx - 1].id + "/" + ongletPeriode);
-    if (dx < 0 && idx < H.periodes.length - 1) aller("#/p/" + H.periodes[idx + 1].id + "/" + ongletPeriode);
+    if (dx > 0 && idx > 0) { Memoire.periode(H.periodes[idx - 1].id); rendre(); }
+    if (dx < 0 && idx < H.periodes.length - 1) { Memoire.periode(H.periodes[idx + 1].id); rendre(); }
   }, { passive: true });
   window.addEventListener("hashchange", rendre);
 
