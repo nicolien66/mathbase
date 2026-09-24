@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="histoire.css">
+<link rel="stylesheet" href="histoire-ui.css">
 <script src="matiere.js"></script>
 <script src="auth.js" data-protect data-sans-chip></script>
 <script src="contenu-histoire.js"></script>
@@ -23,23 +24,25 @@
   </div>
 </header>
 
-<nav class="outils" aria-label="Outils">
-  <div class="outils-dedans">
-    <div class="fil" id="fil"></div>
-
-    <div class="classes" role="group" aria-label="Filtrer par classe">
-      <span class="classes-nom">Classe</span>
-      <div id="classes" style="display:flex;align-items:center;gap:.3rem;flex-wrap:wrap"></div>
-    </div>
-
-    <button type="button" class="outil-btn" id="ouvrir-recherche">
-      Chercher <kbd>/</kbd>
-    </button>
-    <button type="button" class="outil-btn" id="aller-reviser">Réviser</button>
+<nav class="hn-nav" aria-label="Navigation de l'histoire">
+  <div class="hn-nav-inner">
+    <button type="button" class="hn-onglet" data-route="#/">Accueil</button>
+    <button type="button" class="hn-onglet" data-route="#/frise">Frise</button>
+    <button type="button" class="hn-onglet" data-route="#/reviser">Réviser</button>
+    <button type="button" class="hn-onglet" id="ouvrir-recherche">Chercher <kbd>/</kbd></button>
+    <label class="hn-classe">Classe <select id="classes" aria-label="Filtrer par classe"></select></label>
+    <a class="hn-retour" href="matieres.html">↩ Matières</a>
   </div>
 </nav>
+<div class="outils" hidden><div id="fil"></div><button type="button" id="aller-reviser" hidden></button></div>
 
-<div id="page"></div>
+<div class="hn-cadre">
+  <aside class="hn-sommaire" id="sommaire" aria-label="Sommaire"></aside>
+  <div>
+    <div class="hn-som-mobile" id="sommaire-mobile"></div>
+    <div id="page"></div>
+  </div>
+</div>
 
 <p class="colophon">Polymates — Histoire · collège et lycée</p>
 
@@ -255,121 +258,101 @@
      ══════════════════════════════════════════════════════════════ */
   function rendreAccueil() {
     const f = el("main", "feuille");
-    f.appendChild(el("p", "rubrique", "Histoire"));
-
-    const h1 = el("h1");
-    h1.innerHTML = "Toute l’histoire,<br><em>période par période.</em>";
-    f.appendChild(h1);
-
-    const filet = el("div", "filet"); filet.innerHTML = "<span>❦</span>";
-    f.appendChild(filet);
-
-    const ouv = el("p", "ouverture lettrine",
-      "Chaque période du programme a sa frise, ses chapitres et ses fiches, des origines " +
-      "à nos jours. Choisissez une classe pour ne voir que ce qui vous concerne, ouvrez une " +
-      "période pour en parcourir les chapitres, et passez en mode révision quand les dates " +
-      "commencent à se mélanger.");
-    f.appendChild(ouv);
-
-    f.appendChild(ruban(null));
-    const note = el("p", "note-echelle", "Repères ordonnés, échelle non proportionnelle");
-    f.appendChild(note);
-
-    /* La géographie a son propre espace depuis la séparation des deux
-       matières : les élèves les associent, autant leur tendre le lien. */
-    const versGeo = el("p", "mention");
-    versGeo.style.cssText = "margin-top:1.2rem";
-    const lienGeo = el("a", null, "Ouvrir la géographie →");
-    lienGeo.href = "geographie.html?matiere=geographie";
-    lienGeo.style.cssText = "color:var(--accent);text-decoration:none";
-    versGeo.append(document.createTextNode("La géographie a désormais son propre espace. "), lienGeo);
-    f.appendChild(versGeo);
-
-    /* Reprendre là où l’on s’était arrêté. */
-    const dernier = Memoire.dernier() && H.chapitre(Memoire.dernier());
-    if (dernier) {
-      const rep = el("div");
-      rep.style.cssText =
-        "margin-top:2rem;padding:.9rem 1.1rem;border:1px solid var(--trait);" +
-        "border-left:3px solid " + dernier.teinte + ";background:rgba(255,252,242,.6);" +
-        "display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap";
-      const l = el("span", "mention", "Reprendre");
-      const b = el("button", null, dernier.titre);
-      b.type = "button";
-      b.style.cssText = "font:inherit;font-family:var(--titre);font-size:1.1rem;background:none;" +
-        "border:none;padding:0;cursor:pointer;color:" + dernier.teinte;
-      b.onclick = () => aller("#/c/" + dernier.id);
-      rep.append(l, b);
-      f.appendChild(rep);
-    }
-
-    /* Les périodes, avec leur avancement. */
-    const grille = el("div", "periodes");
-    H.periodes.forEach(p => {
-      const chaps = retenus(p.chapitres);
-      const vus = chaps.filter(c => Memoire.vu(c.id)).length;
-
-      const c = el("button", "periode-carte");
-      c.type = "button";
-      c.style.setProperty("--teinte", p.teinte);
-      c.onclick = () => aller("#/p/" + p.id);
-
-      c.appendChild(el("div", "carte-nom", p.nom));
-      c.appendChild(el("div", "carte-dates", p.dates));
-      c.appendChild(el("div", "carte-resume", coupe(p.resume, 120)));
-
-      const pied = el("div", "carte-pied");
-      const g = el("span");
-      if (chaps.length === 0) {
-        g.textContent = "rien en " + nomClasse(Memoire.classe());
-      } else {
-        g.innerHTML = "<strong>" + chaps.length + "</strong> chapitre" + (chaps.length > 1 ? "s" : "");
-      }
-      pied.appendChild(g);
-      if (chaps.length) pied.appendChild(el("span", null, vus + " / " + chaps.length + " revus"));
-      c.appendChild(pied);
-
-      const jauge = el("div", "jauge");
-      const i = el("i");
-      i.style.width = (chaps.length ? (vus / chaps.length) * 100 : 0) + "%";
-      jauge.appendChild(i);
-      c.appendChild(jauge);
-
-      grille.appendChild(c);
-    });
-    f.appendChild(grille);
-
-    /* Avancement global et remise à zéro. */
     const chaps = chapitresVisibles();
     const vus = chaps.filter(c => Memoire.vu(c.id)).length;
-    const bilan = el("div");
-    bilan.style.cssText = "margin-top:2.4rem;padding-top:1.2rem;border-top:1px solid var(--trait);" +
-      "display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap";
-    const t = el("p");
-    t.style.cssText = "font-family:var(--titre);font-size:1.05rem";
-    t.innerHTML = chaps.length
-      ? "Vous avez révisé <strong style=\"color:var(--accent)\">" + vus + "</strong> chapitre" +
-        (vus > 1 ? "s" : "") + " sur " + chaps.length +
-        (Memoire.classe() === "tous" ? "" : " en " + nomClasse(Memoire.classe())) + "."
-      : "Aucun chapitre pour cette classe.";
-    bilan.appendChild(t);
+    f.appendChild(entete("Histoire", (chaps.length ? vus + " chapitre" + (vus > 1 ? "s" : "") + " revu" + (vus > 1 ? "s" : "") + " sur " + chaps.length : "Aucun chapitre pour cette classe") +
+      (Memoire.classe() === "tous" ? "" : " en " + nomClasse(Memoire.classe())) + ". Des origines à nos jours : la frise, les chapitres, les fiches, et la révision.",
+      [{ nom:"Réviser", classe:"plein", onclick: () => aller("#/reviser") }]));
 
-    const rev = el("button", "bouton plein", "Réviser maintenant");
-    rev.type = "button"; rev.onclick = () => aller("#/reviser");
-    bilan.appendChild(rev);
+    /* ── Continuer : reprendre le dernier chapitre, sinon le premier non revu ── */
+    const dernier = Memoire.dernier() && H.chapitre(Memoire.dernier());
+    const prochain = chaps.find(c => !Memoire.vu(c.id));
+    const cible = (dernier && !Memoire.vu(dernier.id)) ? dernier : prochain;
+    if (cible) {
+      const cont = el("section", "continuer");
+      const g = el("div");
+      g.appendChild(el("div", "continuer-quoi", cible === dernier ? "Reprendre" : (vus ? "Le chapitre suivant" : "Par où commencer")));
+      g.appendChild(el("div", "continuer-titre", cible.titre));
+      g.appendChild(el("div", "continuer-texte", cible.periodeNom + " · " + listeClasses(cible.niveaux) + " — " + cible.accroche));
+      cont.appendChild(g);
+      const b = el("button", "btn plein grand", "Ouvrir la fiche →"); b.type = "button"; b.onclick = () => aller("#/c/" + cible.id);
+      cont.appendChild(b);
+      f.appendChild(cont);
+    }
+
+    /* ── Les périodes ── */
+    const sec = el("section", "hn-section");
+    const st = el("div", "hn-section-tete"); st.appendChild(el("h2", null, "Les huit périodes"));
+    const fr = el("button", null, "Voir la frise complète →"); fr.type = "button"; fr.onclick = () => aller("#/frise"); st.appendChild(fr);
+    sec.appendChild(st);
+    const grille = el("div", "periodes");
+    H.periodes.forEach(p => {
+      const cp = retenus(p.chapitres);
+      const v = cp.filter(c => Memoire.vu(c.id)).length;
+      const c = el("button", "periode-carte");
+      c.type = "button"; c.style.setProperty("--teinte", p.teinte);
+      c.onclick = () => aller("#/p/" + p.id);
+      c.appendChild(el("div", "carte-dates", p.dates));
+      c.appendChild(el("div", "carte-nom", p.nom));
+      c.appendChild(el("div", "carte-resume", coupe(p.resume, 110)));
+      const pied = el("div", "carte-pied");
+      pied.appendChild(el("span", null, cp.length ? cp.length + " chapitre" + (cp.length > 1 ? "s" : "") : "rien en " + nomClasse(Memoire.classe())));
+      if (cp.length) pied.appendChild(el("span", null, v + " / " + cp.length + " revus"));
+      c.appendChild(pied);
+      const jauge = el("div", "jauge"); const i = el("i"); i.style.width = (cp.length ? (v / cp.length) * 100 : 0) + "%"; jauge.appendChild(i); c.appendChild(jauge);
+      grille.appendChild(c);
+    });
+    sec.appendChild(grille);
+    f.appendChild(sec);
+
+    /* ── Tous les chapitres, période par période ── */
+    const sec2 = el("section", "hn-section");
+    const st2 = el("div", "hn-section-tete"); st2.appendChild(el("h2", null, "Le programme, chapitre par chapitre")); sec2.appendChild(st2);
+    H.periodes.forEach(p => {
+      const cp = retenus(p.chapitres);
+      if (!cp.length) return;
+      const bd = el("div", "hn-periode-bandeau"); bd.style.setProperty("--teinte", p.teinte);
+      bd.appendChild(el("i")); bd.appendChild(el("b", null, p.nom)); bd.appendChild(el("span", null, p.dates));
+      const op = el("button", null, "Ouvrir la période →"); op.type = "button"; op.onclick = () => aller("#/p/" + p.id); bd.appendChild(op);
+      sec2.appendChild(bd);
+      const gr = el("div", "hn-grille");
+      cp.forEach((c, i) => {
+        const b = el("button", "hn-chap"); b.type = "button"; b.style.setProperty("--teinte", p.teinte);
+        b.onclick = () => aller("#/c/" + c.id);
+        b.appendChild(el("span", "hn-chap-num", String(i + 1)));
+        const nom = el("span", "hn-chap-nom"); nom.appendChild(el("span", null, c.titre));
+        if (Memoire.classe() === "tous") nom.appendChild(el("div", "hn-chap-classes", listeClasses(c.niveaux)));
+        b.appendChild(nom);
+        const sc = Memoire.scoreDe(c.id);
+        b.appendChild(el("span", "hn-chap-etat" + (Memoire.vu(c.id) ? " vu" : ""), Memoire.vu(c.id) ? (sc ? "✓ " + sc.juste + "/" + sc.total : "✓ revu") : "à voir"));
+        gr.appendChild(b);
+      });
+      sec2.appendChild(gr);
+    });
+    f.appendChild(sec2);
 
     if (vus > 0) {
-      const raz = el("button", "bouton", "Effacer ma progression");
-      raz.type = "button";
-      raz.onclick = () => {
-        if (confirm("Effacer les chapitres marqués comme révisés et les scores ?")) {
-          Memoire.oublier(); rendre(); billet("Progression effacée.");
-        }
-      };
-      bilan.appendChild(raz);
+      const raz = el("div", "actions");
+      const b = el("button", "btn discret", "Effacer ma progression"); b.type = "button";
+      b.onclick = () => { if (confirm("Effacer les chapitres marqués comme révisés et les scores ?")) { Memoire.oublier(); rendre(); billet("Progression effacée."); } };
+      raz.appendChild(b); f.appendChild(raz);
     }
-    f.appendChild(bilan);
+    return f;
+  }
 
+  /* ── La frise complète ── */
+  function rendreFrise() {
+    const f = el("main", "feuille");
+    f.appendChild(entete("La frise", "Les huit périodes, puis les repères de chacune. Les repères sont ordonnés, l'échelle n'est pas proportionnelle. Cliquez un repère rattaché à un chapitre pour l'ouvrir.", null,
+      [{ nom:"Histoire", href:"#/" }, { nom:"Frise" }]));
+    f.appendChild(ruban(null));
+    H.periodes.forEach(p => {
+      const bd = el("div", "hn-periode-bandeau"); bd.style.setProperty("--teinte", p.teinte);
+      bd.appendChild(el("i")); bd.appendChild(el("b", null, p.nom)); bd.appendChild(el("span", null, p.dates));
+      const op = el("button", null, "Ouvrir la période →"); op.type = "button"; op.onclick = () => aller("#/p/" + p.id); bd.appendChild(op);
+      f.appendChild(bd);
+      f.appendChild(friseDePeriode(p));
+    });
     return f;
   }
 
@@ -380,17 +363,7 @@
     const f = el("main", "feuille");
     f.style.setProperty("--teinte", p.teinte);
 
-    f.appendChild(el("p", "rubrique", p.nom));
-    const h1 = el("h1"); h1.innerHTML = p.titre; f.appendChild(h1);
-
-    const dates = el("p", "mention", p.dates);
-    dates.style.marginTop = ".4rem";
-    f.appendChild(dates);
-
-    const filet = el("div", "filet"); filet.innerHTML = "<span>❦</span>";
-    f.appendChild(filet);
-    f.appendChild(el("p", "ouverture lettrine", p.resume));
-
+    f.appendChild(entete(p.titre, p.dates + " — " + p.resume, null, [{ nom:"Histoire", href:"#/" }, { nom: p.nom }]));
     f.appendChild(friseDePeriode(p));
     f.appendChild(el("p", "note-echelle",
       (p.reperes || []).length + " repères · cliquez un repère rattaché à un chapitre pour l’ouvrir"));
@@ -411,7 +384,18 @@
       sec.appendChild(vide);
     }
 
-    chaps.forEach(c => {
+    const gr = el("div", "hn-grille"); sec.appendChild(gr);
+    chaps.forEach((c, i) => {
+      const b = el("button", "hn-chap"); b.type = "button"; b.style.setProperty("--teinte", p.teinte);
+      b.onclick = () => aller("#/c/" + c.id);
+      b.appendChild(el("span", "hn-chap-num", String(i + 1)));
+      const nom = el("span", "hn-chap-nom"); nom.appendChild(el("span", null, c.titre)); nom.appendChild(el("div", "hn-chap-classes", listeClasses(c.niveaux)));
+      b.appendChild(nom);
+      const s = Memoire.scoreDe(c.id);
+      b.appendChild(el("span", "hn-chap-etat" + (Memoire.vu(c.id) ? " vu" : ""), Memoire.vu(c.id) ? (s ? "✓ " + s.juste + "/" + s.total : "✓ revu") : "à voir"));
+      gr.appendChild(b);
+    });
+    if (false) chaps.forEach(c => {
       const b = el("button", "entree");
       b.type = "button";
       b.onclick = () => aller("#/c/" + c.id);
@@ -468,19 +452,10 @@
     f.style.setProperty("--teinte", c.teinte);
 
     /* Tête */
-    const tete = el("header", "fiche-tete");
-    const rub = el("p", "rubrique");
-    const lienP = el("button", null, p.nom);
-    lienP.type = "button";
-    lienP.style.cssText = "font:inherit;background:none;border:none;padding:0;cursor:pointer;color:inherit";
-    lienP.onclick = () => aller("#/p/" + p.id);
-    rub.appendChild(lienP);
-    rub.appendChild(document.createTextNode(" · " + listeClasses(c.niveaux)));
-    tete.appendChild(rub);
-    tete.appendChild(el("h1", null, c.titre));
-    tete.appendChild(el("p", "accroche", c.accroche));
-    f.appendChild(tete);
-
+    f.appendChild(entete(c.titre, c.accroche,
+      [{ nom: Memoire.vu(c.id) ? "✓ Revu" : "Marquer comme revu", classe: Memoire.vu(c.id) ? "plein" : "", onclick: () => { Memoire.basculerVu(c.id); rendre(); billet(Memoire.vu(c.id) ? "Chapitre marqué comme revu." : "Chapitre remis à revoir."); } },
+       { nom:"Quiz du chapitre ↓", classe:"discret", onclick: () => { const q = f.querySelector(".quiz"); if (q) q.scrollIntoView({ behavior:"smooth", block:"start" }); } }],
+      [{ nom:"Histoire", href:"#/" }, { nom: p.nom, href:"#/p/" + p.id }, { nom: listeClasses(c.niveaux) }]));
     /* Corps : texte + marge */
     const feuillet = el("div", "feuillet");
     const corps = el("div", "corps");
@@ -654,13 +629,7 @@
 
   function rendreRevision() {
     const f = el("main", "feuille");
-    f.appendChild(el("p", "rubrique", "Révision"));
-    const h1 = el("h1");
-    h1.innerHTML = "Se tester,<br><em>jusqu’à ce que ça tienne.</em>";
-    f.appendChild(h1);
-    const filet = el("div", "filet"); filet.innerHTML = "<span>❦</span>";
-    f.appendChild(filet);
-
+    f.appendChild(entete("Réviser", "Un quiz tiré au sort dans les chapitres de la classe choisie, ou des cartes de dates à retourner.", null, [{ nom:"Histoire", href:"#/" }, { nom:"Révision" }]));
     const onglets = el("div", "onglets");
     onglets.setAttribute("role", "tablist");
     [["quiz", "Quiz au hasard"], ["dates", "Cartes de dates"]].forEach(([id, nom]) => {
@@ -1010,27 +979,77 @@
   const hoteClasses = document.getElementById("classes");
   function dessinerClasses() {
     hoteClasses.innerHTML = "";
-    const tous = el("button", "classe-btn", "Toutes");
-    tous.type = "button";
-    tous.setAttribute("aria-pressed", Memoire.classe() === "tous" ? "true" : "false");
-    tous.onclick = () => { Memoire.classe("tous"); dessinerClasses(); rendre(); };
+    const tous = document.createElement("option"); tous.value = "tous"; tous.textContent = "Toutes";
     hoteClasses.appendChild(tous);
-    hoteClasses.appendChild(el("span", "classe-sep"));
-
-    let cycle = null;
+    let cycle = null, og = null;
     H.niveaux.forEach(n => {
-      if (cycle && n.cycle !== cycle) hoteClasses.appendChild(el("span", "classe-sep"));
-      cycle = n.cycle;
-      const b = el("button", "classe-btn", n.nom);
-      b.type = "button";
-      b.title = n.cycle + " — " + n.nom;
-      b.setAttribute("aria-pressed", Memoire.classe() === n.id ? "true" : "false");
-      b.onclick = () => {
-        Memoire.classe(Memoire.classe() === n.id ? "tous" : n.id);
-        dessinerClasses(); rendre();
-      };
-      hoteClasses.appendChild(b);
+      if (n.cycle !== cycle) { cycle = n.cycle; og = document.createElement("optgroup"); og.label = n.cycle; hoteClasses.appendChild(og); }
+      const o = document.createElement("option"); o.value = n.id; o.textContent = n.nom; og.appendChild(o);
     });
+    hoteClasses.value = Memoire.classe();
+    hoteClasses.onchange = () => { Memoire.classe(hoteClasses.value); rendre(); };
+  }
+
+  /* ── Le sommaire permanent : périodes et chapitres, filtrés par classe ── */
+  const hoteSommaire = document.getElementById("sommaire");
+  const hoteSommaireMobile = document.getElementById("sommaire-mobile");
+  function dessinerSommaire(route) {
+    hoteSommaire.innerHTML = "";
+    hoteSommaire.appendChild(el("div", "hn-som-titre", "Sommaire"));
+    const sel = document.createElement("select");
+    sel.innerHTML = '<option value="">Aller à un chapitre…</option>';
+    H.periodes.forEach(p => {
+      const chaps = retenus(p.chapitres);
+      if (!chaps.length) return;
+      const bp = el("button", "hn-som-periode" + (route === "#/p/" + p.id ? " actif" : ""));
+      bp.type = "button"; bp.style.setProperty("--teinte", p.teinte);
+      bp.appendChild(el("i")); bp.appendChild(document.createTextNode(p.nom));
+      bp.onclick = () => aller("#/p/" + p.id);
+      hoteSommaire.appendChild(bp);
+      const og = document.createElement("optgroup"); og.label = p.nom;
+      chaps.forEach(c => {
+        const b = el("button", "hn-som-chap" + (route === "#/c/" + c.id ? " actif" : ""));
+        b.type = "button"; b.style.setProperty("--teinte", p.teinte);
+        b.appendChild(el("span", null, c.titre));
+        if (Memoire.vu(c.id)) b.appendChild(el("span", "vu", "✓"));
+        b.onclick = () => aller("#/c/" + c.id);
+        hoteSommaire.appendChild(b);
+        const o = document.createElement("option"); o.value = "#/c/" + c.id; o.textContent = c.titre + (Memoire.vu(c.id) ? " ✓" : "");
+        if (route === o.value) o.selected = true;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    sel.onchange = () => { if (sel.value) aller(sel.value); };
+    hoteSommaireMobile.innerHTML = ""; hoteSommaireMobile.appendChild(sel);
+    const actif = hoteSommaire.querySelector(".actif");
+    if (actif && actif.scrollIntoView) actif.scrollIntoView({ block: "nearest" });
+  }
+
+  /* ── En-tête compact d'une page ── */
+  function entete(titre, sous, actions, fil) {
+    const e = el("div");
+    if (fil && fil.length) {
+      const f = el("div", "fil-ariane");
+      fil.forEach((x, i) => {
+        if (i) f.appendChild(el("i", null, "›"));
+        if (x.href) { const b = el("button", null, x.nom); b.type = "button"; b.onclick = () => aller(x.href); f.appendChild(b); }
+        else f.appendChild(el("span", null, x.nom));
+      });
+      e.appendChild(f);
+    }
+    const h = el("div", "entete");
+    const g = el("div");
+    const h1 = el("h1"); h1.innerHTML = titre; g.appendChild(h1);
+    if (sous) g.appendChild(el("p", "entete-sous", sous));
+    h.appendChild(g);
+    if (actions && actions.length) {
+      const ac = el("div", "entete-actions");
+      actions.forEach(x => { const b = el("button", "btn" + (x.classe ? " " + x.classe : ""), x.nom); b.type = "button"; b.onclick = x.onclick; ac.appendChild(b); });
+      h.appendChild(ac);
+    }
+    e.appendChild(h);
+    return e;
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -1072,6 +1091,10 @@
       filDAriane([{ nom: "Histoire", href: "#/" },
                   { nom: c.periodeNom, href: "#/p/" + c.periodeId },
                   { nom: c.titre }]);
+    } else if (parts[0] === "frise") {
+      vue = rendreFrise();
+      titre = "Frise";
+      filDAriane([{ nom: "Histoire", href: "#/" }, { nom: "Frise" }]);
     } else if (parts[0] === "reviser") {
       vue = rendreRevision();
       titre = "Révision";
@@ -1084,10 +1107,13 @@
     page.innerHTML = "";
     page.appendChild(vue);
     document.title = "Polymates — " + titre;
+    const routeNav = parts[0] === "frise" ? "#/frise" : parts[0] === "reviser" ? "#/reviser" : (parts.length ? null : "#/");
+    document.querySelectorAll(".hn-onglet[data-route]").forEach(b => { if (b.dataset.route === routeNav) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    dessinerSommaire("#" + "/" + parts.join("/"));
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
-  document.getElementById("aller-reviser").onclick = () => aller("#/reviser");
+  document.querySelectorAll(".hn-onglet[data-route]").forEach(b => b.onclick = () => aller(b.dataset.route));
   window.addEventListener("hashchange", rendre);
 
   dessinerClasses();
