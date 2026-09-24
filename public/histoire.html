@@ -24,40 +24,10 @@
   </div>
 </header>
 
-<nav class="hn-nav" aria-label="Navigation de l'histoire">
-  <div class="hn-nav-inner">
-    <button type="button" class="hn-onglet" data-route="#/">Périodes</button>
-    <button type="button" class="hn-onglet" data-route="#/frise">Frise</button>
-    <button type="button" class="hn-onglet" data-route="#/reviser">Réviser</button>
-    <button type="button" class="hn-onglet" id="ouvrir-recherche">Chercher <kbd>/</kbd></button>
-    <label class="hn-classe">Classe <select id="classes" aria-label="Filtrer par classe"></select></label>
-    <a class="hn-retour" href="matieres.html">↩ Matières</a>
-  </div>
-</nav>
-<div class="outils" hidden><div id="fil"></div><button type="button" id="aller-reviser" hidden></button></div>
-
-<div class="hn-cadre">
-  <aside class="hn-sommaire" id="sommaire" aria-label="Sommaire"></aside>
-  <div>
-    <div class="hn-som-mobile" id="sommaire-mobile"></div>
-    <div id="page"></div>
-  </div>
-</div>
+<div id="fil" hidden></div>
+<div id="page"></div>
 
 <p class="colophon">Polymates — Histoire · collège et lycée</p>
-
-<div class="voile" id="voile" role="dialog" aria-modal="true" aria-label="Recherche">
-  <div class="chercheur">
-    <input type="search" id="q" placeholder="Une date, un chapitre, une notion, un personnage…"
-           autocomplete="off" spellcheck="false" aria-label="Rechercher">
-    <div class="resultats" id="resultats"></div>
-    <div class="chercheur-pied">
-      <span>↑ ↓ pour naviguer</span><span>↵ pour ouvrir</span><span>Échap pour fermer</span>
-    </div>
-  </div>
-</div>
-
-<div id="billet" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -323,94 +293,115 @@
     return f;
   }
 
-  /* ── La page d'une période : sa frise en haut, puis ce qu'on peut faire ── */
-  function rendrePeriode(p, onglet) {
+  /* ── Écran 2 : la frise de la période, et rien d'autre ──
+     La frise au centre, en grand. Une flèche à droite mène aux
+     chapitres ; une flèche discrète à gauche ramène aux périodes. ── */
+  function rendreFrisePeriode(p) {
     Memoire.periode(p.id);
-    const f = el("main", "feuille large");
+    const f = el("main", "ecran-frise");
     f.style.setProperty("--teinte", p.teinte);
-    const cp = retenus(p.chapitres), vus = cp.filter(c => Memoire.vu(c.id)).length;
-    f.appendChild(entete(p.titre, p.dates + " — " + p.resume,
-      [{ nom:"↔ Changer de période", classe:"discret", onclick: () => aller("#/") }],
-      [{ nom:"Périodes", href:"#/" }, { nom: p.nom }]));
 
-    /* La frise, en haut */
-    f.appendChild(friseDePeriode(p));
-    f.appendChild(el("p", "mention", "Les repères de la période, dans l'ordre. Cliquez un repère rattaché à un chapitre pour l'ouvrir."));
+    const retour = el("button", "ecran-fleche gauche");
+    retour.type = "button"; retour.setAttribute("aria-label", "Revenir aux périodes"); retour.title = "Revenir aux périodes";
+    retour.innerHTML = "&#8592;";
+    retour.onclick = () => aller("#/");
 
-    /* Ce qu'on peut faire */
-    const actions = el("div", "tuiles-periode");
-    [
-      { id:"chapitres", nom:"Les chapitres", chiffre: cp.length ? vus + " / " + cp.length + " revus" : "aucun pour cette classe", texte:"Les fiches de cours : le récit, les dates, les notions, les personnages, et un quiz." },
-      { id:"reviser", nom:"Quiz", chiffre: cp.reduce((n, c) => n + (c.quiz || []).length, 0) + " questions", texte:"Des questions tirées au sort dans les chapitres de la période." },
-      { id:"dates", nom:"Cartes de dates", chiffre: H.reperes.filter(r => r.periodeId === p.id).length + " repères", texte:"Retourner une carte, deviner l'année, cocher ce qu'on sait." },
-    ].forEach(x => {
-      const b = el("button", "tuile-periode" + (onglet === x.id ? " actif" : "")); b.type = "button";
-      b.innerHTML = '<span class="tuile-periode-nom">' + x.nom + '</span><span class="tuile-periode-chiffre">' + x.chiffre + '</span><span class="tuile-periode-texte">' + x.texte + '</span>';
-      b.onclick = () => aller("#/p/" + p.id + (x.id === "chapitres" ? "" : "/" + x.id));
-      actions.appendChild(b);
-    });
-    f.appendChild(actions);
+    const centre = el("div", "ecran-frise-centre");
+    centre.appendChild(el("div", "ecran-dates", p.dates));
+    centre.appendChild(el("h1", "ecran-titre", p.nom));
+    const cadre = el("div", "ecran-frise-cadre");
+    cadre.appendChild(friseDePeriode(p));
+    centre.appendChild(cadre);
 
-    if (onglet === "reviser") {
-      periodeFiltre = p.id;
-      f.appendChild(el("h2", "hn-titre-section", "Quiz de la période"));
-      f.appendChild(quizAuHasard());
-      periodeFiltre = null;
-    } else if (onglet === "dates") {
-      f.appendChild(el("h2", "hn-titre-section", "Cartes de dates"));
-      f.appendChild(cartesDeDates(p.id));
-    } else {
-      const dernier = Memoire.dernier() && H.chapitre(Memoire.dernier());
-      const prochain = cp.find(c => !Memoire.vu(c.id));
-      const cible = (dernier && dernier.periodeId === p.id && !Memoire.vu(dernier.id)) ? dernier : prochain;
-      f.appendChild(el("h2", "hn-titre-section", "Les chapitres"));
-      if (cible) {
-        const cont = el("section", "continuer");
-        const g = el("div");
-        g.appendChild(el("div", "continuer-quoi", cible === dernier ? "Reprendre" : "Le chapitre suivant"));
-        g.appendChild(el("div", "continuer-titre", cible.titre));
-        g.appendChild(el("div", "continuer-texte", listeClasses(cible.niveaux) + " — " + cible.accroche));
-        cont.appendChild(g);
-        const b = el("button", "btn plein grand", "Ouvrir la fiche →"); b.type = "button"; b.onclick = () => aller("#/c/" + cible.id);
-        cont.appendChild(b);
-        f.appendChild(cont);
-      }
-      if (!cp.length) {
-        const v = el("div", "vide");
-        v.innerHTML = "<strong>Rien dans cette période pour la " + nomClasse(Memoire.classe()) + "</strong><p>Choisissez une autre période, ou « Toutes » les classes dans la barre.</p>";
-        f.appendChild(v);
-      } else {
-        const gr = el("div", "hn-grille");
-        cp.forEach((c, i) => {
-          const b = el("button", "hn-chap"); b.type = "button"; b.style.setProperty("--teinte", p.teinte);
-          b.onclick = () => aller("#/c/" + c.id);
-          b.appendChild(el("span", "hn-chap-num", String(i + 1)));
-          const nom = el("span", "hn-chap-nom"); nom.appendChild(el("span", null, c.titre));
-          if (Memoire.classe() === "tous") nom.appendChild(el("div", "hn-chap-classes", listeClasses(c.niveaux)));
-          b.appendChild(nom);
-          const sc = Memoire.scoreDe(c.id);
-          b.appendChild(el("span", "hn-chap-etat" + (Memoire.vu(c.id) ? " vu" : ""), Memoire.vu(c.id) ? (sc ? "✓ " + sc.juste + "/" + sc.total : "✓ revu") : "à voir"));
-          gr.appendChild(b);
-        });
-        f.appendChild(gr);
-      }
-    }
+    const suite = el("button", "ecran-fleche droite");
+    suite.type = "button"; suite.setAttribute("aria-label", "Voir les chapitres"); suite.title = "Voir les chapitres";
+    suite.innerHTML = '<span class="ecran-fleche-mot">Chapitres</span><span class="ecran-fleche-signe">&#8594;</span>';
+    suite.onclick = () => aller("#/p/" + p.id + "/chapitres");
+
+    f.appendChild(retour);
+    f.appendChild(centre);
+    f.appendChild(suite);
     return f;
   }
 
-  /* ── La frise complète ── */
-  function rendreFrise() {
-    const f = el("main", "feuille");
-    f.appendChild(entete("La frise", "Les huit périodes, puis les repères de chacune. Les repères sont ordonnés, l'échelle n'est pas proportionnelle. Cliquez un repère rattaché à un chapitre pour l'ouvrir.", null,
-      [{ nom:"Histoire", href:"#/" }, { nom:"Frise" }]));
-    f.appendChild(ruban(null));
-    H.periodes.forEach(p => {
-      const bd = el("div", "hn-periode-bandeau"); bd.style.setProperty("--teinte", p.teinte);
-      bd.appendChild(el("i")); bd.appendChild(el("b", null, p.nom)); bd.appendChild(el("span", null, p.dates));
-      const op = el("button", null, "Ouvrir la période →"); op.type = "button"; op.onclick = () => aller("#/p/" + p.id); bd.appendChild(op);
-      f.appendChild(bd);
-      f.appendChild(friseDePeriode(p));
+  /* ── Écran 3 : les chapitres en colonne, et le panneau d'un chapitre ──
+     À gauche, les chapitres numérotés. Un clic ouvre, à droite, le
+     panneau du chapitre avec ses boutons d'action. Les actions sont
+     déclarées dans ACTIONS_CHAPITRE : on les branchera une par une. ── */
+  const ACTIONS_CHAPITRE = [
+    { id: "fiche",   nom: "Lire la fiche",       texte: "Le récit du chapitre, ses dates, ses notions et ses personnages." },
+    { id: "quiz",    nom: "Quiz",                texte: "Quelques questions pour vérifier ce qui est acquis." },
+    { id: "dates",   nom: "Cartes de dates",     texte: "Retrouver l'année de chaque repère." },
+    { id: "retenir", nom: "L'essentiel",         texte: "Ce qu'il faut retenir, en quelques lignes." },
+  ];
+  /* Pour brancher une action plus tard : ACTION_BRANCHEE["fiche"] = c => aller("#/c/" + c.id); */
+  const ACTION_BRANCHEE = {};
+
+  function rendreChapitres(p, chapId) {
+    Memoire.periode(p.id);
+    const f = el("main", "ecran-chapitres" + (chapId ? " panneau-ouvert" : ""));
+    f.style.setProperty("--teinte", p.teinte);
+
+    /* En-tête : retour à la frise, nom de la période */
+    const tete = el("div", "chap-tete");
+    const retour = el("button", "chap-retour");
+    retour.type = "button"; retour.innerHTML = "&#8592; " + p.nom;
+    retour.title = "Revenir à la frise"; retour.onclick = () => aller("#/p/" + p.id);
+    tete.appendChild(retour);
+    tete.appendChild(el("span", "chap-compte", p.chapitres.length + " chapitre" + (p.chapitres.length > 1 ? "s" : "")));
+    f.appendChild(tete);
+
+    const corps = el("div", "chap-corps");
+
+    /* La colonne des chapitres */
+    const liste = el("ol", "chap-liste");
+    p.chapitres.forEach((c, i) => {
+      const li = el("li");
+      const b = el("button", "chap-ligne" + (c.id === chapId ? " actif" : ""));
+      b.type = "button";
+      b.setAttribute("aria-expanded", c.id === chapId ? "true" : "false");
+      b.appendChild(el("span", "chap-num", String(i + 1).padStart(2, "0")));
+      const t = el("span", "chap-textes");
+      t.appendChild(el("span", "chap-nom", c.titre));
+      t.appendChild(el("span", "chap-classes", listeClasses(c.niveaux)));
+      b.appendChild(t);
+      b.appendChild(el("span", "chap-chevron", "&#8250;"));
+      b.onclick = () => aller("#/p/" + p.id + "/chapitres" + (c.id === chapId ? "" : "/" + c.id));
+      li.appendChild(b);
+      liste.appendChild(li);
     });
+    corps.appendChild(liste);
+
+    /* Le panneau du chapitre choisi */
+    const panneau = el("aside", "chap-panneau");
+    panneau.setAttribute("aria-label", "Actions du chapitre");
+    const c = chapId && H.chapitre(chapId);
+    if (c && c.periodeId === p.id) {
+      const fermer = el("button", "chap-fermer");
+      fermer.type = "button"; fermer.setAttribute("aria-label", "Fermer"); fermer.innerHTML = "&#215;";
+      fermer.onclick = () => aller("#/p/" + p.id + "/chapitres");
+      panneau.appendChild(fermer);
+      panneau.appendChild(el("div", "chap-panneau-classes", listeClasses(c.niveaux)));
+      panneau.appendChild(el("h2", "chap-panneau-titre", c.titre));
+      if (c.accroche) panneau.appendChild(el("p", "chap-panneau-accroche", c.accroche));
+      const actions = el("div", "chap-actions");
+      ACTIONS_CHAPITRE.forEach(a => {
+        const branchee = typeof ACTION_BRANCHEE[a.id] === "function";
+        const b = el("button", "chap-action" + (branchee ? "" : " a-venir"));
+        b.type = "button"; b.dataset.action = a.id;
+        b.appendChild(el("span", "chap-action-nom", a.nom));
+        b.appendChild(el("span", "chap-action-texte", a.texte));
+        if (!branchee) b.appendChild(el("span", "chap-action-bientot", "bientôt"));
+        b.onclick = () => { if (branchee) ACTION_BRANCHEE[a.id](c); };
+        if (!branchee) b.setAttribute("aria-disabled", "true");
+        actions.appendChild(b);
+      });
+      panneau.appendChild(actions);
+    } else {
+      panneau.appendChild(el("p", "chap-panneau-vide", "Choisissez un chapitre dans la liste."));
+    }
+    corps.appendChild(panneau);
+    f.appendChild(corps);
     return f;
   }
 
@@ -823,184 +814,6 @@
     return hote;
   }
 
-  /* ══════════════════════════════════════════════════════════════
-     Recherche : chapitres, notions, personnages, repères
-     ══════════════════════════════════════════════════════════════ */
-  const INDEX = [];
-  H.chapitres.forEach(c => {
-    /* Le corps du cours est indexé lui aussi : chercher « féodalité »
-       doit ramener le chapitre où le mot est expliqué, même s’il ne
-       figure ni dans le titre ni dans l’accroche. */
-    const corpsTexte = [c.resume]
-      .concat(c.parties.map(p => p.titre + " " + p.points.join(" ")))
-      .concat(c.retenir).join(" ");
-    INDEX.push({ type: "Chapitre", nom: c.titre, ou: c.periodeNom + " · " + listeClasses(c.niveaux),
-                 quoi: c.accroche, corps: corpsTexte, href: "#/c/" + c.id, poids: 0 });
-    (c.notions || []).forEach(n => INDEX.push({
-      type: "Notion", nom: n.mot, ou: c.titre, quoi: n.def, href: "#/c/" + c.id, poids: 1 }));
-    (c.personnages || []).forEach(p => INDEX.push({
-      type: "Personnage", nom: p.nom, ou: c.titre, quoi: p.vie + " — " + p.role, href: "#/c/" + c.id, poids: 2 }));
-  });
-  H.periodes.forEach(p => INDEX.push({
-    type: "Période", nom: p.nom, ou: p.dates, quoi: p.resume, href: "#/p/" + p.id, poids: 0 }));
-  H.reperes.forEach(r => INDEX.push({
-    type: "Repère", nom: H.an(r.an) + " — " + r.label, ou: r.periodeNom,
-    quoi: "", href: r.chapitreId ? "#/c/" + r.chapitreId : "#/p/" + r.periodeId, poids: 3 }));
-
-  function sansAccent(t) {
-    return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[’']/g, "'");
-  }
-  INDEX.forEach(e => {
-    e._n = sansAccent(e.nom);
-    e._q = sansAccent(e.quoi || "");
-    e._c = sansAccent(e.corps || "");
-  });
-
-  const voile = document.getElementById("voile");
-  const champ = document.getElementById("q");
-  const liste = document.getElementById("resultats");
-  let vise = 0, trouves = [];
-
-  function chercher(mot) {
-    const m = sansAccent(mot.trim());
-    liste.innerHTML = ""; vise = 0; trouves = [];
-    if (m.length < 2) {
-      const aide = el("div", "chercheur-pied");
-      aide.textContent = "Tapez au moins deux lettres — « Verdun », « féodalité », « 1789 », « Périclès »…";
-      liste.appendChild(aide);
-      return;
-    }
-    trouves = INDEX
-      .map(e => {
-        const i = e._n.indexOf(m);
-        const score = i === 0 ? 0 : i > 0 ? 1
-                    : e._q.indexOf(m) >= 0 ? 4
-                    : e._c.indexOf(m) >= 0 ? 6 : -1;
-        return score < 0 ? null : { e, score: score + e.poids };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a.score - b.score || a.e.nom.length - b.e.nom.length)
-      .slice(0, 30)
-      .map(x => x.e);
-
-    if (!trouves.length) {
-      const rien = el("div", "vide");
-      rien.innerHTML = "<strong>Rien trouvé</strong><p>Essayez un autre mot, ou une date seule.</p>";
-      liste.appendChild(rien);
-      return;
-    }
-
-    trouves.forEach((e, i) => {
-      const b = el("button", "resultat" + (i === 0 ? " vise" : ""));
-      b.type = "button";
-      const nom = el("div", "resultat-nom");
-      const pos = e._n.indexOf(m);
-      if (pos >= 0) {
-        nom.appendChild(document.createTextNode(e.nom.slice(0, pos)));
-        const mk = el("mark", null, e.nom.slice(pos, pos + m.length));
-        nom.appendChild(mk);
-        nom.appendChild(document.createTextNode(e.nom.slice(pos + m.length)));
-      } else nom.textContent = e.nom;
-
-      b.appendChild(nom);
-      b.appendChild(el("div", "resultat-ou", e.type + " · " + e.ou));
-      if (e.quoi) b.appendChild(el("div", "resultat-quoi", e.quoi.slice(0, 120)));
-      b.onclick = () => { fermerRecherche(); aller(e.href); };
-      liste.appendChild(b);
-    });
-  }
-
-  function viser(d) {
-    const enfants = [...liste.querySelectorAll(".resultat")];
-    if (!enfants.length) return;
-    enfants[vise] && enfants[vise].classList.remove("vise");
-    vise = (vise + d + enfants.length) % enfants.length;
-    enfants[vise].classList.add("vise");
-    enfants[vise].scrollIntoView({ block: "nearest" });
-  }
-
-  function ouvrirRecherche() {
-    voile.classList.add("ouvert");
-    champ.value = ""; chercher("");
-    setTimeout(() => champ.focus(), 20);
-  }
-  function fermerRecherche() { voile.classList.remove("ouvert"); }
-
-  document.getElementById("ouvrir-recherche").onclick = ouvrirRecherche;
-  champ.oninput = () => chercher(champ.value);
-  voile.onclick = e => { if (e.target === voile) fermerRecherche(); };
-
-  document.addEventListener("keydown", e => {
-    const saisie = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
-    if (voile.classList.contains("ouvert")) {
-      if (e.key === "Escape") { e.preventDefault(); fermerRecherche(); }
-      if (e.key === "ArrowDown") { e.preventDefault(); viser(1); }
-      if (e.key === "ArrowUp") { e.preventDefault(); viser(-1); }
-      if (e.key === "Enter") {
-        e.preventDefault();
-        const cible = liste.querySelectorAll(".resultat")[vise];
-        if (cible) cible.click();
-      }
-      return;
-    }
-    if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !saisie)) {
-      e.preventDefault(); ouvrirRecherche();
-    }
-  });
-
-  /* ══════════════════════════════════════════════════════════════
-     Filtre de classe
-     ══════════════════════════════════════════════════════════════ */
-  const hoteClasses = document.getElementById("classes");
-  function dessinerClasses() {
-    hoteClasses.innerHTML = "";
-    const tous = document.createElement("option"); tous.value = "tous"; tous.textContent = "Toutes";
-    hoteClasses.appendChild(tous);
-    let cycle = null, og = null;
-    H.niveaux.forEach(n => {
-      if (n.cycle !== cycle) { cycle = n.cycle; og = document.createElement("optgroup"); og.label = n.cycle; hoteClasses.appendChild(og); }
-      const o = document.createElement("option"); o.value = n.id; o.textContent = n.nom; og.appendChild(o);
-    });
-    hoteClasses.value = Memoire.classe();
-    hoteClasses.onchange = () => { Memoire.classe(hoteClasses.value); rendre(); };
-  }
-
-  /* ── Le sommaire permanent : périodes et chapitres, filtrés par classe ── */
-  const hoteSommaire = document.getElementById("sommaire");
-  const hoteSommaireMobile = document.getElementById("sommaire-mobile");
-  function dessinerSommaire(route) {
-    hoteSommaire.innerHTML = "";
-    hoteSommaire.appendChild(el("div", "hn-som-titre", "Sommaire"));
-    const sel = document.createElement("select");
-    sel.innerHTML = '<option value="">Aller à un chapitre…</option>';
-    H.periodes.forEach(p => {
-      const chaps = retenus(p.chapitres);
-      if (!chaps.length) return;
-      const bp = el("button", "hn-som-periode" + (route.indexOf("#/p/" + p.id) === 0 ? " actif" : ""));
-      bp.type = "button"; bp.style.setProperty("--teinte", p.teinte);
-      bp.appendChild(el("i")); bp.appendChild(document.createTextNode(p.nom));
-      bp.onclick = () => aller("#/p/" + p.id);
-      hoteSommaire.appendChild(bp);
-      const og = document.createElement("optgroup"); og.label = p.nom;
-      chaps.forEach(c => {
-        const b = el("button", "hn-som-chap" + (route === "#/c/" + c.id ? " actif" : ""));
-        b.type = "button"; b.style.setProperty("--teinte", p.teinte);
-        b.appendChild(el("span", null, c.titre));
-        if (Memoire.vu(c.id)) b.appendChild(el("span", "vu", "✓"));
-        b.onclick = () => aller("#/c/" + c.id);
-        hoteSommaire.appendChild(b);
-        const o = document.createElement("option"); o.value = "#/c/" + c.id; o.textContent = c.titre + (Memoire.vu(c.id) ? " ✓" : "");
-        if (route === o.value) o.selected = true;
-        og.appendChild(o);
-      });
-      sel.appendChild(og);
-    });
-    sel.onchange = () => { if (sel.value) aller(sel.value); };
-    hoteSommaireMobile.innerHTML = ""; hoteSommaireMobile.appendChild(sel);
-    const actif = hoteSommaire.querySelector(".actif");
-    if (actif && actif.scrollIntoView) actif.scrollIntoView({ block: "nearest" });
-  }
-
   /* ── En-tête compact d'une page ── */
   function entete(titre, sous, actions, fil) {
     const e = el("div");
@@ -1052,52 +865,47 @@
   function rendre() {
     const route = (location.hash || "#/").replace(/^#/, "");
     const parts = route.split("/").filter(Boolean);
-    let vue, titre = "Histoire";
+    let vue, titre = "Histoire", mode = "accueil";
 
-    if (parts[0] === "p" && H.periode(parts[1])) {
+    if (parts[0] === "p" && H.periode(parts[1]) && parts[2] === "chapitres") {
       const p = H.periode(parts[1]);
-      vue = rendrePeriode(p, ["reviser", "dates"].includes(parts[2]) ? parts[2] : "chapitres");
-      titre = p.nom;
-      filDAriane([{ nom: "Histoire", href: "#/" }, { nom: p.nom }]);
+      vue = rendreChapitres(p, parts[3] || null);
+      titre = p.nom + " — chapitres"; mode = "chapitres";
+    } else if (parts[0] === "p" && H.periode(parts[1])) {
+      const p = H.periode(parts[1]);
+      vue = rendreFrisePeriode(p);
+      titre = p.nom; mode = "frise";
     } else if (parts[0] === "c" && H.chapitre(parts[1])) {
       const c = H.chapitre(parts[1]);
       vue = rendreChapitre(c);
-      titre = c.titre;
-      filDAriane([{ nom: "Histoire", href: "#/" },
-                  { nom: c.periodeNom, href: "#/p/" + c.periodeId },
-                  { nom: c.titre }]);
-    } else if (parts[0] === "frise") {
-      vue = rendreFrise();
-      titre = "Frise";
-      filDAriane([{ nom: "Histoire", href: "#/" }, { nom: "Frise" }]);
-    } else if (parts[0] === "reviser") {
-      vue = rendreRevision();
-      titre = "Révision";
-      filDAriane([{ nom: "Histoire", href: "#/" }, { nom: "Révision" }]);
+      titre = c.titre; mode = "fiche";
     } else {
       vue = rendreCarrousel();
-      filDAriane([{ nom: "Histoire" }]);
     }
 
     page.innerHTML = "";
     page.appendChild(vue);
     document.title = "Polymates — " + titre;
-    /* À l'accueil, le carrousel occupe tout l'écran sous le cartouche : ni barre, ni sommaire. */
-    document.body.classList.toggle("accueil", !parts.length);
-    const routeNav = parts[0] === "frise" ? "#/frise" : parts[0] === "reviser" ? "#/reviser" : (parts[0] === "p" || !parts.length) ? "#/" : null;
-    document.querySelectorAll(".hn-onglet[data-route]").forEach(b => { if (b.dataset.route === routeNav) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-    dessinerSommaire("#" + "/" + parts.join("/"));
+    document.body.dataset.mode = mode;
+    document.body.classList.toggle("accueil", mode === "accueil");
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
-  document.querySelectorAll(".hn-onglet[data-route]").forEach(b => b.onclick = () => aller(b.dataset.route));
   document.addEventListener("keydown", e => {
-    if ((e.target && e.target.matches && e.target.matches("input, select, textarea")) || document.getElementById("voile").classList.contains("ouvert")) return;
-    if (!document.querySelector(".car")) return;
-    const idx = H.periodes.findIndex(x => x.id === Memoire.periode());
-    if (e.key === "ArrowLeft" && idx > 0) { Memoire.periode(H.periodes[idx - 1].id); rendre(); }
-    if (e.key === "ArrowRight" && idx < H.periodes.length - 1) { Memoire.periode(H.periodes[idx + 1].id); rendre(); }
-    if (e.key === "Enter") aller("#/p/" + H.periodes[idx].id);
+    if (e.target && e.target.matches && e.target.matches("input, select, textarea")) return;
+    const mode = document.body.dataset.mode;
+    const route = (location.hash || "#/").replace(/^#/, "").split("/").filter(Boolean);
+    if (mode === "accueil") {
+      const idx = H.periodes.findIndex(x => x.id === Memoire.periode());
+      if (e.key === "ArrowLeft" && idx > 0) { Memoire.periode(H.periodes[idx - 1].id); rendre(); }
+      if (e.key === "ArrowRight" && idx < H.periodes.length - 1) { Memoire.periode(H.periodes[idx + 1].id); rendre(); }
+      if (e.key === "Enter") aller("#/p/" + H.periodes[Math.max(0, idx)].id);
+    } else if (mode === "frise") {
+      if (e.key === "ArrowRight") aller("#/p/" + route[1] + "/chapitres");
+      if (e.key === "ArrowLeft" || e.key === "Escape") aller("#/");
+    } else if (mode === "chapitres") {
+      if (e.key === "Escape") aller(route[3] ? "#/p/" + route[1] + "/chapitres" : "#/p/" + route[1]);
+    }
   });
   let toucheX = null;
   document.addEventListener("touchstart", e => { const c = e.target.closest(".car"); toucheX = c ? e.touches[0].clientX : null; }, { passive: true });
@@ -1111,7 +919,7 @@
   }, { passive: true });
   window.addEventListener("hashchange", rendre);
 
-  dessinerClasses();
+  Memoire.classe("tous");   /* plus de filtre de classe : tous les chapitres de la période */
   rendre();
 
   /* ── Bandeau : session ─────────────────────────────────────────── */
