@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
 <link rel="stylesheet" href="atelier.css">
+<link rel="stylesheet" href="francais-ui.css">
 <style>
 .fiche { margin-top: 2.2rem; padding-bottom: 1.6rem; border-bottom: 1px solid rgba(120,100,60,.18); }
 .fiche:last-of-type { border-bottom: none; }
@@ -125,13 +126,7 @@ mark { background: rgba(168,129,58,.32); color: inherit; padding: 0 .1em; }
     const f = el("main", "feuille");
     f.style.maxWidth = "54rem";
 
-    f.appendChild(el("p", "rubrique", "Français · mémento"));
-    f.appendChild(el("h1", null, "Toutes les règles,<br><em>en un seul endroit.</em>"));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
-    f.appendChild(el("p", "ouverture",
-      "Chaque tableau du cours et chaque « à retenir » est repris ici, sans le texte " +
-      "qui l'entoure. On y cherche une règle en pleine dictée, on la lit, on repart. " +
-      "Un mot dans le champ ci-dessous suffit."));
+    f.appendChild(MB_ATELIER.entete("Mémento", "Chaque tableau du cours et chaque « à retenir », sans le texte autour. Tapez un mot pour trouver la règle."));
 
     /* ── Le champ de recherche ── */
     const chercher = el("div", "chercher");

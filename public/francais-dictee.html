@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
 <link rel="stylesheet" href="atelier.css">
+<link rel="stylesheet" href="francais-ui.css">
 <style>
 /* ── Le recueil ────────────────────────────────────────────── */
 .filtres { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: 1.8rem; }
@@ -343,14 +344,7 @@
   function vueRecueil() {
     page.innerHTML = "";
     const f = el("main", "feuille");
-    f.appendChild(el("p", "rubrique", "Français · dictées"));
-    f.appendChild(el("h1", null, "Écouter,<br><em>puis écrire juste.</em>"));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
-    f.appendChild(el("p", "ouverture",
-      "Chaque texte est écrit pour piéger une difficulté précise. On l'écoute segment " +
-      "par segment, on l'écrit sur le cahier, puis la copie revient corrigée à l'encre " +
-      "rouge — avec, pour chaque faute, le chapitre qui l'explique."));
-
+    f.appendChild(MB_ATELIER.entete("Dictées", "Écoutez segment par segment, écrivez sur le cahier, puis recevez la copie corrigée à l'encre rouge, avec pour chaque faute le chapitre qui l'explique."));
     /* Le relevé des dictées déjà faites, s'il y en a. */
     const faites = MB_FR.dictees();
     if (faites.length) {
@@ -431,12 +425,7 @@
     fil.appendChild(el("span", null, ech(d.titre)));
     f.appendChild(fil);
 
-    f.appendChild(el("p", "rubrique", d.auto ? "Auto-dictée" : "Dictée · niveau " + d.niveau));
-    f.appendChild(el("h1", null, ech(d.titre)));
-    f.appendChild(el("p", "mention",
-      d.mots + " mots · " + d.texte.length + " segments" +
-      '<span class="etiq">' + ech((d.vise || []).map(nomChapitre).filter(Boolean)[0] || "langue") + '</span>'));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
+    f.appendChild(MB_ATELIER.entete(ech(d.titre), (d.auto ? "Auto-dictée · " : "Dictée niveau " + d.niveau + " · ") + d.mots + " mots, " + d.texte.length + " segments · " + ((d.vise || []).map(nomChapitre).filter(Boolean).join(", ") || "langue")));
 
     if (d.auto) {
       f.appendChild(el("p", "ouverture",
@@ -640,9 +629,7 @@
                el("i", null, "›"), el("span", null, "Correction"));
     f.appendChild(fil);
 
-    f.appendChild(el("p", "rubrique", "Copie corrigée"));
-    f.appendChild(el("h1", null, ech(d.titre)));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
+    f.appendChild(MB_ATELIER.entete("Copie corrigée — " + ech(d.titre), "Chaque faute est soulignée ; cliquez-la pour lire la règle."));
 
     /* ── Le bulletin ── */
     const bulletin = el("div", "bulletin");

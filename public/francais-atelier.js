@@ -10,12 +10,12 @@
   "use strict";
 
   const SALLES = [
-    { id:"accueil",    page:"francais.html",            nom:"L'atelier",     marque:"❦" },
-    { id:"cours",      page:"francais-cours.html",      nom:"Le cours",      marque:"¶" },
-    { id:"exercices",  page:"francais-exercices.html",  nom:"Exercices",     marque:"✎" },
-    { id:"dictee",     page:"francais-dictee.html",     nom:"Dictées",       marque:"☙" },
-    { id:"conjugueur", page:"francais-conjugueur.html", nom:"Conjugueur",    marque:"⁂" },
-    { id:"memento",    page:"francais-memento.html",    nom:"Mémento",       marque:"☞" },
+    { id:"accueil",    page:"francais.html",            nom:"Accueil",      ico:"🏠" },
+    { id:"cours",      page:"francais-cours.html",      nom:"Cours",        ico:"📖" },
+    { id:"exercices",  page:"francais-exercices.html",  nom:"Exercices",    ico:"✏️" },
+    { id:"dictee",     page:"francais-dictee.html",     nom:"Dictées",      ico:"🎧" },
+    { id:"conjugueur", page:"francais-conjugueur.html", nom:"Conjugueur",   ico:"🔤" },
+    { id:"memento",    page:"francais-memento.html",    nom:"Mémento",      ico:"📋" },
   ];
 
   /* ── Outils partagés ───────────────────────────────────────── */
@@ -57,20 +57,62 @@
     return (window.MB_MAT && MB_MAT.lien) ? MB_MAT.lien(page) : page;
   }
 
-  /* ── Les onglets de reliure ────────────────────────────────── */
-  function rubans(salleActive, large) {
-    const nav = el("nav", "rubans" + (large ? " large" : ""));
-    nav.setAttribute("aria-label", "Les salles de l'atelier");
+  /* ── La barre de navigation ─────────────────────────────────
+     Une entrée par salle, avec son icône et son nom en clair ; l'onglet
+     de la page courante est souligné. Un lien « Matières » ramène au
+     choix de matière. */
+  function rubans(salleActive) {
+    const nav = el("nav", "fr-nav");
+    nav.setAttribute("aria-label", "Navigation du français");
+    const inner = el("div", "fr-nav-inner");
     SALLES.forEach(s => {
       const a = document.createElement("a");
-      a.className = "ruban";
+      a.className = "fr-onglet";
       a.href = lien(s.page);
-      a.innerHTML = '<span class="marque" aria-hidden="true">' + s.marque + '</span>' +
-                    '<span>' + ech(s.nom) + '</span>';
+      a.innerHTML = '<span class="ico" aria-hidden="true">' + s.ico + '</span><span>' + ech(s.nom) + '</span>';
       if (s.id === salleActive) a.setAttribute("aria-current", "page");
-      nav.appendChild(a);
+      inner.appendChild(a);
     });
+    const m = document.createElement("a");
+    m.className = "fr-onglet retour"; m.href = "matieres.html"; m.textContent = "↩ Matières";
+    inner.appendChild(m);
+    nav.appendChild(inner);
     return nav;
+  }
+
+  /* ── L'en-tête compact d'une page ───────────────────────────
+     Un titre, une ligne, et les boutons d'action à droite. Remplace
+     les longs préambules. */
+  function entete(titre, sous, actions, fil) {
+    const e = el("div");
+    if (fil && fil.length) {
+      const f = el("div", "fil-ariane");
+      fil.forEach((x, i) => {
+        if (i) f.appendChild(el("i", null, "›"));
+        if (x.href) { const a = document.createElement("a"); a.href = x.href; a.textContent = x.nom; if (x.onclick) a.onclick = ev => { ev.preventDefault(); x.onclick(); }; f.appendChild(a); }
+        else f.appendChild(el("span", null, ech(x.nom)));
+      });
+      e.appendChild(f);
+    }
+    const h = el("div", "entete");
+    const g = el("div");
+    g.appendChild(el("h1", null, titre));
+    if (sous) g.appendChild(el("p", "entete-sous", ech(sous)));
+    h.appendChild(g);
+    if (actions && actions.length) {
+      const ac = el("div", "entete-actions");
+      actions.forEach(x => {
+        const b = document.createElement(x.href ? "a" : "button");
+        b.className = "btn" + (x.classe ? " " + x.classe : "");
+        if (x.href) b.href = x.href; else b.type = "button";
+        if (x.onclick) b.onclick = x.onclick;
+        b.textContent = x.nom;
+        ac.appendChild(b);
+      });
+      h.appendChild(ac);
+    }
+    e.appendChild(h);
+    return e;
   }
 
   /* ── Installation ──────────────────────────────────────────── */
@@ -85,7 +127,7 @@
     document.body.setAttribute("data-matiere", "francais");
 
     const ancre = document.getElementById("rubans");
-    if (ancre) ancre.replaceWith(rubans(salleActive, options.large));
+    if (ancre) ancre.replaceWith(rubans(salleActive));
 
     const lecteur = document.getElementById("lecteur");
     if (lecteur) {
@@ -121,7 +163,7 @@
   }
 
   window.MB_ATELIER = {
-    SALLES, installer, rubans, lien, lienChapitre, nomChapitre,
+    SALLES, installer, rubans, entete, lien, lienChapitre, nomChapitre,
     ech, fmt, el, melange, pareil,
   };
 })();

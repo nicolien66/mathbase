@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
 <link rel="stylesheet" href="atelier.css">
+<link rel="stylesheet" href="francais-ui.css">
 <style>
 .theme-titre {
   font-family: var(--titre); font-variant: small-caps; letter-spacing: .16em;
@@ -163,76 +164,55 @@
   function vueChoix() {
     page.innerHTML = "";
     const f = el("main", "feuille");
-    f.appendChild(el("p", "rubrique", "Français · exercices"));
-    f.appendChild(el("h1", null, "S'entraîner<br><em>jusqu'à l'automatisme.</em>"));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
-    f.appendChild(el("p", "ouverture",
-      "Une règle comprise n'est pas une règle acquise. Dix questions par séance, " +
-      "corrigées à la volée, avec l'explication et le renvoi au chapitre. " +
-      "Les mots manqués en dictée reviennent d'eux-mêmes, à intervalles croissants."));
-
     const s = MB_FR.stats();
-
-    /* ── Les séances transversales ── */
-    const cartes = el("div", "cartes");
-    const propositions = [
-      { id:"revision", marque:"☞", nom:"Réviser mes fautes",
-        texte:"Les mots manqués en dictée ou en exercice, ramenés au bon moment.",
-        chiffre: s.aReviser ? s.aReviser + " à revoir aujourd'hui" : "rien à revoir",
-        actif: s.aReviser > 0 },
-      { id:"conjugaison", marque:"⁂", nom:"Marathon de conjugaison",
-        texte:"Un verbe, un temps, une personne — tiré au sort, sans fin.",
-        chiffre:"illimité", actif:true },
-      { id:"melange", marque:"✽", nom:"Mélange général",
-        texte:"Dix questions tirées dans les vingt-cinq chapitres.",
-        chiffre: BANQUE.length + " questions en réserve", actif:true },
-    ];
-    propositions.forEach(p => {
-      const b = el("button", "carte");
-      b.type = "button";
-      b.disabled = !p.actif;
+    f.appendChild(MB_ATELIER.entete("Exercices", "Dix questions par séance, corrigées à la volée, avec l'explication et le renvoi au chapitre. Les mots manqués reviennent d'eux-mêmes."));
+    /* ── Les trois séances transversales ── */
+    const tuiles = el("div", "tuiles");
+    [
+      { id:"revision", ico:"🔁", nom:"Réviser mes fautes", texte:"Les mots manqués en dictée ou en exercice, ramenés au bon moment.",
+        chiffre: s.aReviser ? s.aReviser + " à revoir aujourd'hui" : "rien à revoir", actif: s.aReviser > 0 },
+      { id:"conjugaison", ico:"🔤", nom:"Marathon de conjugaison", texte:"Un verbe, un temps, une personne — tirés au sort.", chiffre:"illimité", actif:true },
+      { id:"melange", ico:"🎲", nom:"Mélange général", texte:"Dix questions tirées dans tous les chapitres.", chiffre: BANQUE.length + " questions en réserve", actif:true },
+    ].forEach(p => {
+      const b = el("button", "tuile");
+      b.type = "button"; b.disabled = !p.actif;
       if (!p.actif) b.style.opacity = ".45";
-      b.innerHTML =
-        '<span class="carte-tete">' +
-          '<span class="carte-marque" aria-hidden="true">' + p.marque + '</span>' +
-          '<span class="carte-nom">' + ech(p.nom) + '</span>' +
-          '<span class="carte-chiffre">' + ech(p.chiffre) + '</span>' +
-          (p.actif ? '<span class="carte-fleche">Commencer →</span>' : '') +
-        '</span>' +
-        '<span class="carte-texte">' + ech(p.texte) + '</span>';
+      b.innerHTML = '<span class="tuile-ico" aria-hidden="true">' + p.ico + '</span><span class="tuile-nom">' + ech(p.nom) + '</span>' +
+        '<span class="tuile-chiffre">' + ech(p.chiffre) + '</span><span class="tuile-texte">' + ech(p.texte) + '</span>';
       if (p.actif) b.onclick = () => lancer(p.id);
-      cartes.appendChild(b);
+      tuiles.appendChild(b);
     });
-    f.appendChild(cartes);
-
+    f.appendChild(tuiles);
     /* ── Chapitre par chapitre ── */
+    const sec = el("section", "section");
+    const st = el("div", "section-tete");
+    st.appendChild(el("h2", null, "Par chapitre"));
+    sec.appendChild(st);
     THEMES.forEach(t => {
-      const titre = el("p", "theme-titre", ech(t.nom));
-      titre.style.setProperty("--teinte", t.teinte);
-      f.appendChild(titre);
-      t.chapitres.forEach(c => {
+      const bd = el("div", "theme-bandeau");
+      bd.style.setProperty("--teinte", t.teinte);
+      bd.innerHTML = '<i></i><b>' + ech(t.nom) + '</b>';
+      sec.appendChild(bd);
+      const gr = el("div", "fr-grille");
+      t.chapitres.forEach((c, i) => {
         const n = BANQUE.filter(e => e.chapitre === c.id).length;
         const score = MB_FR.scoreChapitre(c.id);
-        const b = el("button", "chap-ex");
-        b.type = "button";
-        b.disabled = n === 0;
-        b.innerHTML =
-          '<span class="chap-ex-nom">' + ech(c.nom) + '</span>' +
-          '<span class="chap-ex-points" aria-hidden="true"></span>' +
-          (score != null ? '<span class="score ' + (score >= 75 ? "haut" : "bas") + '">' + score + ' %</span>' : '') +
-          '<span class="chap-ex-n">' + n + (n > 1 ? " questions" : " question") + '</span>';
+        const b = el("button", "fr-chap");
+        b.type = "button"; b.disabled = n === 0;
+        b.style.setProperty("--teinte", t.teinte);
+        b.innerHTML = '<span class="fr-chap-num">' + (i + 1) + '</span><span class="fr-chap-nom">' + ech(c.nom) + '</span>' +
+          (score != null ? '<span class="fr-chap-etat ' + (score >= 75 ? "score-haut" : "score-bas") + '">' + score + ' %</span>'
+                         : '<span class="fr-chap-etat">' + n + (n > 1 ? " questions" : " question") + '</span>');
         if (n) b.onclick = () => lancer("chapitre", c.id);
-        f.appendChild(b);
+        gr.appendChild(b);
       });
+      sec.appendChild(gr);
     });
-
+    f.appendChild(sec);
     page.appendChild(f);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  /* ══════════════════════════════════════════════════════════════
-     VUE 2 — la séance
-     ══════════════════════════════════════════════════════════════ */
   function lancer(mode, chapId) {
     let questions = [], titre = "", sousTitre = "";
 
@@ -401,9 +381,7 @@
       const taux = Math.round(100 * justes / S.questions.length);
       page.innerHTML = "";
       const f = el("main", "feuille");
-      f.appendChild(el("p", "rubrique", "Bilan de séance"));
-      f.appendChild(el("h1", null, ech(S.titre)));
-      f.appendChild(el("div", "filet", "<span>❦</span>"));
+      f.appendChild(MB_ATELIER.entete("Bilan — " + ech(S.titre), null, [{ nom:"↩ Toutes les séances", onclick: vueChoix, classe:"discret" }]));
 
       const b = el("div", "bulletin");
       const n = el("div");
@@ -467,7 +445,10 @@
   }
 
   /* ── Départ : #revision mène droit au carnet ── */
-  if ((location.hash || "").replace("#", "") === "revision" && MB_FR.stats().aReviser) {
+  const hashDepart = (location.hash || "").replace("#", "");
+  if (hashDepart.indexOf("chapitre/") === 0 && BANQUE.some(e => e.chapitre === hashDepart.slice(9))) {
+    lancer("chapitre", hashDepart.slice(9));
+  } else if (hashDepart === "revision" && MB_FR.stats().aReviser) {
     lancer("revision");
   } else {
     vueChoix();

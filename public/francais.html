@@ -9,56 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
 <link rel="stylesheet" href="atelier.css">
-<style>
-/* Le programme du jour : une seule chose à faire, franchement proposée. */
-.programme {
-  margin-top: 2.4rem; padding: 1.5rem 1.7rem;
-  border: 1px solid rgba(168,129,58,.4); background: rgba(168,129,58,.07);
-}
-.programme-quoi {
-  font-variant: small-caps; letter-spacing: .16em; font-size: .72rem;
-  color: var(--encre-pale); margin-bottom: .5rem;
-}
-.programme-titre { font-family: var(--titre); font-size: 1.75rem; font-weight: 600; line-height: 1.15; }
-.programme-texte { margin-top: .4rem; color: var(--encre-pale); font-size: .97rem; }
-
-.serie-jours { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; margin-top: 1.2rem; }
-.semaine { display: flex; gap: .3rem; }
-.jour {
-  width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center;
-  border: 1px solid rgba(120,100,60,.35);
-  font-variant: small-caps; font-size: .62rem; color: var(--encre-pale);
-}
-.jour.travaille { background: var(--accent); border-color: var(--accent); color: var(--papier-clair); }
-
-.carnet-mot {
-  display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap;
-  padding: .5rem 0; border-bottom: 1px solid rgba(120,100,60,.14);
-}
-.carnet-mot:last-child { border-bottom: none; }
-.carnet-juste { font-family: var(--titre); font-size: 1.12rem; font-weight: 600; }
-.carnet-rate { font-size: .88rem; color: var(--correction); text-decoration: line-through; }
-.carnet-type { flex: 1 1 8rem; font-variant: small-caps; letter-spacing: .1em; font-size: .7rem; color: var(--encre-pale); }
-.carnet-quand { font-variant: small-caps; letter-spacing: .1em; font-size: .7rem; color: var(--a-revoir); }
-.carnet-oublier {
-  background: none; border: none; padding: 0 .2rem; cursor: pointer;
-  color: var(--encre-pale); font-size: .95rem; line-height: 1; opacity: .5;
-}
-.carnet-oublier:hover { opacity: 1; color: var(--correction); }
-
-.dernieres { margin-top: 1rem; }
-.derniere {
-  display: flex; align-items: baseline; gap: .7rem;
-  padding: .4rem 0; border-bottom: 1px solid rgba(120,100,60,.12);
-  font-size: .95rem;
-}
-.derniere:last-child { border-bottom: none; }
-.derniere-titre { font-family: var(--titre); font-size: 1.05rem; flex: 1; }
-.derniere-note { font-family: var(--titre); font-weight: 600; }
-.derniere-note.haut { color: var(--acquis); }
-.derniere-note.bas { color: var(--correction); }
-.derniere-date { font-variant: small-caps; letter-spacing: .1em; font-size: .68rem; color: var(--encre-pale); }
-</style>
+<link rel="stylesheet" href="francais-ui.css">
 <script src="matiere.js"></script>
 <script src="auth.js" data-protect data-sans-chip></script>
 <script src="francais-contenu.js"></script>
@@ -145,181 +96,140 @@
      ══════════════════════════════════════════════════════════════ */
   function vue() {
     const s = MB_FR.stats();
+    const carnet = MB_FR.carnet();
+    const dus = MB_FR.aReviser();
     page.innerHTML = "";
     const f = el("main", "feuille");
 
-    f.appendChild(el("p", "rubrique", "Français"));
-    f.appendChild(el("h1", null, "Lire, écrire,<br><em>et dire juste.</em>"));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
-    f.appendChild(el("p", "ouverture",
-      "Cet atelier a un seul but : écrire un français sans faute. Le cours donne la règle, " +
-      "les exercices l'ancrent, la dictée la met à l'épreuve, et le carnet ramène ce qui " +
-      "a été manqué jusqu'à ce que ce soit acquis."));
+    /* ── En-tête ── */
+    f.appendChild(MB_ATELIER.entete("Français", "Cours, exercices, dictées : tout ce qu'il faut pour écrire sans faute."));
 
-    /* ── Le programme du jour ── */
+    /* ── Continuer : une seule chose à faire, avec son bouton ── */
     const p = programme();
-    const prog = el("section", "programme");
-    prog.appendChild(el("p", "programme-quoi", ech(p.quoi)));
-    prog.appendChild(el("p", "programme-titre", ech(p.titre)));
-    prog.appendChild(el("p", "programme-texte", ech(p.texte)));
-    const barre = el("div", "barre-boutons");
-    const a = document.createElement("a");
-    a.className = "bouton"; a.href = p.href; a.textContent = p.bouton;
-    barre.appendChild(a);
-    prog.appendChild(barre);
-    f.appendChild(prog);
-
-    /* ── La série de jours : sept cases, rien de plus ── */
+    const cont = el("section", "continuer");
+    const g = el("div");
+    g.appendChild(el("div", "continuer-quoi", ech(p.quoi)));
+    g.appendChild(el("div", "continuer-titre", ech(p.titre)));
+    g.appendChild(el("div", "continuer-texte", ech(p.texte)));
     if (s.serie || MB_FR.etat().jours.length) {
-      const sj = el("div", "serie-jours");
-      const b = el("div", "compteur");
-      b.innerHTML = '<b>' + s.serie + '</b><span>' +
-        (s.serie > 1 ? "jours d'affilée" : s.serie === 1 ? "jour" : "série interrompue") + '</span>';
-      sj.appendChild(b);
-      const sem = el("div", "semaine");
+      const se = el("div", "serie");
+      se.appendChild(el("span", null, "<b>" + s.serie + "</b> " + (s.serie > 1 ? "jours d'affilée" : s.serie === 1 ? "jour" : "série interrompue")));
+      const cases = el("div", "serie-cases");
       const NOMS = ["d", "l", "m", "m", "j", "v", "s"];
       for (let i = 6; i >= 0; i--) {
         const dte = new Date(); dte.setDate(dte.getDate() - i);
-        const j = el("div", "jour" + (MB_FR.etat().jours.indexOf(MB_FR.jour(dte)) >= 0 ? " travaille" : ""),
-                     NOMS[dte.getDay()]);
-        j.title = dte.toLocaleDateString("fr-FR");
-        sem.appendChild(j);
+        const c = el("div", "serie-case" + (MB_FR.etat().jours.indexOf(MB_FR.jour(dte)) >= 0 ? " ok" : ""), NOMS[dte.getDay()]);
+        c.title = dte.toLocaleDateString("fr-FR");
+        cases.appendChild(c);
       }
-      sj.appendChild(sem);
-      f.appendChild(sj);
+      se.appendChild(cases);
+      g.appendChild(se);
     }
+    cont.appendChild(g);
+    const a = document.createElement("a");
+    a.className = "btn grand"; a.href = p.href; a.textContent = p.bouton + " →";
+    cont.appendChild(a);
+    f.appendChild(cont);
 
-    /* ── Les chiffres ── */
-    const ch = el("div", "chiffres");
-    const cartesChiffres = [
-      ["Chapitres lus", lus() + " / " + totalChap, Math.round(100 * lus() / totalChap)],
-      ["Exercices justes", s.exTaux == null ? "—" : s.exTaux + " %", s.exTaux],
-      ["Moyenne en dictée", s.dicteeMoyenne == null ? "—" : s.dicteeMoyenne + " %", s.dicteeMoyenne],
-      ["Mots au carnet", s.carnet, null],
-    ];
-    cartesChiffres.forEach(([nom, val, pct]) => {
-      const b = el("div");
-      b.appendChild(el("div", "chiffre-val", ech(val)));
-      b.appendChild(el("div", "chiffre-nom", ech(nom)));
-      if (pct != null) b.appendChild(el("div", "jauge", '<span style="width:' + pct + '%"></span>'));
-      ch.appendChild(b);
-    });
-    f.appendChild(ch);
-
-    /* ── Les salles ── */
-    const sec = el("section", "sommaire");
-    sec.appendChild(el("p", "sommaire-titre", "Les salles de l'atelier"));
-    const cartes = el("div", "cartes");
+    /* ── Accès rapide ── */
+    const tuiles = el("div", "tuiles");
     [
-      { page:"francais-cours.html", marque:"¶", nom:"Le cours",
-        chiffre: totalChap + " chapitres",
-        texte:"Orthographe, grammaire, conjugaison : la règle, ses exemples, ses tableaux et son récapitulatif." },
-      { page:"francais-exercices.html", marque:"✎", nom:"Exercices",
-        chiffre: window.FRANCAIS_EXERCICES.length + " questions",
-        texte:"Dix questions par séance, corrigées à la volée, avec le renvoi au chapitre concerné." },
-      { page:"francais-dictee.html", marque:"☙", nom:"Dictées",
-        chiffre: DICTEES.length + " textes",
-        texte:"Écouter, écrire sur le cahier, recevoir la copie corrigée à l'encre rouge, faute par faute." },
-      { page:"francais-conjugueur.html", marque:"⁂", nom:"Conjugueur",
-        chiffre:"tous les verbes",
-        texte:"La table complète d'un verbe, ses cinq formes clés, et un entraînement au tirage au sort." },
-      { page:"francais-memento.html", marque:"☞", nom:"Mémento",
-        chiffre:"toutes les règles",
-        texte:"Chaque tableau du cours, cherchable d'un mot. À ouvrir en pleine rédaction." },
+      { page:"francais-cours.html", ico:"📖", nom:"Cours", chiffre: lus() + " / " + totalChap + " chapitres lus", texte:"La règle, ses exemples, ses tableaux." },
+      { page:"francais-exercices.html", ico:"✏️", nom:"Exercices", chiffre: s.exTaux == null ? window.FRANCAIS_EXERCICES.length + " questions" : s.exTaux + " % de réussite", texte:"Dix questions, corrigées à la volée." },
+      { page:"francais-dictee.html", ico:"🎧", nom:"Dictées", chiffre: s.dicteeMoyenne == null ? DICTEES.length + " textes" : "moyenne " + s.dicteeMoyenne + " %", texte:"Écouter, écrire, recevoir la copie corrigée." },
+      { page:"francais-conjugueur.html", ico:"🔤", nom:"Conjugueur", chiffre:"tous les verbes", texte:"La table complète et un entraînement." },
+      { page:"francais-memento.html", ico:"📋", nom:"Mémento", chiffre:"toutes les règles", texte:"Chaque tableau du cours, cherchable." },
     ].forEach(x => {
-      const c = document.createElement("a");
-      c.className = "carte"; c.href = lien(x.page);
-      c.innerHTML =
-        '<span class="carte-tete">' +
-          '<span class="carte-marque" aria-hidden="true">' + x.marque + '</span>' +
-          '<span class="carte-nom">' + ech(x.nom) + '</span>' +
-          '<span class="carte-chiffre">' + ech(x.chiffre) + '</span>' +
-          '<span class="carte-fleche">Entrer →</span>' +
-        '</span>' +
-        '<span class="carte-texte">' + ech(x.texte) + '</span>';
-      cartes.appendChild(c);
+      const t = document.createElement("a");
+      t.className = "tuile"; t.href = lien(x.page);
+      t.innerHTML = '<span class="tuile-ico" aria-hidden="true">' + x.ico + '</span>' +
+        '<span class="tuile-nom">' + ech(x.nom) + '</span>' +
+        '<span class="tuile-chiffre">' + ech(x.chiffre) + '</span>' +
+        '<span class="tuile-texte">' + ech(x.texte) + '</span>';
+      tuiles.appendChild(t);
     });
-    sec.appendChild(cartes);
+    f.appendChild(tuiles);
+
+    /* ── Le cours, chapitre par chapitre : la carte du programme ── */
+    const sec = el("section", "section");
+    const st = el("div", "section-tete");
+    st.appendChild(el("h2", null, "Le programme, chapitre par chapitre"));
+    const tout = document.createElement("a"); tout.href = lien("francais-cours.html"); tout.textContent = "Ouvrir le cours →";
+    st.appendChild(tout);
+    sec.appendChild(st);
+    THEMES.forEach(t => {
+      const lusT = t.chapitres.filter(c => MB_FR.estLu(t.id, c.id)).length;
+      const bd = el("div", "theme-bandeau");
+      bd.style.setProperty("--teinte", t.teinte);
+      bd.innerHTML = '<i></i><b>' + ech(t.nom) + '</b><span>' + lusT + ' / ' + t.chapitres.length + ' lus</span>';
+      sec.appendChild(bd);
+      const gr = el("div", "fr-grille");
+      t.chapitres.forEach((c, i) => {
+        const lu = MB_FR.estLu(t.id, c.id);
+        const score = MB_FR.scoreChapitre(c.id);
+        const ch = document.createElement("a");
+        ch.className = "fr-chap"; ch.href = lienChapitre(c.id);
+        ch.style.setProperty("--teinte", t.teinte);
+        let etat = lu ? '<span class="fr-chap-etat lu">✓ lu</span>' : '<span class="fr-chap-etat">à lire</span>';
+        if (score != null) etat = '<span class="fr-chap-etat ' + (score >= 75 ? "score-haut" : "score-bas") + '">' + score + ' %</span>';
+        ch.innerHTML = '<span class="fr-chap-num">' + (i + 1) + '</span><span class="fr-chap-nom">' + ech(c.nom) + '</span>' + etat;
+        gr.appendChild(ch);
+      });
+      sec.appendChild(gr);
+    });
     f.appendChild(sec);
 
     /* ── Le carnet de fautes ── */
-    const carnet = MB_FR.carnet();
     const mots = Object.keys(carnet);
     if (mots.length) {
-      const car = el("section", "sommaire");
-      car.appendChild(el("p", "sommaire-titre",
-        "Mon carnet de fautes — " + mots.length + (mots.length > 1 ? " mots" : " mot")));
-      const dus = MB_FR.aReviser();
-      const ordre = dus.map(x => x.mot)
-        .concat(mots.filter(m => !dus.some(d => d.mot === m)));
-      ordre.slice(0, 12).forEach(m => {
-        const x = carnet[m];
-        const due = dus.some(d => d.mot === m);
-        const l = el("div", "carnet-mot");
-        l.appendChild(el("span", "carnet-juste", ech(x.attendu)));
-        if (x.erreurs && x.erreurs[0]) l.appendChild(el("span", "carnet-rate", ech(x.erreurs[0])));
-        l.appendChild(el("span", "carnet-type", ech(x.type || "orthographe")));
-        l.appendChild(el("span", "carnet-quand", due ? "à revoir" : "revu"));
-        const o = el("button", "carnet-oublier", "×");
-        o.type = "button";
-        o.title = "Retirer « " + x.attendu + " » du carnet";
-        o.setAttribute("aria-label", "Retirer " + x.attendu + " du carnet");
+      const car = el("section", "section");
+      const ct = el("div", "section-tete");
+      ct.appendChild(el("h2", null, "Mon carnet de fautes — " + mots.length + (mots.length > 1 ? " mots" : " mot")));
+      if (dus.length) { const r = document.createElement("a"); r.href = lien("francais-exercices.html") + "#revision"; r.textContent = "Réviser les " + dus.length + " mots dus →"; ct.appendChild(r); }
+      else ct.appendChild(el("span", null, "Tout est révisé pour aujourd'hui"));
+      car.appendChild(ct);
+      const table = el("table", "carnet-table");
+      const ordre = dus.map(x => x.mot).concat(mots.filter(m => !dus.some(d => d.mot === m)));
+      ordre.slice(0, 10).forEach(m => {
+        const x = carnet[m], due = dus.some(d => d.mot === m);
+        const tr = el("tr");
+        tr.innerHTML = '<td class="mot-juste">' + ech(x.attendu) + '</td>' +
+          '<td class="mot-rate">' + ech(x.erreurs && x.erreurs[0] || "") + '</td>' +
+          '<td class="mot-type">' + ech(x.type || "orthographe") + '</td>' +
+          '<td class="mot-du ' + (due ? "oui" : "non") + '">' + (due ? "à revoir" : "revu") + '</td>' +
+          '<td></td>';
+        const o = el("button", "oublier", "×"); o.type = "button"; o.title = "Retirer « " + x.attendu + " » du carnet";
         o.onclick = () => { MB_FR.oublier(m); vue(); };
-        l.appendChild(o);
-        car.appendChild(l);
+        tr.lastChild.appendChild(o);
+        table.appendChild(tr);
       });
-      if (mots.length > 12) car.appendChild(el("p", "note", "et " + (mots.length - 12) + " autres."));
-      const b = el("div", "barre-boutons");
-      const rev = document.createElement("a");
-      rev.className = "bouton creux";
-      rev.href = lien("francais-exercices.html") + "#revision";
-      rev.textContent = dus.length ? "Réviser les " + dus.length + " mots dus" : "Tout est révisé pour aujourd'hui";
-      if (!dus.length) { rev.className = "bouton sourd"; rev.removeAttribute("href"); }
-      b.appendChild(rev);
-      car.appendChild(b);
+      car.appendChild(table);
+      if (mots.length > 10) car.appendChild(el("p", "note", "et " + (mots.length - 10) + " autres."));
       f.appendChild(car);
     }
 
     /* ── Les dernières dictées ── */
     const d = MB_FR.dictees();
     if (d.length) {
-      const sec2 = el("section", "sommaire");
-      sec2.appendChild(el("p", "sommaire-titre", "Dernières dictées"));
-      const liste = el("div", "dernieres");
+      const sec2 = el("section", "section");
+      const dt = el("div", "section-tete");
+      dt.appendChild(el("h2", null, "Dernières dictées"));
+      const rd = document.createElement("a"); rd.href = lien("francais-dictee.html"); rd.textContent = "Toutes les dictées →"; dt.appendChild(rd);
+      sec2.appendChild(dt);
+      const table = el("table", "carnet-table");
       d.slice(0, 5).forEach(x => {
-        const l = el("div", "derniere");
-        l.appendChild(el("span", "derniere-titre", ech(x.titre)));
-        l.appendChild(el("span", "derniere-note " + (x.score >= 85 ? "haut" : "bas"), x.score + " %"));
-        l.appendChild(el("span", "derniere-date",
-          new Date(x.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })));
-        liste.appendChild(l);
+        const tr = el("tr");
+        tr.innerHTML = '<td class="mot-juste">' + ech(x.titre) + '</td>' +
+          '<td class="mot-du ' + (x.score >= 90 ? "non" : "oui") + '">' + x.score + ' %</td>' +
+          '<td class="mot-type">' + ech(new Date(x.date).toLocaleDateString("fr-FR")) + '</td>';
+        table.appendChild(tr);
       });
-      sec2.appendChild(liste);
+      sec2.appendChild(table);
       f.appendChild(sec2);
     }
-
-    /* ── Ce qui n'existe pas encore : le dire, plutôt que de le taire ── */
-    f.appendChild(el("p", "note",
-      "Littérature, expression écrite et annales du brevet ne sont pas encore ouvertes. " +
-      "Les données de progression restent sur cet appareil et n'en sortent pas."));
-
-    if (MB_FR.etat().jours.length) {
-      const raz = el("div", "barre-boutons");
-      const b = el("button", "bouton sourd", "Effacer ma progression");
-      b.type = "button";
-      b.onclick = () => {
-        if (confirm("Effacer tout : chapitres lus, scores, dictées et carnet de fautes ?")) {
-          MB_FR.reinitialiser(); vue();
-        }
-      };
-      raz.appendChild(b);
-      f.appendChild(raz);
-    }
-
     page.appendChild(f);
   }
 
-  window.addEventListener("mb-francais-progres", vue);
   vue();
 })();
 </script>

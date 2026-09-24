@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
 <link rel="stylesheet" href="atelier.css">
+<link rel="stylesheet" href="francais-ui.css">
 <style>
 /* ═══════════════════════════════════════════════════════════════
    Français — trois thèmes, leurs chapitres, et le cours.
@@ -207,7 +208,13 @@ body { transition: none; }
 </header>
 
 <div id="rubans"></div>
-<div id="page"></div>
+<div class="fr-cours">
+  <aside class="panneau" id="panneau" aria-label="Sommaire du cours"></aside>
+  <div>
+    <div class="panneau-mobile" id="panneau-mobile"></div>
+    <div id="page"></div>
+  </div>
+</div>
 
 <nav class="feuillet" id="feuillet" aria-label="Navigation" hidden>
   <button type="button" id="precedent">
@@ -269,73 +276,37 @@ body { transition: none; }
   function vueAccueil() {
     teindre(null);
     const f = feuilleVide();
-    f.appendChild(el("p", "rubrique", "Français"));
-    f.appendChild(el("h1", null, "La langue,<br><em>règle par règle.</em>"));
-    f.appendChild(filet());
-    f.appendChild(el("p", "ouverture",
-      "Trois grands domaines gouvernent la langue : écrire les mots, construire la phrase, " +
-      "conjuguer le verbe. Chacun a sa page et ses chapitres, et chaque chapitre son cours " +
-      "complet — règles, exemples, tableaux et récapitulatif."));
-
-    /* Le nombre de chapitres lus, thème par thème : la lecture est la
-       première moitié du travail, l'entraînement la seconde. */
-    const totalLus = THEMES.reduce((n, t) =>
-      n + t.chapitres.filter(c => MB_FR.estLu(t.id, c.id)).length, 0);
+    const totalLus = THEMES.reduce((n, t) => n + t.chapitres.filter(c => MB_FR.estLu(t.id, c.id)).length, 0);
     const totalChap = THEMES.reduce((n, t) => n + t.chapitres.length, 0);
-    if (totalLus) {
-      const ch = document.createElement("div");
-      ch.className = "chiffres";
-      ch.innerHTML =
-        '<div><div class="chiffre-val">' + totalLus + ' / ' + totalChap + '</div>' +
-        '<div class="chiffre-nom">chapitres lus</div>' +
-        '<div class="jauge"><span style="width:' + Math.round(100 * totalLus / totalChap) + '%"></span></div></div>';
-      f.appendChild(ch);
-    }
-
-    const sec = el("section", "sommaire themes");
-    sec.appendChild(el("p", "sommaire-titre", "Les trois grands thèmes de la langue"));
-
+    f.appendChild(MB_ATELIER.entete("Le cours", totalLus + " chapitre" + (totalLus > 1 ? "s" : "") + " lu" + (totalLus > 1 ? "s" : "") + " sur " + totalChap + ". Choisissez un chapitre : la règle, ses exemples, ses tableaux et son récapitulatif."));
     THEMES.forEach((t, i) => {
-      const b = el("button", "theme-bloc");
-      b.type = "button";
-      b.style.setProperty("--teinte", t.teinte);
-      b.innerHTML =
-        '<span class="theme-tete">' +
-          '<span class="theme-nom"></span>' +
-          '<span class="theme-compte"></span>' +
-          '<span class="theme-ouvrir">Ouvrir →</span>' +
-        '</span>' +
-        '<span class="theme-sous"></span>';
-      b.querySelector(".theme-nom").textContent = t.nom;
       const lus = t.chapitres.filter(c => MB_FR.estLu(t.id, c.id)).length;
-      b.querySelector(".theme-compte").textContent =
-        t.chapitres.length + " chapitres" + (lus ? " · " + lus + " lus" : " · cours complet");
-      b.querySelector(".theme-sous").textContent = t.sous;
-      b.onclick = () => aller({ niveau: "theme", t: i });
-      sec.appendChild(b);
+      const bd = el("div", "theme-bandeau");
+      bd.style.setProperty("--teinte", t.teinte);
+      bd.innerHTML = '<i></i><b>' + ech(t.nom) + '</b><span>' + ech(t.sous) + ' · ' + lus + ' / ' + t.chapitres.length + ' lus</span>';
+      f.appendChild(bd);
+      const gr = el("div", "fr-grille");
+      t.chapitres.forEach((c, n) => {
+        const b = el("button", "fr-chap");
+        b.type = "button";
+        b.style.setProperty("--teinte", t.teinte);
+        b.innerHTML = '<span class="fr-chap-num">' + (n + 1) + '</span><span class="fr-chap-nom">' + ech(c.nom) + '</span>' +
+          (MB_FR.estLu(t.id, c.id) ? '<span class="fr-chap-etat lu">✓ lu</span>' : '<span class="fr-chap-etat">à lire</span>');
+        b.onclick = () => aller({ niveau: "chapitre", t: i, c: n });
+        gr.appendChild(b);
+      });
+      f.appendChild(gr);
     });
-
-    f.appendChild(sec);
-    f.appendChild(el("p", "note",
-      "Littérature, expression écrite et annales du brevet : sections à paraître."));
     return f;
   }
 
-  /* ══════════════════════════════════════════════════════════════
-     Vue 2 — un thème : un bouton par chapitre
-     ══════════════════════════════════════════════════════════════ */
   function vueTheme(i) {
     const t = THEMES[i];
     teindre(t.teinte);
 
     const f = feuilleVide();
-    f.appendChild(fil([["Français", () => aller({ niveau: "accueil" })], [t.nom, null]]));
-    f.appendChild(el("p", "rubrique", t.nom));
-    f.appendChild(el("h1", null, t.titre));
-    f.appendChild(el("p", "mention", ech(t.sous) +
-      '<span>' + t.chapitres.length + ' chapitres</span>'));
-    f.appendChild(filet());
-    f.appendChild(el("p", "ouverture", ech(t.ouverture)));
+    f.appendChild(MB_ATELIER.entete(ech(t.nom), t.sous + " — " + t.chapitres.length + " chapitres. " + t.ouverture, null,
+      [{ nom:"Le cours", href:"#", onclick: () => aller({ niveau: "accueil" }) }, { nom: t.nom }]));
 
     const sec = el("section", "sommaire chapitres");
     sec.appendChild(el("p", "sommaire-titre", "Les chapitres de ce thème"));
@@ -370,15 +341,11 @@ body { transition: none; }
     teindre(t.teinte);
 
     const f = feuilleVide();
-    f.appendChild(fil([
-      ["Français", () => aller({ niveau: "accueil" })],
-      [t.nom,      () => aller({ niveau: "theme", t: i })],
-      ["Chapitre " + romain(n + 1), null]
-    ]));
-    f.appendChild(el("p", "rubrique", t.nom + " · chapitre " + romain(n + 1)));
-    f.appendChild(el("h1", null, ech(c.nom)));
-    f.appendChild(el("p", "mention", ech(c.resume) + '<span>' + ech(c.classe) + '</span>'));
-    f.appendChild(filet());
+    f.appendChild(MB_ATELIER.entete(ech(c.nom), c.resume + " — " + c.classe + ".",
+      [{ nom:"✏️ M'entraîner sur ce chapitre", href: MB_ATELIER.lien("francais-exercices.html") + "#chapitre/" + c.id, classe:"secondaire" }],
+      [{ nom:"Le cours", href:"#", onclick: () => aller({ niveau: "accueil" }) },
+       { nom: t.nom, href:"#", onclick: () => aller({ niveau: "theme", t: i }) },
+       { nom:"Chapitre " + (n + 1) }]));
 
     const cours = el("section", "cours");
     (c.cours || []).forEach(b => {
@@ -490,6 +457,45 @@ body { transition: none; }
      ══════════════════════════════════════════════════════════════ */
   let vue = { niveau: "accueil", t: 0, c: 0 };
 
+  /* ── Le sommaire permanent : tous les chapitres, à gauche ── */
+  const panneau = document.getElementById("panneau");
+  const panneauMobile = document.getElementById("panneau-mobile");
+  function majPanneau() {
+    panneau.innerHTML = "";
+    panneau.appendChild(el("div", "panneau-titre", "Sommaire"));
+    const acc = el("button", "fr-chap" + (vue.niveau === "accueil" ? " actif" : ""));
+    acc.type = "button"; acc.innerHTML = '<span class="fr-chap-nom">Tous les chapitres</span>';
+    acc.onclick = () => aller({ niveau: "accueil" });
+    panneau.appendChild(acc);
+    const sel = document.createElement("select");
+    sel.innerHTML = '<option value="">Sommaire du cours…</option>';
+    THEMES.forEach((t, i) => {
+      const bd = el("div", "theme-bandeau");
+      bd.style.setProperty("--teinte", t.teinte);
+      bd.innerHTML = '<i></i><b>' + ech(t.nom) + '</b>';
+      panneau.appendChild(bd);
+      const og = document.createElement("optgroup"); og.label = t.nom;
+      t.chapitres.forEach((c, n) => {
+        const actif = vue.niveau === "chapitre" && vue.t === i && vue.c === n;
+        const b = el("button", "fr-chap" + (actif ? " actif" : ""));
+        b.type = "button"; b.style.setProperty("--teinte", t.teinte);
+        b.innerHTML = '<span class="fr-chap-num">' + (n + 1) + '</span><span class="fr-chap-nom">' + ech(c.nom) + '</span>' +
+          (MB_FR.estLu(t.id, c.id) ? '<span class="fr-chap-etat lu">✓</span>' : '');
+        b.onclick = () => aller({ niveau: "chapitre", t: i, c: n });
+        panneau.appendChild(b);
+        const o = document.createElement("option");
+        o.value = i + "/" + n; o.textContent = (n + 1) + ". " + c.nom + (MB_FR.estLu(t.id, c.id) ? " ✓" : "");
+        if (actif) o.selected = true;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    sel.onchange = () => { if (!sel.value) return aller({ niveau: "accueil" }); const [i, n] = sel.value.split("/").map(Number); aller({ niveau: "chapitre", t: i, c: n }); };
+    panneauMobile.innerHTML = ""; panneauMobile.appendChild(sel);
+    const actif = panneau.querySelector(".fr-chap.actif");
+    if (actif && actif.scrollIntoView) actif.scrollIntoView({ block: "nearest" });
+  }
+
   function aller(v, sansHash) {
     vue = { niveau: v.niveau, t: v.t || 0, c: v.c || 0 };
 
@@ -499,6 +505,7 @@ body { transition: none; }
     else                             page.appendChild(vueAccueil());
 
     majFeuillet();
+    majPanneau();
     majTitre();
     if (!sansHash) {
       const h = hashDe(vue);

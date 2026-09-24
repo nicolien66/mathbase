@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
 <link rel="stylesheet" href="atelier.css">
+<link rel="stylesheet" href="francais-ui.css">
 <style>
 .carte-verbe {
   display: flex; align-items: baseline; gap: .8rem; flex-wrap: wrap;
@@ -87,16 +88,8 @@
     const f = el("main", "feuille" + (c ? " large" : ""));
     if (c) f.style.maxWidth = "62rem";
 
-    f.appendChild(el("p", "rubrique", "Français · conjugueur"));
-    f.appendChild(el("h1", null, c ? ech(c.infinitif) : 'Tous les temps,<br><em>de tous les verbes.</em>'));
-    f.appendChild(el("div", "filet", "<span>❦</span>"));
-
-    if (!c) {
-      f.appendChild(el("p", "ouverture",
-        "Écrivez un verbe à l'infinitif : sa table complète s'affiche, des temps simples " +
-        "aux temps composés, avec les cinq formes clés dont tout le reste se déduit. " +
-        "Les verbes préfixés — reprendre, devenir, survivre — sont reconnus d'eux-mêmes."));
-    }
+    f.appendChild(MB_ATELIER.entete(c ? ech(c.infinitif) : "Conjugueur",
+      c ? "La table complète, des temps simples aux temps composés." : "Écrivez un verbe à l'infinitif : sa table complète s'affiche. Les verbes préfixés (reprendre, devenir, survivre) sont reconnus d'eux-mêmes."));
 
     /* ── La recherche ── */
     const chercher = el("div", "chercher");

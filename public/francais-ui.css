@@ -1,0 +1,180 @@
+/* ═══════════════════════════════════════════════════════════════
+   POLYMATES — francais-ui.css
+   La nouvelle interface de l'atelier de français : une barre de
+   navigation lisible, des en-têtes courts, des tuiles d'action et
+   des grilles de chapitres. Le papier et les caractères restent
+   (parchemin.css), mais la page se lit d'un coup d'œil et chaque
+   chose à faire a son bouton.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ═══ Barre de navigation ══════════════════════════════════════ */
+.fr-nav {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(245,236,216,.96); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--papier-ombre);
+}
+.fr-nav-inner {
+  max-width: 68rem; margin: 0 auto; padding: 0 1rem;
+  display: flex; align-items: stretch; gap: .2rem; overflow-x: auto; scrollbar-width: none;
+}
+.fr-nav-inner::-webkit-scrollbar { display: none; }
+.fr-onglet {
+  display: flex; align-items: center; gap: .5rem; white-space: nowrap;
+  padding: .85rem .95rem; text-decoration: none; color: var(--encre-pale);
+  font-family: var(--texte); font-weight: 400; font-size: .95rem;
+  border-bottom: 3px solid transparent; transition: color .15s, border-color .15s;
+}
+.fr-onglet .ico { font-size: 1.05rem; line-height: 1; }
+.fr-onglet:hover { color: var(--encre); }
+.fr-onglet[aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+.fr-onglet:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.fr-onglet.retour { margin-right: auto; color: var(--encre-pale); font-size: .88rem; }
+.fr-onglet.retour:hover { color: var(--accent); }
+.fr-nav + .feuille, .fr-nav + .fr-cours { margin-top: 1.6rem; }
+
+/* ═══ En-tête compact de page ══════════════════════════════════ */
+.entete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap;
+          margin-bottom: 1.6rem; padding-bottom: 1rem; border-bottom: 1px solid var(--papier-ombre); }
+.entete h1 { font-family: var(--titre); font-size: 2rem; font-weight: 600; line-height: 1.1; margin: 0; }
+.entete h1 em { font-style: italic; color: var(--accent); }
+.entete-sous { color: var(--encre-pale); font-size: .95rem; margin-top: .3rem; max-width: 40rem; }
+.entete-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.fil-ariane { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center;
+              font-size: .8rem; color: var(--encre-pale); margin-bottom: .6rem; }
+.fil-ariane a { color: var(--encre-pale); text-decoration: none; }
+.fil-ariane a:hover { color: var(--accent); text-decoration: underline; }
+.fil-ariane i { font-style: normal; opacity: .6; }
+
+/* ═══ Boutons ══════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .6rem 1.1rem; border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--papier-clair); text-decoration: none;
+  font-family: var(--texte); font-weight: 500; font-size: .92rem; cursor: pointer;
+  transition: filter .15s, transform .1s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; }
+.btn.secondaire { background: transparent; color: var(--accent); }
+.btn.secondaire:hover { background: rgba(143,47,34,.06); }
+.btn.discret { background: transparent; border-color: var(--papier-ombre); color: var(--encre-pale); }
+.btn.discret:hover { color: var(--encre); border-color: var(--encre-pale); }
+.btn.grand { padding: .8rem 1.4rem; font-size: 1rem; }
+.btn:disabled, .btn.inactif { opacity: .45; cursor: default; pointer-events: none; }
+
+/* ═══ La carte « continuer » de l'accueil ══════════════════════ */
+.continuer {
+  display: grid; grid-template-columns: 1fr auto; gap: 1.2rem; align-items: center;
+  padding: 1.4rem 1.6rem; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(143,47,34,.09), rgba(168,129,58,.08));
+  border: 1px solid rgba(143,47,34,.25);
+}
+.continuer-quoi { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+.continuer-titre { font-family: var(--titre); font-size: 1.7rem; font-weight: 600; line-height: 1.15; margin: .2rem 0 .3rem; }
+.continuer-texte { color: var(--encre-pale); font-size: .95rem; }
+.serie { display: flex; align-items: center; gap: .7rem; margin-top: .8rem; font-size: .85rem; color: var(--encre-pale); }
+.serie-cases { display: flex; gap: .25rem; }
+.serie-case { width: 1.35rem; height: 1.35rem; border-radius: 4px; border: 1px solid rgba(120,100,60,.3);
+              display: flex; align-items: center; justify-content: center; font-size: .6rem; text-transform: uppercase; color: var(--encre-pale); }
+.serie-case.ok { background: var(--accent); border-color: var(--accent); color: var(--papier-clair); }
+
+/* ═══ Tuiles d'accès rapide ════════════════════════════════════ */
+.tuiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr)); gap: .8rem; margin-top: 1.4rem; }
+.tuile {
+  display: flex; flex-direction: column; gap: .35rem; padding: 1rem 1.1rem; border-radius: 10px;
+  background: var(--papier-clair); border: 1px solid var(--papier-ombre); text-decoration: none; color: var(--encre);
+  transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.tuile:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 18px -14px rgba(70,55,30,.6); }
+.tuile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tuile-ico { font-size: 1.5rem; line-height: 1; }
+.tuile-nom { font-family: var(--titre); font-size: 1.25rem; font-weight: 600; line-height: 1.1; }
+.tuile-chiffre { font-size: .8rem; color: var(--accent); font-weight: 500; }
+.tuile-texte { font-size: .84rem; color: var(--encre-pale); line-height: 1.45; }
+
+/* ═══ Chiffres de progression ══════════════════════════════════ */
+.pastilles { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.2rem; }
+.pastille { display: flex; flex-direction: column; gap: .15rem; padding: .6rem .9rem; border-radius: 8px;
+            background: rgba(255,255,255,.35); border: 1px solid var(--papier-ombre); min-width: 8rem; }
+.pastille b { font-family: var(--titre); font-size: 1.4rem; font-weight: 600; line-height: 1; }
+.pastille span { font-size: .74rem; color: var(--encre-pale); }
+.pastille .barre { height: 4px; border-radius: 2px; background: rgba(120,100,60,.18); margin-top: .3rem; overflow: hidden; }
+.pastille .barre i { display: block; height: 100%; background: var(--accent); }
+
+/* ═══ Sections ═════════════════════════════════════════════════ */
+.section { margin-top: 2.2rem; }
+.section-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.section-tete h2 { font-family: var(--titre); font-size: 1.45rem; font-weight: 600; margin: 0; }
+.section-tete a { font-size: .85rem; color: var(--accent); text-decoration: none; }
+.section-tete a:hover { text-decoration: underline; }
+
+/* ═══ Grille de chapitres ══════════════════════════════════════ */
+.theme-bandeau { display: flex; align-items: center; gap: .6rem; margin: 1.3rem 0 .5rem; }
+.theme-bandeau i { width: 10px; height: 10px; border-radius: 50%; background: var(--teinte, var(--accent)); }
+.theme-bandeau b { font-family: var(--titre); font-size: 1.15rem; font-weight: 600; }
+.theme-bandeau span { font-size: .8rem; color: var(--encre-pale); }
+.fr-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .5rem; }
+.fr-chap {
+  display: flex; align-items: center; gap: .6rem; padding: .65rem .8rem; border-radius: 8px;
+  background: var(--papier-clair); border: 1px solid var(--papier-ombre); text-decoration: none; color: var(--encre);
+  font-size: .93rem; cursor: pointer; transition: border-color .15s, background .15s; text-align: left; font-family: var(--texte);
+}
+button.fr-chap { width: 100%; }
+.fr-chap:hover { border-color: var(--teinte, var(--accent)); background: rgba(255,255,255,.55); }
+.fr-chap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fr-chap.actif { border-color: var(--teinte, var(--accent)); background: rgba(255,255,255,.6); font-weight: 500; }
+.fr-chap-num { font-family: var(--titre); font-size: .85rem; color: var(--encre-pale); min-width: 1.4rem; }
+.fr-chap-nom { flex: 1; line-height: 1.3; }
+.fr-chap-etat { font-size: .74rem; white-space: nowrap; color: var(--encre-pale); }
+.fr-chap-etat.lu { color: #4f6b52; font-weight: 500; }
+.fr-chap-etat.score-haut { color: #4f6b52; font-weight: 500; }
+.fr-chap-etat.score-bas { color: var(--accent); font-weight: 500; }
+.fr-chap:disabled { opacity: .45; cursor: default; }
+
+/* ═══ Le cours : panneau latéral + contenu ═════════════════════ */
+.fr-cours { max-width: 68rem; margin: 1.6rem auto 4rem; padding: 0 1rem; display: grid; grid-template-columns: 17rem 1fr; gap: 1.4rem; align-items: start; }
+.fr-cours .feuille { margin: 0; max-width: none; }
+.panneau { position: sticky; top: 4rem; max-height: calc(100vh - 5rem); overflow-y: auto;
+           background: var(--papier-clair); border: 1px solid var(--papier-ombre); border-radius: 10px; padding: .8rem; }
+.panneau-titre { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--encre-pale); margin: .4rem .3rem .6rem; }
+.panneau .theme-bandeau { margin: .8rem .3rem .3rem; }
+.panneau .theme-bandeau b { font-size: 1rem; }
+.panneau .fr-chap { padding: .45rem .55rem; font-size: .86rem; border-color: transparent; background: transparent; }
+.panneau .fr-chap:hover { background: rgba(255,255,255,.6); }
+.panneau .fr-chap.actif { background: rgba(255,255,255,.85); border-color: var(--teinte, var(--accent)); }
+.panneau-mobile { display: none; }
+.panneau-mobile select { width: 100%; padding: .6rem .7rem; border-radius: 8px; border: 1px solid var(--papier-ombre);
+                          background: var(--papier-clair); font-family: var(--texte); font-size: .95rem; color: var(--encre); }
+.suite-chap { display: flex; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--papier-ombre); }
+
+/* ═══ Séances : questions, dictées ═════════════════════════════ */
+.avancement { display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem; font-size: .84rem; color: var(--encre-pale); }
+.avancement .barre { flex: 1; height: 6px; border-radius: 3px; background: rgba(120,100,60,.18); overflow: hidden; }
+.avancement .barre i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+
+/* ═══ Carnet compact ═══════════════════════════════════════════ */
+.carnet-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.carnet-table td { padding: .45rem .4rem; border-bottom: 1px solid rgba(120,100,60,.14); vertical-align: middle; }
+.carnet-table tr:last-child td { border-bottom: none; }
+.carnet-table .mot-juste { font-family: var(--titre); font-size: 1.1rem; font-weight: 600; }
+.carnet-table .mot-rate { color: var(--accent); text-decoration: line-through; font-size: .86rem; }
+.carnet-table .mot-type { font-size: .76rem; color: var(--encre-pale); }
+.carnet-table .mot-du { font-size: .76rem; font-weight: 500; }
+.carnet-table .mot-du.oui { color: var(--accent); }
+.carnet-table .mot-du.non { color: #4f6b52; }
+.carnet-table .oublier { background: none; border: none; color: var(--encre-pale); cursor: pointer; font-size: 1rem; opacity: .5; padding: 0 .3rem; }
+.carnet-table .oublier:hover { opacity: 1; color: var(--accent); }
+
+/* ═══ Les anciens ornements, désormais discrets ════════════════ */
+.rubans { display: none; }
+.feuille .filet { display: none; }
+.colophon { opacity: .5; }
+
+@media (max-width: 860px) {
+  .fr-cours { grid-template-columns: 1fr; }
+  .panneau { display: none; }
+  .panneau-mobile { display: block; margin-bottom: .8rem; }
+  .continuer { grid-template-columns: 1fr; }
+  .entete h1 { font-size: 1.6rem; }
+}
