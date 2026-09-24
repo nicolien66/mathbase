@@ -219,3 +219,37 @@ body { background: var(--ivoire); background-image: none !important; color: var(
   .continuer { grid-template-columns: 1fr; }
   .hn-classe { margin-left: .6rem; }
 }
+
+/* ═══ Le carrousel des périodes ═══════════════════════════════ */
+.car { display: grid; grid-template-columns: 3rem 1fr 3rem; align-items: center; gap: .6rem; margin: .4rem 0 .6rem; }
+.car-fleche { height: 3rem; width: 3rem; border: 1px solid var(--encre); background: var(--page); color: var(--encre); font-family: var(--ui); font-size: 1.2rem; cursor: pointer; transition: background .15s, color .15s; }
+.car-fleche:hover:not(:disabled) { background: var(--encre); color: var(--page); }
+.car-fleche:disabled { opacity: .25; cursor: default; }
+.car-piste { display: grid; grid-template-columns: 1fr 2.6fr 1fr; gap: .8rem; align-items: center; min-height: 15rem; }
+.car-carte { border: 1px solid var(--page-ombre); background: var(--page); text-align: left; font-family: var(--texte); color: var(--encre); padding: 1.2rem 1.4rem; cursor: pointer; display: flex; flex-direction: column; gap: .35rem; transition: box-shadow .15s, border-color .15s, opacity .15s; }
+.car-carte.centre { border: 1px solid var(--encre); border-top: 4px solid var(--teinte); box-shadow: 6px 6px 0 var(--or); padding: 1.6rem 2rem 1.5rem; min-height: 15rem; cursor: default; }
+.car-carte.cote { opacity: .55; min-height: 9rem; border-top: 3px solid var(--teinte); }
+.car-carte.cote:hover { opacity: 1; border-color: var(--teinte); box-shadow: 3px 3px 0 var(--or); }
+.car-carte.vide { border: 1px dashed var(--page-ombre); background: transparent; min-height: 9rem; }
+.car-dates { font-family: var(--ui); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--teinte); font-weight: 600; }
+.car-nom { font-family: var(--titre); font-weight: 600; font-size: 1.5rem; line-height: 1.1; }
+.car-carte.centre .car-nom { font-size: 2.6rem; letter-spacing: -.01em; }
+.car-resume { font-size: 1.02rem; color: var(--encre-pale); line-height: 1.5; margin-top: .2rem; }
+.car-pied { display: flex; justify-content: space-between; gap: .8rem; font-family: var(--ui); font-size: .74rem; letter-spacing: .04em; color: var(--encre-claire); margin-top: .5rem; }
+.car-carte .jauge { height: 3px; background: var(--page-ombre); margin-top: .4rem; }
+.car-carte .jauge i { display: block; height: 100%; background: var(--teinte); }
+.car-points { display: flex; justify-content: center; gap: .55rem; margin: .2rem 0 1.4rem; }
+.car-point { width: .55rem; height: .55rem; padding: 0; border: 1px solid var(--encre-claire); background: transparent; transform: rotate(45deg); cursor: pointer; }
+.car-point:hover { border-color: var(--teinte); }
+.car-point.actif { background: var(--teinte); border-color: var(--teinte); }
+.periode-onglets { margin-top: .2rem; }
+.periode-onglets .onglet { font-size: .8rem; padding: .8rem 1.3rem; }
+.periode-onglets .onglet[aria-selected="true"] { color: var(--teinte); border-bottom-color: var(--teinte); }
+@media (max-width: 900px) {
+  .car { grid-template-columns: 2.4rem 1fr 2.4rem; gap: .4rem; }
+  .car-fleche { width: 2.4rem; height: 2.4rem; }
+  .car-piste { grid-template-columns: 1fr; min-height: 0; }
+  .car-carte.cote, .car-carte.vide { display: none; }
+  .car-carte.centre { padding: 1.2rem 1.3rem; min-height: 0; }
+  .car-carte.centre .car-nom { font-size: 1.9rem; }
+}
