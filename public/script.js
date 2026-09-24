@@ -155,9 +155,6 @@ const DEMO_EXERCISES = [
   { id:27, title:"Développer une identité remarquable", level:"lycee", subject:"Algèbre", difficulty:"Moyen", classe:"2nde", chapitre:"Calcul littéral",
     content:"Développe : (x + 5)² puis factorise : x² − 49.",
     solution:"(x + 5)² = x² + 10x + 25 et x² − 49 = (x − 7)(x + 7).", keys:["x^2+10x+25","x²+10x+25"] },
-  { id:28, title:"Résoudre une inéquation", level:"college", subject:"Algèbre", difficulty:"Difficile", classe:"4ème", chapitre:"Inéquations",
-    content:"Résous l'inéquation : −2x + 6 > 0.\nAttention au sens de l'inégalité !",
-    solution:"−2x > −6, on divise par −2 (négatif) donc on inverse : x < 3.", keys:["x<3","x < 3"] },
   /* ── PROBLÈMES (énoncés longs, plusieurs étapes) ── */
   { id:101, type:"probleme", title:"La fête d'anniversaire", level:"college", subject:"Arithmétique", difficulty:"Moyen", classe:"6ème", chapitre:"Fractions",
     content:"Pour son anniversaire, Sofia commande 3 pizzas identiques, chacune coupée en 8 parts égales.\nSes invités mangent les 3/4 de la première pizza, la moitié de la deuxième, et 5 parts de la troisième.\n\n1) Combien de parts ont été mangées en tout ?\n2) Quelle fraction du total des 3 pizzas cela représente-t-il ?\n3) Sofia veut garder au moins une pizza entière (8 parts) pour le lendemain. A-t-elle assez de restes ?",

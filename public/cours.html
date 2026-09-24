@@ -1941,21 +1941,6 @@ COURS['Équations'] = { branch:'algebre', level:'4ème–3ème',
       piege:["x² = 16 → x = 4","x = 4 ou x = −4 : (−4)² = 16 aussi"] },
   ] };
 
-COURS['Inéquations'] = { branch:'algebre', level:'3ème',
-  intro:"Une inéquation compare deux expressions avec <, >, ≤ ou ≥. Elle a une infinité de solutions, qu'on représente sur une droite graduée.",
-  competences:[
-    { nom:'Résoudre une inéquation', classe:'3ème',
-      def:["On résout une inéquation comme une équation : on ajoute ou soustrait le même nombre des deux côtés.","UNE exception : multiplier ou diviser par un nombre NÉGATIF retourne le sens de l'inégalité."],
-      methode:["Isole le terme en x avec des additions et soustractions.","Divise par le coefficient de x ; s'il est négatif, retourne le signe.","Écris l'ensemble des solutions."],
-      exemple:{ q:"Résous −2x + 3 > 7", l:["−2x > 4","x < −2 (division par −2)"] },
-      piege:["−2x > 4 → x > −2","x < −2 : diviser par un négatif retourne le signe"] },
-    { nom:'Représenter les solutions', classe:'3ème',
-      def:["Les solutions de x < −2 sont tous les nombres à gauche de −2 : on les colorie sur la droite graduée.","Un crochet indique si la borne est comprise (≤, ≥) ou non (<, >)."],
-      methode:["Place la borne sur la droite graduée.","Colorie du bon côté.","Crochet tourné vers la partie coloriée si la borne est comprise, vers l'extérieur sinon."],
-      exemple:{ q:"Représente x ≥ 1", l:["borne 1 comprise : crochet fermé [","on colorie vers la droite"] },
-      piege:["x > 3 : 3 est solution","3 n'est pas solution de x > 3 (inégalité stricte)"],
-      visuel:{ type:'axe', min:-4, max:4, points:[{x:1,label:'[1',c:CL.vert},{x:3,label:'solution',c:CL.vert}] } },
-  ] };
 
 /* ───────── GÉOMÉTRIE ───────── */
 
@@ -2162,21 +2147,6 @@ COURS['Trigonométrie'] = { branch:'geometrie', level:'4ème–3ème',
       methode:["Schéma, angle droit, angle cherché ou connu.","Nomme les côtés (opposé, adjacent, hypoténuse) par rapport à l'angle.","Choisis la formule qui contient les deux côtés en jeu."],
       exemple:{ q:"Une rampe monte de 1 m pour 10 m au sol. Angle ?", l:["opposé 1, adjacent 10 → tangente","tan(x) = 0,1","x = tan⁻¹(0,1) ≈ 5,7°"] },
       piege:["Deux côtés de l'angle droit connus → cosinus","Opposé et adjacent → tangente"] },
-  ] };
-
-COURS['Triangles semblables'] = { branch:'geometrie', level:'3ème',
-  intro:"Deux triangles semblables ont les mêmes angles : l'un est un agrandissement de l'autre. Leurs côtés sont proportionnels.",
-  competences:[
-    { nom:'Reconnaître des triangles semblables', classe:'3ème',
-      def:["Deux triangles sont semblables s'ils ont deux angles deux à deux égaux : le troisième est alors égal aussi.","Ils sont aussi semblables si leurs trois côtés sont proportionnels."],
-      methode:["Compare les angles connus des deux triangles.","Ou calcule les rapports des côtés, du plus petit au plus grand.","Conclus à la similitude et note le rapport k."],
-      exemple:{ q:"Côtés 3, 4, 5 et 6, 8, 10. Semblables ?", l:["6/3 = 8/4 = 10/5 = 2","oui, rapport k = 2"] },
-      piege:["Deux triangles avec un angle égal sont semblables","Il en faut deux (ou les trois côtés proportionnels)"] },
-    { nom:'Utiliser le rapport de similitude', classe:'3ème',
-      def:["Si le rapport est k, toutes les longueurs du grand triangle valent k fois celles du petit.","Les aires sont multipliées par k², pas par k."],
-      methode:["Associe les côtés homologues (opposés aux angles égaux).","Calcule k avec un couple de côtés connus.","Applique × k aux longueurs, × k² aux aires."],
-      exemple:{ q:"k = 2, aire du petit 7 cm². Aire du grand ?", l:["aire × k² = × 4","28 cm²"] },
-      piege:["k = 2 → aire du grand = 14 cm²","aire = 7 × 4 = 28 cm²"] },
   ] };
 
 COURS['Homothéties'] = { branch:'geometrie', level:'3ème',
@@ -4949,46 +4919,6 @@ LIVRES['Calcul littéral'] = { branch:'algebre', level:'5ème–3ème', figure:{
   ] };
 
 /* ══════════════════════════════════════════════════════════════
-   INÉQUATIONS — livre complet
-   ══════════════════════════════════════════════════════════════ */
-LIVRES['Inéquations'] = { branch:'algebre', level:'3ème', figure:{ type:'axe', min:-4, max:4, points:[{x:-2,label:'−2',c:C.or}], legende:'x < −2' },
-  intro:"« Combien de films pour que l'abonnement soit rentable ? », « quelle taille de colis pour rester sous 5 kg ? » : beaucoup de questions n'ont pas une réponse, mais une infinité. Ce livre apprend à les résoudre avec une inéquation, et à représenter les solutions.",
-  competences:[
-
-    { nom:'Résoudre une inéquation', classe:'3ème', pages:[
-      { titre:'Une infinité de solutions', texte:["x < 3 : tous les nombres plus petits que 3 conviennent : 2, 0, −5, 2,99… Une inéquation a en général une infinité de solutions, qu'on décrit plutôt qu'on ne les liste.","Les symboles : < (strictement plus petit), ≤ (plus petit ou égal), > et ≥. x ≤ 3 accepte 3, x < 3 le refuse.","Résoudre une inéquation, c'est la transformer en une inéquation simple du type x < nombre, avec les mêmes règles que pour une équation… sauf une."],
-        figure:{ type:'axe', min:-4, max:6, points:[{x:3,label:'3',c:C.or}], legende:'x < 3 : tout ce qui est à gauche de 3' },
-        encart:{ type:'retenir', lignes:["Ajouter ou soustraire le même nombre des deux côtés ne change pas le sens de l'inégalité."] } },
-      { titre:'Les mêmes gestes qu\'une équation…', texte:["2x + 5 ≤ 11. On enlève 5 des deux côtés : 2x ≤ 6. On divise par 2 : x ≤ 3.","Pourquoi c'est permis ? Si Léa a moins de billes que Tom, et qu'on leur en donne 5 à chacun, Léa en a toujours moins. Et si on double leurs billes, toujours moins. L'ordre est conservé.","Vérifie avec un nombre : x = 0 donne 5 ≤ 11 ✓ ; x = 4 donne 13 ≤ 11 ✗. Cohérent avec x ≤ 3."],
-        figure:{ type:'tableau', lignes:[['2x + 5 ≤ 11'],['2x ≤ 6'],['x ≤ 3']] },
-        encart:{ type:'monde', lignes:["Un ascenseur supporte 300 kg. Avec un chariot de 40 kg et des cartons de 20 kg : 40 + 20n ≤ 300, donc n ≤ 13 cartons."] } },
-      { titre:'… sauf une : multiplier par un négatif', texte:["3 < 5, c'est vrai. Multiplie par −1 : −3 et −5. Or −3 > −5 ! Le sens s'est retourné. Multiplier ou diviser par un nombre NÉGATIF inverse l'inégalité.","−2x + 3 > 7 : on enlève 3, −2x > 4. On divise par −2, et on RETOURNE le signe : x < −2.","Vérifie : x = −3 donne 6 + 3 = 9 > 7 ✓. x = 0 donne 3 > 7 ✗. C'est bien x < −2."],
-        figure:{ type:'axe', min:-6, max:6, points:[{x:3,label:'3',c:C.vert},{x:5,label:'5',c:C.vert},{x:-3,label:'−3',c:C.rouge},{x:-5,label:'−5',c:C.rouge}], legende:'3 < 5 mais −3 > −5' },
-        encart:{ type:'piege', lignes:["−2x > 4 → x > −2  ✗","x < −2 : diviser par −2 retourne le signe  ✓"] } },
-      { titre:'Éviter la division par un négatif', texte:["Autre façon de résoudre −2x + 3 > 7 : mettre les x du côté où ils seront positifs. 3 − 7 > 2x, soit −4 > 2x, soit −2 > x, c'est-à-dire x < −2. Même résultat, sans retourner de signe.","Les deux méthodes sont valables. La seconde évite l'oubli le plus fréquent.","Quand les x sont des deux côtés : 5x − 2 ≥ 8x + 7. On rassemble : −2 − 7 ≥ 8x − 5x, −9 ≥ 3x, x ≤ −3."],
-        figure:{ type:'tableau', lignes:[['−2x + 3 > 7'],['3 − 7 > 2x'],['−4 > 2x'],['x < −2']] },
-        encart:{ type:'exercice', titre:'À toi', lignes:["Résous : 3x − 4 < 11 ; −5x ≥ 20 ; 7 − 2x ≤ 1 ; 4x + 3 > 6x − 5."] } },
-      { titre:'Réponse', texte:["3x − 4 < 11 : 3x < 15, x < 5.","−5x ≥ 20 : on divise par −5, x ≤ −4.","7 − 2x ≤ 1 : 7 − 1 ≤ 2x, 6 ≤ 2x, x ≥ 3.","4x + 3 > 6x − 5 : 3 + 5 > 2x, 8 > 2x, x < 4.","Teste chaque solution avec un nombre : c'est la seule vérification qui détecte un signe retourné à tort."],
-        figure:{ type:'tableau', lignes:[['3x − 4 < 11','x < 5'],['−5x ≥ 20','x ≤ −4'],['7 − 2x ≤ 1','x ≥ 3'],['4x + 3 > 6x − 5','x < 4']] } },
-    ] },
-
-    { nom:'Représenter les solutions', classe:'3ème', pages:[
-      { titre:'Colorier la droite graduée', texte:["Les solutions de x < 3 : tous les nombres à gauche de 3. On les représente en coloriant la demi-droite à gauche de 3.","Pour x ≥ 1 : on colorie à droite de 1, et 1 est compris.","Un crochet indique si la borne fait partie des solutions : [ ou ] tourné vers la partie coloriée si la borne est comprise (≤, ≥), tourné vers l'extérieur si elle est exclue (<, >)."],
-        figure:{ type:'axe', min:-4, max:6, points:[{x:1,label:'[1',c:C.vert},{x:3,label:'',c:C.vert},{x:5,label:'solutions',c:C.vert}], legende:'x ≥ 1 : à droite de 1, borne comprise' },
-        encart:{ type:'retenir', lignes:["< ou > : borne exclue, crochet vers l'extérieur.   ≤ ou ≥ : borne comprise, crochet vers l'intérieur."] } },
-      { titre:'Deux bornes', texte:["−1 < x ≤ 4 : les nombres strictement plus grands que −1 ET plus petits ou égaux à 4. On colorie entre −1 et 4 ; −1 exclu (crochet ouvert), 4 compris (crochet fermé).","Un colis doit peser plus de 1 kg et au plus 5 kg : 1 < m ≤ 5.","Sur la droite, on voit d'un coup si un nombre convient : 4 oui, −1 non, 0 oui."],
-        figure:{ type:'axe', min:-3, max:6, points:[{x:-1,label:']−1',c:C.rouge},{x:4,label:'4]',c:C.vert}], legende:'−1 < x ≤ 4' },
-        encart:{ type:'piege', lignes:["Pour x > 3, le nombre 3 est solution  ✗","3 n'est pas solution : l'inégalité est stricte  ✓"] } },
-      { titre:'Un problème complet', texte:["Abonnement A : 15 € + 2 € par film. Abonnement B : 3 € par film. À partir de combien de films A est-il moins cher ?","A < B : 15 + 2x < 3x, donc 15 < x. Pour plus de 15 films, A est moins cher. À 15 films exactement, ils coûtent pareil (45 €).","Les solutions sont les entiers 16, 17, 18… : dans un problème concret, on garde les solutions qui ont un sens (un nombre entier de films, une longueur positive)."],
-        figure:{ type:'repere', xmin:0, xmax:25, ymin:0, ymax:60, droites:[{a:2,b:15,label:'A',c:C.rouge},{a:3,b:0,label:'B',c:C.vert}], points:[{x:15,y:45,label:'15 films'}] },
-        encart:{ type:'exercice', titre:'À toi', lignes:["Un taxi facture 4 € de prise en charge plus 1,50 € par km. Avec 25 €, quelle distance maximale ?","Représente les solutions de −2 ≤ x < 3."] } },
-      { titre:'Réponse', texte:["4 + 1,5d ≤ 25, donc 1,5d ≤ 21, d ≤ 14. On peut faire au plus 14 km.","−2 ≤ x < 3 : on colorie de −2 (compris, crochet fermé) à 3 (exclu, crochet ouvert).","Une inéquation se résout comme une équation, à une règle près ; elle se lit sur une droite graduée, avec des crochets qui disent si les bornes comptent."],
-        figure:{ type:'axe', min:-4, max:5, points:[{x:-2,label:'[−2',c:C.vert},{x:3,label:'3[',c:C.rouge}], legende:'−2 ≤ x < 3' },
-        encart:{ type:'retenir', lignes:["mêmes gestes qu'une équation · × ou ÷ par un négatif : on retourne le signe · borne comprise ≤ ≥, exclue < > · vérifier avec un nombre."] } },
-    ] },
-  ] };
-
-/* ══════════════════════════════════════════════════════════════
    GÉOMÉTRIE — livre complet
    ══════════════════════════════════════════════════════════════ */
 LIVRES['Géométrie'] = { branch:'geometrie', level:'6ème', figure:{ type:'paralleles', angles:[] },
@@ -6066,9 +5996,6 @@ const FAMILLES = {
   },
 };
 
-/* « Triangles semblables » n'est pas un chapitre d'exercices du site :
-   son contenu est traité dans le livre du théorème de Thalès. */
-delete COURS['Triangles semblables']; delete LIVRES['Triangles semblables'];
 
 /* Chaque chapitre devient un livre : le livre illustré s'il existe, sinon les
    pages construites à partir des fiches par compétence (à enrichir). */

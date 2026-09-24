@@ -68,7 +68,6 @@ const REFERENTIEL = {
       ["A08", "4ème", "Mettre un problème en équation et interpréter la solution"],
       ["A09", "3ème", "Factoriser avec un facteur commun et les identités remarquables"],
       ["A10", "3ème", "Résoudre une équation produit nul"],
-      ["A11", "3ème", "Résoudre une inéquation du premier degré et représenter les solutions"],
       ["A12", "2nde", "Résoudre une équation ou une inéquation à l'aide d'un tableau de signes"],
       ["A13", "2nde", "Choisir la forme d'une expression (développée, factorisée) adaptée au problème"],
       ["A14", "1ère", "Résoudre une équation du second degré avec le discriminant"],

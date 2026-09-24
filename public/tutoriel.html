@@ -877,18 +877,6 @@ TUT.systemes = { title:"Systèmes d'équations", steps:[
   finish("Un système = deux équations vraies EN MÊME TEMPS. Substitution ou combinaison, la solution est un couple (x ; y).")
 ]};
 
-TUT.inequations = { title:'Inéquations', steps:[
-  numberline('x < 3 : choisis une solution', "Une inéquation a une infinité de solutions ! Clique sur N'IMPORTE QUEL nombre strictement inférieur à 3.",
-    -5, 6, null, { accept:v=>v<3, legend:'toutes les graduations < 3 conviennent' }),
-  qcm('Comme une équation…', "x + 4 ≤ 9 se résout comme une équation : −4 des deux côtés.",
-    'x + 4 ≤ 9  →  ?', [{label:'x ≤ 5',ok:true},{label:'x ≤ 13',ok:false},{label:'x ≥ 5',ok:false}]),
-  qcm('… sauf UN piège', "Multiplier ou diviser par un nombre NÉGATIF inverse le sens ! Résous −2x > 4.",
-    '−2x > 4  →  ?', [{label:'x > −2',ok:false},{label:'x < −2',ok:true},{label:'x > 2',ok:false}]),
-  finish("On résout comme une équation, mais ÷ ou × par un négatif retourne le signe < en > (et vice-versa).")
-]};
-
-/* ───────── GÉOMÉTRIE ───────── */
-
 TUT.geometrie = { title:'Géométrie', steps:[
   multi('Le portrait du carré', "Clique sur les DEUX propriétés qui définissent un carré.",
     [{label:'4 côtés égaux',ok:true},{label:'4 angles droits',ok:true},{label:'côtés tous différents',ok:false},{label:'3 sommets',ok:false}],
@@ -1121,16 +1109,6 @@ TUT.trigonometrie = { title:'Trigonométrie', steps:[
   qcm('Et le sinus ?', "sin(x) = opposé / hypoténuse. Dans le même triangle, si l'opposé vaut 8,66 et l'hypoténuse 10 :",
     'sin(x) ≈ ?', [{label:'0,87',ok:true},{label:'0,5',ok:false},{label:'1,15',ok:false}]),
   finish("SOH-CAH-TOA : sin = opp/hyp, cos = adj/hyp, tan = opp/adj. Toujours dans un triangle RECTANGLE.")
-]};
-
-TUT['triangles-semblables'] = { title:'Triangles semblables', steps:[
-  qcm('La définition', "Deux triangles sont semblables quand ils ont les mêmes…",
-    'Les mêmes… ?', [{label:'angles',ok:true},{label:'côtés',ok:false},{label:'aires',ok:false}]),
-  qcm('Le rapport k', "Si le rapport de similitude est k = 2, alors les côtés du grand triangle sont…",
-    'k = 2  →  côtés ?', [{label:'2 fois plus longs',ok:true},{label:'4 fois plus longs',ok:false},{label:'identiques',ok:false}]),
-  qcm('Attention aux aires !', "Avec k = 2, les longueurs doublent… mais l'aire est multipliée par ?",
-    'k = 2  →  aire × ?', [{label:'2',ok:false},{label:'4',ok:true},{label:'8',ok:false}]),
-  finish("Mêmes angles → côtés proportionnels (×k) → aires multipliées par k². Ne confonds jamais k et k² !")
 ]};
 
 TUT.homotheties = { title:'Homothéties', steps:[
@@ -2179,8 +2157,8 @@ TUT['stats-position'] = { title:'Statistiques', steps:[
 ]}; })();
 
 /* Chapitres du site sans famille en base : les tutoriels d'origine restent
-   tels quels (inequations, systemes, parallelogrammes, perimetres, prisme,
-   pyramides, triangles-semblables, proba-vocab, stats-graphiques). */
+   tels quels (systemes, parallelogrammes, perimetres, prisme,
+   pyramides, proba-vocab, stats-graphiques). */
 
 /* ════════════════════════════════════════════════════════════
    LE MOTEUR

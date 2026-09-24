@@ -633,53 +633,6 @@ const THEME_CONTENT = {
   ]
 },
 
-"Inéquations": {
-  tuto:"inequations", cours:"Inéquations",
-  lecon:{
-    definitions:[
-      "Une inéquation est une inégalité avec une inconnue : 2x + 1 < 7.",
-      "Ses solutions forment en général une infinité de nombres (un intervalle), qu'on représente sur une droite graduée."
-    ],
-    proprietes:[
-      "On peut ajouter ou soustraire le même nombre des deux côtés sans changer le sens.",
-      "On peut multiplier ou diviser par un nombre POSITIF sans changer le sens.",
-      "Multiplier ou diviser par un nombre NÉGATIF inverse le sens de l'inégalité."
-    ],
-    exemples:[
-      "x + 4 ≤ 9 → x ≤ 5.",
-      "−2x > 4 → x < −2 (on a divisé par −2 : le sens s'inverse)."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Résoudre comme une équation : regrouper, réduire.",
-      "Au moment de diviser par le coefficient de x : vérifier son signe !",
-      "S'il est négatif, retourner le symbole (< devient >).",
-      "Représenter les solutions sur une droite graduée (crochet ou rond selon ≤ ou <)."
-    ],
-    erreurs:[
-      "Oublier d'inverser le sens en divisant par un négatif : c'est LE piège du chapitre.",
-      "Donner une seule valeur comme solution au lieu d'un intervalle.",
-      "Confondre < (strict) et ≤ (large) dans la représentation."
-    ],
-    resolu:{
-      enonce:"Résoudre −3x + 6 ≥ 0.",
-      etapes:[
-        "−6 des deux côtés : −3x ≥ −6.",
-        "÷(−3), négatif → on inverse : x ≤ 2.",
-        "Les solutions sont tous les nombres inférieurs ou égaux à 2."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Résous : 2x − 3 < 7.", sol:"2x < 10, donc x < 5." },
-    { q:"Résous : 5 − 4x ≤ 17.", sol:"−4x ≤ 12, on divise par −4 : x ≥ −3." },
-    { q:"Un forfait coûte 15 € plus 2 € par film. Combien de films au maximum avec 30 € ?", sol:"15 + 2x ≤ 30 → 2x ≤ 15 → x ≤ 7,5 : au maximum 7 films." }
-  ]
-},
-
-/* ═══════════ GÉOMÉTRIE ═══════════ */
-
 "Géométrie": {
   tuto:"geometrie", cours:"Géométrie",
   lecon:{
@@ -1040,51 +993,6 @@ const THEME_CONTENT = {
     { q:"Adjacent 7, hypoténuse 14 : quel est l'angle x ?", sol:"cos(x) = 7/14 = 0,5, donc x = 60°." },
     { q:"tan(x) = 1. Que vaut x ?", sol:"x = 45° (opposé = adjacent)." },
     { q:"Une rampe fait un angle de 5° avec le sol et l'horizontale mesure 20 m. Quelle hauteur atteint-elle ? (tan 5° ≈ 0,087)", sol:"h = 20 × tan(5°) ≈ 1,75 m." }
-  ]
-},
-
-"Triangles semblables": {
-  tuto:"triangles-semblables", cours:"Triangles semblables",
-  lecon:{
-    definitions:[
-      "Deux triangles sont semblables s'ils ont les mêmes angles deux à deux.",
-      "Leurs côtés sont alors proportionnels ; le coefficient est le rapport de similitude k."
-    ],
-    proprietes:[
-      "Il suffit de DEUX angles égaux pour conclure (le troisième suit automatiquement).",
-      "Les longueurs sont multipliées par k, les aires par k².",
-      "Des triangles en configuration de Thalès sont semblables."
-    ],
-    exemples:[
-      "k = 2 : côtés doublés, aire quadruplée.",
-      "Triangles de côtés 3-4-5 et 6-8-10 : semblables avec k = 2."
-    ]
-  },
-  methodes:{
-    etapes:[
-      "Chercher deux paires d'angles égaux (angles codés, opposés par le sommet, alternes-internes…).",
-      "Conclure à la similitude.",
-      "Associer les côtés homologues (face aux angles égaux).",
-      "Écrire les rapports et calculer."
-    ],
-    erreurs:[
-      "Associer les mauvais côtés : les côtés homologues font face aux angles égaux.",
-      "Multiplier l'aire par k au lieu de k².",
-      "Confondre « semblables » (même forme) et « égaux » (superposables)."
-    ],
-    resolu:{
-      enonce:"Deux triangles semblables : le premier a des côtés 3, 5, 6 ; le plus petit côté du second mesure 9. Les autres côtés ?",
-      etapes:[
-        "k = 9/3 = 3.",
-        "Côtés du second : 3×3 = 9, 5×3 = 15, 6×3 = 18.",
-        "Ses côtés mesurent 9, 15 et 18."
-      ]
-    }
-  },
-  problemes:[
-    { q:"Deux triangles ont des angles 40°-60°-80° et 60°-80°-40°. Sont-ils semblables ?", sol:"Oui : mêmes angles deux à deux." },
-    { q:"k = 5 : par combien l'aire est-elle multipliée ?", sol:"Par k² = 25." },
-    { q:"Un triangle d'aire 8 cm² est agrandi avec k = 3. Nouvelle aire ?", sol:"8 × 9 = 72 cm²." }
   ]
 },
 
