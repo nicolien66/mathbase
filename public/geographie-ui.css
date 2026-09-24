@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════
+   POLYMATES — geographie-ui.css
+   La géographie, dans le même classicisme que l'histoire et le
+   français : ivoire, Cormorant et EB Garamond, Inter pour cliquer,
+   le vert d'eau des cartes anciennes pour l'accent. Les cartes sont
+   dessinées en SVG et se colorent au survol.
+   ═══════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap');
+
+:root, body[data-matiere="geographie"] {
+  --ivoire: #f6f2ea; --page: #fffdf9; --page-ombre: #e6dfd1;
+  --encre: #1d1a16; --encre-pale: #6b655b; --encre-claire: #9a9285;
+  --vert: #3f6b4e; --or: #b9963f; --bleu: #2f4a6d; --rouge: #8e1c2b;
+  --mer: #e4ebe6; --terre: #f2ecdc; --terre-trait: #a89b7e; --terre-survol: #cfe1cc; --terre-actif: #3f6b4e;
+  --papier: var(--ivoire); --papier-clair: var(--page); --papier-ombre: var(--page-ombre);
+  --accent: var(--vert);
+  --titre: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
+  --texte: 'EB Garamond', Garamond, 'Times New Roman', serif;
+  --ui: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--ivoire); background-image: none !important; color: var(--encre); font-family: var(--texte); font-size: 1.05rem; line-height: 1.6; margin: 0; }
+body.accueil { overflow: hidden; }
+
+/* ═══ Cartouche ═══ */
+.bandeau { max-width: none; margin: 0; padding: 1.1rem 2.5rem .8rem; border: none; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--page-ombre); }
+.bandeau-titre { font-family: var(--titre); font-weight: 600; font-size: 1.75rem; color: var(--encre); text-decoration: none; }
+.bandeau-titre em { font-style: italic; font-weight: 500; color: var(--vert); }
+.bandeau-droite { font-family: var(--ui); font-size: .8rem; gap: 1.2rem; display: flex; align-items: baseline; }
+.bandeau-droite span { color: var(--encre-pale); }
+.bandeau-droite a, .bandeau-droite button { font-family: var(--ui); font-size: .8rem; color: var(--encre-pale); background: none; border: none; border-bottom: 1px solid transparent; padding: 0; cursor: pointer; text-decoration: none; }
+.bandeau-droite a:hover, .bandeau-droite button:hover { color: var(--vert); border-bottom-color: var(--vert); }
+
+/* ═══ Écran 1 : le carrousel ═══ */
+.geo-accueil { height: calc(100vh - 4.3rem); display: flex; flex-direction: column; justify-content: center; padding: .8rem 2.2rem 1rem; }
+.geo-consigne { font-family: var(--ui); font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--encre-claire); text-align: center; margin: 0 0 .8rem; }
+.geo-car { display: grid; grid-template-columns: 3.4rem 1fr 3.4rem; align-items: center; gap: 1rem; flex: 1; min-height: 0; }
+.geo-fleche { width: 3.4rem; height: 3.4rem; border: 1px solid var(--encre); background: var(--page); color: var(--encre); font-family: var(--ui); font-size: 1.4rem; cursor: pointer; transition: background .15s, color .15s; }
+.geo-fleche:hover:not(:disabled) { background: var(--encre); color: var(--page); }
+.geo-fleche:disabled { opacity: .2; cursor: default; }
+.geo-piste { display: grid; grid-template-columns: 11rem minmax(0, 1fr) 11rem; gap: 1.2rem; align-items: center; height: 100%; min-height: 0; }
+
+.geo-vignette { display: flex; flex-direction: column; gap: .5rem; background: var(--page); border: 1px solid var(--page-ombre); padding: .9rem; cursor: pointer; opacity: .6; transition: opacity .15s, box-shadow .15s, border-color .15s; font-family: var(--texte); color: var(--encre); }
+.geo-vignette:hover { opacity: 1; border-color: var(--or); box-shadow: 3px 3px 0 var(--or); }
+.geo-vignette.vide { border: 1px dashed var(--page-ombre); background: transparent; cursor: default; min-height: 8rem; opacity: 1; }
+.geo-vignette-nom { font-family: var(--titre); font-size: 1.25rem; font-weight: 600; }
+.geo-vignette-carte { width: 100%; }
+.geo-vignette-carte .carte-svg { pointer-events: none; }
+
+.geo-centre { height: 100%; min-height: 0; display: flex; flex-direction: column; background: var(--page); border: 1px solid var(--encre); border-top: 4px solid var(--vert); box-shadow: 6px 6px 0 var(--or); padding: 1.1rem 1.4rem 1.2rem; }
+.geo-centre-tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-bottom: .6rem; margin-bottom: .6rem; border-bottom: 1px solid var(--page-ombre); }
+.geo-centre-nom { font-family: var(--titre); font-size: 2.2rem; font-weight: 600; line-height: 1; }
+.geo-centre-sous { font-family: var(--ui); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-claire); margin-top: .35rem; }
+.geo-modes { display: flex; gap: 0; border: 1px solid var(--encre); }
+.geo-mode { font-family: var(--ui); font-size: .74rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; background: none; border: none; padding: .5rem .9rem; cursor: pointer; color: var(--encre-pale); }
+.geo-mode.actif { background: var(--encre); color: var(--page); }
+.geo-corps { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 0; gap: 0; transition: grid-template-columns .25s ease, gap .25s ease; }
+.geo-corps.fiche-ouverte { grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.2rem; }
+.geo-carte { min-height: 0; display: flex; align-items: center; justify-content: center; }
+.carte-svg { width: 100%; height: 100%; max-height: 100%; display: block; }
+.carte-mer { fill: var(--mer); }
+.terr { fill: var(--terre); stroke: var(--terre-trait); stroke-width: .6; stroke-linejoin: round; cursor: pointer; transition: fill .12s; }
+.terr:hover { fill: var(--terre-survol); }
+.terr.actif { fill: var(--terre-actif); stroke: var(--encre); }
+.couche-departements .terr { stroke-width: .5; }
+.ville { fill: var(--rouge); stroke: var(--page); stroke-width: 1.5; cursor: pointer; transition: r .12s; }
+.ville.banlieue { fill: #b8342a; opacity: .7; }
+.ville:hover, .ville.actif { fill: var(--encre); }
+.ville-nom { font-family: var(--ui); font-size: 13px; fill: var(--encre); pointer-events: none; paint-order: stroke; stroke: var(--page); stroke-width: 3px; stroke-linejoin: round; }
+.geo-fiche { min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.geo-corps:not(.fiche-ouverte) .geo-fiche { visibility: hidden; }
+.geo-corps.fiche-ouverte .geo-fiche { visibility: visible; border-left: 1px solid var(--page-ombre); padding-left: 1.2rem; animation: ficheEntre .25s ease; }
+@keyframes ficheEntre { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+.geo-fiche-vide { font-style: italic; color: var(--encre-claire); }
+.geo-fermer { float: right; width: 1.8rem; height: 1.8rem; border: 1px solid var(--page-ombre); background: none; cursor: pointer; color: var(--encre-pale); font-size: 1rem; }
+.geo-fermer:hover { border-color: var(--encre); color: var(--encre); }
+.geo-fiche-rubrique { font-family: var(--ui); font-size: .68rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--vert); }
+.geo-fiche-titre { font-family: var(--titre); font-size: 1.9rem; font-weight: 600; line-height: 1.1; margin: .25rem 0 .2rem; }
+.geo-fiche-sous { font-style: italic; color: var(--encre-pale); font-size: .95rem; margin: 0 0 .6rem; }
+.geo-fiche-lignes { margin: .8rem 0 0; }
+.geo-fiche-lignes dt { font-family: var(--ui); font-size: .66rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--encre-claire); margin-top: .7rem; }
+.geo-fiche-lignes dd { margin: .1rem 0 0; font-size: 1rem; line-height: 1.45; }
+.geo-fiche-vide, .geo-fiche p { font-size: .95rem; }
+.carte-bulle { position: fixed; z-index: 30; pointer-events: none; background: var(--encre); color: var(--page); font-family: var(--ui); font-size: .78rem; padding: .3rem .6rem; letter-spacing: .02em; }
+.geo-points { display: flex; justify-content: center; gap: .7rem; margin: .9rem 0 .4rem; }
+.geo-point { width: .65rem; height: .65rem; padding: 0; border: 1px solid var(--encre-claire); background: transparent; transform: rotate(45deg); cursor: pointer; }
+.geo-point.actif { background: var(--vert); border-color: var(--vert); }
+.geo-pied { text-align: center; }
+.geo-lien { font-family: var(--ui); font-size: .78rem; letter-spacing: .04em; color: var(--encre-pale); background: none; border: none; border-bottom: 1px solid transparent; cursor: pointer; padding: 0; }
+.geo-lien:hover { color: var(--vert); border-bottom-color: var(--vert); }
+
+/* ═══ Écran 2 : le programme ═══ */
+.geo-programme { max-width: 62rem; margin: 2rem auto 4rem; padding: 0 1.5rem; }
+.geo-prog-tete { padding-bottom: 1rem; border-bottom: 1px solid var(--encre); position: relative; margin-bottom: 1.6rem; }
+.geo-prog-tete::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: var(--or); opacity: .7; }
+.geo-retour { font-family: var(--ui); font-size: .78rem; letter-spacing: .04em; color: var(--encre-pale); background: none; border: none; padding: 0; cursor: pointer; }
+.geo-retour:hover { color: var(--vert); }
+.geo-prog-titre { font-family: var(--titre); font-size: 2.5rem; font-weight: 600; margin: .3rem 0 0; line-height: 1.05; }
+.geo-annee { margin-top: 2.4rem; }
+.geo-annee-tete { display: grid; grid-template-columns: 4rem 1fr; gap: 1rem; align-items: start; padding-bottom: .6rem; border-bottom: 1px solid var(--page-ombre); }
+.geo-annee-classe { font-family: var(--titre); font-size: 2rem; font-weight: 600; color: var(--teinte); line-height: 1; }
+.geo-annee-nom { font-family: var(--titre); font-size: 1.7rem; font-weight: 600; margin: 0; line-height: 1.15; }
+.geo-annee-nom em { font-style: italic; color: var(--teinte); }
+.geo-annee-question { margin: .3rem 0 0; color: var(--encre-pale); font-style: italic; }
+.geo-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 1rem; margin-top: 1rem; }
+.geo-theme { background: var(--page); border: 1px solid var(--page-ombre); border-top: 3px solid var(--teinte); padding: 1rem 1.1rem; }
+.geo-theme-nom { font-family: var(--titre); font-size: 1.25rem; font-weight: 600; margin: 0 0 .3rem; line-height: 1.2; }
+.geo-theme-intro { font-size: .92rem; color: var(--encre-pale); margin: 0 0 .6rem; line-height: 1.45; }
+.geo-chapitres { margin: 0; padding-left: 1.2rem; font-size: .98rem; }
+.geo-chapitres li { margin: .25rem 0; }
+.geo-chapitres li::marker { color: var(--or); font-family: var(--ui); font-size: .8rem; }
+
+@media (max-width: 960px) {
+  body.accueil { overflow: auto; }
+  .geo-accueil { height: auto; min-height: calc(100vh - 4.3rem); padding: .8rem .8rem 1.5rem; }
+  .geo-car { grid-template-columns: 2.4rem 1fr 2.4rem; gap: .4rem; }
+  .geo-fleche { width: 2.4rem; height: 2.4rem; font-size: 1.1rem; }
+  .geo-piste { grid-template-columns: 1fr; height: auto; }
+  .geo-vignette { display: none; }
+  .geo-centre { height: auto; padding: .9rem 1rem 1rem; }
+  .geo-centre-nom { font-size: 1.7rem; }
+  .geo-corps, .geo-corps.fiche-ouverte { grid-template-columns: 1fr; gap: .8rem; }
+  .geo-corps.fiche-ouverte .geo-fiche { border-left: none; border-top: 1px solid var(--page-ombre); padding: .8rem 0 0; }
+  .bandeau { padding: .9rem 1rem .7rem; }
+}

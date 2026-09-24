@@ -6,151 +6,11 @@
 <title>Polymates — Géographie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Spectral:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="parchemin.css">
-<style>
-/* ── Série de parchemins : un par année, feuilletable ──────────────────
-   La page est la sœur de histoire.html : même papier, même feuilletage.
-   Là où l'Histoire déroule le TEMPS sur des frises, la Géographie déroule
-   les ÉCHELLES — du quartier habité au monde entier. La bande n'est donc
-   pas une chronologie mais un parcours de thèmes, lu de gauche à droite. */
-.serie { position: relative; }
-.parchemin { display: none; }
-.parchemin.actif { display: block; }
-
-.feuille.large { max-width: 96rem; padding-left: 3rem; padding-right: 3rem; }
-
-/* ── Colonne de bandes : une par année ── */
-.colonne-bandes { margin-top: 2.4rem; }
-.bande-annee { margin-bottom: 2.6rem; }
-.bande-annee:last-child { margin-bottom: .5rem; }
-
-/* Titre de l'année : cliquable, il mène à ses thèmes. */
-.bande-tete {
-  display: flex; align-items: baseline; gap: .9rem; flex-wrap: wrap;
-  width: 100%; padding: .5rem 0 .6rem; text-align: left;
-  background: none; border: none; border-bottom: 1px solid rgba(120,100,60,.22);
-  font: inherit; color: inherit; cursor: pointer;
-}
-.bande-tete::before {
-  content: ''; width: .55rem; height: .55rem; flex: none;
-  background: var(--teinte); border: 1px solid rgba(47,40,32,.4);
-  transform: translateY(-.1rem);
-}
-.bande-nom {
-  font-family: var(--titre); font-size: 1.5rem; font-weight: 600;
-  transition: color .2s;
-}
-.bande-question, .bande-compte {
-  font-variant: small-caps; letter-spacing: .12em; font-size: .74rem; color: var(--encre-pale);
-}
-.bande-compte { opacity: .75; }
-.bande-ouvrir {
-  margin-left: auto; font-size: .8rem; color: var(--accent);
-  opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s;
-}
-.bande-tete:hover .bande-nom, .bande-tete:focus-visible .bande-nom { color: var(--accent); }
-.bande-tete:hover .bande-ouvrir, .bande-tete:focus-visible .bande-ouvrir { opacity: 1; transform: none; }
-.bande-tete:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-
-.bande-cadre { position: relative; overflow-x: auto; overflow-y: hidden; padding: 1.6rem 0 .5rem; }
-.bande-cadre svg { display: block; }
-.bande-cadre { scrollbar-width: thin; scrollbar-color: rgba(120,100,60,.45) transparent; }
-.bande-cadre::-webkit-scrollbar { height: 9px; }
-.bande-cadre::-webkit-scrollbar-track { background: rgba(120,100,60,.10); }
-.bande-cadre::-webkit-scrollbar-thumb { background: rgba(120,100,60,.45); border-radius: 5px; }
-.bande-cadre::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-.bande-note {
-  margin-top: .8rem; font-variant: small-caps; letter-spacing: .12em;
-  font-size: .72rem; color: var(--encre-pale); text-align: right;
-}
-.annee-zone { cursor: pointer; }
-
-/* Points de chapitre : discrets au repos, francs au survol. */
-.chapitre-point { cursor: pointer; }
-.chapitre-point .point { transition: r .18s ease, fill-opacity .18s ease; }
-.chapitre-point:hover .point, .chapitre-point:focus-visible .point { r: 6; }
-.chapitre-point:focus { outline: none; }
-.chapitre-point:focus-visible .point { stroke: var(--accent); stroke-width: 2; stroke-opacity: 1; }
-
-/* L'infobulle : un billet posé sur le papier. */
-.bande-infobulle {
-  position: absolute; left: 0; top: 0; z-index: 5;
-  transform: translate(-50%, -100%);
-  display: flex; align-items: baseline; gap: .5rem; white-space: nowrap;
-  padding: .3rem .7rem;
-  background: var(--papier-clair);
-  border: 1px solid rgba(120,100,60,.45);
-  box-shadow: 0 6px 16px -8px rgba(70,55,30,.6);
-  opacity: 0; pointer-events: none;
-  transition: opacity .16s ease;
-}
-.bande-infobulle.visible { opacity: 1; }
-.bande-infobulle .bulle-theme {
-  font-family: var(--titre); font-weight: 600; font-size: 1rem; color: var(--accent);
-}
-.bande-infobulle .bulle-texte { font-size: .84rem; color: var(--encre); }
-.annee-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.theme-segment { transition: opacity .2s; }
-.annee-zone:hover .theme-segment { opacity: .82; }
-
-/* ── Thèmes d'une année ── */
-.themes { margin-top: 2.4rem; }
-.annee-question {
-  font-variant: small-caps; letter-spacing: .16em; font-size: .78rem;
-  color: var(--encre-pale); margin-top: -.7rem; margin-bottom: 1.2rem;
-}
-.classe-mention {
-  display: inline-block; margin-left: .6rem; padding: .05rem .5rem;
-  border: 1px solid rgba(120,100,60,.35); border-radius: 2px;
-  font-size: .7rem; letter-spacing: .1em; color: var(--encre-pale);
-}
-/* Un thème regroupe ses chapitres : le titre du thème sépare les blocs. */
-.theme-titre {
-  margin-top: 1.8rem; margin-bottom: .5rem;
-  font-family: var(--titre); font-size: 1.22rem; font-weight: 600; color: var(--accent);
-}
-.theme-titre:first-of-type { margin-top: .4rem; }
-.theme-intro { font-size: .92rem; color: var(--encre-pale); margin-bottom: .7rem; }
-
-/* ── Feuilletage ── */
-.feuillet {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 1rem; max-width: 46rem; margin: 0 auto 2.5rem; padding: 0 1rem;
-}
-.serie[data-large="oui"] .feuillet { max-width: 96rem; }
-.feuillet button {
-  display: flex; align-items: baseline; gap: .55rem;
-  background: none; border: none; cursor: pointer;
-  font-family: var(--titre); font-size: 1rem; color: var(--encre-pale);
-  padding: .4rem .2rem; transition: color .2s;
-  max-width: 42%; text-align: left;
-}
-.feuillet button:hover:not(:disabled) { color: var(--accent); }
-.feuillet button:disabled { opacity: .3; cursor: default; }
-.feuillet button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.feuillet .chevron { font-size: 1.1rem; line-height: 1; }
-.feuillet .suivant { text-align: right; justify-content: flex-end; }
-.feuillet-nom { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.jalons { display: flex; gap: .45rem; align-items: center; }
-.jalon {
-  width: .55rem; height: .55rem; border-radius: 50%; padding: 0;
-  background: none; border: 1px solid rgba(120,100,60,.5); cursor: pointer;
-  transition: background .2s, border-color .2s;
-}
-.jalon:hover { border-color: var(--accent); }
-.jalon.actif { background: var(--accent); border-color: var(--accent); }
-.jalon.vue-ensemble { border-radius: 1px; width: 1.1rem; }
-
-@media (max-width: 900px) {
-  .feuille.large { padding-left: 1.6rem; padding-right: 1.6rem; }
-  .feuillet .feuillet-nom { display: none; }
-  .jalons { gap: .35rem; }
-}
-</style>
+<link rel="stylesheet" href="geographie-ui.css">
 <script src="matiere.js"></script>
 <script src="auth.js" data-protect data-sans-chip></script>
+<script src="geographie-cartes.js"></script>
 </head>
 <body data-matiere="geographie">
 
@@ -163,29 +23,284 @@
   </div>
 </header>
 
-<div class="serie" id="serie"></div>
-
-<nav class="feuillet" id="feuillet" aria-label="Navigation entre les années">
-  <button type="button" id="precedent">
-    <span class="chevron" aria-hidden="true">←</span><span class="feuillet-nom"></span>
-  </button>
-  <div class="jalons" id="jalons" role="tablist" aria-label="Années"></div>
-  <button type="button" id="suivant" class="suivant">
-    <span class="feuillet-nom"></span><span class="chevron" aria-hidden="true">→</span>
-  </button>
-</nav>
-
-<p class="colophon">Polymates — Géographie</p>
+<div id="page"></div>
 
 <script>
 (function () {
   "use strict";
 
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  const svgEl = (tag, attrs) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const page = document.getElementById("page");
+
+  /* ── Mémoire : la carte affichée, le mode de la France ── */
+  const Memoire = (function () {
+    const CLE = "mb_geographie";
+    let etat = { carte: "monde", modeFrance: "regions" };
+    try { const brut = JSON.parse(localStorage.getItem(CLE)); if (brut && typeof brut === "object") etat = Object.assign(etat, brut); } catch (_) {}
+    const ranger = () => { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch (_) {} };
+    return {
+      carte(v) { if (v === undefined) return etat.carte; etat.carte = v; ranger(); },
+      modeFrance(v) { if (v === undefined) return etat.modeFrance; etat.modeFrance = v; ranger(); },
+    };
+  })();
+
   /* ══════════════════════════════════════════════════════════════
-     Le programme, année par année. Chaque année pose une question
-     et la traite en trois ou quatre thèmes ; chaque thème se déploie
-     en chapitres. Sur la bande, la largeur d'un thème suit son nombre
-     de chapitres : elle dit le poids du thème dans l'année, rien de plus.
+     LES CARTES
+     Trois cartes dessinées en SVG à partir des contours de
+     geographie-cartes.js : le monde (projection de Mercator),
+     l'Europe et la France. Chaque territoire réagit au survol et au
+     clic, et sa fiche s'affiche à côté de la carte.
+     ══════════════════════════════════════════════════════════════ */
+  const DATA = window.GEO_CARTES;
+
+  /* Projection de Mercator, ajustée à un cadre [lonMin, latMin, lonMax, latMax]. */
+  function mercator(cadre, W, H) {
+    const y = lat => Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * Math.PI / 180) / 2));
+    const x0 = cadre[0], x1 = cadre[2], y0 = y(cadre[1]), y1 = y(cadre[3]);
+    const sx = W / (x1 - x0), sy = H / (y1 - y0), s = Math.min(sx, sy);
+    const dx = (W - (x1 - x0) * s) / 2, dy = (H - (y1 - y0) * s) / 2;
+    return ([lon, lat]) => [dx + (lon - x0) * s, dy + (y1 - y(lat)) * s];
+  }
+
+  function cheminDe(geom, proj) {
+    const anneau = r => r.map((c, i) => (i ? "L" : "M") + proj(c).map(v => v.toFixed(1)).join(" ")).join("") + "Z";
+    if (geom.type === "Polygon") return geom.coordinates.map(anneau).join("");
+    return geom.coordinates.map(poly => poly.map(anneau).join("")).join("");
+  }
+
+  const fmt = n => n == null ? "—" : Math.round(n).toLocaleString("fr-FR");
+  const fmtKm2 = n => n == null ? "—" : fmt(n) + " km²";
+
+  /* ── Les trois cartes ─────────────────────────────────────────── */
+  const CARTES = [
+    {
+      id: "monde", nom: "Le monde", sous: "Projection de Mercator · " + DATA.pays.length + " pays",
+      cadre: [-170, -58, 180, 84], ratio: 0.52,
+      couches: () => [{ id: "pays", items: DATA.pays, cle: p => p.id, classe: "pays" }],
+      fiche: p => ({
+        rubrique: p.continent + (p.region ? " · " + p.region : ""),
+        titre: (p.drapeau ? p.drapeau + " " : "") + p.nom,
+        sous: p.officiel !== p.nom ? p.officiel : "",
+        lignes: [["Capitale", p.capitale || "—"], ["Population", p.population ? fmt(p.population) + " habitants" : "—"], ["Superficie", fmtKm2(p.superficie)], ["Langues", p.langues || "—"],
+                 ["Pays voisins", p.voisins.length ? p.voisins.map(v => { const q = DATA.pays.find(x => x.id === v); return q ? q.nom : v; }).join(", ") : "aucun (île)"]],
+      }),
+      vide: "Survolez un pays pour le nommer, cliquez pour ouvrir sa fiche.",
+    },
+    {
+      id: "europe", nom: "L'Europe", sous: DATA.europe.length + " pays",
+      cadre: [-25, 34, 45, 71.5], ratio: 0.72,
+      couches: () => [{ id: "pays", items: DATA.europe, cle: p => p.id, classe: "pays" }],
+      fiche: p => ({
+        rubrique: p.region || "Europe",
+        titre: (p.drapeau ? p.drapeau + " " : "") + p.nom,
+        sous: p.officiel !== p.nom ? p.officiel : "",
+        lignes: [["Capitale", p.capitale || "—"], ["Population", p.population ? fmt(p.population) + " habitants" : "—"], ["Superficie", fmtKm2(p.superficie)], ["Langues", p.langues || "—"],
+                 ["Pays voisins", p.voisins.length ? p.voisins.map(v => { const q = DATA.pays.find(x => x.id === v); return q ? q.nom : v; }).join(", ") : "aucun (île)"]],
+      }),
+      vide: "Survolez un pays pour le nommer, cliquez pour ouvrir sa fiche.",
+    },
+    {
+      id: "france", nom: "La France", sous: "13 régions · 96 départements · 45 grandes villes",
+      cadre: [-5.4, 41.2, 9.8, 51.3], ratio: 0.95,
+      modes: [["regions", "Régions"], ["departements", "Départements"]],
+      couches: mode => [
+        { id: mode, items: mode === "regions" ? DATA.france.regions : DATA.france.departements, cle: x => x.code, classe: mode === "regions" ? "region" : "departement" },
+        { id: "villes", points: DATA.france.villes, cle: v => v.code },
+      ],
+      fiche: (x, couche) => {
+        if (couche === "villes") {
+          const d = DATA.france.departements.find(k => k.code === x.departement), r = DATA.france.regions.find(k => k.code === x.region);
+          return { rubrique: "Commune" + (x.banlieue ? " · agglomération" : ""), titre: x.nom, sous: "",
+            lignes: [["Population", fmt(x.population) + " habitants"], ["Département", d ? d.nom + " (" + d.code + ")" : "—"], ["Région", r ? r.nom : "—"], ["Code INSEE", x.code]] };
+        }
+        if (couche === "regions") {
+          return { rubrique: "Région", titre: x.nom, sous: "",
+            lignes: [["Chef-lieu", x.chefLieu || "—"], ["Population", fmt(x.population) + " habitants"], ["Départements", x.departements.length + " : " + x.departements.join(", ")]] };
+        }
+        const r = DATA.france.regions.find(k => k.code === x.region);
+        const villes = DATA.france.villes.filter(v => v.departement === x.code).map(v => v.nom);
+        return { rubrique: "Département " + x.code, titre: x.nom, sous: "",
+          lignes: [["Préfecture", x.prefecture || "—"], ["Région", r ? r.nom : "—"], ["Population", fmt(x.population) + " habitants"], ["Communes", fmt(x.communes)], ["Grandes villes", villes.length ? villes.join(", ") : "—"]] };
+      },
+      vide: "Survolez une région ou un département ; cliquez pour ouvrir sa fiche. Les points sont les grandes villes.",
+    },
+  ];
+
+  /* ── Dessiner une carte dans un conteneur ─────────────────────── */
+  function dessinerCarte(carte, mode, hote, surSelection, interactif) {
+    const W = 1000, H = Math.round(1000 * carte.ratio);
+    const proj = mercator(carte.cadre, W, H);
+    const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, class: "carte-svg", role: "img", "aria-label": carte.nom });
+    svg.appendChild(svgEl("rect", { x: 0, y: 0, width: W, height: H, class: "carte-mer" }));
+    const couches = carte.couches(mode);
+    let actif = null;
+    couches.forEach(couche => {
+      const g = svgEl("g", { class: "couche couche-" + couche.id });
+      if (couche.items) {
+        couche.items.forEach(item => {
+          const p = svgEl("path", { d: cheminDe(item.g, proj), class: "terr " + couche.classe, "data-cle": couche.cle(item) });
+          if (interactif) {
+            p.addEventListener("mouseenter", () => infobulle(item.nom));
+            p.addEventListener("mouseleave", () => infobulle(null));
+            p.addEventListener("click", () => { if (actif) actif.classList.remove("actif"); actif = p; p.classList.add("actif"); surSelection(item, couche.id); });
+          }
+          g.appendChild(p);
+        });
+      }
+      if (couche.points) {
+        couche.points.forEach(v => {
+          const [x, y] = proj([v.lon, v.lat]);
+          const r = v.population > 400000 ? 7 : v.population > 200000 ? 5.5 : 4.5;
+          const c = svgEl("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r, class: "ville" + (v.banlieue ? " banlieue" : ""), "data-cle": couche.cle(v) });
+          if (interactif) {
+            c.addEventListener("mouseenter", () => infobulle(v.nom));
+            c.addEventListener("mouseleave", () => infobulle(null));
+            c.addEventListener("click", e => { e.stopPropagation(); if (actif) actif.classList.remove("actif"); actif = c; c.classList.add("actif"); surSelection(v, "villes"); });
+          }
+          g.appendChild(c);
+          if (!v.banlieue && v.population > 250000) {
+            g.appendChild(svgEl("text", { x: (x + 9).toFixed(1), y: (y + 4).toFixed(1), class: "ville-nom" })).textContent = v.nom;
+          }
+        });
+      }
+      svg.appendChild(g);
+    });
+    hote.innerHTML = "";
+    hote.appendChild(svg);
+    return svg;
+  }
+
+  /* L'infobulle suit la souris. */
+  const bulle = el("div", "carte-bulle"); bulle.hidden = true; document.body.appendChild(bulle);
+  function infobulle(texte) { bulle.hidden = !texte; if (texte) bulle.textContent = texte; }
+  document.addEventListener("mousemove", e => { if (!bulle.hidden) { bulle.style.left = (e.clientX + 14) + "px"; bulle.style.top = (e.clientY + 14) + "px"; } });
+
+
+  /* ══════════════════════════════════════════════════════════════
+     ÉCRAN 1 : LE CARROUSEL DES CARTES
+     La carte choisie au centre, interactive, avec sa fiche à droite ;
+     les deux autres sur les côtés, en vignettes.
+     ══════════════════════════════════════════════════════════════ */
+  let selection = null;   /* { item, couche } de la carte centrale */
+
+  function rendreCarrousel() {
+    const idx = Math.max(0, CARTES.findIndex(c => c.id === Memoire.carte()));
+    const carte = CARTES[idx];
+    const f = el("main", "geo-accueil");
+
+    f.appendChild(el("p", "geo-consigne", "Choisissez une carte"));
+
+    const car = el("section", "geo-car");
+    const prev = CARTES[idx - 1], next = CARTES[idx + 1];
+    const fleche = (sens, cible) => {
+      const b = el("button", "geo-fleche " + sens);
+      b.type = "button"; b.disabled = !cible;
+      b.setAttribute("aria-label", sens === "gauche" ? "Carte précédente" : "Carte suivante");
+      b.innerHTML = sens === "gauche" ? "&#8592;" : "&#8594;";
+      if (cible) b.onclick = () => { Memoire.carte(cible.id); selection = null; rendre(); };
+      return b;
+    };
+    car.appendChild(fleche("gauche", prev));
+
+    const piste = el("div", "geo-piste");
+    /* vignette de gauche */
+    piste.appendChild(vignette(prev));
+
+    /* la carte centrale, interactive */
+    const centre = el("div", "geo-centre");
+    const tete = el("div", "geo-centre-tete");
+    const titres = el("div");
+    titres.appendChild(el("div", "geo-centre-nom", carte.nom));
+    titres.appendChild(el("div", "geo-centre-sous", carte.sous));
+    tete.appendChild(titres);
+    if (carte.modes) {
+      const modes = el("div", "geo-modes");
+      carte.modes.forEach(([id, nom]) => {
+        const b = el("button", "geo-mode" + (Memoire.modeFrance() === id ? " actif" : ""), nom);
+        b.type = "button"; b.setAttribute("aria-pressed", Memoire.modeFrance() === id ? "true" : "false");
+        b.onclick = () => { Memoire.modeFrance(id); selection = null; rendre(); };
+        modes.appendChild(b);
+      });
+      tete.appendChild(modes);
+    }
+    centre.appendChild(tete);
+
+    const corps = el("div", "geo-corps" + (selection ? " fiche-ouverte" : ""));
+    const hoteCarte = el("div", "geo-carte");
+    corps.appendChild(hoteCarte);
+    const fiche = el("aside", "geo-fiche");
+    corps.appendChild(fiche);
+    centre.appendChild(corps);
+    piste.appendChild(centre);
+
+    /* vignette de droite */
+    piste.appendChild(vignette(next));
+    car.appendChild(piste);
+    car.appendChild(fleche("droite", next));
+    f.appendChild(car);
+
+    const points = el("div", "geo-points");
+    CARTES.forEach((c, i) => {
+      const d = el("button", "geo-point" + (i === idx ? " actif" : "")); d.type = "button";
+      d.setAttribute("aria-label", c.nom); d.title = c.nom;
+      d.onclick = () => { Memoire.carte(c.id); selection = null; rendre(); };
+      points.appendChild(d);
+    });
+    f.appendChild(points);
+
+    const pied = el("div", "geo-pied");
+    const prog = el("button", "geo-lien", "Le programme de géographie, de la 6ᵉ à la terminale →");
+    prog.type = "button"; prog.onclick = () => aller("#/programme");
+    pied.appendChild(prog);
+    f.appendChild(pied);
+
+    /* Dessin de la carte et branchement de la fiche */
+    const mode = carte.modes ? Memoire.modeFrance() : null;
+    dessinerCarte(carte, mode, hoteCarte, (item, couche) => { selection = { item, couche }; montrerFiche(fiche, carte, corps); }, true);
+    montrerFiche(fiche, carte, corps);
+    if (selection) {
+      const cle = selection.couche === "villes" ? selection.item.code : (carte.id === "france" ? selection.item.code : selection.item.id);
+      const noeud = hoteCarte.querySelector('[data-cle="' + cle + '"]');
+      if (noeud) noeud.classList.add("actif");
+    }
+    return f;
+  }
+
+  function vignette(carte) {
+    if (!carte) return el("div", "geo-vignette vide");
+    const v = el("button", "geo-vignette"); v.type = "button";
+    v.setAttribute("aria-label", "Voir " + carte.nom);
+    v.appendChild(el("div", "geo-vignette-nom", carte.nom));
+    const mini = el("div", "geo-vignette-carte");
+    dessinerCarte(carte, carte.modes ? "regions" : null, mini, () => {}, false);
+    v.appendChild(mini);
+    v.onclick = () => { Memoire.carte(carte.id); selection = null; rendre(); };
+    return v;
+  }
+
+  function montrerFiche(fiche, carte, corps) {
+    fiche.innerHTML = "";
+    if (!selection) {
+      corps.classList.remove("fiche-ouverte");
+      fiche.appendChild(el("p", "geo-fiche-vide", carte.vide));
+      return;
+    }
+    corps.classList.add("fiche-ouverte");
+    const d = carte.fiche(selection.item, selection.couche);
+    const fermer = el("button", "geo-fermer"); fermer.type = "button"; fermer.innerHTML = "&#215;"; fermer.setAttribute("aria-label", "Fermer la fiche");
+    fermer.onclick = () => { selection = null; rendre(); };
+    fiche.appendChild(fermer);
+    fiche.appendChild(el("div", "geo-fiche-rubrique", d.rubrique));
+    fiche.appendChild(el("h2", "geo-fiche-titre", d.titre));
+    if (d.sous) fiche.appendChild(el("p", "geo-fiche-sous", d.sous));
+    const dl = el("dl", "geo-fiche-lignes");
+    d.lignes.forEach(([k, v]) => { dl.appendChild(el("dt", null, k)); dl.appendChild(el("dd", null, v)); });
+    fiche.appendChild(dl);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     ÉCRAN 2 : LE PROGRAMME, EN LISTE
      ══════════════════════════════════════════════════════════════ */
   const ANNEES = [
     {
@@ -311,296 +426,68 @@
     },
   ];
 
-  /* ── Dimensions de la bande ── */
-  const H = 200, BANDE_Y = 150, BANDE_H = 34, MARGE = 30;
-  const PAR_CHAPITRE = 132, MIN_SEGMENT = 210;
 
-  /* Largeur de chaque thème, puis de l'année entière. */
-  ANNEES.forEach(a => {
-    let x = 0;
-    a.themes.forEach(t => {
-      t._l = Math.max(MIN_SEGMENT, t.chapitres.length * PAR_CHAPITRE);
-      t._x = x; x += t._l;
-    });
-    a._l = x;
-  });
 
-  const ns = (nom, attrs, parent) => {
-    const el = document.createElementNS("http://www.w3.org/2000/svg", nom);
-    for (const k in attrs) el.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(el);
-    return el;
-  };
-
-  /* ── Infobulle : le nom du chapitre n'apparaît qu'au survol ──────
-     Même parti pris que sur les frises d'histoire : la bande se lit
-     d'abord comme une forme, et le détail se demande. */
-  function brancherInfobulle(cadre, svg) {
-    const bulle = document.createElement("div");
-    bulle.className = "bande-infobulle";
-    bulle.innerHTML = '<span class="bulle-theme"></span><span class="bulle-texte"></span>';
-    cadre.appendChild(bulle);
-    let visible = null;
-
-    function montrer(g) {
-      const i = g._infos;
-      bulle.querySelector(".bulle-theme").textContent = i.theme;
-      bulle.querySelector(".bulle-texte").textContent = i.texte;
-      const r = g.getBoundingClientRect(), c = cadre.getBoundingClientRect();
-      bulle.style.left = (r.left - c.left + cadre.scrollLeft + r.width / 2) + "px";
-      bulle.style.top  = (r.top - c.top - 8) + "px";
-      bulle.classList.add("visible");
-      visible = g;
-    }
-    function cacher() { bulle.classList.remove("visible"); visible = null; }
-
-    svg.querySelectorAll(".chapitre-point").forEach(g => {
-      g.addEventListener("mouseenter", () => montrer(g));
-      g.addEventListener("mouseleave", cacher);
-      g.addEventListener("focus", () => montrer(g));
-      g.addEventListener("blur", cacher);
-      /* Sur écran tactile, où le survol n'existe pas : une tape suffit. */
-      g.addEventListener("click", e => {
-        e.stopPropagation();
-        visible === g ? cacher() : montrer(g);
+  function rendreProgramme() {
+    const f = el("main", "geo-programme");
+    const tete = el("div", "geo-prog-tete");
+    const retour = el("button", "geo-retour"); retour.type = "button"; retour.innerHTML = "&#8592; Les cartes"; retour.onclick = () => aller("#/");
+    tete.appendChild(retour);
+    tete.appendChild(el("h1", "geo-prog-titre", "Le programme de géographie"));
+    f.appendChild(tete);
+    ANNEES.forEach(a => {
+      const sec = el("section", "geo-annee");
+      sec.style.setProperty("--teinte", a.teinte);
+      const h = el("div", "geo-annee-tete");
+      h.appendChild(el("span", "geo-annee-classe", a.classe));
+      const t = el("div");
+      t.appendChild(el("h2", "geo-annee-nom", a.titre));
+      t.appendChild(el("p", "geo-annee-question", a.question));
+      h.appendChild(t);
+      sec.appendChild(h);
+      const themes = el("div", "geo-themes");
+      a.themes.forEach(th => {
+        const bloc = el("div", "geo-theme");
+        bloc.appendChild(el("h3", "geo-theme-nom", th.nom));
+        bloc.appendChild(el("p", "geo-theme-intro", th.intro));
+        const ol = el("ol", "geo-chapitres");
+        th.chapitres.forEach(c => ol.appendChild(el("li", null, c)));
+        bloc.appendChild(ol);
+        themes.appendChild(bloc);
       });
+      sec.appendChild(themes);
+      f.appendChild(sec);
     });
-    cadre.addEventListener("click", cacher);
-    return cacher;
-  }
-
-  /* ── Construction des parchemins ──────────────────────────────── */
-  const serie = document.getElementById("serie");
-
-  function construireBandeAnnee(a, i) {
-    const L = a._l + MARGE * 2;
-    const nbChapitres = a.themes.reduce((n, t) => n + t.chapitres.length, 0);
-
-    const svg = ns("svg", { viewBox: "0 0 " + L + " " + H, width: L, height: H, role: "img",
-      "aria-label": "Thèmes de " + a.nom + " : " + a.themes.map(t => t.nom).join(", ") });
-
-    const zone = ns("g", { class: "annee-zone", tabindex: "0", role: "button",
-      "aria-label": "Ouvrir les thèmes de " + a.nom }, svg);
-    zone.addEventListener("click", () => aller(i + 1));
-    zone.addEventListener("keydown", e => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); aller(i + 1); }
-    });
-
-    /* Un segment par thème, d'une nuance à l'autre : la bande se lit
-       comme un dégradé, du plus proche au plus lointain. */
-    a.themes.forEach((t, n) => {
-      const opacite = 0.82 - n * 0.13;
-      ns("rect", { class: "theme-segment", x: MARGE + t._x, y: BANDE_Y, width: t._l, height: BANDE_H,
-        fill: a.teinte, "fill-opacity": opacite.toFixed(2) }, zone);
-      ns("rect", { x: MARGE + t._x, y: BANDE_Y, width: t._l, height: BANDE_H,
-        fill: "none", stroke: "#2f2820", "stroke-opacity": ".35", "stroke-width": "1" }, zone);
-
-      /* Numéro et nom court sous le segment. */
-      const cx = MARGE + t._x + t._l / 2;
-      const num = ns("text", { x: cx, y: BANDE_Y + BANDE_H + 20, "text-anchor": "middle",
-        fill: "#6d6252", "font-family": "'Spectral', Georgia, serif", "font-size": "12",
-        "letter-spacing": "1.4" }, svg);
-      num.textContent = "THÈME " + (n + 1);
-      const lib = ns("text", { x: cx, y: BANDE_Y + BANDE_H + 38, "text-anchor": "middle",
-        fill: "#2f2820", "font-family": "'Cormorant Garamond', Garamond, serif",
-        "font-size": "16" }, svg);
-      lib.textContent = t.court;
-    });
-
-    /* Points de chapitre, à trois hauteurs pour rester lisibles. */
-    const HAUTEURS = [48, 88, 128];
-    let rang = 0;
-    a.themes.forEach(t => {
-      const pas = t._l / t.chapitres.length;
-      t.chapitres.forEach((ch, n) => {
-        const px = MARGE + t._x + (n + 0.5) * pas;
-        const haut = HAUTEURS[rang % HAUTEURS.length];
-        rang++;
-
-        const g = ns("g", { class: "chapitre-point", tabindex: "0", role: "button",
-          "aria-label": t.nom + " : " + ch }, svg);
-        ns("line", { x1: px, y1: BANDE_Y, x2: px, y2: BANDE_Y - haut,
-          stroke: "#2f2820", "stroke-opacity": ".3", "stroke-width": "1" }, g);
-        ns("circle", { class: "point", cx: px, cy: BANDE_Y - haut, r: "4",
-          fill: a.teinte, stroke: "#2f2820", "stroke-opacity": ".55" }, g);
-        /* Cible large et invisible : le point se vise sans précision. */
-        ns("circle", { cx: px, cy: BANDE_Y - haut, r: "13", fill: "transparent" }, g);
-
-        g._infos = { theme: "Thème " + (a.themes.indexOf(t) + 1), texte: ch };
-      });
-    });
-
-    const bloc = document.createElement("section");
-    bloc.className = "bande-annee";
-    bloc.style.setProperty("--teinte", a.teinte);
-
-    const tete = document.createElement("button");
-    tete.type = "button";
-    tete.className = "bande-tete";
-    tete.innerHTML =
-      '<span class="bande-nom"></span>' +
-      '<span class="bande-question"></span>' +
-      '<span class="bande-compte"></span>' +
-      '<span class="bande-ouvrir">Voir les thèmes →</span>';
-    tete.querySelector(".bande-nom").textContent = a.nom;
-    tete.querySelector(".bande-question").textContent = a.question;
-    tete.querySelector(".bande-compte").textContent =
-      a.themes.length + " thèmes · " + nbChapitres + " chapitres";
-    tete.onclick = () => aller(i + 1);
-
-    const cadre = document.createElement("div");
-    cadre.className = "bande-cadre";
-    cadre.appendChild(svg);
-
-    bloc.append(tete, cadre);
-    brancherInfobulle(cadre, svg);
-    return bloc;
-  }
-
-  function feuilleVueEnsemble() {
-    const f = document.createElement("main");
-    f.className = "feuille large parchemin";
-    f.innerHTML =
-      '<p class="rubrique">Géographie</p>' +
-      '<h1>Toute la géographie,<br><em>échelle par échelle.</em></h1>' +
-      '<div class="filet"><span>❦</span></div>' +
-      '<p class="ouverture">Chaque année du collège pose une question et la traite en trois ou ' +
-      'quatre thèmes. Les points marquent les chapitres : survolez-en un pour le découvrir. ' +
-      'Cliquez une bande pour ouvrir les thèmes de l\'année — les flèches, en bas de page, ' +
-      'permettent ensuite de les parcourir dans l\'ordre.</p>' +
-      '<div class="colonne-bandes" id="colonne-bandes"></div>' +
-      '<p class="bande-note">Thèmes du programme, largeur proportionnelle au nombre de chapitres</p>' +
-      '<p class="ouverture" style="margin-top:2rem;font-size:.95rem;color:var(--encre-pale)">' +
-      'L\'histoire a son propre espace : ' +
-      '<a href="histoire.html?matiere=histoire">ouvrir l\'histoire →</a>. ' +
-      'Enseignement moral et civique : section à paraître.</p>';
-    const colonne = f.querySelector("#colonne-bandes");
-    ANNEES.forEach((a, i) => colonne.appendChild(construireBandeAnnee(a, i)));
     return f;
   }
 
-  function feuilleAnnee(a) {
-    const f = document.createElement("main");
-    f.className = "feuille parchemin";
-
-    const rubrique = document.createElement("p");
-    rubrique.className = "rubrique";
-    rubrique.textContent = a.nom;
-
-    const h1 = document.createElement("h1");
-    h1.innerHTML = a.titre;
-
-    const question = document.createElement("p");
-    question.className = "annee-question";
-    question.textContent = a.question;
-    const cl = document.createElement("span");
-    cl.className = "classe-mention";
-    cl.textContent = "classe de " + a.classe;
-    question.appendChild(cl);
-
-    const filet = document.createElement("div");
-    filet.className = "filet";
-    filet.innerHTML = "<span>❦</span>";
-
-    const ouv = document.createElement("p");
-    ouv.className = "ouverture";
-    ouv.textContent = a.ouverture;
-
-    f.append(rubrique, h1, question, filet, ouv);
-
-    /* Un bloc par thème : son titre, sa phrase d'intention, ses chapitres. */
-    a.themes.forEach((t, n) => {
-      const titre = document.createElement("p");
-      titre.className = "theme-titre";
-      titre.textContent = "Thème " + (n + 1) + " · " + t.nom;
-
-      const intro = document.createElement("p");
-      intro.className = "theme-intro";
-      intro.textContent = t.intro;
-
-      const sec = document.createElement("section");
-      sec.className = "sommaire themes";
-      sec.style.marginTop = "0";
-
-      t.chapitres.forEach(nom => {
-        const ligne = document.createElement("div");
-        ligne.className = "entree";
-        ligne.style.cursor = "default";
-        ligne.innerHTML =
-          '<span class="entree-nom"></span>' +
-          '<span class="entree-points" aria-hidden="true"></span>' +
-          '<span class="entree-etat">à paraître</span>';
-        ligne.querySelector(".entree-nom").textContent = nom;
-        sec.appendChild(ligne);
-      });
-
-      f.append(titre, intro, sec);
-    });
-
-    return f;
+  /* ══════════════════════════════════════════════════════════════
+     Routage
+     ══════════════════════════════════════════════════════════════ */
+  function aller(hash) { if (location.hash === hash) rendre(); else location.hash = hash; }
+  function rendre() {
+    const route = (location.hash || "#/").replace(/^#/, "").split("/").filter(Boolean);
+    const vue = route[0] === "programme" ? rendreProgramme() : rendreCarrousel();
+    page.innerHTML = ""; page.appendChild(vue);
+    document.body.classList.toggle("accueil", route[0] !== "programme");
+    document.title = "Polymates — Géographie" + (route[0] === "programme" ? " · programme" : "");
+    window.scrollTo({ top: 0 });
   }
-
-  const feuilles = [feuilleVueEnsemble()].concat(ANNEES.map(feuilleAnnee));
-  feuilles.forEach(f => serie.appendChild(f));
-
-  /* ── Feuilletage ──────────────────────────────────────────────── */
-  const NOMS = ["Vue d'ensemble"].concat(ANNEES.map(a => a.nom));
-  const precedent = document.getElementById("precedent");
-  const suivant   = document.getElementById("suivant");
-  const jalons    = document.getElementById("jalons");
-  let index = 0;
-
-  NOMS.forEach((nom, i) => {
-    const j = document.createElement("button");
-    j.type = "button";
-    j.className = "jalon" + (i === 0 ? " vue-ensemble" : "");
-    j.title = nom;
-    j.setAttribute("aria-label", nom);
-    j.onclick = () => aller(i);
-    jalons.appendChild(j);
-  });
-
-  function aller(i) {
-    index = Math.min(Math.max(i, 0), feuilles.length - 1);
-    feuilles.forEach((f, n) => f.classList.toggle("actif", n === index));
-    serie.setAttribute("data-large", index === 0 ? "oui" : "non");
-
-    precedent.disabled = index === 0;
-    suivant.disabled   = index === feuilles.length - 1;
-    precedent.querySelector(".feuillet-nom").textContent = index > 0 ? NOMS[index - 1] : "";
-    suivant.querySelector(".feuillet-nom").textContent =
-      index < NOMS.length - 1 ? NOMS[index + 1] : "";
-
-    [...jalons.children].forEach((j, n) => {
-      j.classList.toggle("actif", n === index);
-      j.setAttribute("aria-selected", n === index ? "true" : "false");
-    });
-
-    document.title = "Polymates — " + (index === 0 ? "Géographie" : NOMS[index]);
-    if (location.hash !== "#" + index) history.replaceState(null, "", "#" + index);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  precedent.onclick = () => aller(index - 1);
-  suivant.onclick   = () => aller(index + 1);
-
-  /* Les flèches du clavier feuillettent aussi, sauf si l'on saisit du texte. */
   document.addEventListener("keydown", e => {
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
-    /* Dans une bande, les flèches servent à la parcourir horizontalement :
-       on laisse le navigateur faire défiler. */
-    if (document.activeElement.closest && document.activeElement.closest(".bande-cadre")) return;
-    if (e.key === "ArrowLeft")  { e.preventDefault(); aller(index - 1); }
-    if (e.key === "ArrowRight") { e.preventDefault(); aller(index + 1); }
+    if (e.target && e.target.matches && e.target.matches("input, select, textarea")) return;
+    if (!document.body.classList.contains("accueil")) return;
+    const idx = CARTES.findIndex(c => c.id === Memoire.carte());
+    if (e.key === "ArrowLeft" && idx > 0) { Memoire.carte(CARTES[idx - 1].id); selection = null; rendre(); }
+    if (e.key === "ArrowRight" && idx < CARTES.length - 1) { Memoire.carte(CARTES[idx + 1].id); selection = null; rendre(); }
+    if (e.key === "Escape" && selection) { selection = null; rendre(); }
   });
-
-  const depart = Number((location.hash || "").replace("#", ""));
-  aller(Number.isInteger(depart) && depart > 0 ? depart : 0);
+  window.addEventListener("hashchange", rendre);
+  rendre();
 
   /* ── Bandeau ── */
-  const u = MB_AUTH.user();
+  const u = window.MB_AUTH && MB_AUTH.user();
   if (u && u.pseudo) document.getElementById("lecteur").textContent = u.pseudo;
-  document.getElementById("sortir").onclick = () => MB_AUTH.logout();
+  document.getElementById("sortir").onclick = () => { if (window.MB_AUTH) MB_AUTH.logout(); else location.href = "index.html"; };
 })();
 </script>
 </body>
