@@ -1,0 +1,280 @@
+/* ═══════════════════════════════════════════════════════════════
+   POLYMATES — francais.css
+   Le style de l'atelier de français : une page d'ivoire nette, la
+   typographie classique française (Cormorant pour les titres, EB
+   Garamond pour le texte, Inter pour ce qu'on clique), des filets
+   fins, une rubrique rouge, un liseré doré. Rien qui imite le vieux
+   papier : de la lumière, des marges, des alignements.
+
+   Cette feuille se charge après parchemin.css, atelier.css et
+   francais-ui.css, dont elle redéfinit l'apparence.
+   ═══════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap');
+
+:root, body[data-matiere="francais"] {
+  --ivoire:        #f6f2ea;     /* le fond de la salle */
+  --page:          #fffdf9;     /* la feuille */
+  --page-ombre:    #e6dfd1;     /* filets et bords */
+  --encre:         #1d1a16;     /* le texte */
+  --encre-pale:    #6b655b;     /* mentions, sous-titres */
+  --encre-claire:  #9a9285;     /* ce qui doit s'effacer */
+  --rouge:         #8e1c2b;     /* la rubrique, le stylo rouge */
+  --or:            #b9963f;     /* le liseré doré */
+  --bleu:          #2f4a6d;     /* l'encre bleue des tables */
+  --vert:          #3f6b4e;     /* ce qui est juste */
+
+  --papier:        var(--ivoire);
+  --papier-clair:  var(--page);
+  --papier-ombre:  var(--page-ombre);
+  --rubrique:      var(--rouge);
+  --accent:        var(--rouge);
+  --correction:    #b8342a;
+  --acquis:        var(--vert);
+  --a-revoir:      var(--or);
+
+  --titre: 'Cormorant Garamond', 'EB Garamond', Garamond, Georgia, serif;
+  --texte: 'EB Garamond', Garamond, 'Times New Roman', serif;
+  --ui:    'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ivoire); background-image: none !important;
+  color: var(--encre); font-family: var(--texte); font-weight: 400; font-size: 1.08rem; line-height: 1.7;
+}
+::selection { background: rgba(185,150,63,.3); }
+
+/* ═══ Le cartouche : marque et lecteur ════════════════════════ */
+.bandeau {
+  max-width: 68rem; margin: 0 auto; padding: 1.3rem 1rem .9rem;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  border-bottom: none;
+}
+.bandeau-titre { font-family: var(--titre); font-weight: 600; font-size: 1.75rem; letter-spacing: .02em; color: var(--encre); text-decoration: none; }
+.bandeau-titre em { font-style: italic; font-weight: 500; color: var(--rouge); }
+.bandeau-droite { font-family: var(--ui); font-size: .8rem; gap: 1.2rem; }
+.bandeau-droite span { color: var(--encre-pale); }
+.bandeau-droite a, .bandeau-droite button {
+  font-family: var(--ui); font-size: .8rem; color: var(--encre-pale); background: none; border: none;
+  border-bottom: 1px solid transparent; padding: 0; cursor: pointer; text-decoration: none;
+}
+.bandeau-droite a:hover, .bandeau-droite button:hover { color: var(--rouge); border-bottom-color: var(--rouge); }
+
+/* ═══ La barre de navigation : un filet double, comme une une ═ */
+.fr-nav {
+  position: sticky; top: 0; z-index: 20; background: rgba(246,242,234,.96); backdrop-filter: blur(8px);
+  border-top: 1px solid var(--encre); border-bottom: 1px solid var(--encre);
+  box-shadow: 0 3px 0 -2px var(--encre);   /* le second filet, plus fin */
+}
+.fr-nav-inner { max-width: 68rem; margin: 0 auto; padding: 0 1rem; display: flex; align-items: stretch; justify-content: center; gap: 0; overflow-x: auto; }
+.fr-onglet {
+  font-family: var(--ui); font-size: .78rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--encre-pale); padding: .8rem 1.1rem; border-bottom: 2px solid transparent; gap: .45rem;
+}
+.fr-onglet .ico { display: none; }
+.fr-onglet:hover { color: var(--encre); }
+.fr-onglet[aria-current="page"] { color: var(--rouge); border-bottom-color: var(--rouge); font-weight: 600; }
+.fr-onglet.retour { text-transform: none; letter-spacing: 0; font-size: .8rem; color: var(--encre-claire); margin-left: auto; margin-right: 0; }
+.fr-onglet.retour:hover { color: var(--rouge); }
+
+/* ═══ La feuille ════════════════════════════════════════════════ */
+.feuille {
+  max-width: 50rem; margin: 2.4rem auto 4rem; padding: 3rem 3.4rem 3.2rem;
+  background: var(--page); border: 1px solid var(--page-ombre); border-radius: 0;
+  box-shadow: 0 1px 2px rgba(60,45,20,.05), 0 16px 40px -30px rgba(60,45,20,.35);
+}
+.feuille.large, .fr-cours .feuille { max-width: none; }
+.fr-cours { max-width: 72rem; }
+.colophon { display: none; }
+
+/* ═══ Typographie ═══════════════════════════════════════════════ */
+h1, h2, h3, .entete h1, .continuer-titre, .tuile-nom, .section-tete h2, .bloc-titre { font-family: var(--titre); }
+.entete { margin-bottom: 1.8rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--encre); position: relative; }
+.entete::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: var(--or); opacity: .7; }
+.entete h1 { font-size: 2.5rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.05; }
+.entete h1 em { color: var(--rouge); font-style: italic; }
+.entete-sous { font-family: var(--texte); font-size: 1.02rem; color: var(--encre-pale); line-height: 1.55; margin-top: .45rem; }
+.fil-ariane { font-family: var(--ui); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-claire); }
+.fil-ariane a { color: var(--encre-claire); }
+.fil-ariane a:hover { color: var(--rouge); text-decoration: none; }
+
+.rubrique, .sommaire-titre, .theme-titre, .panneau-titre, .section-tete h2 small {
+  font-family: var(--ui); font-size: .72rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--rouge); font-variant: normal;
+}
+.section { margin-top: 2.6rem; }
+.section-tete { border-bottom: 1px solid var(--page-ombre); padding-bottom: .5rem; margin-bottom: 1rem; }
+.section-tete h2 { font-size: 1.55rem; font-weight: 600; }
+.section-tete a { font-family: var(--ui); font-size: .78rem; letter-spacing: .04em; color: var(--rouge); }
+.sommaire-titre { border-bottom: 1px solid var(--page-ombre); padding-bottom: .4rem; margin-bottom: .8rem; }
+.note, .mention { font-family: var(--ui); font-size: .8rem; color: var(--encre-pale); }
+.saillant { color: var(--rouge); font-weight: 500; }
+.juste { color: var(--vert); } .faux { color: var(--correction); }
+p { margin: 0; }
+
+/* ═══ Boutons ═══════════════════════════════════════════════════ */
+.btn, .bouton {
+  font-family: var(--ui); font-size: .82rem; font-weight: 500; letter-spacing: .04em;
+  background: var(--rouge); color: #fff; border: 1px solid var(--rouge); border-radius: 2px; padding: .65rem 1.25rem;
+  text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: .45rem; transition: background .15s, color .15s;
+}
+.btn:hover, .bouton:hover { background: #741622; border-color: #741622; filter: none; }
+.btn.secondaire, .bouton.creux { background: transparent; color: var(--rouge); }
+.btn.secondaire:hover, .bouton.creux:hover { background: rgba(142,28,43,.06); }
+.btn.discret { border-color: var(--page-ombre); color: var(--encre-pale); background: transparent; }
+.btn.discret:hover { color: var(--encre); border-color: var(--encre-pale); background: transparent; }
+.btn.grand { padding: .85rem 1.6rem; font-size: .9rem; }
+.bouton.sourd { opacity: .4; }
+.barre-boutons { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.4rem; }
+
+/* ═══ Continuer ═════════════════════════════════════════════════ */
+.continuer {
+  background: var(--page); border: 1px solid var(--encre); border-radius: 0; padding: 1.6rem 1.8rem;
+  box-shadow: 4px 4px 0 var(--or);
+}
+.continuer-quoi { font-family: var(--ui); font-size: .7rem; font-weight: 600; letter-spacing: .18em; color: var(--rouge); }
+.continuer-titre { font-size: 2rem; font-weight: 600; margin: .35rem 0 .35rem; }
+.continuer-texte { font-size: 1rem; color: var(--encre-pale); }
+.serie { font-family: var(--ui); font-size: .78rem; }
+.serie-case { border-radius: 0; border-color: var(--page-ombre); font-family: var(--ui); font-size: .58rem; }
+.serie-case.ok { background: var(--encre); border-color: var(--encre); color: var(--page); }
+
+/* ═══ Tuiles ════════════════════════════════════════════════════ */
+.tuiles { gap: .7rem; margin-top: 1.6rem; }
+.tuile, button.tuile { background: var(--page); border: 1px solid var(--page-ombre); border-radius: 0; padding: 1.1rem 1.2rem 1.15rem; font-family: var(--texte); text-align: left; color: var(--encre); }
+.tuile:hover { border-color: var(--or); box-shadow: 3px 3px 0 var(--or); transform: none; }
+.tuile-ico { display: none; }
+.tuile-nom { font-size: 1.35rem; font-weight: 600; color: var(--encre); }
+.tuile-nom::after { content: ''; display: block; width: 1.8rem; height: 1px; background: var(--or); margin-top: .4rem; }
+.tuile-chiffre { font-family: var(--ui); font-size: .72rem; font-weight: 500; letter-spacing: .04em; color: var(--rouge); }
+.tuile-texte { font-size: .92rem; color: var(--encre-pale); }
+
+/* ═══ Chapitres ═════════════════════════════════════════════════ */
+.theme-bandeau { margin: 1.6rem 0 .6rem; padding-bottom: .35rem; border-bottom: 1px solid var(--page-ombre); }
+.theme-bandeau i { width: 8px; height: 8px; border-radius: 0; transform: rotate(45deg); }
+.theme-bandeau b { font-size: 1.25rem; font-weight: 600; }
+.theme-bandeau span { font-family: var(--ui); font-size: .72rem; letter-spacing: .04em; color: var(--encre-claire); }
+.fr-grille { gap: .45rem; }
+.fr-chap { background: var(--page); border: 1px solid var(--page-ombre); border-radius: 0; padding: .6rem .85rem; font-family: var(--texte); font-size: 1rem; }
+.fr-chap:hover { border-color: var(--teinte, var(--rouge)); background: var(--page); box-shadow: inset 3px 0 0 var(--teinte, var(--rouge)); }
+.fr-chap.actif { background: var(--page); box-shadow: inset 3px 0 0 var(--teinte, var(--rouge)); border-color: var(--teinte, var(--rouge)); font-weight: 500; }
+.fr-chap-num { font-family: var(--titre); font-weight: 600; font-size: .95rem; color: var(--encre-claire); }
+.fr-chap-etat { font-family: var(--ui); font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: var(--encre-claire); }
+.fr-chap-etat.lu, .fr-chap-etat.score-haut { color: var(--vert); }
+.fr-chap-etat.score-bas { color: var(--rouge); }
+
+/* ═══ Le sommaire du cours ══════════════════════════════════════ */
+.panneau { background: transparent; border: none; border-right: 1px solid var(--page-ombre); border-radius: 0; padding: .4rem .9rem .4rem 0; }
+.panneau .fr-chap { border: none; padding: .38rem .55rem; font-size: .92rem; }
+.panneau .fr-chap:hover { box-shadow: inset 2px 0 0 var(--teinte, var(--rouge)); }
+.panneau .fr-chap.actif { box-shadow: inset 2px 0 0 var(--teinte, var(--rouge)); color: var(--teinte, var(--rouge)); }
+.panneau-mobile select { font-family: var(--texte); border-radius: 0; border-color: var(--page-ombre); background: var(--page); }
+
+/* ═══ Le corps d'un chapitre de cours ═══════════════════════════ */
+.bloc { margin-top: 2rem; }
+.bloc-titre { font-size: 1.55rem; font-weight: 600; margin-bottom: .5rem; padding-left: .9rem; border-left: 2px solid var(--or); }
+.bloc-texte { font-size: 1.08rem; }
+.exemples { margin: .7rem 0 0 1rem; padding-left: 1rem; border-left: 1px solid var(--page-ombre); }
+.exemples li { list-style: none; padding: .2rem 0; font-style: italic; }
+.exemples li::before { content: '— '; color: var(--or); }
+.chap-ligne, .entree { border-bottom: 1px solid var(--page-ombre); }
+
+/* ═══ Tableaux ══════════════════════════════════════════════════ */
+.tab-cadre { margin: 1rem 0; border: none; }
+.tab { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.tab th { font-family: var(--ui); font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--encre-pale);
+          text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--encre); background: none; }
+.tab td { padding: .5rem .7rem; border-bottom: 1px solid var(--page-ombre); vertical-align: top; }
+.tab tr:last-child td { border-bottom: 1px solid var(--encre); }
+.carnet-table td { padding: .55rem .5rem; border-bottom: 1px solid var(--page-ombre); }
+.carnet-table .mot-juste { font-family: var(--titre); font-size: 1.2rem; font-weight: 600; }
+.carnet-table .mot-rate { color: var(--correction); }
+.carnet-table .mot-type, .carnet-table .mot-du { font-family: var(--ui); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
+.carnet-table .mot-du.oui { color: var(--rouge); } .carnet-table .mot-du.non { color: var(--vert); }
+
+/* ═══ Chiffres ══════════════════════════════════════════════════ */
+.chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem; margin: 1.4rem 0; }
+.chiffres > div { padding: .8rem 1rem; border: 1px solid var(--page-ombre); background: var(--page); }
+.chiffre-val { font-family: var(--titre); font-size: 1.9rem; font-weight: 600; line-height: 1; }
+.chiffre-nom { font-family: var(--ui); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--encre-pale); margin-top: .3rem; }
+.jauge { height: 3px; background: var(--page-ombre); margin-top: .5rem; }
+.jauge > span { display: block; height: 100%; background: var(--or); }
+.etiq { font-family: var(--ui); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--page-ombre); border-radius: 0; padding: .15rem .5rem; color: var(--encre-pale); }
+.etiq.vert { color: var(--vert); border-color: var(--vert); } .etiq.or { color: var(--or); border-color: var(--or); }
+
+/* ═══ Exercices ═════════════════════════════════════════════════ */
+.compteur, .perles { font-family: var(--ui); }
+.perle { border-radius: 0; width: .55rem; height: .55rem; }
+.question { margin-top: 1.4rem; }
+.question-enonce { font-family: var(--texte); font-size: 1.35rem; font-weight: 400; line-height: 1.5; }
+.question-enonce .vise { color: var(--rouge); font-style: italic; }
+.question-enonce .creux-mot { display: inline-block; min-width: 2.2rem; border-bottom: 1px solid var(--encre); text-align: center; color: var(--encre-claire); }
+.choix { display: grid; gap: .5rem; margin-top: 1.2rem; }
+.choix-btn { font-family: var(--texte); font-size: 1.05rem; text-align: left; background: var(--page); border: 1px solid var(--page-ombre); border-radius: 0; padding: .7rem 1rem; display: flex; gap: .8rem; align-items: baseline; cursor: pointer; color: var(--encre); }
+.choix-btn .lettre { font-family: var(--ui); font-size: .72rem; font-weight: 600; color: var(--encre-claire); }
+.choix-btn:hover:not(:disabled) { border-color: var(--encre); }
+.choix-btn.bon { border-color: var(--vert); background: rgba(63,107,78,.06); }
+.choix-btn.mauvais { border-color: var(--correction); background: rgba(184,52,42,.05); }
+.saisie { font-family: var(--texte); font-size: 1.1rem; border: none; border-bottom: 1px solid var(--encre); border-radius: 0; background: transparent; padding: .5rem .2rem; width: 100%; }
+.saisie:focus { outline: none; border-bottom: 2px solid var(--rouge); }
+.saisie.bon { border-bottom-color: var(--vert); } .saisie.mauvais { border-bottom-color: var(--correction); }
+.verdict { margin-top: 1.2rem; padding: 1rem 1.2rem; border-left: 3px solid var(--page-ombre); background: rgba(0,0,0,.02); }
+.verdict.bon { border-left-color: var(--vert); } .verdict.mauvais { border-left-color: var(--correction); }
+.verdict-titre { font-family: var(--ui); font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.verdict.bon .verdict-titre { color: var(--vert); } .verdict.mauvais .verdict-titre { color: var(--correction); }
+.avancement { font-family: var(--ui); }
+.avancement .barre { height: 3px; background: var(--page-ombre); }
+.avancement .barre i { background: var(--rouge); }
+
+/* ═══ Dictée : le cahier et la copie ════════════════════════════ */
+.filtres { display: flex; gap: .4rem; flex-wrap: wrap; margin: 1rem 0 1.4rem; }
+.filtre { font-family: var(--ui); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; background: transparent; border: 1px solid var(--page-ombre); border-radius: 0; padding: .4rem .8rem; cursor: pointer; color: var(--encre-pale); }
+.filtre[aria-pressed="true"] { background: var(--encre); color: var(--page); border-color: var(--encre); }
+.dictee-ligne { border: 1px solid var(--page-ombre); background: var(--page); border-radius: 0; margin-bottom: .45rem; padding: .8rem 1rem; }
+.dictee-ligne:hover { border-color: var(--or); box-shadow: 3px 3px 0 var(--or); }
+.dictee-nom { font-family: var(--titre); font-size: 1.3rem; font-weight: 600; }
+.dictee-info, .dictee-vise { font-family: var(--ui); font-size: .72rem; letter-spacing: .04em; color: var(--encre-pale); }
+.dictee-fleche { font-family: var(--ui); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rouge); }
+.seyes { font-family: var(--texte); font-size: 1.15rem; border: 1px solid var(--page-ombre); border-radius: 0; }
+.copie { font-family: var(--texte); font-size: 1.15rem; line-height: 2.1; }
+.mot.faux { color: var(--correction); text-decoration: underline wavy var(--correction); }
+.mot.juste { color: var(--encre); }
+.faute-ligne { border-bottom: 1px solid var(--page-ombre); padding: .5rem 0; }
+.faute-ecrit { color: var(--correction); text-decoration: line-through; }
+.faute-juste { font-weight: 500; }
+.faute-motif { font-family: var(--ui); font-size: .74rem; color: var(--encre-pale); }
+.faute-lien { font-family: var(--ui); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--rouge); }
+.bulletin { display: flex; align-items: flex-end; gap: 1.5rem; padding: 1.2rem 0; border-top: 1px solid var(--encre); border-bottom: 1px solid var(--encre); margin: 1.2rem 0; }
+.bilan-note, .note-val { font-family: var(--titre); font-size: 3.2rem; font-weight: 600; line-height: 1; color: var(--rouge); }
+.bilan-sur { font-family: var(--titre); font-size: 1.4rem; color: var(--encre-claire); }
+.note-nom { font-family: var(--ui); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--encre-pale); }
+
+/* ═══ Conjugueur et mémento ═════════════════════════════════════ */
+.chercher input { font-family: var(--texte); font-size: 1.25rem; border: none; border-bottom: 1px solid var(--encre); border-radius: 0; background: transparent; padding: .6rem 0; width: 100%; }
+.chercher input:focus { outline: none; border-bottom: 2px solid var(--rouge); }
+.chercher::before { display: none; }
+.suggestions { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.suggestion { font-family: var(--texte); font-size: .95rem; background: transparent; border: 1px solid var(--page-ombre); border-radius: 0; padding: .3rem .7rem; cursor: pointer; }
+.suggestion:hover, .suggestion.vise { border-color: var(--rouge); color: var(--rouge); }
+.reglages { display: flex; gap: 1.2rem; flex-wrap: wrap; font-family: var(--ui); font-size: .78rem; color: var(--encre-pale); }
+.reglage select { font-family: var(--texte); border-radius: 0; border-color: var(--page-ombre); background: var(--page); }
+
+/* ═══ Le feuilletage bas de page ════════════════════════════════ */
+.feuillet { font-family: var(--ui); }
+.feuillet button { font-family: var(--ui); font-size: .78rem; letter-spacing: .04em; border: 1px solid var(--page-ombre); background: var(--page); border-radius: 0; padding: .5rem .9rem; cursor: pointer; color: var(--encre); }
+.feuillet button:hover:not(:disabled) { border-color: var(--rouge); color: var(--rouge); }
+.feuillet button:disabled { opacity: .35; }
+.jalon { width: .5rem; height: .5rem; border-radius: 0; transform: rotate(45deg); }
+.jalon.actif { background: var(--rouge); }
+
+/* ═══ Ce qui disparaît ══════════════════════════════════════════ */
+.rubans, .filet, .ouverture::first-letter, .carte-marque, .theme-ouvrir, .chap-ex-points, .entree-points { display: none !important; }
+.ouverture::first-letter { float: none; font-size: inherit; }
+
+@media (max-width: 860px) {
+  .feuille { margin: 1.2rem .8rem 2.5rem; padding: 1.8rem 1.3rem 2rem; }
+  .entete h1 { font-size: 1.9rem; }
+  .fr-nav-inner { justify-content: flex-start; }
+  .fr-onglet { padding: .75rem .8rem; letter-spacing: .1em; }
+  .continuer { box-shadow: 3px 3px 0 var(--or); }
+}
