@@ -355,7 +355,7 @@ app.use(bodyParser.json({ limit: "25mb" }));
 /* Repère de version : affiché par le diagnostic admin et au démarrage. Si ce
    numéro ne correspond pas à la dernière version déployée, c'est que le
    serveur n'a pas redémarré sur le code attendu. */
-const SERVEUR_VERSION = "2026-09-22-analyse";
+const SERVEUR_VERSION = "2026-09-24-cours";
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
@@ -939,6 +939,22 @@ async function initDB() {
     )
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_analyse_user ON analyse_sessions (user_id, matiere, etat)`);
+  /* ── LECTURE DES COURS ──
+     Une ligne par (élève, livre) : dernière page vue, nombre de pages, lu
+     jusqu'au bout ou non. Le livre est identifié par l'id que cours.html
+     donne à chaque leçon (l_<chapitre>_<n>). */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS lecture_cours (
+      user_id    INTEGER NOT NULL,
+      matiere    TEXT NOT NULL DEFAULT 'mathematiques',
+      lecon      TEXT NOT NULL,
+      page       INTEGER NOT NULL DEFAULT 1,
+      total      INTEGER NOT NULL DEFAULT 1,
+      terminee   BOOLEAN NOT NULL DEFAULT FALSE,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, lecon)
+    )
+  `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
@@ -2794,6 +2810,37 @@ app.delete("/analyse/:id", auth, async (req, res) => {
     const r = await pool.query("DELETE FROM analyse_sessions WHERE id = $1 AND user_id = $2 AND etat = 'en_cours'",
       [Number(req.params.id), req.user.id]);
     res.json({ ok: r.rowCount > 0 });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROGRESSION DE LECTURE DES COURS
+   ═══════════════════════════════════════════════════════════════════════════ */
+app.get("/cours/progression", auth, async (req, res) => {
+  const matiere = req.query.matiere || "mathematiques";
+  try {
+    const { rows } = await pool.query(
+      "SELECT lecon, page, total, terminee, updated_at FROM lecture_cours WHERE user_id = $1 AND matiere = $2",
+      [req.user.id, matiere]);
+    const progression = {};
+    rows.forEach(r => { progression[r.lecon] = { page: r.page, derniere: r.page, total: r.total, terminee: r.terminee, updated_at: r.updated_at }; });
+    res.json({ progression });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/cours/progression", auth, async (req, res) => {
+  const { matiere, lecon, page, total, terminee } = req.body || {};
+  if (!lecon || typeof lecon !== "string" || lecon.length > 120) return res.status(400).json({ error: "Leçon invalide." });
+  const p = Math.max(1, Number(page) || 1), t = Math.max(1, Number(total) || 1);
+  try {
+    await pool.query(
+      `INSERT INTO lecture_cours (user_id, matiere, lecon, page, total, terminee, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,NOW())
+       ON CONFLICT (user_id, lecon) DO UPDATE
+         SET page = EXCLUDED.page, total = EXCLUDED.total,
+             terminee = lecture_cours.terminee OR EXCLUDED.terminee, updated_at = NOW()`,
+      [req.user.id, String(matiere || "mathematiques"), lecon, p, t, !!terminee]);
+    res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
