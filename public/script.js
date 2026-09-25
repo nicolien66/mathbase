@@ -486,10 +486,12 @@ function renderByChapter(data) {
     g.notions.forEach((n, i) => {
       const nb = compte(n);
       const st = document.createElement(nb ? "button" : "div");
-      st.className = "fx-station" + (nb ? "" : " fx-vide");
+      /* la première notion de chaque classe porte l'étiquette de la classe */
+      const nouvelleClasse = n.classe && (i === 0 || g.notions[i - 1].classe !== n.classe);
+      st.className = "fx-station" + (nb ? "" : " fx-vide") + (nouvelleClasse && i ? " fx-rupture" : "");
       if (nb) { st.type = "button"; st.onclick = () => openNotion(g, n); st.title = n.familles.length + " famille" + (n.familles.length > 1 ? "s" : "") + " d'exercices"; }
       st.innerHTML =
-        `<span class="fx-num">${i + 1}</span><span class="fx-point"></span>` +
+        `<span class="fx-classe${nouvelleClasse ? "" : " fx-classe-suite"}">${escapeHtml(n.classe || "")}</span><span class="fx-point"></span>` +
         `<span class="fx-nom">${escapeHtml(n.nom)}</span>` +
         `<span class="fx-compte">${nb ? nb + " exercice" + (nb > 1 ? "s" : "") : "à venir"}</span>`;
       ligne.appendChild(st);
@@ -512,17 +514,20 @@ function renderByChapter(data) {
 
 /* ── VUE D'UN CHAPITRE : la liste de ses exercices ── */
 let currentFiltre = null;   /* quand une notion est ouverte : ex => true si l'exercice en fait partie */
+let currentClasse = "";     /* la classe de la notion ouverte (6e, 5e…) */
 
 function openNotion(idee, notion) {
   const cles = new Set(notion.familles.map(([c, f]) => c + "|" + normaliseTitre(f)));
   currentFiltre = ex => cles.has((ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || ""));
   currentChapter = notion.nom;
+  currentClasse = notion.classe || "";
   chapterMode = "exercice";
   showView("chapter");
 }
 
 function openChapter(chap) {
   currentFiltre = null;
+  currentClasse = "";
   currentChapter = chap;
   chapterMode = "exercice";
   showView("chapter");
@@ -547,7 +552,7 @@ function ouvrirFamille(cle) {
   document.getElementById("famille-title").textContent = g.titre;
   const mot = chapterMode === "probleme" ? "problème" : "exercice";
   document.getElementById("famille-sub").textContent =
-    g.items.length + " " + mot + (g.items.length > 1 ? "s" : "") + " \u00b7 " + currentChapter;
+    g.items.length + " " + mot + (g.items.length > 1 ? "s" : "") + " \u00b7 " + currentChapter + (currentClasse ? " \u00b7 " + currentClasse : "");
   const liste = document.getElementById("famille-list");
   liste.innerHTML = "";
   g.items.forEach(ex => liste.appendChild(exerciseCard(ex)));
@@ -569,7 +574,7 @@ function renderChapterView() {
   const wordSing = chapterMode === "probleme" ? "problème" : "exercice d'entraînement";
   const wordPlur = chapterMode === "probleme" ? "problèmes" : "exercices d'entraînement";
   document.getElementById("chapter-sub").textContent =
-    shown.length + " " + (shown.length > 1 ? wordPlur : wordSing) + (currentFiltre ? " dans cette notion" : " dans ce chapitre");
+    (currentClasse ? currentClasse + " · " : "") + shown.length + " " + (shown.length > 1 ? wordPlur : wordSing) + (currentFiltre ? " dans cette notion" : " dans ce chapitre");
 
   const grid = document.getElementById("chapter-list");
   grid.innerHTML = "";
