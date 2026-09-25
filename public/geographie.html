@@ -56,11 +56,14 @@
 
   /* Projection de Mercator, ajustée à un cadre [lonMin, latMin, lonMax, latMax]. */
   function mercator(cadre, W, H) {
-    const y = lat => Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * Math.PI / 180) / 2));
-    const x0 = cadre[0], x1 = cadre[2], y0 = y(cadre[1]), y1 = y(cadre[3]);
-    const sx = W / (x1 - x0), sy = H / (y1 - y0), s = Math.min(sx, sy);
+    /* x et y sont tous deux en radians : c'est ce qui garde les formes. */
+    const RAD = Math.PI / 180;
+    const x = lon => lon * RAD;
+    const y = lat => Math.log(Math.tan(Math.PI / 4 + (Math.max(-85, Math.min(85, lat)) * RAD) / 2));
+    const x0 = x(cadre[0]), x1 = x(cadre[2]), y0 = y(cadre[1]), y1 = y(cadre[3]);
+    const s = Math.min(W / (x1 - x0), H / (y1 - y0));
     const dx = (W - (x1 - x0) * s) / 2, dy = (H - (y1 - y0) * s) / 2;
-    return ([lon, lat]) => [dx + (lon - x0) * s, dy + (y1 - y(lat)) * s];
+    return ([lon, lat]) => [dx + (x(lon) - x0) * s, dy + (y1 - y(lat)) * s];
   }
 
   function cheminDe(geom, proj) {
@@ -76,7 +79,7 @@
   const CARTES = [
     {
       id: "monde", nom: "Le monde", sous: "Projection de Mercator · " + DATA.pays.length + " pays",
-      cadre: [-170, -58, 180, 84], ratio: 0.52,
+      cadre: [-170, -58, 180, 84], ratio: 0.69,
       couches: () => [{ id: "pays", items: DATA.pays, cle: p => p.id, classe: "pays" }],
       fiche: p => ({
         rubrique: p.continent + (p.region ? " · " + p.region : ""),
@@ -89,7 +92,7 @@
     },
     {
       id: "europe", nom: "L'Europe", sous: DATA.europe.length + " pays",
-      cadre: [-25, 34, 45, 71.5], ratio: 0.72,
+      cadre: [-25, 34, 45, 71.5], ratio: 0.97,
       couches: () => [{ id: "pays", items: DATA.europe, cle: p => p.id, classe: "pays" }],
       fiche: p => ({
         rubrique: p.region || "Europe",
@@ -102,7 +105,7 @@
     },
     {
       id: "france", nom: "La France", sous: "13 régions · 96 départements · 45 grandes villes",
-      cadre: [-5.4, 41.2, 9.8, 51.3], ratio: 0.95,
+      cadre: [-5.4, 41.2, 9.8, 51.3], ratio: 0.97,
       modes: [["regions", "Régions"], ["departements", "Départements"]],
       couches: mode => [
         { id: mode, items: mode === "regions" ? DATA.france.regions : DATA.france.departements, cle: x => x.code, classe: mode === "regions" ? "region" : "departement" },
@@ -131,7 +134,8 @@
   function dessinerCarte(carte, mode, hote, surSelection, interactif) {
     const W = 1000, H = Math.round(1000 * carte.ratio);
     const proj = mercator(carte.cadre, W, H);
-    const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, class: "carte-svg", role: "img", "aria-label": carte.nom });
+    const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, preserveAspectRatio: "xMidYMid meet", class: "carte-svg", role: "img", "aria-label": carte.nom });
+    svg.style.setProperty("--ratio", (W / H).toFixed(4));
     svg.appendChild(svgEl("rect", { x: 0, y: 0, width: W, height: H, class: "carte-mer" }));
     const couches = carte.couches(mode);
     let actif = null;

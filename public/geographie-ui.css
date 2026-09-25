@@ -56,8 +56,8 @@ body.accueil { overflow: hidden; }
 .geo-mode.actif { background: var(--encre); color: var(--page); }
 .geo-corps { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 0; gap: 0; transition: grid-template-columns .25s ease, gap .25s ease; }
 .geo-corps.fiche-ouverte { grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.2rem; }
-.geo-carte { min-height: 0; display: flex; align-items: center; justify-content: center; }
-.carte-svg { width: 100%; height: 100%; max-height: 100%; display: block; }
+.geo-carte { min-height: 0; min-width: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.carte-svg { width: auto; height: auto; max-width: 100%; max-height: 100%; display: block; aspect-ratio: var(--ratio, 2); }
 .carte-mer { fill: var(--mer); }
 .terr { fill: var(--terre); stroke: var(--terre-trait); stroke-width: .6; stroke-linejoin: round; cursor: pointer; transition: fill .12s; }
 .terr:hover { fill: var(--terre-survol); }
