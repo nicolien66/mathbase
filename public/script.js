@@ -421,35 +421,108 @@ function renderByChapter(data) {
     return card;
   }
 
+  /* Chaque grande idée est une frise : une ligne, une station par
+     chapitre, dans l'ordre de la progression. */
+  function frise(titre, desc, couleur, chapitres) {
+    const section = document.createElement("section");
+    section.className = "fx";
+    section.style.setProperty("--sc", couleur || "#c8b97a");
+    const total = chapitres.reduce((n, c) => n + (byChap.get(c) || []).length, 0);
+    section.innerHTML =
+      `<div class="fx-tete"><span class="fx-titre">${escapeHtml(titre)}</span>` +
+      (desc ? `<span class="fx-desc">${escapeHtml(desc)}</span>` : "") +
+      `<span class="fx-total">${chapitres.length} chapitre${chapitres.length > 1 ? "s" : ""} · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
+    const ligne = document.createElement("div");
+    ligne.className = "fx-ligne";
+    ligne.style.setProperty("--n", chapitres.length);
+    chapitres.forEach((chap, i) => {
+      const exs = byChap.get(chap) || [];
+      const n = exs.length;
+      const st = document.createElement(n ? "button" : "div");
+      st.className = "fx-station" + (n ? "" : " fx-vide");
+      if (n) { st.type = "button"; st.onclick = () => openChapter(chap); st.title = "Ouvrir « " + chap + " »"; }
+      st.innerHTML =
+        `<span class="fx-num">${i + 1}</span>` +
+        `<span class="fx-point"></span>` +
+        `<span class="fx-nom">${escapeHtml(chap)}</span>` +
+        `<span class="fx-compte">${n ? n + " exercice" + (n > 1 ? "s" : "") : "à venir"}</span>`;
+      ligne.appendChild(st);
+    });
+    section.appendChild(ligne);
+    return section;
+  }
+
+  list.classList.add("fx-liste");
+
+  /* Collège : les chapitres sont cassés, chaque famille est rangée sous une
+     notion de l'une des six grandes idées (GRANDES_IDEES, dans contenu.js). */
+  const idees = (typeof GRANDES_IDEES !== "undefined" && (!window.MB_MAT || MB_MAT.estMaths())) ? GRANDES_IDEES : null;
+  const avecIdees = idees && (!currentFilter || currentFilter === "college" || currentFilter === "primaire");
+  if (idees) {
+    /* ces chapitres ne s'affichent plus en tant que tels, où que ce soit */
+    idees.forEach(g => g.notions.forEach(n => n.familles.forEach(([c]) => known.add(c))));
+  }
+  if (avecIdees) {
+    const cleEx = ex => (ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || "");
+    const parCle = new Map();
+    data.forEach(ex => { const k = cleEx(ex); if (!parCle.has(k)) parCle.set(k, []); parCle.get(k).push(ex); });
+    idees.forEach(g => frag.appendChild(friseIdee(g, parCle)));
+  }
+
+  function friseIdee(g, parCle) {
+    const section = document.createElement("section");
+    section.className = "fx";
+    section.style.setProperty("--sc", g.color);
+    const compte = n => n.familles.reduce((s, [c, f]) => s + (parCle.get(c + "|" + normaliseTitre(f)) || []).length, 0);
+    const total = g.notions.reduce((s, n) => s + compte(n), 0);
+    const pleines = g.notions.filter(n => compte(n) > 0).length;
+    section.innerHTML =
+      `<div class="fx-tete"><span class="fx-titre">${escapeHtml(g.nom)}</span>` +
+      `<span class="fx-desc">${escapeHtml(g.desc)}</span>` +
+      `<span class="fx-total">${pleines} / ${g.notions.length} notions · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
+    const ligne = document.createElement("div");
+    ligne.className = "fx-ligne";
+    ligne.style.setProperty("--n", g.notions.length);
+    g.notions.forEach((n, i) => {
+      const nb = compte(n);
+      const st = document.createElement(nb ? "button" : "div");
+      st.className = "fx-station" + (nb ? "" : " fx-vide");
+      if (nb) { st.type = "button"; st.onclick = () => openNotion(g, n); st.title = n.familles.length + " famille" + (n.familles.length > 1 ? "s" : "") + " d'exercices"; }
+      st.innerHTML =
+        `<span class="fx-num">${i + 1}</span><span class="fx-point"></span>` +
+        `<span class="fx-nom">${escapeHtml(n.nom)}</span>` +
+        `<span class="fx-compte">${nb ? nb + " exercice" + (nb > 1 ? "s" : "") : "à venir"}</span>`;
+      ligne.appendChild(st);
+    });
+    section.appendChild(ligne);
+    return section;
+  }
+
   structure.forEach(mat => {
-    const section = document.createElement("div");
-    section.className = "chapx-subject";
-    section.innerHTML = `<div class="chapx-subject-head" style="--sc:${mat.color||'#c8b97a'}">${escapeHtml(mat.subject)}</div>`;
-    const row = document.createElement("div");
-    row.className = "chapx-row";
-    mat.chapters.forEach(chap => row.appendChild(chapterCardEl(chap, byChap.get(chap) || [], mat.color)));
-    section.appendChild(row);
-    frag.appendChild(section);
+    if (idees && (mat.niveaux || []).some(n => n === "college" || n === "primaire")) return;
+    frag.appendChild(frise(mat.subject, mat.desc, mat.color, mat.chapters));
   });
 
   // intitulés hors-arbre → section « Autres »
   const extras = [...byChap.keys()].filter(k => !known.has(k));
-  if (extras.length) {
-    const section = document.createElement("div");
-    section.className = "chapx-subject";
-    section.innerHTML = `<div class="chapx-subject-head" style="--sc:#9b8fb0">Autres</div>`;
-    const row = document.createElement("div");
-    row.className = "chapx-row";
-    extras.forEach(chap => row.appendChild(chapterCardEl(chap, byChap.get(chap), "#9b8fb0")));
-    section.appendChild(row);
-    frag.appendChild(section);
-  }
+  if (extras.length) frag.appendChild(frise("AUTRES", "Chapitres sans catégorie.", "#9b8fb0", extras));
 
   list.appendChild(frag);
 }
 
 /* ── VUE D'UN CHAPITRE : la liste de ses exercices ── */
+let currentFiltre = null;   /* quand une notion est ouverte : ex => true si l'exercice en fait partie */
+
+function openNotion(idee, notion) {
+  const cles = new Set(notion.familles.map(([c, f]) => c + "|" + normaliseTitre(f)));
+  currentFiltre = ex => cles.has((ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || ""));
+  currentChapter = notion.nom;
+  chapterMode = "exercice";
+  showView("chapter");
+}
+
 function openChapter(chap) {
+  currentFiltre = null;
   currentChapter = chap;
   chapterMode = "exercice";
   showView("chapter");
@@ -484,7 +557,7 @@ function ouvrirFamille(cle) {
 function retourChapitre() { showView("chapter", "browse"); }
 
 function renderChapterView() {
-  const all = LOADED_EXERCISES.filter(ex => (ex.chapitre || "Sans chapitre") === currentChapter);
+  const all = LOADED_EXERCISES.filter(ex => currentFiltre ? currentFiltre(ex) : (ex.chapitre || "Sans chapitre") === currentChapter);
   const exos = all.filter(ex => (ex.type || "exercice") === "exercice");
   const pbs  = all.filter(ex => (ex.type || "exercice") === "probleme");
 
@@ -496,7 +569,7 @@ function renderChapterView() {
   const wordSing = chapterMode === "probleme" ? "problème" : "exercice d'entraînement";
   const wordPlur = chapterMode === "probleme" ? "problèmes" : "exercices d'entraînement";
   document.getElementById("chapter-sub").textContent =
-    shown.length + " " + (shown.length > 1 ? wordPlur : wordSing) + " dans ce chapitre";
+    shown.length + " " + (shown.length > 1 ? wordPlur : wordSing) + (currentFiltre ? " dans cette notion" : " dans ce chapitre");
 
   const grid = document.getElementById("chapter-list");
   grid.innerHTML = "";

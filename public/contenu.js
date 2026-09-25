@@ -1419,76 +1419,85 @@ const CHAPTER_STRUCTURE = [
      `niveaux` dit à quels niveaux un groupe de chapitres appartient. La page
      exercices s'en sert pour n'afficher, sous un filtre de niveau, que les
      chapitres de ce niveau (un groupe sans `niveaux` reste visible partout). */
+  /* Les six grandes idées du collège : chaque chapitre est rangé sous
+     l'idée qui le porte, dans l'ordre où on les rencontre. La page
+     exercices les affiche comme six frises. */
   {
-    "subject": "NOMBRES",
+    "subject": "PROPORTIONNALITÉ",
+    "desc": "Deux grandeurs liées par un rapport constant.",
     "color": "#7ab4c8",
     "niveaux": ["primaire", "college"],
     "chapters": [
-      "Entiers & décimaux",
       "Fractions",
-      "Nombres relatifs",
-      "Puissances",
       "Proportionnalité",
       "Pourcentages",
       "Longueur",
       "Repérage temps & durées",
-      "Arithmétique"
+      "Fonction linéaire",
+      "Théorème de Thalès",
+      "Homothéties",
+      "Trigonométrie"
     ]
   },
   {
-    "subject": "ALGÈBRE",
+    "subject": "DISTRIBUTIVITÉ",
+    "desc": "Réécrire un nombre ou une expression sans changer sa valeur.",
     "color": "#c8a07a",
     "niveaux": ["primaire", "college"],
     "chapters": [
+      "Entiers & décimaux",
       "Enchaînement d'opérations",
-      "Calcul littéral",
-      "Équations"
+      "Nombres relatifs",
+      "Arithmétique",
+      "Puissances",
+      "Calcul littéral"
     ]
   },
   {
-    "subject": "GÉOMÉTRIE",
+    "subject": "ÉGALITÉ",
+    "desc": "Une balance qu'on garde en équilibre, qu'on teste ou qu'on utilise dans les deux sens.",
+    "color": "#c87a9a",
+    "niveaux": ["primaire", "college"],
+    "chapters": [
+      "Aires et figures",
+      "Volumes et solides",
+      "Équations",
+      "Théorème de Pythagore"
+    ]
+  },
+  {
+    "subject": "TRANSFORMATIONS ET INVARIANCE",
+    "desc": "Déplacer une figure en conservant certaines de ses propriétés.",
     "color": "#a07ac8",
     "niveaux": ["primaire", "college"],
     "chapters": [
       "Géométrie",
       "Symétrie axiale",
-      "Symétrie centrale",
       "Angles et parallélisme",
       "Géométrie du triangle",
-      "Aires et figures",
-      "Théorème de Pythagore",
-      "Théorème de Thalès",
-      "Trigonométrie",
-      "Homothéties",
-      "Translation et rotation",
-      "Volumes et solides"
+      "Symétrie centrale",
+      "Translation et rotation"
     ]
   },
   {
-    "subject": "FONCTIONS",
+    "subject": "FONCTION",
+    "desc": "Une quantité dépend d'une autre.",
     "color": "#7ac8a0",
     "niveaux": ["primaire", "college"],
     "chapters": [
       "Notions de fonctions",
-      "Fonction linéaire",
       "Fonction affine"
     ]
   },
   {
-    "subject": "PROBABILITÉS",
-    "color": "#c87a9a",
-    "niveaux": ["primaire", "college"],
-    "chapters": [
-      "Bases des probabilités"
-    ]
-  },
-  {
-    "subject": "STATISTIQUES",
+    "subject": "HASARD ET DONNÉES",
+    "desc": "Résumer ce qu'on observe et prévoir ce qui est incertain.",
     "color": "#e8a87c",
     "niveaux": ["primaire", "college"],
     "chapters": [
       "Organisation des données",
-      "Statistiques"
+      "Statistiques",
+      "Bases des probabilités"
     ]
   },
 
@@ -1577,3 +1586,252 @@ if (typeof window !== 'undefined') {
 }
 
 })();
+
+/* ══════════════════════════════════════════════════════════════════════
+   LES SIX GRANDES IDÉES DU COLLÈGE
+   Les chapitres sont cassés : chaque famille d'exercices est rangée sous
+   la notion du programme qui la porte, dans l'ordre du tableau. Une
+   notion sans famille reste affichée, vide, en attendant ses exercices.
+   Une famille est désignée par [chapitre en base, nom de la famille].
+   ══════════════════════════════════════════════════════════════════════ */
+const GRANDES_IDEES = [
+  {
+    nom: "PROPORTIONNALITÉ", color: "#7ab4c8",
+    desc: "Deux grandeurs liées par un rapport constant.",
+    notions: [
+      { nom: "Fractions : proportion et fraction d'une quantité", familles: [
+        ["Fractions", "Fraction d'une figure"], ["Fractions", "Le gâteau partagé"], ["Fractions", "Fraction d'une quantité"],
+        ["Fractions", "Fraction d'une fraction"], ["Fractions", "La jauge du réservoir"], ["Fractions", "Les brioches du goûter"],
+        ["Fractions", "La randonnée en deux étapes"], ["Fractions", "Le terrain partagé"], ["Fractions", "Écriture décimale d'une fraction"] ] },
+      { nom: "Pourcentages et coefficient multiplicateur", familles: [
+        ["Pourcentages", "Pourcentage d'une proportion"], ["Pourcentages", "Exprimer en pourcentage"], ["Pourcentages", "Appliquer un pourcentage"],
+        ["Pourcentages", "Calculer une augmentation"], ["Pourcentages", "Calculer une remise"], ["Pourcentages", "La hausse du ticket"],
+        ["Pourcentages", "La remise du magasin de sport"], ["Pourcentages", "Appliquer une baisse"], ["Pourcentages", "Coefficients multiplicateurs"],
+        ["Pourcentages", "Du HT au TTC"], ["Pourcentages", "Calculer un taux d'évolution"], ["Pourcentages", "Le comparateur de soldes"] ] },
+      { nom: "Ratios et partage proportionnel", familles: [
+        ["Proportionnalité", "Partager selon un ratio"], ["Proportionnalité", "Le sirop à diluer"] ] },
+      { nom: "Quatrième proportionnelle", familles: [
+        ["Proportionnalité", "Reconnaître la proportionnalité"], ["Proportionnalité", "Le tarif est-il proportionnel ?"],
+        ["Proportionnalité", "Compléter un tableau de proportionnalité"], ["Proportionnalité", "La méthode additive"],
+        ["Proportionnalité", "Le produit en croix 1"], ["Proportionnalité", "La recette pour 9 personnes"] ] },
+      { nom: "Échelles", familles: [
+        ["Proportionnalité", "Utiliser une échelle de carte"] ] },
+      { nom: "Vitesse et grandeurs quotients", familles: [
+        ["Proportionnalité", "Vitesse moyenne"], ["Proportionnalité", "Calculer une distance"], ["Proportionnalité", "Calculer une durée"],
+        ["Proportionnalité", "Le coureur régulier"], ["Proportionnalité", "La moyenne sur tout le trajet"],
+        ["Proportionnalité", "Calculer un débit"], ["Proportionnalité", "Masse volumique"] ] },
+      { nom: "Conversions d'unités", familles: [
+        ["Longueur", "Convertir des longueurs"], ["Longueur", "Comparer des longueurs"], ["Longueur", "Convertir des surfaces"],
+        ["Longueur", "Comparer des surfaces"], ["Longueur", "Convertir des volumes"], ["Longueur", "Comparer des volumes"],
+        ["Longueur", "Le ruban à partager"], ["Repérage temps & durées", "Les unités de temps"], ["Repérage temps & durées", "Convertir des durées"],
+        ["Repérage temps & durées", "Heures décimales"], ["Repérage temps & durées", "Calculer une durée"],
+        ["Repérage temps & durées", "Calculer une heure d'arrivée"], ["Repérage temps & durées", "L'arrivée du bus"],
+        ["Repérage temps & durées", "Le marathon en relais"] ] },
+      { nom: "Puissances de 10, notation scientifique, ordres de grandeur", familles: [
+        ["Entiers & décimaux", "Multiplier par 10,100,1000 etc..."], ["Entiers & décimaux", "Diviser par 10,100,1000 etc..."],
+        ["Puissances", "Puissances de 10"], ["Puissances", "Les globules rouges"], ["Puissances", "L'étoile à 4 années-lumière"] ] },
+      { nom: "Droite des milieux", familles: [] },
+      { nom: "Théorème de Thalès", familles: [
+        ["Théorème de Thalès", "Triangles imbriqués"], ["Théorème de Thalès", "Triangles opposés"],
+        ["Théorème de Thalès", "Démonstration avec la réciproque de Thalès"], ["Théorème de Thalès", "Triangles semblables"] ] },
+      { nom: "Trigonométrie", familles: [
+        ["Trigonométrie", "Calculer un côté avec le cosinus"], ["Trigonométrie", "Calculer un angle avec le cosinus"],
+        ["Trigonométrie", "Calculer une longueur avec le sinus"], ["Trigonométrie", "Calculer un angle avec le sinus"],
+        ["Trigonométrie", "Calculer une longueur avec la tangente"], ["Trigonométrie", "Calculer un angle avec la tangente"],
+        ["Trigonométrie", "L'angle de la rampe"] ] },
+      { nom: "Agrandissement et réduction", familles: [
+        ["Proportionnalité", "La photo agrandie"], ["Proportionnalité", "La maquette au 1/24"], ["Homothéties", "Construction des homothéties"] ] },
+      { nom: "Fonctions linéaires", familles: [
+        ["Fonction linéaire", "Reconnaître une fonction linéaire"], ["Fonction linéaire", "Image et antécédent"],
+        ["Fonction linéaire", "Déterminer le coefficient"], ["Fonction linéaire", "Le taux de change"] ] },
+    ],
+  },
+  {
+    nom: "DISTRIBUTIVITÉ", color: "#c8a07a",
+    desc: "Réécrire un nombre ou une expression sans changer sa valeur.",
+    notions: [
+      { nom: "Numération décimale", familles: [
+        ["Entiers & décimaux", "Chiffre et nombre"], ["Entiers & décimaux", "Écrire un grand nombre en chiffres"],
+        ["Entiers & décimaux", "Addition posée de décimaux"], ["Entiers & décimaux", "Soustraction posée de décimaux"],
+        ["Entiers & décimaux", "Multiplication de décimaux"], ["Entiers & décimaux", "Division décimale"],
+        ["Entiers & décimaux", "La monnaie du libraire"], ["Entiers & décimaux", "Le plein de carburant"] ] },
+      { nom: "Calcul mental réfléchi", familles: [
+        ["Calcul littéral", "Le calcul malin"] ] },
+      { nom: "Priorités opératoires", familles: [
+        ["Enchaînement d'opérations", "Priorité de la multiplication/division"], ["Enchaînement d'opérations", "Calcul avec parenthèses"],
+        ["Enchaînement d'opérations", "Traduire par une expression"], ["Fractions", "Priorités avec des fractions"],
+        ["Fractions", "Expression avec parenthèses"], ["Nombres relatifs", "Priorité des relatifs"] ] },
+      { nom: "Nombres relatifs", familles: [
+        ["Nombres relatifs", "L'opposé d'un nombre"], ["Nombres relatifs", "Suite d'additions et de soustractions"],
+        ["Nombres relatifs", "Simplifier une opération"], ["Nombres relatifs", "Produits de relatifs"],
+        ["Nombres relatifs", "Quotients de relatifs"], ["Nombres relatifs", "La règle des signes en chaîne"],
+        ["Nombres relatifs", "L'ascenseur du parking"], ["Nombres relatifs", "Le compte en banque"],
+        ["Nombres relatifs", "La température du congélateur"], ["Nombres relatifs", "La dette partagée"],
+        ["Nombres relatifs", "Les points du quiz"] ] },
+      { nom: "Distributivité simple et double", familles: [
+        ["Calcul littéral", "Distributivité"] ] },
+      { nom: "Réduction d'expressions", familles: [
+        ["Calcul littéral", "Réduction"] ] },
+      { nom: "Développement et factorisation", familles: [
+        ["Calcul littéral", "Factoriser"], ["Calcul littéral", "L'aire du panneau"] ] },
+      { nom: "Identités remarquables", familles: [
+        ["Calcul littéral", "Développer (a−b)² et (a+b)²"], ["Calcul littéral", "Développer (a+b)(a−b)"],
+        ["Calcul littéral", "Factoriser a²−b²"] ] },
+      { nom: "Opposé d'une expression", familles: [] },
+      { nom: "Règles de calcul sur les puissances", familles: [
+        ["Puissances", "Calculer une puissance"], ["Puissances", "Exposant négatif"], ["Puissances", "Produit et quotient de puissances"],
+        ["Puissances", "Puissances et parenthèses"], ["Puissances", "Les bactéries qui doublent"] ] },
+      { nom: "Multiples et diviseurs", familles: [
+        ["Arithmétique", "Tous les diviseurs"], ["Arithmétique", "Premier ou non ?"], ["Arithmétique", "Plus petit multiple commun"],
+        ["Arithmétique", "Les guirlandes synchronisées"], ["Arithmétique", "Les lots identiques"], ["Arithmétique", "Le dallage parfait"] ] },
+      { nom: "Critères de divisibilité", familles: [
+        ["Arithmétique", "Critères de divisibilité"] ] },
+      { nom: "Décomposition en facteurs premiers", familles: [
+        ["Arithmétique", "Décomposer"] ] },
+      { nom: "Fractions irréductibles", familles: [
+        ["Arithmétique", "Fraction irréductible"], ["Fractions", "Simplifier des fractions"], ["Fractions", "Fractions égales"] ] },
+      { nom: "Mise au même dénominateur", familles: [
+        ["Fractions", "Additionner avec le même dénominateur"], ["Fractions", "Additionner avec des dénominateurs multiples"],
+        ["Fractions", "Somme de dénominateurs quelconques"], ["Fractions", "Différence de fractions"],
+        ["Fractions", "Somme avec un relatif"], ["Fractions", "Opérations entiers et fractions"],
+        ["Fractions", "Produit de fractions"], ["Fractions", "Produit avec un signe"], ["Fractions", "Quotient de fractions"],
+        ["Fractions", "L'inverse d'un nombre"], ["Fractions", "Les sachets de café"] ] },
+      { nom: "Démonstrations par le calcul littéral", familles: [] },
+    ],
+  },
+  {
+    nom: "ÉGALITÉ", color: "#c87a9a",
+    desc: "Une balance qu'on garde en équilibre, qu'on teste ou qu'on utilise dans un sens ou dans l'autre.",
+    notions: [
+      { nom: "Opérations à trou et opérations inverses", familles: [] },
+      { nom: "Division euclidienne", familles: [
+        ["Arithmétique", "Vocabulaire de la division euclidienne"], ["Arithmétique", "Poser une division euclidienne"],
+        ["Arithmétique", "Les œufs en boîtes"], ["Arithmétique", "Les cars du voyage scolaire"] ] },
+      { nom: "Comparaison et rangement", familles: [
+        ["Entiers & décimaux", "Comparer deux décimaux"], ["Entiers & décimaux", "Ranger des décimaux"],
+        ["Entiers & décimaux", "Intercaler un décimal"], ["Fractions", "Comparer"], ["Nombres relatifs", "Ranger des relatifs"] ] },
+      { nom: "Encadrements et valeurs approchées", familles: [
+        ["Entiers & décimaux", "Encadrer"], ["Entiers & décimaux", "Arrondir un décimal"], ["Fractions", "Encadrer une fraction"] ] },
+      { nom: "Tester si une égalité est vraie", familles: [
+        ["Équations", "Vérification des équations"] ] },
+      { nom: "Équations", familles: [
+        ["Équations", "Équations simples"], ["Équations", "Équations complexes"], ["Équations", "Équations avec parenthèses"] ] },
+      { nom: "Inéquations", familles: [] },
+      { nom: "Équation produit nul", familles: [] },
+      { nom: "Équation x² = a et racine carrée", familles: [
+        ["Équations", "Équations avec des x²"] ] },
+      { nom: "Remonter un programme de calcul", familles: [] },
+      { nom: "Théorème de Pythagore, réciproque et contraposée", familles: [
+        ["Théorème de Pythagore", "Le fil du mât"], ["Théorème de Pythagore", "La diagonale de l'écran"],
+        ["Théorème de Pythagore", "Calculer un côté de l'angle droit"], ["Théorème de Pythagore", "Démontrer avec la contraposée"] ] },
+      { nom: "Inégalité triangulaire et construction de triangles", familles: [
+        ["Géométrie du triangle", "Triangle constructible ?"] ] },
+      { nom: "Angle manquant par la somme des angles", familles: [
+        ["Géométrie du triangle", "Triangle quelconque"], ["Géométrie du triangle", "Triangle isocèle"],
+        ["Géométrie du triangle", "Triangle rectangle"] ] },
+      { nom: "Formules de périmètre, d'aire et de volume", familles: [
+        ["Aires et figures", "Aire et périmètre d'un carré"], ["Aires et figures", "Aire et périmètre d'un rectangle"],
+        ["Aires et figures", "Aire et périmètre d'un triangle rectangle"], ["Aires et figures", "Aire et périmètre d'un triangle quelconque"],
+        ["Aires et figures", "Aire et périmètre d'un cercle"], ["Aires et figures", "La chambre à moquette"],
+        ["Volumes et solides", "Volume d'un cube"], ["Volumes et solides", "Volume d'un pavé droit"],
+        ["Volumes et solides", "Volume d'un prisme droit"], ["Volumes et solides", "Volume d'un cylindre"],
+        ["Volumes et solides", "Volume d'une pyramide"], ["Volumes et solides", "Volume d'un cône"],
+        ["Volumes et solides", "Volume d'une boule"] ] },
+    ],
+  },
+  {
+    nom: "TRANSFORMATIONS ET INVARIANCE", color: "#a07ac8",
+    desc: "Déplacer une figure en conservant certaines propriétés.",
+    notions: [
+      { nom: "Symétrie axiale", familles: [
+        ["Symétrie axiale", "Construction des symétries"] ] },
+      { nom: "Symétrie centrale", familles: [
+        ["Symétrie centrale", "Construction des symétries"] ] },
+      { nom: "Translation", familles: [
+        ["Translation et rotation", "Rotation et translation"] ] },
+      { nom: "Vecteurs et relation de Chasles", familles: [] },
+      { nom: "Frises, pavages et polygones réguliers", familles: [] },
+      { nom: "Médiatrice et bissectrice", familles: [] },
+      { nom: "Angles : opposés, alternes-internes, correspondants", familles: [
+        ["Géométrie", "Perpendiculaires et parallèles"], ["Angles et parallélisme", "Angles opposés par le sommet"],
+        ["Angles et parallélisme", "Complémentaires et supplémentaires"], ["Angles et parallélisme", "Angles alternes-internes"],
+        ["Angles et parallélisme", "Angles correspondants"], ["Angles et parallélisme", "Déduire un angle"] ] },
+      { nom: "Démonstration de la somme des angles d'un triangle", familles: [] },
+      { nom: "Parallélogrammes et quadrilatères particuliers", familles: [
+        ["Géométrie", "Droite, segment, demi-droite"], ["Géométrie", "Vocabulaire des figures"], ["Aires et figures", "Reconnaître une figure"] ] },
+      { nom: "Triangles particuliers et droites remarquables", familles: [
+        ["Géométrie du triangle", "Types de triangle"] ] },
+      { nom: "Cercle circonscrit au triangle rectangle", familles: [] },
+      { nom: "Aires par découpage et recollement", familles: [] },
+      { nom: "Représentations de solides", familles: [
+        ["Volumes et solides", "Reconnaître un solide"] ] },
+      { nom: "Sections de solides", familles: [] },
+      { nom: "Déplacements en programmation", familles: [] },
+    ],
+  },
+  {
+    nom: "FONCTION", color: "#7ac8a0",
+    desc: "Une quantité dépend d'une autre.",
+    notions: [
+      { nom: "« En fonction de »", familles: [] },
+      { nom: "Suites de motifs et régularités", familles: [] },
+      { nom: "Formules exprimant une dépendance", familles: [] },
+      { nom: "Programmes de calcul", familles: [
+        ["Calcul littéral", "Le programme de calcul"] ] },
+      { nom: "Droite graduée et repère du plan", familles: [
+        ["Nombres relatifs", "Distance entre deux points"] ] },
+      { nom: "Tableaux de valeurs", familles: [
+        ["Notions de fonctions", "Le tableau mystère"] ] },
+      { nom: "Lire et tracer un graphique", familles: [] },
+      { nom: "Image et antécédent", familles: [
+        ["Notions de fonctions", "La notation « flèche »"], ["Notions de fonctions", "Calculer une image"],
+        ["Notions de fonctions", "Image d'un nombre négatif"], ["Notions de fonctions", "Une fonction avec un carré"],
+        ["Notions de fonctions", "Déterminer un antécédent"] ] },
+      { nom: "Fonctions affines et fonction carré", familles: [
+        ["Fonction affine", "Identifier a et b"], ["Fonction affine", "Calculer des images"],
+        ["Fonction affine", "Antécédent par une fonction affine"], ["Fonction affine", "Déterminer une fonction affine"],
+        ["Fonction affine", "Le forfait téléphonique"] ] },
+      { nom: "Résolution graphique", familles: [] },
+      { nom: "Algorithmique", familles: [] },
+    ],
+  },
+  {
+    nom: "HASARD ET DONNÉES", color: "#e8a87c",
+    desc: "Résumer ce qu'on observe et prévoir ce qui est incertain.",
+    notions: [
+      { nom: "Recueil et organisation de données", familles: [
+        ["Organisation des données", "Analyse de données"] ] },
+      { nom: "Effectifs et fréquences", familles: [
+        ["Statistiques", "Fréquence"] ] },
+      { nom: "Tableaux et diagrammes", familles: [
+        ["Organisation des données", "Construction"] ] },
+      { nom: "Moyenne simple et pondérée", familles: [
+        ["Statistiques", "Calculer une moyenne"], ["Statistiques", "Moyenne pondérée"] ] },
+      { nom: "Médiane", familles: [
+        ["Statistiques", "Médiane d'une série impaire"], ["Statistiques", "Médiane d'une série paire"] ] },
+      { nom: "Étendue", familles: [
+        ["Statistiques", "Calculer l'étendue"] ] },
+      { nom: "Effectifs cumulés", familles: [] },
+      { nom: "Quartiles et boîtes à moustaches", familles: [] },
+      { nom: "Comparer des séries", familles: [] },
+      { nom: "Vocabulaire des probabilités", familles: [
+        ["Bases des probabilités", "Les issues d'une expérience"], ["Bases des probabilités", "L'échelle des probabilités"] ] },
+      { nom: "Équiprobabilité", familles: [
+        ["Bases des probabilités", "Probabilité simple"], ["Bases des probabilités", "Probabilité d'un événement"],
+        ["Bases des probabilités", "Probabilité avec un dé"], ["Bases des probabilités", "Tirage dans une urne"],
+        ["Bases des probabilités", "Le jeu de 32 cartes"], ["Bases des probabilités", "Les jetons numérotés"],
+        ["Bases des probabilités", "Probabilité sur une roue"], ["Bases des probabilités", "La roue de la kermesse"],
+        ["Bases des probabilités", "La somme des probabilités"] ] },
+      { nom: "Événement contraire", familles: [
+        ["Bases des probabilités", "L'événement contraire"] ] },
+      { nom: "Réunion et intersection", familles: [] },
+      { nom: "Expériences à deux épreuves", familles: [
+        ["Bases des probabilités", "Dé et pièce"], ["Bases des probabilités", "Deux pièces de monnaie"],
+        ["Bases des probabilités", "Deux tirages avec remise"] ] },
+      { nom: "Fluctuation et stabilisation des fréquences", familles: [
+        ["Bases des probabilités", "De la fréquence à la probabilité"] ] },
+      { nom: "Tableur", familles: [] },
+    ],
+  },
+];
+if (typeof window !== "undefined") window.GRANDES_IDEES = GRANDES_IDEES;
