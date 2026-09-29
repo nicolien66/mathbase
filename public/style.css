@@ -1958,3 +1958,51 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
   padding: 0 .45rem; border-radius: 4px; color: var(--bg); background: var(--sc); }
 .fx-classe-suite { background: transparent; color: var(--sc); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sc) 60%, transparent); }
 .fx-rupture::before { content: ''; position: absolute; left: 0; top: .1rem; height: 2.9rem; border-left: 1px dashed color-mix(in srgb, var(--sc) 55%, transparent); }
+
+/* ── Frises coulissantes ──
+   La section ne s'élargit plus avec son contenu : c'est la ligne qui
+   défile, dans son cadre, avec des flèches sur les bords. ── */
+#list.fx-liste { min-width: 0; width: 100%; align-items: stretch; }
+#list.fx-liste > .fx { min-width: 0; max-width: 100%; }
+.fx-cadre { position: relative; min-width: 0; }
+.fx-ligne {
+  display: block !important; overflow-x: auto; overflow-y: hidden; min-width: 0;
+  padding: 0 0 .7rem; cursor: grab;
+  scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--sc) 55%, transparent) transparent;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+}
+.fx-ligne::before { display: none; }
+.fx-ligne::-webkit-scrollbar { height: 6px; }
+.fx-ligne::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--sc) 55%, transparent); border-radius: 3px; }
+.fx-ligne.glisse { cursor: grabbing; user-select: none; }
+.fx-ligne.glisse .fx-station { pointer-events: none; }
+.fx-piste {
+  display: grid; grid-template-columns: repeat(var(--n), 8.5rem); position: relative;
+  width: max-content; min-width: 100%; padding: 0 .2rem .2rem;
+}
+.fx-piste::before {
+  content: ''; position: absolute; left: 4.25rem; right: 4.25rem; top: 2.05rem; height: 2px;
+  background: linear-gradient(to right, var(--sc), color-mix(in srgb, var(--sc) 35%, transparent));
+}
+/* flèches et fondus sur les bords, seulement si la frise déborde */
+.fx-defile {
+  position: absolute; top: 1.15rem; z-index: 3; width: 2rem; height: 2rem; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: 1.2rem; line-height: 1; cursor: pointer; display: none; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35); transition: opacity .15s, border-color .15s;
+}
+.fx-defile:hover { border-color: var(--sc); color: var(--sc); }
+.fx-defile.gauche { left: -.4rem; } .fx-defile.droite { right: -.4rem; }
+.fx-cadre.deborde .fx-defile { display: flex; }
+.fx-cadre.au-debut .fx-defile.gauche, .fx-cadre.a-la-fin .fx-defile.droite { opacity: 0; pointer-events: none; }
+.fx-cadre.deborde::before, .fx-cadre.deborde::after {
+  content: ''; position: absolute; top: 0; bottom: .7rem; width: 2.5rem; z-index: 2; pointer-events: none; transition: opacity .15s;
+}
+.fx-cadre.deborde::before { left: 0; background: linear-gradient(to right, var(--surface), transparent); }
+.fx-cadre.deborde::after { right: 0; background: linear-gradient(to left, var(--surface), transparent); }
+.fx-cadre.au-debut::before, .fx-cadre.a-la-fin::after { opacity: 0; }
+@media (max-width: 760px) {
+  .fx-piste { grid-template-columns: repeat(var(--n), 7.2rem); }
+  .fx-piste::before { left: 3.6rem; right: 3.6rem; }
+  .fx-defile { display: none !important; }
+}

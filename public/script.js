@@ -421,6 +421,62 @@ function renderByChapter(data) {
     return card;
   }
 
+  /* Une frise trop longue pour l'écran coulisse : on la fait glisser à la
+     souris ou au doigt, à la molette, ou avec les flèches ‹ › des bords.
+     Un glissement ne déclenche pas l'ouverture de la notion survolée. */
+  function coulissante(ligne) {
+    const cadre = document.createElement("div");
+    cadre.className = "fx-cadre";
+    const g = document.createElement("button"), d = document.createElement("button");
+    g.type = d.type = "button";
+    g.className = "fx-defile gauche"; d.className = "fx-defile droite";
+    g.innerHTML = "&#8249;"; d.innerHTML = "&#8250;";
+    g.setAttribute("aria-label", "Faire défiler vers la gauche"); d.setAttribute("aria-label", "Faire défiler vers la droite");
+    g.onclick = () => ligne.scrollBy({ left: -ligne.clientWidth * 0.8, behavior: "smooth" });
+    d.onclick = () => ligne.scrollBy({ left:  ligne.clientWidth * 0.8, behavior: "smooth" });
+    cadre.append(g, ligne, d);
+
+    const maj = () => {
+      const max = ligne.scrollWidth - ligne.clientWidth;
+      cadre.classList.toggle("deborde", max > 2);
+      cadre.classList.toggle("au-debut", ligne.scrollLeft <= 2);
+      cadre.classList.toggle("a-la-fin", ligne.scrollLeft >= max - 2);
+    };
+    ligne.addEventListener("scroll", maj, { passive: true });
+    window.addEventListener("resize", maj);
+    requestAnimationFrame(maj);
+
+    /* molette verticale → défilement horizontal, tant que la frise peut bouger */
+    ligne.addEventListener("wheel", e => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      const max = ligne.scrollWidth - ligne.clientWidth;
+      if ((e.deltaY < 0 && ligne.scrollLeft <= 0) || (e.deltaY > 0 && ligne.scrollLeft >= max)) return;
+      e.preventDefault();
+      ligne.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    /* glisser à la souris (le toucher défile nativement) */
+    let depart = null, bouge = false;
+    ligne.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      depart = { x: e.clientX, gauche: ligne.scrollLeft }; bouge = false;
+    });
+    window.addEventListener("pointermove", e => {
+      if (!depart) return;
+      const dx = e.clientX - depart.x;
+      if (!bouge && Math.abs(dx) > 5) { bouge = true; ligne.classList.add("glisse"); }
+      if (bouge) ligne.scrollLeft = depart.gauche - dx;
+    });
+    window.addEventListener("pointerup", () => {
+      if (!depart) return;
+      depart = null;
+      setTimeout(() => ligne.classList.remove("glisse"), 0);
+    });
+    /* un glissement n'est pas un clic */
+    ligne.addEventListener("click", e => { if (bouge) { e.stopPropagation(); e.preventDefault(); bouge = false; } }, true);
+    return cadre;
+  }
+
   /* Chaque grande idée est une frise : une ligne, une station par
      chapitre, dans l'ordre de la progression. */
   function frise(titre, desc, couleur, chapitres) {
@@ -434,7 +490,10 @@ function renderByChapter(data) {
       `<span class="fx-total">${chapitres.length} chapitre${chapitres.length > 1 ? "s" : ""} · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
     const ligne = document.createElement("div");
     ligne.className = "fx-ligne";
-    ligne.style.setProperty("--n", chapitres.length);
+    const piste = document.createElement("div");
+    piste.className = "fx-piste";
+    piste.style.setProperty("--n", chapitres.length);
+    ligne.appendChild(piste);
     chapitres.forEach((chap, i) => {
       const exs = byChap.get(chap) || [];
       const n = exs.length;
@@ -446,9 +505,9 @@ function renderByChapter(data) {
         `<span class="fx-point"></span>` +
         `<span class="fx-nom">${escapeHtml(chap)}</span>` +
         `<span class="fx-compte">${n ? n + " exercice" + (n > 1 ? "s" : "") : "à venir"}</span>`;
-      ligne.appendChild(st);
+      piste.appendChild(st);
     });
-    section.appendChild(ligne);
+    section.appendChild(coulissante(ligne));
     return section;
   }
 
@@ -482,7 +541,10 @@ function renderByChapter(data) {
       `<span class="fx-total">${pleines} / ${g.notions.length} notions · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
     const ligne = document.createElement("div");
     ligne.className = "fx-ligne";
-    ligne.style.setProperty("--n", g.notions.length);
+    const piste = document.createElement("div");
+    piste.className = "fx-piste";
+    piste.style.setProperty("--n", g.notions.length);
+    ligne.appendChild(piste);
     g.notions.forEach((n, i) => {
       const nb = compte(n);
       const st = document.createElement(nb ? "button" : "div");
@@ -494,9 +556,9 @@ function renderByChapter(data) {
         `<span class="fx-classe${nouvelleClasse ? "" : " fx-classe-suite"}">${escapeHtml(n.classe || "")}</span><span class="fx-point"></span>` +
         `<span class="fx-nom">${escapeHtml(n.nom)}</span>` +
         `<span class="fx-compte">${nb ? nb + " exercice" + (nb > 1 ? "s" : "") : "à venir"}</span>`;
-      ligne.appendChild(st);
+      piste.appendChild(st);
     });
-    section.appendChild(ligne);
+    section.appendChild(coulissante(ligne));
     return section;
   }
 
