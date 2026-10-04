@@ -3075,11 +3075,6 @@ function ouvrirKholleur(chapitre) {
   location.href = window.MB_MAT ? MB_MAT.lien(href) : href;
 }
 
-/* ── L'Analyse des compétences : sa propre page ── */
-function ouvrirAnalyse() {
-  location.href = window.MB_MAT ? MB_MAT.lien("analyse.html") : "analyse.html";
-}
-
 /* ── Liens profonds : app.html#vue ouvre directement une section ── */
 function routeFromHash() {
   const h = (location.hash || "").replace("#", "");
@@ -3087,7 +3082,6 @@ function routeFromHash() {
     case "entrainement": openSeance("exercice"); break;
     case "probleme":
     case "problemes":    ouvrirKholleur(); break;   // les « Problèmes » sont devenus le Khôlleur
-    case "analyse":      ouvrirAnalyse(); break;
     case "examen":       openExamen(); break;
     case "annales":      showView("annales"); break;
     case "exercices":
