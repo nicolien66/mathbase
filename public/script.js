@@ -533,23 +533,24 @@ function renderByChapter(data) {
     section.className = "fx";
     section.style.setProperty("--sc", g.color);
     const compte = n => n.familles.reduce((s, [c, f]) => s + (parCle.get(c + "|" + normaliseTitre(f)) || []).length, 0);
-    const total = g.notions.reduce((s, n) => s + compte(n), 0);
-    const pleines = g.notions.filter(n => compte(n) > 0).length;
+    /* une notion sans aucun exercice n'est pas affichée (elle réapparaît dès qu'elle en reçoit) */
+    const notions = g.notions.filter(n => compte(n) > 0);
+    const total = notions.reduce((s, n) => s + compte(n), 0);
     section.innerHTML =
       `<div class="fx-tete"><span class="fx-titre">${escapeHtml(g.nom)}</span>` +
       `<span class="fx-desc">${escapeHtml(g.desc)}</span>` +
-      `<span class="fx-total">${pleines} / ${g.notions.length} notions · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
+      `<span class="fx-total">${notions.length} notion${notions.length > 1 ? "s" : ""} · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
     const ligne = document.createElement("div");
     ligne.className = "fx-ligne";
     const piste = document.createElement("div");
     piste.className = "fx-piste";
-    piste.style.setProperty("--n", g.notions.length);
+    piste.style.setProperty("--n", notions.length);
     ligne.appendChild(piste);
-    g.notions.forEach((n, i) => {
+    notions.forEach((n, i) => {
       const nb = compte(n);
       const st = document.createElement(nb ? "button" : "div");
       /* la première notion de chaque classe porte l'étiquette de la classe */
-      const nouvelleClasse = n.classe && (i === 0 || g.notions[i - 1].classe !== n.classe);
+      const nouvelleClasse = n.classe && (i === 0 || notions[i - 1].classe !== n.classe);
       st.className = "fx-station" + (nb ? "" : " fx-vide") + (nouvelleClasse && i ? " fx-rupture" : "");
       if (nb) { st.type = "button"; st.onclick = () => openNotion(g, n); st.title = n.familles.length + " famille" + (n.familles.length > 1 ? "s" : "") + " d'exercices"; }
       st.innerHTML =
