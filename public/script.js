@@ -239,13 +239,40 @@ function demoCorrect(ex, answer){
   };
 }
 
+/* ── BIBLIOTHÈQUE D'EXERCICES ──
+   La carte « Exercices » du tiroir d'accueil ouvre la bibliothèque, comme
+   dans la première version : frises → chapitre → familles (« Voir → ») →
+   liste des exercices. C'est la même vue que la page principale, sans le
+   carrousel, avec l'ancien titre et le compteur. Tout autre accès à la vue
+   « browse » (menu, liens) ramène à la page principale. */
+let bibliotheque = false;
+let garderBibliotheque = false;
+function rubriqueActive() { return bibliotheque ? "entrainement" : rubrique; }
+function ouvrirBibliotheque() {
+  bibliotheque = true; garderBibliotheque = true;
+  showView("browse");
+}
+function quitterBibliotheque() {
+  bibliotheque = false;
+  showView("browse");
+}
+/* « ← Tous les chapitres » : on revient là d'où l'on venait. */
+function retourChapitres() {
+  garderBibliotheque = bibliotheque;
+  showView("browse");
+}
+
 function showView(name, tabName) {
   /* L'ancien accueil n'est plus une vue : c'est un tiroir posé sur la page
      principale. Toute navigation le referme ; « home » l'ouvre. */
   if (name === "home") { name = "browse"; setTimeout(ouvrirAccueil, 0); }
   else fermerAccueil();
-  document.body.classList.toggle("vue-principale", name === "browse");
-  rangerAnnales(name === "browse" && rubrique === "annales" ? "browse" : "annales");
+  if (name === "browse" && !garderBibliotheque) bibliotheque = false;
+  garderBibliotheque = false;
+  const vb = document.getElementById("view-browse");
+  if (vb) vb.classList.toggle("mode-bibliotheque", bibliotheque);
+  document.body.classList.toggle("vue-principale", name === "browse" && !bibliotheque);
+  rangerAnnales(name === "browse" && rubriqueActive() === "annales" ? "browse" : "annales");
   // Blindage : fermer toute surcouche/modal restée ouverte (sinon elle masque la page en noir)
   document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classList.remove("open"));
   document.body.style.overflow = "";
@@ -541,9 +568,9 @@ function renderByChapter(data) {
     const compte = n => n.familles.reduce((s, [c, f]) => s + (parCle.get(c + "|" + normaliseTitre(f)) || []).length, 0);
     /* une notion sans aucun exercice n'est pas affichée (elle réapparaît dès qu'elle en reçoit) */
     /* COURS et TUTORIEL : les frises comptent les ressources, plus les exercices. */
-    const enCours = rubrique === "cours" || rubrique === "tutoriel";
-    const nbCours = n => rubrique === "tutoriel" ? tutosDeNotion(n).length : coursDeNotion(n).cours.length;
-    const unite = k => rubrique === "tutoriel" ? k + " tutoriel" + (k > 1 ? "s" : "") : k + " cours";
+    const enCours = rubriqueActive() === "cours" || rubriqueActive() === "tutoriel";
+    const nbCours = n => rubriqueActive() === "tutoriel" ? tutosDeNotion(n).length : coursDeNotion(n).cours.length;
+    const unite = k => rubriqueActive() === "tutoriel" ? k + " tutoriel" + (k > 1 ? "s" : "") : k + " cours";
     const notions = g.notions.filter(n => compte(n) > 0 || (enCours && nbCours(n) > 0));
     const total = notions.reduce((s, n) => s + compte(n), 0);
     section.innerHTML =
@@ -595,8 +622,8 @@ let currentFiltre = null;   /* quand une notion est ouverte : ex => true si l'ex
 let currentClasse = "";     /* la classe de la notion ouverte (6e, 5e…) */
 
 function openNotion(idee, notion) {
-  if (rubrique === "cours") { ouvrirCoursNotion(notion); return; }
-  if (rubrique === "tutoriel") { ouvrirTutosNotion(notion); return; }
+  if (rubriqueActive() === "cours") { ouvrirCoursNotion(notion); return; }
+  if (rubriqueActive() === "tutoriel") { ouvrirTutosNotion(notion); return; }
   FAMILLES_COCHEES = new Set();
   const cles = new Set(notion.familles.map(([c, f]) => c + "|" + normaliseTitre(f)));
   currentFiltre = ex => cles.has((ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || ""));
@@ -607,8 +634,8 @@ function openNotion(idee, notion) {
 }
 
 function openChapter(chap) {
-  if (rubrique === "cours") { ouvrirCoursChapitre(chap); return; }
-  if (rubrique === "tutoriel") { ouvrirTutosChapitre(chap); return; }
+  if (rubriqueActive() === "cours") { ouvrirCoursChapitre(chap); return; }
+  if (rubriqueActive() === "tutoriel") { ouvrirTutosChapitre(chap); return; }
   FAMILLES_COCHEES = new Set();
   currentFiltre = null;
   currentClasse = "";
@@ -689,6 +716,23 @@ function renderChapterView() {
      sur ces familles uniquement. Les coches survivent au passage
      Entraînement ↔ Problèmes, et sont remises à zéro à chaque notion. */
   FAMILLES = {};
+  if (bibliotheque) {
+    /* Bibliothèque : chaque famille ouvre la page qui liste ses exercices. */
+    ordonnes.forEach(g => {
+      const cle = normaliseTitre(g.titre);
+      FAMILLES[cle] = g;
+      const tete = document.createElement("button");
+      tete.className = "chap-group-head";
+      tete.innerHTML =
+        `<span class="chap-group-title">${escapeHtml(g.titre)}</span>
+         <span class="chap-group-count">${g.items.length}</span>
+         <span class="chap-group-go">Voir →</span>`;
+      tete.onclick = () => ouvrirFamille(cle);
+      grid.appendChild(tete);
+    });
+    majLancement();
+    return;
+  }
   ordonnes.forEach(g => {
     const cle = normaliseTitre(g.titre);
     FAMILLES[cle] = g;
@@ -720,7 +764,7 @@ function majLancement() {
   const barre = document.getElementById("chapter-launch");
   if (!barre) return;
   const total = Object.keys(FAMILLES).length;
-  barre.hidden = total === 0;
+  barre.hidden = total === 0 || bibliotheque;
   const choix = famillesCochees();
   const nbEx = choix.reduce((n, g) => n + g.items.length, 0);
   document.getElementById("chap-launch-txt").textContent = choix.length
@@ -3223,16 +3267,25 @@ function dessinerCarrousel(sens) {
 }
 
 /* Ce que montre la page selon la rubrique. */
+/* Titre de la vue : page principale, ou bibliothèque (titre de la première version). */
+const TITRES_VUE = {
+  principale:   { tag: "Polymates", h1: "<em>Mathématiques.</em>" },
+  bibliotheque: { tag: "Bibliothèque d'exercices", h1: "Exercices de<br><em>mathématiques.</em>",
+                  sous: "Explore, filtre et résous des exercices classés par niveau — du primaire à l'université." },
+};
 function appliquerRubrique() {
-  const ann = rubrique === "annales";
+  const ann = rubriqueActive() === "annales";
   const vue = document.getElementById("view-browse");
   if (!vue) return;
+  const t = TITRES_VUE[bibliotheque ? "bibliotheque" : "principale"];
+  vue.querySelector(".browse-hero .hero-tag").textContent = t.tag;
+  vue.querySelector(".browse-hero h1").innerHTML = t.h1;
   vue.querySelector(".filter-section").style.display = ann ? "none" : "";
   vue.querySelector(".grid-section").style.display = ann ? "none" : "";
   document.getElementById("browse-annales").hidden = !ann;
   const sous = vue.querySelector(".browse-hero .hero-sub");
   const r = RUBRIQUES[rangRubrique(rubrique)];
-  if (sous && r) sous.textContent = r.sous;
+  if (sous) sous.textContent = bibliotheque ? t.sous : (r ? r.sous : "");
   if (ann) { rangerAnnales("browse"); loadAnnales(); }
 }
 
@@ -3420,6 +3473,7 @@ function routeFromHash() {
     case "ajouter":
     case "add":          showView("add"); break;
     case "seance":       openSeance("exercice"); break; // rétrocompat
+    case "bibliotheque": ouvrirBibliotheque(); break;
     case "accueil":
     case "home":         showView("home"); break;      // la page principale, tiroir d'accueil ouvert
     default:             showView("browse");            // la page principale

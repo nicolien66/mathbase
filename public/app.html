@@ -76,7 +76,7 @@
           <div class="home-card-desc">Un problème de 20 à 30 minutes par chapitre : expose ton raisonnement à l'examinateur, fais valider ton plan, puis rédige.</div>
           <div class="home-card-go">Chercher →</div>
         </div>
-        <div class="home-card" onclick="showView('browse')" style="--hc:var(--accent)">
+        <div class="home-card" onclick="ouvrirBibliotheque()" style="--hc:var(--accent)">
           <div class="home-card-icon">📚</div>
           <div class="home-card-title">Exercices</div>
           <div class="home-card-desc">Parcourir la banque d'exercices, classée par chapitre du programme.</div>
@@ -108,6 +108,13 @@
         <p class="hero-tag">Polymates</p>
         <h1><em>Mathématiques.</em></h1>
         <p class="hero-sub">Explore, filtre et résous des exercices classés par niveau — du primaire à l'université.</p>
+        <!-- Bibliothèque seulement : retour à la page principale -->
+        <button type="button" class="biblio-retour" onclick="quitterBibliotheque()">← Page principale</button>
+      </div>
+      <!-- Bibliothèque seulement : nombre d'exercices -->
+      <div id="total-badge" class="total-badge">
+        <span id="total-num">—</span>
+        <span class="total-label">exercices</span>
       </div>
     </div>
 
@@ -161,7 +168,7 @@
   <!-- ══ VUE : EXERCICES D'UN CHAPITRE ══ -->
   <div id="view-chapter" class="view">
     <div class="chapter-page">
-      <button class="chapter-back" onclick="showView('browse')">← Tous les chapitres</button>
+      <button class="chapter-back" onclick="retourChapitres()">← Tous les chapitres</button>
       <h2 id="chapter-title" class="chapter-title">Chapitre</h2>
       <p id="chapter-sub" class="chapter-sub"></p>
       <div class="chapter-switch">

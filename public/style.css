@@ -2142,3 +2142,14 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
   .tiroir-onglet { padding:.8rem .4rem .9rem; }
   .tiroir-fermer { width:32px; height:60px; font-size:1.25rem; top:auto; bottom:90px; transform:none; }
 }
+
+/* ══ Bibliothèque d'exercices (carte « Exercices » du tiroir d'accueil) ══
+   Même vue que la page principale : sans carrousel, avec le compteur. */
+#view-browse:not(.mode-bibliotheque) #total-badge,
+#view-browse:not(.mode-bibliotheque) .biblio-retour { display:none; }
+#view-browse.mode-bibliotheque #rubriques,
+#view-browse.mode-bibliotheque #browse-annales { display:none; }
+.biblio-retour { margin-top:1.3rem; background:none; border:1px solid rgba(200,185,122,.35);
+  border-radius:999px; color:var(--accent,#c8b97a); font:inherit; font-size:.82rem;
+  padding:.45rem 1rem; cursor:pointer; transition:background .2s; }
+.biblio-retour:hover { background:rgba(200,185,122,.1); }
