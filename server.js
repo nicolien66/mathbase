@@ -109,6 +109,10 @@ async function _loadRenderer() {
 /* Seuls les PDF d'annales sont rasterisables : garde-fou anti-traversée. */
 function _cheminSujet(relUrl) {
   const rel = String(relUrl || "").replace(/^\/+/, "");
+  /* Sujets déposés, en attente de validation : hors de public/, donc jamais
+     servis tels quels ; seul le serveur les lit (rendu des pages). */
+  const dep = rel.match(/^depots\/(\d+)\.pdf$/i);
+  if (dep) return path.join(__dirname, "depots-cache", dep[1] + ".pdf");
   if (!/^annales-pdf\/[A-Za-z0-9._-]+\.pdf$/i.test(rel)) return null;
   return path.join(__dirname, "public", rel);
 }
@@ -531,14 +535,26 @@ app.post("/annales/upload", auth, requireAdmin, async (req, res) => {
       return res.status(422).json({ error: e.message });
     }
 
-    const { rows } = await pool.query(
-      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, image_url, questions, matiere)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, title`,
-      [title || fichier.replace(/\.pdf$/i, "").replace(/_/g, " "),
-       exam || "Brevet", year ? Number(year) : null, "college",
-       classe || "3ème", "Mathématiques", duration ? Number(duration) : null,
-       "annales-pdf/" + fichier, JSON.stringify(analyse.questions),
-       req.body.matiere || "mathematiques"]);
+    /* `content` est obligatoire dans la table (NOT NULL) : on y range le texte
+       complet du sujet, exercice par exercice. Sans lui, l'insertion échouait
+       et le PDF restait sur le disque, ce qui bloquait ensuite tout nouvel
+       essai avec le même fichier (« existe déjà »). */
+    const texteComplet = analyse.questions.map(q => q.enonce_correction || q.enonce).join("\n\n");
+    let rows;
+    try {
+      ({ rows } = await pool.query(
+        `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, questions, matiere)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, title`,
+        [title || fichier.replace(/\.pdf$/i, "").replace(/_/g, " "),
+         exam || "Brevet", year ? Number(year) : null, "college",
+         classe || "3ème", "Mathématiques", duration ? Number(duration) : null,
+         texteComplet || "(sujet déposé en PDF)",
+         "annales-pdf/" + fichier, JSON.stringify(analyse.questions),
+         req.body.matiere || "mathematiques"]));
+    } catch (e) {
+      try { fs.unlinkSync(cible); } catch (_) {}   // pas de PDF orphelin si l'enregistrement échoue
+      throw e;
+    }
 
     res.json({
       id: rows[0].id, title: rows[0].title, fichier,
@@ -552,6 +568,467 @@ app.post("/annales/upload", auth, requireAdmin, async (req, res) => {
     console.error("Erreur upload annale:", e.message);
     res.status(500).json({ error: e.message });
   }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DÉPÔTS DE SUJETS : tout élève connecté dépose un PDF, l'administrateur le
+   valide en trois temps avant qu'il ne rejoigne la banque d'annales.
+
+     1. LECTURE   — l'admin lit le PDF et corrige les informations du sujet ;
+     2. ANALYSE   — découpage en exercices, puis l'IA regarde chaque exercice
+                    (image des pages + texte) : description des figures,
+                    widgets interactifs adaptés aux questions, erreurs ;
+                    l'admin relit et corrige tout ;
+     3. TEST      — l'admin compose le sujet comme un élève (app.html,
+                    #test-depot=ID), avec la vraie correction ;
+     puis PUBLICATION dans la banque d'annales.
+
+   Le PDF est conservé EN BASE (colonne pdf). Le disque d'un hébergement
+   comme Railway est effacé à chaque redéploiement : un fichier seul y serait
+   perdu. Les copies sur disque (depots-cache/, public/annales-pdf/) ne sont
+   que des caches, réécrits depuis la base dès qu'ils manquent.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const DOSSIER_DEPOTS = path.join(__dirname, "depots-cache");
+const MAX_DEPOTS_EN_ATTENTE = 10;             // par élève, contre les abus
+const MISTRAL_URL = process.env.MISTRAL_API_URL || "https://api.mistral.ai/v1/chat/completions";
+const MODELE_ANALYSE_SUJET = process.env.MISTRAL_MODEL_SUJET || "mistral-small-latest";
+let MB_SQ_SERVEUR = null;                      // le même découpeur de sous-questions que la page Examen
+try { MB_SQ_SERVEUR = require("./public/sous-questions.js"); } catch (_) {}
+
+async function initDepots() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS depots_sujets (
+      id            SERIAL PRIMARY KEY,
+      user_id       INTEGER,
+      nom_fichier   TEXT NOT NULL,
+      pdf           BYTEA NOT NULL,
+      taille        INTEGER,
+      title         TEXT,
+      exam          TEXT,
+      classe        TEXT,
+      year          INTEGER,
+      duration      INTEGER,
+      matiere       TEXT DEFAULT 'mathematiques',
+      commentaire   TEXT,
+      statut        TEXT NOT NULL DEFAULT 'en_attente',  -- en_attente | lu | analyse | teste | publie | refuse
+      motif_refus   TEXT,
+      "analyse"     JSONB,                               -- { questions, anomalies, pages_total, date, ia } (ANALYSE est un mot réservé : guillemets)
+      fichier_public TEXT,                               -- annales-pdf/xxx.pdf une fois publié
+      annale_id     INTEGER,
+      created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_depots_statut ON depots_sujets (statut)`);
+  await restaurerPdfPublies();
+}
+
+/* Au démarrage : les PDF des sujets publiés depuis un dépôt sont réécrits sur
+   le disque s'ils ont disparu (redéploiement). */
+async function restaurerPdfPublies() {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, fichier_public FROM depots_sujets WHERE statut = 'publie' AND fichier_public IS NOT NULL");
+    let n = 0;
+    for (const r of rows) {
+      const cible = _cheminSujet(r.fichier_public);
+      if (!cible || fs.existsSync(cible)) continue;
+      const { rows: b } = await pool.query("SELECT pdf FROM depots_sujets WHERE id = $1", [r.id]);
+      fs.mkdirSync(path.dirname(cible), { recursive: true });
+      fs.writeFileSync(cible, b[0].pdf); n++;
+    }
+    if (n) console.log("[dépôts] " + n + " PDF de sujets publiés restaurés depuis la base.");
+  } catch (e) { console.error("[dépôts] restauration :", e.message); }
+}
+
+/* Le PDF d'un dépôt, sous forme de fichier, pour le rendu des pages. */
+async function assurerFichierDepot(id) {
+  const fichier = path.join(DOSSIER_DEPOTS, Number(id) + ".pdf");
+  if (fs.existsSync(fichier)) return "depots/" + Number(id) + ".pdf";
+  const { rows } = await pool.query("SELECT pdf FROM depots_sujets WHERE id = $1", [Number(id)]);
+  if (!rows.length) return null;
+  fs.mkdirSync(DOSSIER_DEPOTS, { recursive: true });
+  fs.writeFileSync(fichier, rows[0].pdf);
+  return "depots/" + Number(id) + ".pdf";
+}
+
+function depotVisible(d) {
+  const o = Object.assign({}, d);
+  delete o.pdf;
+  return o;
+}
+
+/* ── DÉPOSER (tout compte connecté) ── */
+app.post("/depots", auth, async (req, res) => {
+  try {
+    const { nom, pdf_base64, title, exam, classe, year, duration, matiere, commentaire } = req.body || {};
+    if (!pdf_base64) return res.status(400).json({ error: "Aucun PDF reçu." });
+    const buffer = Buffer.from(String(pdf_base64).replace(/^data:.*?base64,/, ""), "base64");
+    if (buffer.slice(0, 4).toString() !== "%PDF") return res.status(400).json({ error: "Le fichier n'est pas un PDF." });
+    if (req.user.role !== "admin") {
+      const { rows } = await pool.query(
+        "SELECT COUNT(*)::int AS n FROM depots_sujets WHERE user_id = $1 AND statut NOT IN ('publie','refuse')", [req.user.id]);
+      if (rows[0].n >= MAX_DEPOTS_EN_ATTENTE)
+        return res.status(429).json({ error: "Tu as déjà " + rows[0].n + " sujets en attente : attends qu'ils soient validés." });
+    }
+    const propre = String(nom || "sujet.pdf").replace(/[^A-Za-z0-9._-]/g, "_").replace(/_+/g, "_").slice(0, 120);
+    const { rows } = await pool.query(
+      `INSERT INTO depots_sujets (user_id, nom_fichier, pdf, taille, title, exam, classe, year, duration, matiere, commentaire)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, statut, created_at`,
+      [req.user.id, propre, buffer, buffer.length, (title || "").trim() || null, exam || null, classe || null,
+       year ? Number(year) : null, duration ? Number(duration) : null, matiere || "mathematiques",
+       (commentaire || "").trim().slice(0, 1000) || null]);
+    res.json({ ok: true, id: rows[0].id, statut: rows[0].statut });
+  } catch (e) { console.error("[dépôts] envoi :", e.message); res.status(500).json({ error: e.message }); }
+});
+
+/* Mes dépôts, avec leur état. */
+app.get("/depots/mes", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, nom_fichier, title, exam, classe, year, statut, motif_refus, annale_id, created_at, updated_at
+         FROM depots_sujets WHERE user_id = $1 ORDER BY created_at DESC LIMIT 30`, [req.user.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── ADMINISTRATION ── */
+app.get("/admin/depots", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT d.id, d.nom_fichier, d.taille, d.title, d.exam, d.classe, d.year, d.duration, d.matiere,
+              d.commentaire, d.statut, d.motif_refus, d.annale_id, d.created_at, d.updated_at,
+              u.pseudo, u.email,
+              COALESCE(jsonb_array_length(d."analyse"->'questions'), 0) AS nb_exercices,
+              COALESCE(jsonb_array_length(d."analyse"->'anomalies'), 0) AS nb_anomalies
+         FROM depots_sujets d LEFT JOIN users u ON u.id = d.user_id
+        ORDER BY CASE d.statut WHEN 'en_attente' THEN 0 WHEN 'lu' THEN 1 WHEN 'analyse' THEN 2
+                               WHEN 'teste' THEN 3 WHEN 'publie' THEN 4 ELSE 5 END, d.created_at DESC`);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/admin/depots/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT d.*, u.pseudo, u.email FROM depots_sujets d LEFT JOIN users u ON u.id = d.user_id WHERE d.id = $1`,
+      [Number(req.params.id)]);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    res.json(depotVisible(rows[0]));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* Le PDF lui-même (lecture dans la page d'administration). */
+app.get("/admin/depots/:id/pdf", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT pdf, nom_fichier FROM depots_sujets WHERE id = $1", [Number(req.params.id)]);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline; filename=\"" + rows[0].nom_fichier + "\"");
+    res.send(rows[0].pdf);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* Une page du dépôt en image (phase d'analyse : contrôle visuel des figures). */
+app.get("/admin/depots/:id/page/:n", auth, requireAdmin, async (req, res) => {
+  try {
+    const rel = await assurerFichierDepot(req.params.id);
+    if (!rel) return res.status(404).json({ error: "Dépôt introuvable." });
+    const img = await renderPageImage(rel, Number(req.params.n), 1.4);
+    if (!img) return res.status(404).json({ error: "Page indisponible (moteur de rendu absent ou numéro hors limites)." });
+    res.json({ image: img, page: Number(req.params.n) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* Modifier les informations, l'état ou les questions. */
+app.patch("/admin/depots/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const b = req.body || {};
+    const champs = [], vals = [];
+    const pose = (col, v) => { vals.push(v); champs.push(col + " = $" + vals.length); };
+    if ("title" in b)    pose("title", (b.title || "").trim() || null);
+    if ("exam" in b)     pose("exam", b.exam || null);
+    if ("classe" in b)   pose("classe", b.classe || null);
+    if ("year" in b)     pose("year", b.year ? Number(b.year) : null);
+    if ("duration" in b) pose("duration", b.duration ? Number(b.duration) : null);
+    if ("statut" in b) {
+      if (!["en_attente", "lu", "analyse", "teste"].includes(b.statut))
+        return res.status(400).json({ error: "État inconnu." });
+      pose("statut", b.statut);
+    }
+    if (Array.isArray(b.questions) || Array.isArray(b.anomalies_ia)) {
+      const { rows } = await pool.query('SELECT "analyse" FROM depots_sujets WHERE id = $1', [id]);
+      if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+      const an = rows[0].analyse || {};
+      if (Array.isArray(b.questions)) an.questions = b.questions;
+      /* L'admin peut écarter une remarque de l'IA qu'il a traitée. */
+      if (Array.isArray(b.anomalies_ia)) an.anomalies_ia = b.anomalies_ia;
+      an.questions = an.questions || [];
+      an.anomalies = anomaliesDuSujet(an.questions, an.pages_total || 0, an.anomalies_ia || []);
+      an.modifie = new Date().toISOString();
+      pose('"analyse"', JSON.stringify(an));
+    }
+    if (!champs.length) return res.status(400).json({ error: "Rien à modifier." });
+    pose("updated_at", new Date());
+    vals.push(id);
+    const { rows } = await pool.query(
+      "UPDATE depots_sujets SET " + champs.join(", ") + " WHERE id = $" + vals.length + " RETURNING *", vals);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    res.json(depotVisible(rows[0]));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/admin/depots/:id/refuser", auth, requireAdmin, async (req, res) => {
+  try {
+    const motif = String((req.body && req.body.motif) || "").trim().slice(0, 500) || null;
+    const { rows } = await pool.query(
+      "UPDATE depots_sujets SET statut = 'refuse', motif_refus = $2, updated_at = NOW() WHERE id = $1 RETURNING id",
+      [Number(req.params.id), motif]);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    try { fs.unlinkSync(path.join(DOSSIER_DEPOTS, Number(req.params.id) + ".pdf")); } catch (_) {}
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete("/admin/depots/:id", auth, requireAdmin, async (req, res) => {
+  try {
+    await pool.query("DELETE FROM depots_sujets WHERE id = $1 AND statut <> 'publie'", [Number(req.params.id)]);
+    try { fs.unlinkSync(path.join(DOSSIER_DEPOTS, Number(req.params.id) + ".pdf")); } catch (_) {}
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── PHASE 2 : DÉCOUPAGE ET ANALYSE PAR L'IA ── */
+
+/* Ce que l'IA doit savoir des widgets pour en proposer de valides. */
+const SCHEMAS_WIDGETS = `
+WIDGETS DISPONIBLES (champ "interactif" d'une sous-question ; n'en propose QUE si l'élève doit vraiment manipuler ou compléter quelque chose) :
+1. tableau — compléter un tableau (proportionnalité, valeurs…). Cases vides = null.
+   {"widget":"tableau","titre":"…","lignes":[{"entete":"x","cellules":[1,2,null]},{"entete":"f(x)","cellules":[3,null,7]}],
+    "choix":{"question":"…","options":["Oui","Non"]} (facultatif),
+    "reponse":{"cellules":{"0,2":3,"1,1":5},"choix":"Oui"}}   clé "ligne,colonne" à partir de 0, seulement les cases vides.
+2. axe — placer des points sur une droite graduée.
+   {"widget":"axe","min":-5,"max":5,"pas":1,"etiquettes":1,"fixes":[{"nom":"O","x":0}],"placer":["A","B"],
+    "reponse":{"points":[{"nom":"A","x":-3},{"nom":"B","x":2}]}}
+3. quadrillage — colorier des cases ou tracer des segments sur une grille (symétries, translations, constructions).
+   {"widget":"quadrillage","COLS":12,"ROWS":10,"geste":"segments"|"cases",
+    "fixe":{"cases":[[x,y]],"segments":[[[x1,y1],[x2,y2]]]},"reperes":[{"type":"v","x":6}],
+    "reponse":{"cases":[[x,y]],"segments":[[[x1,y1],[x2,y2]]]}}   repères : v (axe vertical x), h (axe horizontal y), c (centre x,y), t (vecteur de/vers), r (centre x,y).
+4. diagramme — construire un diagramme.
+   {"widget":"diagramme","impose":"batons"|"courbe"|"circulaire","categories":["A","B"],"max":10,"pas":1,"secteurs":12,
+    "xLabel":"…","yLabel":"…","reponse":{"type":"batons","valeurs":[3,5]}}
+5. figure — QCM sur une figure dessinée (points, segments, codages).
+   {"widget":"figure","figure":{"largeur":420,"hauteur":260,"elements":[{"t":"point","x":40,"y":200,"nom":"A","pos":"bas"},{"t":"segment","a":[40,200],"b":[300,200]}]},
+    "question":"…","options":["…","…"],"reponse":{"choix":"…"}}
+6. solide — affiche un solide ou une figure plane (aucune réponse) : {"widget":"solide","type":"cube"|"pave"|"cylindre"|"cone"|"boule"|"pyramide_carree"|"prisme_triangulaire"|…}
+Les réponses (champ "reponse") doivent être EXACTES : calcule-les.`;
+
+function textePagesPourAnalyse(pagesFournies, buffer) {
+  return (Array.isArray(pagesFournies) && pagesFournies.length) ? Promise.resolve(pagesFournies) : texteParPage(buffer);
+}
+
+async function appelMistralJson(contenu, maxTokens) {
+  const key = process.env.MISTRAL_KEY;
+  if (!key) throw new Error("Clé MISTRAL_KEY manquante.");
+  const r = await fetch(MISTRAL_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+    body: JSON.stringify({
+      model: MODELE_ANALYSE_SUJET,
+      messages: [{ role: "user", content: contenu }],
+      response_format: { type: "json_object" },
+      temperature: 0.1, max_tokens: maxTokens || 2500,
+    }),
+  });
+  if (!r.ok) throw new Error("IA indisponible (HTTP " + r.status + ")");
+  const d = await r.json();
+  const parsed = parseJsonTolerant((d.choices && d.choices[0] && d.choices[0].message.content) || "");
+  if (!parsed) throw new Error("Réponse de l'IA illisible.");
+  return parsed;
+}
+
+function sousQuestionsDe(texte) {
+  if (!MB_SQ_SERVEUR) return null;
+  try { return MB_SQ_SERVEUR.parse(texte); } catch (_) { return null; }
+}
+
+/* Une analyse IA pour UN exercice : images de ses pages + son texte. */
+async function analyserExercice(rel, q, numero) {
+  const dec = sousQuestionsDe(q.enonce_correction || "");
+  const labels = dec ? dec.items.map(x => x.label) : [];
+  const images = [];
+  for (const n of (q.pages || []).slice(0, 2)) {
+    const img = await renderPageImage(rel, Number(n));
+    if (img) images.push(img);
+  }
+  const consigne =
+`Tu prépares un exercice de sujet de mathématiques (collège) pour une plateforme d'entraînement.
+EXERCICE ${numero} — texte extrait du PDF (peut contenir des défauts d'extraction) :
+"""
+${String(q.enonce_correction || "").slice(0, 6000)}
+"""
+Sous-questions détectées automatiquement : ${labels.length ? labels.map(l => "« " + l + " »").join(", ") : "aucune"}.
+${images.length ? "Les images jointes sont les pages du sujet où se trouve cet exercice : c'est la référence." : "Aucune image de page n'est disponible : appuie-toi sur le texte."}
+${SCHEMAS_WIDGETS}
+
+Réponds UNIQUEMENT en JSON :
+{
+ "figure_desc": "description PRÉCISE de la ou des figures de CET exercice (points, longueurs, angles, codages, axes, valeurs) ou \\"\\" s'il n'y en a pas",
+ "widgets": [ { "question": "label EXACT d'une sous-question ci-dessus, ou \\"\\" si l'exercice n'en a pas", "interactif": { … } } ],
+ "anomalies": [ { "gravite": "erreur"|"attention", "question": "label ou \\"\\"", "message": "court, précis, en français" } ]
+}
+Signale comme anomalies : texte tronqué ou mal extrait (mots collés, symboles perdus, fractions ou puissances illisibles), sous-question manquante ou mal découpée, donnée nécessaire absente du texte mais présente seulement sur la figure, renvoi à une annexe, incohérence de l'énoncé, barème absent.`;
+  const contenu = [{ type: "text", text: consigne }].concat(images.map(u => ({ type: "image_url", image_url: u })));
+  const r = await appelMistralJson(contenu, 3000);
+  return {
+    figure_desc: typeof r.figure_desc === "string" ? r.figure_desc.trim() : "",
+    widgets: Array.isArray(r.widgets) ? r.widgets.filter(w => w && w.interactif && w.interactif.widget) : [],
+    anomalies: Array.isArray(r.anomalies) ? r.anomalies.filter(a => a && a.message).map(a => ({
+      gravite: a.gravite === "erreur" ? "erreur" : "attention", question: a.question || "",
+      message: String(a.message).slice(0, 400), source: "ia" })) : [],
+    images: images.length,
+  };
+}
+
+const WIDGETS_CONNUS = ["tableau", "axe", "quadrillage", "diagramme", "figure", "solide"];
+
+/* Contrôles sans IA : ce qui se vérifie à coup sûr. */
+function anomaliesDuSujet(questions, pagesTotal, anomaliesIa) {
+  const out = [];
+  const add = (gravite, exercice, message, question) => out.push({ gravite, exercice, question: question || "", message, source: "controle" });
+  if (!questions.length) add("erreur", null, "Aucun exercice détecté : le PDF n'a pas de texte, ou pas de titres « Exercice 1 », « Exercice 2 »…");
+  const couvertes = new Set(questions.flatMap(q => q.pages || []));
+  for (let p = 1; p <= pagesTotal; p++)
+    if (!couvertes.has(p)) add("attention", null, "La page " + p + " n'est rattachée à aucun exercice (annexe, page de garde ou exercice non détecté ?).");
+  let total = 0, sansBareme = 0;
+  questions.forEach((q, i) => {
+    const t = String(q.enonce_correction || "");
+    const titre = (q.enonce || "").split(" — ")[0] || ("Exercice " + (i + 1));
+    if (t.replace(/\s+/g, " ").trim().length < 40) add("erreur", i, titre + " : le texte est vide ou presque — extraction ratée ?");
+    const m = t.match(/\((\s*\d+(?:[.,]\d+)?)\s*points?\s*\)/i);
+    if (m) total += parseFloat(m[1].replace(",", ".")); else sansBareme++;
+    const dec = sousQuestionsDe(t);
+    if (dec) dec.items.forEach(it => {
+      if (/null|undefined/i.test(it.label)) add("erreur", i, titre + " : sous-question mal découpée « " + it.label + " » (une lettre isolée du texte a été prise pour un numéro).", it.label);
+      else if (!String(it.texte || "").trim()) add("erreur", i, titre + " : la sous-question « " + it.label + " » est vide.", it.label);
+    });
+    if (/\b(figure|ci-contre|ci-dessous|sch[ée]ma|graphique|annexe|dessin)\b/i.test(t) && !q.figure_desc)
+      add("attention", i, titre + " : le texte parle d'une figure, mais aucune description n'est enregistrée.");
+    (q.widgets || []).forEach(w => {
+      const p = w.interactif || {};
+      if (!WIDGETS_CONNUS.includes(p.widget)) add("erreur", i, titre + " : widget inconnu « " + p.widget + " ».", w.question);
+      else if (p.widget !== "solide" && !p.reponse) add("erreur", i, titre + " : le widget « " + p.widget + " » n'a pas de réponse attendue.", w.question);
+      if (dec && w.question && !dec.items.some(it => normLabel(it.label) === normLabel(w.question)))
+        add("attention", i, titre + " : le widget vise la sous-question « " + w.question + " », introuvable dans le découpage.", w.question);
+    });
+  });
+  if (questions.length && sansBareme) add("attention", null, sansBareme + " exercice(s) sans barème lisible « (n points) » : la note sera estimée.");
+  return out.concat((anomaliesIa || []).map(a => Object.assign({ source: "ia" }, a)));
+}
+function normLabel(l) { return String(l || "").toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+
+app.post("/admin/depots/:id/analyser", auth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { rows } = await pool.query("SELECT * FROM depots_sujets WHERE id = $1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    const d = rows[0];
+    const rel = await assurerFichierDepot(id);
+    const seul = Number.isInteger(req.body && req.body.exercice) ? req.body.exercice : null;
+
+    let questions, pagesTotal;
+    if (seul !== null && d.analyse && Array.isArray(d.analyse.questions) && d.analyse.questions[seul]) {
+      /* Réanalyse d'un seul exercice : on garde le reste tel que l'admin l'a laissé. */
+      questions = d.analyse.questions;
+      if (req.body.question) questions[seul] = Object.assign({}, questions[seul], req.body.question);
+      pagesTotal = d.analyse.pages_total || 0;
+    } else {
+      const pages = await textePagesPourAnalyse(req.body && req.body.pages_texte, d.pdf);
+      pagesTotal = pages.length;
+      questions = decouper(pages).map((b, i) => ({
+        enonce: (b.titre || ("Exercice " + (i + 1))) + " — reporte-toi au sujet PDF ci-dessus.",
+        enonce_correction: b.enonce, pages: b.pages, pages_total: pages.length,
+        figure_desc: "", widgets: [],
+      }));
+    }
+
+    const anomaliesIa = seul !== null ? ((d.analyse && d.analyse.anomalies_ia) || []).filter(a => a.exercice !== seul) : [];
+    let iaOk = 0, iaKo = 0, derniereErreur = null;
+    for (let i = 0; i < questions.length; i++) {
+      if (seul !== null && i !== seul) continue;
+      try {
+        const r = await analyserExercice(rel, questions[i], i + 1);
+        questions[i].figure_desc = r.figure_desc;
+        questions[i].widgets = r.widgets;
+        r.anomalies.forEach(a => anomaliesIa.push(Object.assign({ exercice: i }, a)));
+        iaOk++;
+      } catch (e) {
+        iaKo++; derniereErreur = e.message;
+        anomaliesIa.push({ exercice: i, gravite: "attention", message: "Analyse IA impossible pour cet exercice : " + e.message, source: "ia" });
+      }
+    }
+    const analyse = {
+      questions, pages_total: pagesTotal, anomalies_ia: anomaliesIa,
+      anomalies: anomaliesDuSujet(questions, pagesTotal, anomaliesIa),
+      ia: { reussies: iaOk, echouees: iaKo, erreur: derniereErreur, modele: MODELE_ANALYSE_SUJET },
+      date: new Date().toISOString(),
+    };
+    const upd = await pool.query(
+      `UPDATE depots_sujets SET "analyse" = $2, statut = CASE WHEN statut IN ('en_attente','lu') THEN 'analyse' ELSE statut END, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [id, JSON.stringify(analyse)]);
+    res.json(depotVisible(upd.rows[0]));
+  } catch (e) { console.error("[dépôts] analyse :", e.message); res.status(500).json({ error: e.message }); }
+});
+
+/* ── PHASE 3 : le sujet tel que la page Examen le recevra ── */
+app.get("/admin/depots/:id/annale", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM depots_sujets WHERE id = $1", [Number(req.params.id)]);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    const d = rows[0];
+    if (!d.analyse || !Array.isArray(d.analyse.questions) || !d.analyse.questions.length)
+      return res.status(400).json({ error: "Lance d'abord le découpage et l'analyse." });
+    const rel = await assurerFichierDepot(d.id);
+    res.json({
+      id: "depot-" + d.id, depot_id: d.id, test: true,
+      title: d.title || d.nom_fichier.replace(/\.pdf$/i, "").replace(/_/g, " "),
+      exam: d.exam || "Brevet", year: d.year, classe: d.classe || "3ème", level: "college",
+      duration: d.duration, content: "", pdf_serveur: rel, questions: d.analyse.questions,
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── PUBLICATION ── */
+app.post("/admin/depots/:id/publier", auth, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { rows } = await pool.query("SELECT * FROM depots_sujets WHERE id = $1", [id]);
+    if (!rows.length) return res.status(404).json({ error: "Dépôt introuvable." });
+    const d = rows[0];
+    if (d.statut === "publie") return res.status(409).json({ error: "Ce sujet est déjà publié." });
+    if (!d.analyse || !Array.isArray(d.analyse.questions) || !d.analyse.questions.length)
+      return res.status(400).json({ error: "Le sujet n'a pas encore été découpé." });
+    const base = d.nom_fichier.replace(/\.pdf$/i, "").replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 80) || "sujet";
+    const fichier = base + "-" + d.id + ".pdf";
+    const rel = "annales-pdf/" + fichier;
+    const cible = _cheminSujet(rel);
+    fs.mkdirSync(path.dirname(cible), { recursive: true });
+    fs.writeFileSync(cible, d.pdf);
+    const questions = d.analyse.questions;
+    const titre = d.title || base.replace(/_/g, " ");
+    const ins = await pool.query(
+      `INSERT INTO annales (title, exam, year, level, classe, subject, duration, content, image_url, questions, matiere)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      [titre, d.exam || "Brevet", d.year, "college", d.classe || "3ème",
+       d.matiere === "physique-chimie" ? "Physique-Chimie" : "Mathématiques", d.duration,
+       questions.map(q => q.enonce_correction || q.enonce).join("\n\n") || "(sujet déposé en PDF)",
+       rel, JSON.stringify(questions), d.matiere || "mathematiques"]);
+    await pool.query(
+      "UPDATE depots_sujets SET statut = 'publie', fichier_public = $2, annale_id = $3, updated_at = NOW() WHERE id = $1",
+      [id, rel, ins.rows[0].id]);
+    try { fs.unlinkSync(path.join(DOSSIER_DEPOTS, id + ".pdf")); } catch (_) {}
+    res.json({ ok: true, annale_id: ins.rows[0].id, image_url: rel });
+  } catch (e) { console.error("[dépôts] publication :", e.message); res.status(500).json({ error: e.message }); }
 });
 
 /* ── Vérification qu'un énoncé est bien un PROBLÈME ─────────────────────── */
@@ -1173,7 +1650,7 @@ async function seedDB() {
   console.log(`Base initialisée avec ${SEED.length} exercices.`);
 }
 
-initDB().catch(err => console.error("Erreur init DB :", err));
+initDB().then(initDepots).catch(err => console.error("Erreur init DB :", err));
 /* ── ANALYSE MISTRAL ── */
 async function analyseWithMistral(title, content, existingExercises) {
   const MISTRAL_API_KEY = process.env.MISTRAL_KEY;
@@ -1582,6 +2059,14 @@ app.post("/exercises/correct", auth, async (req, res) => {
   /* ── Source principale : l'IMAGE de la page du sujet ──
      On rasterise la ou les pages où figure l'exercice (champ `pages`, posé par
      seed-pages.js). Si le rendu échoue, on retombe sur figure_desc. */
+  /* Sujet déposé pas encore publié (phase de test de l'administrateur) :
+     son PDF vit en base, on en garantit la copie sur disque avant le rendu.
+     Réservé aux administrateurs. */
+  if (exercise.annale_url && /^depots\//i.test(String(exercise.annale_url))) {
+    const idDepot = (String(exercise.annale_url).match(/\d+/) || [])[0];
+    if (req.user && req.user.role === "admin" && idDepot) await assurerFichierDepot(idDepot);
+    else exercise.annale_url = null;
+  }
   const images = [];
   let raisonSansFigure = null;
   const pagesVoulues = Array.isArray(exercise.pages) ? exercise.pages.slice(0, 2) : [];

@@ -1064,9 +1064,19 @@ function expanserQuestions(qs) {
     const source = q.enonce_correction || q.enonce || "";
     const dec = source ? parseSousQuestions(source) : null;
     const base = qLabel(q, i);
-    if (!dec) { out.push(Object.assign({}, q, { _label: base, _exercice: base })); return; }
+    /* Widgets posés à l'analyse : chacun vise UNE sous-question par son
+       label (« 2. a. »). Sans sous-questions, le widget vaut pour l'exercice. */
+    const ws = Array.isArray(q.widgets) ? q.widgets : [];
+    const nl = l => String(l || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const widgetDe = label => { const w = ws.find(x => nl(x.question) === nl(label)); return w ? w.interactif : null; };
+    if (!dec) {
+      const w0 = ws.find(x => !x.question) || ws[0];
+      out.push(Object.assign({}, q, { _label: base, _exercice: base }, w0 ? { interactif: w0.interactif } : {}));
+      return;
+    }
     dec.items.forEach(sq => {
-      out.push(Object.assign({}, q, {
+      const wi = widgetDe(sq.label);
+      out.push(Object.assign({}, q, wi ? { interactif: wi } : {}, {
         _label: base + " \u00b7 question " + sq.label,
         _exercice: base,
         // Contexte complet de l'exercice + la sous-question précise :
@@ -1083,8 +1093,15 @@ function expanserQuestions(qs) {
 function startExamen(id) {
   const a = LOADED_ANNALES.find(x => x.id === id);
   if (!a) return;
+  lancerExamen(a);
+}
+/* Recommencer le sujet en cours (annale publiée ou sujet en test). */
+function relancerExamen() { if (EXAM && EXAM.annale) lancerExamen(EXAM.annale); }
+
+function lancerExamen(a) {
   const brutes = annaleQuestions(a);
-  const isPdf = !!(a.image_url && /\.pdf(\?|$)/i.test(a.image_url));
+  /* Un sujet en test arrive par une URL blob:, sans extension .pdf. */
+  const isPdf = !!(a.image_url && (a.test || /\.pdf(\?|$)/i.test(a.image_url)));
   if (!brutes.length && !isPdf) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
   // On compose sous-question par sous-question.
   const qs = expanserQuestions(brutes);
@@ -1095,7 +1112,9 @@ function startExamen(id) {
   const notice = isPdf
     ? `Prends d'abord connaissance du sujet <strong>en entier</strong>, comme le jour de l'épreuve. Quand tu es prêt·e, lance le chronomètre : tu composeras sur une <strong>copie unique</strong> (à l'écran ou sur papier), le sujet restant affiché à côté de ta rédaction.`
     : `Prends d'abord connaissance du sujet <strong>en entier</strong>, comme le jour de l'épreuve. Quand tu es prêt·e, lance le chronomètre — tu traiteras ensuite les questions une par une.`;
-  document.getElementById("examen-sujet-body").innerHTML = `
+  document.getElementById("examen-sujet-body").innerHTML = (a.test
+      ? `<div class="exam-test-bandeau">Mode test administrateur — ce sujet n'est pas encore publié.
+           Les élèves ne le voient pas.</div>` : "") + `
     <div class="annale-paper-head">
       ${annaleBadges(a)}
       <h2>${escapeHtml(a.title)}</h2>
@@ -1291,7 +1310,7 @@ async function submitExamAnswer() {
     // Source principale : le serveur rasterise ces pages du PDF et les joint à
     // l'appel, pour que le correcteur voie réellement la figure.
     pages: Array.isArray(q.pages) ? q.pages : null,
-    annale_url: EXAM.annale.image_url || null,
+    annale_url: EXAM.annale.pdf_serveur || EXAM.annale.image_url || null,
     /* Le barème du sujet : le correcteur note dessus plutôt que d'inventer
        une échelle. */
     bareme: baremeQuestion(q),
@@ -1389,7 +1408,7 @@ function finishExam() {
       ${copie ? `<details class="annale-q-sol" open><summary>Ta copie</summary><div>${nl2br(copie)}</div></details>` : ""}
       <div class="exam-start-row">
         <a class="annale-btn" href="${escapeHtml(EXAM.annale.image_url)}" target="_blank" rel="noopener">\ud83d\udcc4 Revoir le sujet (PDF)</a>
-        <button class="annale-btn" onclick="startExamen(${EXAM.annale.id})">\u21bb Recommencer ce sujet</button>
+        <button class="annale-btn" onclick="relancerExamen()">\u21bb Recommencer ce sujet</button>
         <button class="annale-btn primary" onclick="showView('annales')">Retour aux annales \u2192</button>
       </div>`;
     return;
@@ -1476,7 +1495,7 @@ function finishExam() {
       : barEstimes ? `<div class="exam-notice">Le sujet n'indique pas de barème pour ${barEstimes} question${barEstimes > 1 ? "s" : ""} : ${barEstimes > 1 ? "elles ont été comptées" : "elle a été comptée"} sur ${String(barDefaut).replace(".", ",")} point${barDefaut > 1 ? "s" : ""}${barsLus.length ? ", la moyenne des barèmes du sujet" : ""}. La note sur 20 en dépend.</div>` : ""}
     <div class="exam-bilan-liste">${lignes}</div>
     <div class="exam-start-row">
-      <button class="annale-btn" onclick="startExamen(${EXAM.annale.id})">↻ Recommencer ce sujet</button>
+      <button class="annale-btn" onclick="relancerExamen()">↻ Recommencer ce sujet</button>
       <button class="annale-btn primary" onclick="showView('annales')">Retour aux annales →</button>
     </div>
     ${blocSignalement()}`;
@@ -1702,12 +1721,14 @@ function initAddView() {
   if (sw) sw.style.display = restreint ? "none" : "";
   const sub = document.getElementById("add-sub");
   if (sub && restreint) {
-    sub.textContent = "Dépose le PDF d'un sujet — l'IA le découpe en exercices, "
-                    + "associe les pages et décrit les figures.";
+    sub.textContent = "Tu as un sujet de brevet, de contrôle ou de DS ? Envoie-le en PDF : "
+                    + "après relecture par l'équipe, il rejoindra la banque d'annales.";
   }
   const head = document.querySelector("#view-add .form-page-header h1");
-  if (head && restreint) head.innerHTML = "Ajouter une<br><em>annale.</em>";
-  if (restreint) { setAddType("annale"); return; }
+  if (head && restreint) head.innerHTML = "Ajouter un<br><em>sujet.</em>";
+  const page = document.querySelector("#view-add .form-page");
+  if (page) page.classList.toggle("an-mode", restreint);
+  if (restreint) { setAddType("annale"); etatAnnale(); return; }
   backToInput();
 }
 
@@ -1742,6 +1763,7 @@ function brancheDepot(zoneId, inputId, multiple) {
     if (!pdfs.length) { showToast("Dépose un fichier PDF.", "error"); return; }
     if (multiple) PB_FILES = pdfs; else AN_FILE = pdfs[0];
     const cible = document.getElementById(multiple ? "pb-list" : "an-list");
+    if (!multiple) { puceAnnale(pdfs[0]); return; }
     cible.innerHTML = pdfs.map(f =>
       `<div class="dz-file">▤ ${escapeHtml(f.name)} <span>${Math.round(f.size / 1024)} Ko</span></div>`).join("");
   };
@@ -1756,43 +1778,104 @@ function brancheDepot(zoneId, inputId, multiple) {
 }
 
 /* ── Annale : dépôt du PDF puis analyse ── */
+/* ── AJOUT D'UN SUJET (tout compte connecté) ──
+   L'élève dépose seulement le PDF et ses informations : le sujet part en
+   attente. Le découpage, l'analyse par l'IA, le test et la publication se font
+   dans l'administration (admin-sujets.html). */
+function etatAnnale() {
+  const btn = document.getElementById("an-btn");
+  if (btn) btn.disabled = !AN_FILE;
+  chargerMesDepots();
+}
+
+/* Puce du PDF choisi : nom, taille, nombre de pages (lu par pdf.js). */
+function puceAnnale(f) {
+  const cible = document.getElementById("an-list");
+  document.getElementById("an-drop").classList.toggle("rempli", !!f);
+  const btn = document.getElementById("an-btn");
+  if (btn) btn.disabled = !f;
+  if (!f) { cible.innerHTML = ""; return; }
+  cible.innerHTML = `<div class="an-fichier" onclick="event.stopPropagation()">
+      <span class="an-fichier-ico">PDF</span>
+      <span class="an-fichier-nom">${escapeHtml(f.name)}</span>
+      <span class="an-fichier-info" id="an-fichier-info">${Math.round(f.size / 1024)} Ko</span>
+      <button type="button" class="an-fichier-x" aria-label="Retirer le fichier" onclick="event.stopPropagation(); retirerAnnale()">✕</button>
+    </div>`;
+  if (window.pdfjsLib) f.arrayBuffer()
+    .then(buf => pdfjsLib.getDocument({ data: buf }).promise)
+    .then(doc => { const i = document.getElementById("an-fichier-info");
+      if (i && AN_FILE === f) i.textContent = Math.round(f.size / 1024) + " Ko · " + doc.numPages + " page" + (doc.numPages > 1 ? "s" : ""); })
+    .catch(() => {});
+}
+function retirerAnnale() {
+  AN_FILE = null;
+  const inp = document.getElementById("an-file"); if (inp) inp.value = "";
+  puceAnnale(null);
+}
+function nouvelleAnnale() {
+  retirerAnnale();
+  ["an-title", "an-year", "an-duration", "an-commentaire"].forEach(id => { const e = document.getElementById(id); if (e) e.value = ""; });
+  document.getElementById("an-progress").style.display = "none";
+  document.querySelector("#pane-annale .an-form").classList.remove("termine");
+}
+
 async function envoyerAnnale() {
   if (!AN_FILE) { showToast("Dépose d'abord le PDF du sujet.", "error"); return; }
   const zone = document.getElementById("an-progress");
   const btn = document.getElementById("an-btn");
   btn.disabled = true;
   zone.style.display = "block";
-  zone.innerHTML = `<div class="ai-loading"><span class="spinner"></span>
-    Analyse du sujet en cours — découpage des exercices, association des pages et description des figures.
-    Cela peut prendre une minute.</div>`;
+  zone.innerHTML = `<div class="an-encours"><div class="ai-spinner"></div><div>
+      <div class="an-encours-titre">Envoi du sujet…</div></div></div>`;
   try {
-    const b64 = await litFichier(AN_FILE);
-    const res = await MB_AUTH.apiFetch("/annales/upload", {
+    const val = id => (document.getElementById(id) || {}).value || "";
+    const res = await MB_AUTH.apiFetch("/depots", {
       method: "POST",
       body: JSON.stringify({
-        nom: AN_FILE.name, pdf_base64: b64, matiere: matiereCourante(),
-        pages_texte: await extraireTextePdf(AN_FILE).catch(() => null),
-        title: document.getElementById("an-title").value.trim() || null,
-        year: document.getElementById("an-year").value || null,
-        duration: document.getElementById("an-duration").value || null,
+        nom: AN_FILE.name, pdf_base64: await litFichier(AN_FILE), matiere: matiereCourante(),
+        title: val("an-title").trim() || null, exam: val("an-exam") || null, classe: val("an-classe") || null,
+        year: val("an-year") || null, duration: val("an-duration") || null, commentaire: val("an-commentaire").trim() || null,
       }),
     });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(d.error || ("HTTP " + res.status));
-    zone.innerHTML = `<div class="ai-ok"><strong>${escapeHtml(d.title)}</strong> ajouté.</div>
-      <div class="ai-stats">${d.nb_exercices} exercice(s) sur ${d.pages} page(s) ·
-        ${d.avec_figure} figure(s) décrite(s)</div>
-      <table class="ai-table"><thead><tr><th>Exercice</th><th>Page(s)</th><th>Figure</th></tr></thead><tbody>
-      ${d.apercu.map(x => `<tr><td>${escapeHtml(x.titre)}</td><td>${x.pages.join(", ")}</td>
-        <td>${x.figure ? "oui" : "—"}</td></tr>`).join("")}
-      </tbody></table>
-      <div class="form-actions"><button class="btn-ai" onclick="showView('annales')">Voir les annales →</button></div>`;
+    document.querySelector("#pane-annale .an-form").classList.add("termine");
+    zone.innerHTML = `
+      <div class="an-ok"><span class="an-ok-ico">✓</span><div>
+        <div class="an-ok-titre">Merci, ton sujet est envoyé.</div>
+        <div class="an-ok-sous">Il est en attente de validation : l'équipe le relit, le prépare et le teste
+          avant de le publier dans les annales.</div></div></div>
+      <div class="form-actions">
+        <button class="btn-ghost" onclick="nouvelleAnnale()">Envoyer un autre sujet</button>
+        <button class="btn-ai" onclick="showView('annales')">Voir les annales →</button>
+      </div>`;
     AN_FILE = null;
-    document.getElementById("an-list").innerHTML = "";
-    if (typeof loadAnnales === "function") loadAnnales();
+    chargerMesDepots();
   } catch (e) {
-    zone.innerHTML = `<div class="ai-err">Analyse impossible : ${escapeHtml(e.message || "erreur inconnue")}</div>`;
-  } finally { btn.disabled = false; }
+    zone.innerHTML = `<div class="an-erreur"><b>Envoi impossible</b><span>${escapeHtml(e.message || "erreur inconnue")}</span></div>`;
+    btn.disabled = !AN_FILE;
+  }
+}
+
+/* État des sujets que l'élève a envoyés. */
+const ETATS_DEPOT = {
+  en_attente: "En attente de validation", lu: "En cours de préparation", analyse: "En cours de préparation",
+  teste: "En cours de préparation", publie: "Publié", refuse: "Refusé",
+};
+async function chargerMesDepots() {
+  const hote = document.getElementById("an-mes");
+  if (!hote || DEMO_MODE || (window.MB_AUTH && MB_AUTH.isDemo && MB_AUTH.isDemo())) return;
+  try {
+    const res = await MB_AUTH.apiFetch("/depots/mes");
+    if (!res.ok) return;
+    const liste = await res.json();
+    hote.hidden = !liste.length;
+    document.getElementById("an-mes-liste").innerHTML = liste.map(d => `
+      <li><span class="an-mes-titre">${escapeHtml(d.title || d.nom_fichier)}</span>
+        <span class="an-mes-date">${new Date(d.created_at).toLocaleDateString("fr-FR")}</span>
+        <span class="an-etat ${d.statut}">${ETATS_DEPOT[d.statut] || d.statut}</span>
+        ${d.statut === "refuse" && d.motif_refus ? `<span class="an-mes-motif">${escapeHtml(d.motif_refus)}</span>` : ""}</li>`).join("");
+  } catch (_) {}
 }
 
 /* ── Problème : vérification qu'il s'agit bien d'un problème ── */
@@ -1971,7 +2054,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // faux là où seule l'annale reste ouverte : on les recale au chargement.
   if (annalesSeulement()) {
     const d = document.getElementById("home-add-desc");
-    if (d) d.textContent = "Déposer le PDF d'un sujet d'annale — l'IA le découpe en exercices et le classe.";
+    if (d) d.textContent = "Envoyer le PDF d'un sujet : après relecture, il rejoint la banque d'annales.";
     const b = document.getElementById("empty-add-btn");
     if (b) b.textContent = "Ajouter une annale →";
   }
@@ -3459,9 +3542,38 @@ function fermerAccueil() {
     !!document.querySelector("#view-browse.active"));
 })();
 
+/* ── TEST D'UN SUJET DÉPOSÉ (administrateurs) ──
+   Le sujet n'est pas publié : on le charge depuis l'administration, son PDF
+   arrive par une requête authentifiée (pas d'URL publique), puis l'épreuve se
+   déroule exactement comme pour une annale, correction comprise. */
+async function testerDepot(id) {
+  if (!(window.MB_AUTH && MB_AUTH.isAdmin && MB_AUTH.isAdmin())) {
+    showToast("Le test d'un sujet déposé est réservé aux administrateurs.", "error");
+    showView("browse"); return;
+  }
+  showView("examen", "examen");
+  examPhase("choice");
+  document.getElementById("examen-choice-grid").innerHTML =
+    `<div class="chap-placeholder">Chargement du sujet en test…</div>`;
+  try {
+    const r = await MB_AUTH.apiFetch("/admin/depots/" + id + "/annale");
+    const a = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(a.error || ("HTTP " + r.status));
+    const p = await MB_AUTH.apiFetch("/admin/depots/" + id + "/pdf");
+    if (!p.ok) throw new Error("PDF indisponible (HTTP " + p.status + ")");
+    a.image_url = URL.createObjectURL(new Blob([await p.blob()], { type: "application/pdf" }));
+    lancerExamen(a);
+  } catch (e) {
+    document.getElementById("examen-choice-grid").innerHTML =
+      `<div class="chap-placeholder">Test impossible : ${escapeHtml(e.message)}</div>`;
+  }
+}
+
 /* ── Liens profonds : app.html#vue ouvre directement une section ── */
 function routeFromHash() {
   const h = (location.hash || "").replace("#", "");
+  /* Test d'un sujet déposé, depuis l'administration : #test-depot=12 */
+  if (/^test-depot=\d+$/.test(h)) { testerDepot(Number(h.split("=")[1])); return; }
   switch (h) {
     case "entrainement": openSeance("exercice"); break;
     case "probleme":

@@ -58,6 +58,16 @@
     <strong>Mode démo</strong> — aucun serveur détecté : les comptes affichés sont fictifs et les actions simulées localement.
   </div>
 
+  <!-- ── SUJETS DÉPOSÉS PAR LES ÉLÈVES : validation en trois étapes ── -->
+  <a class="panel depots-lien" href="admin-sujets.html" style="display:flex;align-items:center;gap:1.2rem;padding:1.1rem 1.3rem;margin-bottom:1.6rem;text-decoration:none;color:inherit">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:var(--gold);min-width:2.5rem;text-align:center" id="depots-n">—</div>
+    <div style="flex:1">
+      <div style="font-size:1rem">Sujets déposés à valider</div>
+      <div class="muted" style="font-size:.84rem;margin-top:.2rem">Lecture du PDF, découpage et analyse par l'IA, test comme un élève, puis publication dans les annales.</div>
+    </div>
+    <span class="act">Ouvrir →</span>
+  </a>
+
   <div class="stats">
     <div class="stat"><div class="n" id="st-total">—</div><div class="l">comptes</div></div>
     <div class="stat"><div class="n" id="st-eleves">—</div><div class="l">élèves</div></div>
@@ -658,6 +668,18 @@
   }
 
   load();
+})();
+</script>
+<script>
+/* Nombre de sujets déposés qui attendent une validation. */
+(async function () {
+  try {
+    if (!window.MB_AUTH || !MB_AUTH.token()) return;
+    const r = await MB_AUTH.apiFetch("/admin/depots");
+    if (!r.ok) return;
+    const l = await r.json();
+    document.getElementById("depots-n").textContent = l.filter(d => d.statut !== "publie" && d.statut !== "refuse").length;
+  } catch (_) {}
 })();
 </script>
 </body>

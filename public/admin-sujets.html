@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sujets déposés — Administration Polymates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b09; --panel:#14130f; --panel2:#1a1914; --line:rgba(245,242,232,.1); --line2:rgba(245,242,232,.18);
+    --cream:#f0ece0; --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; --amber:#e6c27e;
+    /* variables lues par les widgets (même plan de travail que sur le site) */
+    --text:#f0ece0; --accent:#c8b97a; --accent2:#82d2a0; --danger:#e6826e; --border:rgba(255,255,255,.1); --border2:rgba(255,255,255,.16);
+    --w-fond:#63676b; --w-bord:rgba(0,0,0,.40); --w-grille:rgba(0,0,0,.50); --w-grille-fine:rgba(0,0,0,.28);
+    --w-grille-forte:#000; --w-figure:#fff; --w-figure-dim:rgba(255,255,255,.62); --w-repere:#9fe3ff;
+    --w-codage:#ffd166; --w-juste:#a8f0c6; --w-faux:#ffab97;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;padding:2.2rem 1rem 5rem;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.07), transparent);}
+  .wrap{width:min(1320px,100%);margin:0 auto;position:relative;}
+  a{color:var(--gold);}
+  .back{display:inline-block;border:1px solid rgba(200,185,122,.35);color:var(--gold);padding:.45rem 1rem;border-radius:999px;
+    font-family:'DM Mono',monospace;font-size:.78rem;text-decoration:none;transition:.2s;}
+  .back:hover{background:rgba(200,185,122,.12);}
+  h1{font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:clamp(1.8rem,4vw,2.5rem);margin:1.4rem 0 .3rem;}
+  h1 em{color:var(--gold);}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:1.6rem;max-width:720px;line-height:1.6;}
+  .mono{font-family:'DM Mono',monospace;}
+  .muted{color:var(--muted);}
+  button{font:inherit;cursor:pointer;}
+  .btn{background:none;border:1px solid var(--line2);color:var(--cream);border-radius:9px;padding:.55rem 1rem;font-size:.85rem;transition:.2s;}
+  .btn:hover{border-color:var(--gold);color:var(--gold);}
+  .btn.or{background:var(--gold);color:#0b0b09;border-color:var(--gold);font-weight:500;}
+  .btn.or:hover{background:#d6c98e;color:#0b0b09;}
+  .btn.danger:hover{border-color:var(--coral);color:var(--coral);}
+  .btn.petit{padding:.3rem .65rem;font-size:.75rem;border-radius:7px;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--cream);border-radius:8px;
+    padding:.6rem .75rem;font:inherit;font-size:.88rem;outline:none;transition:border-color .2s;}
+  textarea{resize:vertical;line-height:1.55;}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+  label{display:block;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;}
+  .spin{width:28px;height:28px;border:2px solid var(--line2);border-top-color:var(--gold);border-radius:50%;animation:t .8s linear infinite;flex:none;}
+  @keyframes t{to{transform:rotate(360deg)}}
+
+  /* ── mise en page : file à gauche, poste de travail à droite ── */
+  .grille{display:grid;grid-template-columns:320px minmax(0,1fr);gap:1.2rem;align-items:start;}
+  @media (max-width:980px){.grille{grid-template-columns:1fr;}}
+  .file{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:sticky;top:80px;}
+  .onglets{display:flex;border-bottom:1px solid var(--line);}
+  .onglets button{flex:1;background:none;border:none;color:var(--muted);padding:.8rem .4rem;font-size:.8rem;border-bottom:2px solid transparent;}
+  .onglets button.on{color:var(--cream);border-bottom-color:var(--gold);}
+  .onglets b{font-family:'DM Mono',monospace;font-weight:400;font-size:.7rem;margin-left:.25rem;color:var(--gold);}
+  .liste{max-height:70vh;overflow-y:auto;}
+  .item{display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--line);color:var(--cream);padding:.85rem 1rem;transition:.15s;}
+  .item:hover{background:rgba(200,185,122,.05);}
+  .item.on{background:rgba(200,185,122,.1);box-shadow:inset 3px 0 0 var(--gold);}
+  .item-t{font-size:.9rem;margin-bottom:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .item-m{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;font-size:.72rem;color:var(--muted);}
+  .vide{padding:2rem 1.2rem;text-align:center;color:var(--muted);font-size:.88rem;line-height:1.6;}
+  .etat{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line2);border-radius:999px;padding:.12rem .5rem;color:var(--muted);}
+  .etat.en_attente{color:var(--gold);border-color:rgba(200,185,122,.5);}
+  .etat.lu,.etat.analyse{color:#7ac8e6;border-color:rgba(122,200,230,.45);}
+  .etat.teste{color:var(--amber);border-color:rgba(230,194,126,.5);}
+  .etat.publie{color:var(--green);border-color:rgba(130,210,160,.45);}
+  .etat.refuse{color:var(--coral);border-color:rgba(230,130,110,.45);}
+
+  .poste{background:var(--panel);border:1px solid var(--line);border-radius:16px;min-height:60vh;}
+  .poste-vide{display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--muted);text-align:center;padding:2rem;line-height:1.7;}
+  .tete{padding:1.4rem 1.5rem 1.1rem;border-bottom:1px solid var(--line);}
+  .tete h2{font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:1.5rem;margin-bottom:.35rem;}
+  .tete-m{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;font-size:.8rem;color:var(--muted);}
+  .commentaire{margin-top:.7rem;font-size:.84rem;color:var(--cream);background:var(--panel2);border-left:2px solid var(--gold);padding:.55rem .8rem;border-radius:0 8px 8px 0;}
+
+  /* étapes */
+  .etapes{display:flex;gap:.5rem;padding:1rem 1.5rem;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .etapes button{display:flex;align-items:center;gap:.55rem;background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:999px;padding:.4rem .95rem .4rem .45rem;font-size:.82rem;}
+  .etapes button b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:'DM Mono',monospace;font-weight:400;font-size:.7rem;border:1px solid var(--line2);}
+  .etapes button.fait{color:var(--green);}
+  .etapes button.fait b{border-color:var(--green);}
+  .etapes button.on{color:var(--cream);border-color:rgba(200,185,122,.55);background:rgba(200,185,122,.08);}
+  .etapes button.on b{background:var(--gold);color:#0b0b09;border-color:var(--gold);}
+  .etapes button:disabled{opacity:.35;cursor:not-allowed;}
+  .corps{padding:1.4rem 1.5rem 1.8rem;}
+
+  /* phase 1 */
+  .lecture{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:1.2rem;}
+  @media (max-width:1100px){.lecture{grid-template-columns:1fr;}}
+  .pdf{width:100%;height:78vh;border:1px solid var(--line);border-radius:12px;background:#222;}
+  .infos{display:flex;flex-direction:column;gap:.85rem;}
+  .deux{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+  .actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.4rem;}
+  .refus{display:none;flex-direction:column;gap:.5rem;border:1px solid rgba(230,130,110,.35);border-radius:10px;padding:.8rem;}
+  .refus.on{display:flex;}
+
+  /* phase 2 */
+  .lancer{display:flex;flex-direction:column;align-items:flex-start;gap:.9rem;padding:1.3rem;border:1px dashed var(--line2);border-radius:14px;}
+  .lancer ol{margin-left:1.2rem;color:var(--muted);font-size:.86rem;line-height:1.8;}
+  .attente{display:flex;align-items:center;gap:1rem;padding:1.1rem;border:1px solid var(--line);border-radius:12px;}
+  .tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.7rem;margin-bottom:1.1rem;}
+  .tuile{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.75rem .9rem;}
+  .tuile b{display:block;font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:1.6rem;color:var(--gold);line-height:1.1;}
+  .tuile span{font-size:.72rem;color:var(--muted);}
+  .tuile.rouge b{color:var(--coral);} .tuile.ambre b{color:var(--amber);}
+  .anoms{border:1px solid var(--line);border-radius:12px;margin-bottom:1.2rem;overflow:hidden;}
+  .anoms-t{padding:.65rem .9rem;font-family:'DM Mono',monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);}
+  .anom{display:flex;gap:.7rem;align-items:flex-start;padding:.6rem .9rem;font-size:.84rem;line-height:1.5;}
+  .anom + .anom{border-top:1px solid var(--line);}
+  .anom .g{flex:none;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:.12rem .45rem;margin-top:.15rem;}
+  .anom .g.erreur{color:var(--coral);border:1px solid rgba(230,130,110,.5);}
+  .anom .g.attention{color:var(--amber);border:1px solid rgba(230,194,126,.5);}
+  .anom .src{flex:none;font-size:.68rem;color:var(--muted);margin-top:.15rem;}
+  .anom span.m{flex:1;}
+  .anom .x{flex:none;background:none;border:none;color:var(--muted);font-size:.8rem;}
+  .anom .x:hover{color:var(--coral);}
+
+  .exo{border:1px solid var(--line);border-radius:14px;margin-bottom:.9rem;overflow:hidden;}
+  .exo.ko{border-color:rgba(230,130,110,.45);}
+  .exo-tete{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.85rem 1rem;cursor:pointer;background:var(--panel2);}
+  .exo-tete h3{flex:1;min-width:160px;font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:1.1rem;}
+  .puce{font-family:'DM Mono',monospace;font-size:.66rem;border:1px solid var(--line2);border-radius:6px;padding:.1rem .4rem;color:var(--muted);}
+  .puce.or{color:var(--gold);border-color:rgba(200,185,122,.45);}
+  .puce.rouge{color:var(--coral);border-color:rgba(230,130,110,.5);}
+  .exo-corps{display:none;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:1.1rem;padding:1rem;}
+  .exo.ouvert .exo-corps{display:grid;}
+  @media (max-width:1100px){.exo-corps{grid-template-columns:1fr !important;}}
+  .pages-img img{width:100%;border-radius:8px;border:1px solid var(--line);background:#fff;margin-bottom:.6rem;}
+  .pages-img .vide{padding:1rem;}
+  .bloc{margin-bottom:1rem;}
+  .sq{list-style:none;display:flex;flex-direction:column;gap:.35rem;margin-top:.5rem;}
+  .sq li{display:flex;gap:.6rem;font-size:.8rem;line-height:1.45;padding:.4rem .55rem;border-radius:7px;background:rgba(255,255,255,.02);}
+  .sq li b{flex:none;font-family:'DM Mono',monospace;font-weight:400;color:var(--gold);min-width:3.2rem;}
+  .sq li.ko{background:rgba(230,130,110,.08);}
+  .sq li.ko b{color:var(--coral);}
+  .sq li .w{flex:none;font-size:.66rem;color:var(--green);}
+  .widget{border:1px solid var(--line);border-radius:12px;padding:.8rem;margin-top:.6rem;}
+  .widget-tete{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem;}
+  .widget-tete select{width:auto;padding:.3rem .5rem;font-size:.78rem;}
+  .widget-apercu{background:#101010;border-radius:10px;padding:.6rem;margin-bottom:.6rem;}
+  .widget-err{color:var(--coral);font-size:.8rem;}
+  .widget textarea{font-family:'DM Mono',monospace;font-size:.74rem;min-height:120px;}
+  .barre{position:sticky;bottom:0;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;justify-content:flex-end;
+    padding:.8rem 1rem;margin-top:1rem;background:rgba(20,19,15,.96);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px);}
+  .barre .etat-save{flex:1;font-size:.8rem;color:var(--muted);}
+  .barre .etat-save.sale{color:var(--amber);}
+
+  /* phase 3 */
+  .test{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.2rem;}
+  @media (max-width:900px){.test{grid-template-columns:1fr;}}
+  .carte{border:1px solid var(--line);border-radius:14px;padding:1.2rem 1.3rem;}
+  .carte h3{font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:1.2rem;margin-bottom:.5rem;}
+  .carte p{font-size:.86rem;color:var(--muted);line-height:1.6;margin-bottom:.8rem;}
+  .verif{list-style:none;display:flex;flex-direction:column;gap:.5rem;margin:.4rem 0 1rem;}
+  .verif label{display:flex;gap:.6rem;align-items:flex-start;text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;font-size:.86rem;color:var(--cream);cursor:pointer;}
+  .verif input{width:auto;margin-top:.2rem;accent-color:var(--gold);}
+  .ok{display:flex;gap:.9rem;align-items:center;padding:1rem;border:1px solid rgba(130,210,160,.4);border-radius:12px;background:rgba(130,210,160,.06);}
+  .ok .i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#0b0b09;flex:none;}
+  .msg{margin-top:.8rem;font-size:.84rem;border-radius:10px;padding:.65rem .85rem;display:none;}
+  .msg.on{display:block;}
+  .msg.err{color:var(--coral);background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);}
+  .msg.info{color:var(--green);background:rgba(130,210,160,.06);border:1px solid rgba(130,210,160,.3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="admin.html">← Administration</a>
+  <h1>Sujets <em>déposés.</em></h1>
+  <p class="sub">Les PDF envoyés depuis la page Ajouter attendent ici. Chacun passe par trois étapes avant d'être publié dans les annales :
+    la <strong>lecture</strong> du PDF, le <strong>découpage et l'analyse par l'IA</strong> (figures, widgets, erreurs), puis le
+    <strong>test</strong> du sujet comme un élève.</p>
+
+  <div class="grille">
+    <aside class="file">
+      <div class="onglets" id="onglets">
+        <button data-f="atraiter" class="on">À traiter<b id="n-atraiter">0</b></button>
+        <button data-f="publie">Publiés<b id="n-publie">0</b></button>
+        <button data-f="refuse">Refusés<b id="n-refuse">0</b></button>
+      </div>
+      <div class="liste" id="liste"><div class="vide">Chargement…</div></div>
+    </aside>
+
+    <section class="poste" id="poste">
+      <div class="poste-vide">Choisis un sujet dans la file pour commencer.</div>
+    </section>
+  </div>
+</div>
+
+<script src="auth.js" data-protect="admin"></script>
+<script src="ui.js" defer></script>
+<!-- Les mêmes outils que la page Examen : découpage en sous-questions et widgets -->
+<script src="sous-questions.js"></script>
+<script src="quadrillage.js"></script>
+<script src="axe.js"></script>
+<script src="tableau.js"></script>
+<script src="figures.js"></script>
+<script src="solides.js"></script>
+<script src="diagrammes.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const nl = l => String(l || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const ETATS = { en_attente:"En attente", lu:"Lu", analyse:"Analysé", teste:"Testé", publie:"Publié", refuse:"Refusé" };
+  const WIDGETS = {
+    tableau:     { mod:"MB_TABLEAU",     nom:"Tableau à compléter" },
+    axe:         { mod:"MB_AXE",         nom:"Axe gradué" },
+    quadrillage: { mod:"MB_QUADRILLAGE", nom:"Quadrillage" },
+    diagramme:   { mod:"MB_DIAGRAMME",   nom:"Diagramme" },
+    figure:      { mod:"MB_FIGURE",      nom:"Figure + QCM" },
+    solide:      { mod:"MB_SOLIDES",     nom:"Solide (affichage)" },
+  };
+  const MODELES = {
+    tableau: { widget:"tableau", titre:"", lignes:[{ entete:"x", cellules:[1,2,null] }, { entete:"y", cellules:[3,null,9] }], reponse:{ cellules:{ "0,2":3, "1,1":6 } } },
+    axe: { widget:"axe", min:-5, max:5, pas:1, etiquettes:1, fixes:[{ nom:"O", x:0 }], placer:["A"], reponse:{ points:[{ nom:"A", x:2 }] } },
+    quadrillage: { widget:"quadrillage", COLS:12, ROWS:10, geste:"segments", fixe:{ cases:[], segments:[[[2,2],[4,6]]] }, reperes:[{ type:"v", x:6 }], reponse:{ cases:[], segments:[[[10,2],[8,6]]] } },
+    diagramme: { widget:"diagramme", impose:"batons", categories:["A","B","C"], max:10, pas:1, reponse:{ type:"batons", valeurs:[3,5,2] } },
+    figure: { widget:"figure", figure:{ largeur:420, hauteur:260, elements:[{ t:"point", x:60, y:200, nom:"A", pos:"bas" }, { t:"point", x:340, y:200, nom:"B", pos:"bas" }, { t:"segment", a:[60,200], b:[340,200] }] }, question:"De quel objet s'agit-il ?", options:["Segment","Droite","Demi-droite"], reponse:{ choix:"Segment" } },
+    solide: { widget:"solide", type:"cube" },
+  };
+
+  let TOUS = [], FILTRE = "atraiter", COURANT = null, PHASE = 1, PDF_URL = null, QS = null, SALE = false;
+
+  async function api(url, opts) {
+    const r = await MB_AUTH.apiFetch(url, opts);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || ("HTTP " + r.status));
+    return d;
+  }
+  function msg(id, texte, type) {
+    const m = $(id); if (!m) return;
+    m.className = "msg on " + (type || "err"); m.textContent = texte;
+  }
+
+  /* ── File des dépôts ── */
+  async function chargerFile(garder) {
+    try { TOUS = await api("/admin/depots"); }
+    catch (e) { $("liste").innerHTML = `<div class="vide">${esc(e.message)}</div>`; return; }
+    const groupe = d => d.statut === "publie" ? "publie" : d.statut === "refuse" ? "refuse" : "atraiter";
+    ["atraiter", "publie", "refuse"].forEach(g => $("n-" + g).textContent = TOUS.filter(d => groupe(d) === g).length);
+    const liste = TOUS.filter(d => groupe(d) === FILTRE);
+    $("liste").innerHTML = liste.length ? liste.map(d => `
+      <button class="item${COURANT && COURANT.id === d.id ? " on" : ""}" data-id="${d.id}">
+        <div class="item-t">${esc(d.title || d.nom_fichier)}</div>
+        <div class="item-m"><span class="etat ${d.statut}">${ETATS[d.statut] || d.statut}</span>
+          <span>${esc(d.pseudo || "?")}</span><span>${new Date(d.created_at).toLocaleDateString("fr-FR")}</span>
+          ${d.nb_anomalies ? `<span>⚠ ${d.nb_anomalies}</span>` : ""}</div>
+      </button>`).join("")
+      : `<div class="vide">${FILTRE === "atraiter" ? "Aucun sujet en attente. Les envois des élèves apparaîtront ici." : "Rien ici."}</div>`;
+    $("liste").querySelectorAll(".item").forEach(b => b.onclick = () => ouvrir(Number(b.dataset.id)));
+    if (!garder && !COURANT && FILTRE === "atraiter" && liste.length) ouvrir(liste[0].id);
+  }
+  $("onglets").querySelectorAll("button").forEach(b => b.onclick = () => {
+    FILTRE = b.dataset.f;
+    $("onglets").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    chargerFile(true);
+  });
+
+  /* ── Ouvrir un dépôt ── */
+  async function ouvrir(id) {
+    if (SALE && !confirm("Des modifications ne sont pas enregistrées. Les abandonner ?")) return;
+    SALE = false;
+    try { COURANT = await api("/admin/depots/" + id); } catch (e) { alert(e.message); return; }
+    if (PDF_URL) { URL.revokeObjectURL(PDF_URL); PDF_URL = null; }
+    QS = COURANT.analyse && Array.isArray(COURANT.analyse.questions) ? JSON.parse(JSON.stringify(COURANT.analyse.questions)) : null;
+    PHASE = { en_attente:1, lu:2, analyse:2, teste:3, publie:3, refuse:1 }[COURANT.statut] || 1;
+    chargerFile(true);
+    dessiner();
+  }
+
+  async function urlPdf() {
+    if (PDF_URL) return PDF_URL;
+    const r = await MB_AUTH.apiFetch("/admin/depots/" + COURANT.id + "/pdf");
+    if (!r.ok) throw new Error("PDF indisponible (HTTP " + r.status + ")");
+    PDF_URL = URL.createObjectURL(new Blob([await r.blob()], { type: "application/pdf" }));
+    return PDF_URL;
+  }
+
+  function phaseAtteinte(n) {
+    const s = COURANT.statut;
+    if (n === 1) return true;
+    if (n === 2) return s !== "en_attente" && s !== "refuse";
+    return !!(QS && QS.length) && s !== "refuse";
+  }
+
+  function dessiner() {
+    const d = COURANT;
+    $("poste").innerHTML = `
+      <div class="tete">
+        <h2>${esc(d.title || d.nom_fichier)}</h2>
+        <div class="tete-m"><span class="etat ${d.statut}">${ETATS[d.statut] || d.statut}</span>
+          <span>Envoyé par <strong>${esc(d.pseudo || "?")}</strong> ${d.email ? "(" + esc(d.email) + ")" : ""}</span>
+          <span>le ${new Date(d.created_at).toLocaleString("fr-FR")}</span>
+          <span class="mono">${esc(d.nom_fichier)} · ${Math.round((d.taille || 0) / 1024)} Ko</span></div>
+        ${d.commentaire ? `<div class="commentaire">« ${esc(d.commentaire)} »</div>` : ""}
+        ${d.statut === "refuse" && d.motif_refus ? `<div class="commentaire" style="border-color:var(--coral)">Refusé : ${esc(d.motif_refus)}</div>` : ""}
+      </div>
+      <nav class="etapes">
+        ${[[1, "Lecture du PDF"], [2, "Découpage & analyse IA"], [3, "Test & publication"]].map(([n, t]) => `
+          <button data-p="${n}" class="${n === PHASE ? "on" : (n < PHASE || (n === 2 && QS) ? "fait" : "")}" ${phaseAtteinte(n) ? "" : "disabled"}><b>${n}</b>${t}</button>`).join("")}
+      </nav>
+      <div class="corps" id="corps"></div>`;
+    $("poste").querySelectorAll(".etapes button").forEach(b => b.onclick = () => {
+      if (SALE && !confirm("Des modifications ne sont pas enregistrées. Changer d'étape quand même ?")) return;
+      SALE = false; PHASE = Number(b.dataset.p); dessiner();
+    });
+    if (PHASE === 1) phaseLecture(); else if (PHASE === 2) phaseAnalyse(); else phaseTest();
+  }
+
+  /* ═════════ PHASE 1 : LECTURE ═════════ */
+  async function phaseLecture() {
+    const d = COURANT, fige = d.statut === "publie";
+    $("corps").innerHTML = `
+      <div class="lecture">
+        <iframe class="pdf" id="pdf" title="PDF déposé"></iframe>
+        <div class="infos">
+          <p class="muted" style="font-size:.85rem;line-height:1.6">Lis le sujet en entier : est-ce bien un sujet de mathématiques complet,
+            lisible, sans données personnelles ? Corrige au besoin ses informations.</p>
+          <div><label>Titre</label><input id="f-title" value="${esc(d.title || "")}" placeholder="${esc(d.nom_fichier.replace(/\.pdf$/i, "").replace(/_/g, " "))}"></div>
+          <div class="deux">
+            <div><label>Type</label><select id="f-exam">${["Brevet", "Brevet blanc", "Contrôle", "DS"].map(x => `<option${(d.exam || "Brevet") === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+            <div><label>Classe</label><select id="f-classe">${["6ème", "5ème", "4ème", "3ème"].map(x => `<option${(d.classe || "3ème") === x ? " selected" : ""}>${x}</option>`).join("")}</select></div>
+            <div><label>Année</label><input id="f-year" type="number" value="${d.year || ""}"></div>
+            <div><label>Durée (min)</label><input id="f-duration" type="number" value="${d.duration || ""}"></div>
+          </div>
+          ${fige ? `<p class="muted">Ce sujet est publié.</p>` : `
+          <div class="actions">
+            <button class="btn or" id="b-valider">Valider la lecture →</button>
+            ${d.statut !== "refuse" ? `<button class="btn danger" id="b-refuser">Refuser…</button>` : ""}
+            <button class="btn danger" id="b-suppr">Supprimer</button>
+          </div>
+          <div class="refus" id="refus">
+            <label for="f-motif">Motif du refus (visible par l'élève)</label>
+            <input id="f-motif" placeholder="Ex : PDF illisible, sujet incomplet, pas des mathématiques…">
+            <div class="actions"><button class="btn danger" id="b-refus-ok">Confirmer le refus</button><button class="btn" id="b-refus-annul">Annuler</button></div>
+          </div>`}
+          <div class="msg" id="m1"></div>
+        </div>
+      </div>`;
+    try { $("pdf").src = (await urlPdf()) + "#view=FitH"; } catch (e) { msg("m1", e.message); }
+    if (fige) return;
+    $("b-valider").onclick = async () => {
+      try {
+        COURANT = await api("/admin/depots/" + d.id, { method: "PATCH", body: JSON.stringify({
+          title: $("f-title").value, exam: $("f-exam").value, classe: $("f-classe").value,
+          year: $("f-year").value, duration: $("f-duration").value,
+          statut: d.statut === "en_attente" || d.statut === "refuse" ? "lu" : d.statut }) });
+        PHASE = 2; chargerFile(true); dessiner();
+      } catch (e) { msg("m1", e.message); }
+    };
+    if ($("b-refuser")) $("b-refuser").onclick = () => $("refus").classList.add("on");
+    if ($("b-refus-annul")) $("b-refus-annul").onclick = () => $("refus").classList.remove("on");
+    if ($("b-refus-ok")) $("b-refus-ok").onclick = async () => {
+      try { await api("/admin/depots/" + d.id + "/refuser", { method: "POST", body: JSON.stringify({ motif: $("f-motif").value }) });
+        COURANT = await api("/admin/depots/" + d.id); chargerFile(true); dessiner(); }
+      catch (e) { msg("m1", e.message); }
+    };
+    $("b-suppr").onclick = async () => {
+      if (!confirm("Supprimer définitivement ce dépôt et son PDF ?")) return;
+      try { await api("/admin/depots/" + d.id, { method: "DELETE" }); COURANT = null;
+        $("poste").innerHTML = `<div class="poste-vide">Dépôt supprimé.</div>`; chargerFile(true); }
+      catch (e) { msg("m1", e.message); }
+    };
+  }
+
+  /* ═════════ PHASE 2 : DÉCOUPAGE ET ANALYSE IA ═════════ */
+  async function texteDuPdf() {
+    if (!window.pdfjsLib) return null;
+    try {
+      const buf = await (await fetch(await urlPdf())).arrayBuffer();
+      const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+      const pages = [];
+      for (let n = 1; n <= doc.numPages; n++) {
+        const tc = await (await doc.getPage(n)).getTextContent();
+        const lignes = new Map();
+        tc.items.forEach(it => { const y = Math.round(it.transform[5]); if (!lignes.has(y)) lignes.set(y, []); lignes.get(y).push({ x: it.transform[4], s: it.str }); });
+        pages.push([...lignes.keys()].sort((a, b) => b - a).map(y => lignes.get(y).sort((a, b) => a.x - b.x).map(o => o.s).join(" ").replace(/\s+/g, " ").trim()).filter(Boolean).join("\n"));
+      }
+      return pages;
+    } catch (_) { return null; }
+  }
+
+  async function lancerAnalyse(exercice) {
+    const corps = $("corps");
+    const attente = `<div class="attente"><div class="spin"></div><div>
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.05rem">${exercice == null ? "Découpage et analyse du sujet…" : "Nouvelle analyse de l'exercice…"}</div>
+        <div class="muted" style="font-size:.82rem;margin-top:.2rem">L'IA regarde chaque exercice (image des pages + texte) : figures, widgets, erreurs.
+          Compte une dizaine de secondes par exercice.</div></div></div>`;
+    if (exercice == null) corps.innerHTML = attente;
+    else { const z = $("ex-" + exercice); if (z) z.insertAdjacentHTML("afterbegin", attente); }
+    try {
+      const corpsReq = exercice == null ? { pages_texte: await texteDuPdf() } : { exercice, question: QS[exercice] };
+      COURANT = await api("/admin/depots/" + COURANT.id + "/analyser", { method: "POST", body: JSON.stringify(corpsReq) });
+      QS = JSON.parse(JSON.stringify(COURANT.analyse.questions || []));
+      SALE = false; chargerFile(true); dessiner();
+      if (exercice != null) ouvrirExo(exercice);
+    } catch (e) {
+      if (exercice == null) corps.innerHTML = `<div class="msg on err">Analyse impossible : ${esc(e.message)}</div>`;
+      else alert("Analyse impossible : " + e.message);
+    }
+  }
+
+  function phaseAnalyse() {
+    const d = COURANT, an = d.analyse;
+    if (!an || !QS) {
+      $("corps").innerHTML = `
+        <div class="lancer">
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.25rem">Découper le sujet et l'analyser</div>
+          <ol>
+            <li>Le texte du PDF est extrait page par page, puis coupé à chaque « Exercice n ».</li>
+            <li>Chaque exercice est découpé en sous-questions, exactement comme sur la page Examen.</li>
+            <li>L'IA regarde l'image des pages de chaque exercice : elle décrit les figures, propose des widgets
+              (tableau, axe, quadrillage, diagramme…) avec leur réponse, et signale les erreurs.</li>
+            <li>Tu relis, corriges et enregistres avant de passer au test.</li>
+          </ol>
+          <button class="btn or" id="b-analyse">Lancer le découpage et l'analyse IA</button>
+        </div>`;
+      $("b-analyse").onclick = () => lancerAnalyse(null);
+      return;
+    }
+    const anoms = an.anomalies || [];
+    const nErr = anoms.filter(a => a.gravite === "erreur").length, nAtt = anoms.length - nErr;
+    const nFig = QS.filter(q => q.figure_desc).length, nW = QS.reduce((n, q) => n + (q.widgets || []).length, 0);
+    const fige = d.statut === "publie";
+    $("corps").innerHTML = `
+      <div class="tuiles">
+        <div class="tuile"><b>${QS.length}</b><span>exercices</span></div>
+        <div class="tuile"><b>${an.pages_total || "—"}</b><span>pages</span></div>
+        <div class="tuile"><b>${nFig}</b><span>figures décrites</span></div>
+        <div class="tuile"><b>${nW}</b><span>widgets</span></div>
+        <div class="tuile${nErr ? " rouge" : ""}"><b>${nErr}</b><span>erreurs</span></div>
+        <div class="tuile${nAtt ? " ambre" : ""}"><b>${nAtt}</b><span>points d'attention</span></div>
+      </div>
+      ${an.ia && an.ia.echouees ? `<div class="msg on err" style="margin:0 0 1rem">L'IA n'a pas pu analyser ${an.ia.echouees} exercice(s) : ${esc(an.ia.erreur || "")}</div>` : ""}
+      ${anoms.length ? `<div class="anoms"><div class="anoms-t">À vérifier</div>${anoms.map((a, k) => `
+        <div class="anom"><span class="g ${a.gravite}">${a.gravite}</span>
+          <span class="m">${a.exercice != null && QS[a.exercice] ? `<a href="#" data-va="${a.exercice}">${esc(titreExo(QS[a.exercice], a.exercice))}</a> — ` : ""}${esc(a.message)}</span>
+          <span class="src">${a.source === "ia" ? "IA" : "contrôle"}</span>
+          ${a.source === "ia" && !fige ? `<button class="x" title="Écarter cette remarque" data-ecarter="${k}">✕</button>` : ""}</div>`).join("")}</div>`
+        : `<div class="msg on info" style="margin:0 0 1rem">Aucune anomalie détectée.</div>`}
+      <div id="exos">${QS.map((q, i) => exoHTML(q, i, fige)).join("")}</div>
+      ${fige ? "" : `<div class="barre">
+        <span class="etat-save" id="etat-save">Tout est enregistré.</span>
+        <button class="btn" id="b-reanalyse">Tout réanalyser</button>
+        <button class="btn" id="b-save">Enregistrer</button>
+        <button class="btn or" id="b-test">Enregistrer et passer au test →</button>
+      </div>`}`;
+    $("corps").querySelectorAll("[data-va]").forEach(a => a.onclick = e => { e.preventDefault(); ouvrirExo(Number(a.dataset.va), true); });
+    $("corps").querySelectorAll("[data-ecarter]").forEach(b => b.onclick = () => ecarter(Number(b.dataset.ecarter)));
+    QS.forEach((q, i) => brancherExo(i, fige));
+    if (!fige) {
+      $("b-save").onclick = () => enregistrer();
+      $("b-test").onclick = async () => { if (await enregistrer()) { PHASE = 3; dessiner(); } };
+      $("b-reanalyse").onclick = () => { if (!SALE || confirm("Tes modifications seront remplacées par une nouvelle analyse. Continuer ?")) lancerAnalyse(null); };
+    }
+    const premier = anoms.find(a => a.exercice != null);
+    ouvrirExo(premier ? premier.exercice : 0);
+  }
+
+  function titreExo(q, i) { return (q.enonce || "").split(" — ")[0] || ("Exercice " + (i + 1)); }
+  function bareme(q) { const m = String(q.enonce_correction || "").match(/\((\s*\d+(?:[.,]\d+)?)\s*points?\s*\)/i); return m ? m[1].trim() : null; }
+
+  function exoHTML(q, i, fige) {
+    const anoms = ((COURANT.analyse && COURANT.analyse.anomalies) || []).filter(a => a.exercice === i);
+    const err = anoms.some(a => a.gravite === "erreur");
+    const b = bareme(q);
+    return `<div class="exo${err ? " ko" : ""}" id="ex-${i}">
+      <div class="exo-tete" data-tete="${i}">
+        <h3>${esc(titreExo(q, i))}</h3>
+        ${(q.pages || []).map(n => `<span class="puce">p. ${n}</span>`).join("")}
+        <span class="puce ${b ? "or" : "rouge"}">${b ? b + " pts" : "barème ?"}</span>
+        ${q.figure_desc ? `<span class="puce or">figure</span>` : ""}
+        ${(q.widgets || []).length ? `<span class="puce or">${q.widgets.length} widget${q.widgets.length > 1 ? "s" : ""}</span>` : ""}
+        ${anoms.length ? `<span class="puce ${err ? "rouge" : ""}">⚠ ${anoms.length}</span>` : ""}
+      </div>
+      <div class="exo-corps">
+        <div class="pages-img" id="img-${i}"><div class="vide">Images des pages…</div></div>
+        <div>
+          <div class="bloc"><label>Texte de l'exercice (lu par le correcteur, découpé en sous-questions)</label>
+            <textarea rows="9" data-champ="enonce_correction" data-i="${i}" ${fige ? "readonly" : ""}>${esc(q.enonce_correction || "")}</textarea>
+            <ul class="sq" id="sq-${i}"></ul></div>
+          <div class="bloc"><label>Description de la figure (filet de sécurité du correcteur)</label>
+            <textarea rows="4" data-champ="figure_desc" data-i="${i}" placeholder="Aucune figure." ${fige ? "readonly" : ""}>${esc(q.figure_desc || "")}</textarea></div>
+          <div class="bloc"><label>Widgets interactifs</label>
+            <div id="w-${i}"></div>
+            ${fige ? "" : `<div class="actions"><select id="w-type-${i}" style="width:auto">${Object.entries(WIDGETS).map(([k, w]) => `<option value="${k}">${w.nom}</option>`).join("")}</select>
+              <button class="btn petit" data-ajout="${i}">+ Ajouter un widget</button>
+              <button class="btn petit" data-reanalyse="${i}">Réanalyser cet exercice avec l'IA</button></div>`}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function ouvrirExo(i, defiler) {
+    const ex = $("ex-" + i); if (!ex) return;
+    ex.classList.add("ouvert");
+    chargerImages(i);
+    if (defiler) ex.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function chargerImages(i) {
+    const z = $("img-" + i);
+    if (!z || z.dataset.fait) return;
+    z.dataset.fait = "1";
+    const pages = QS[i].pages || [];
+    const imgs = [];
+    for (const n of pages.slice(0, 3)) {
+      try { const r = await api("/admin/depots/" + COURANT.id + "/page/" + n); imgs.push(`<img src="${r.image}" alt="Page ${n}">`); }
+      catch (e) { imgs.push(`<div class="vide">Page ${n} : ${esc(e.message)}</div>`); }
+    }
+    z.innerHTML = imgs.join("") || `<div class="vide">Aucune page.</div>`;
+  }
+
+  function sousQuestions(i) {
+    const t = QS[i].enonce_correction || "";
+    const dec = window.MB_SQ ? MB_SQ.parse(t) : null;
+    return dec ? dec.items : [];
+  }
+
+  function dessinerSq(i) {
+    const items = sousQuestions(i);
+    const ws = QS[i].widgets || [];
+    $("sq-" + i).innerHTML = items.length ? items.map(it => {
+      const ko = /null|undefined/i.test(it.label) || !String(it.texte || "").trim();
+      const w = ws.find(x => nl(x.question) === nl(it.label));
+      return `<li class="${ko ? "ko" : ""}"><b>${esc(it.label)}</b><span>${esc(it.texte || "(vide)")}</span>${w ? `<span class="w">◆ ${esc(w.interactif.widget)}</span>` : ""}</li>`;
+    }).join("") : `<li><span class="muted">Pas de sous-questions détectées : l'exercice sera traité d'un bloc.</span></li>`;
+  }
+
+  function dessinerWidgets(i, fige) {
+    const hote = $("w-" + i);
+    const ws = QS[i].widgets || [];
+    const labels = sousQuestions(i).map(x => x.label);
+    hote.innerHTML = ws.length ? "" : `<p class="muted" style="font-size:.82rem">Aucun widget : les questions se traiteront en réponse rédigée.</p>`;
+    ws.forEach((w, k) => {
+      const div = document.createElement("div");
+      div.className = "widget";
+      div.innerHTML = `
+        <div class="widget-tete">
+          <span class="puce or">${esc((WIDGETS[w.interactif.widget] || {}).nom || w.interactif.widget)}</span>
+          <span class="muted" style="font-size:.78rem">pour la question</span>
+          <select data-q ${fige ? "disabled" : ""}>
+            <option value="">(tout l'exercice)</option>
+            ${[...new Set(labels.concat(w.question ? [w.question] : []))].map(l => `<option${nl(l) === nl(w.question) ? " selected" : ""}>${esc(l)}</option>`).join("")}
+          </select>
+          ${fige ? "" : `<button class="btn petit danger" data-suppr>Retirer</button>`}
+        </div>
+        <div class="widget-apercu"></div>
+        <div class="widget-err"></div>
+        ${fige ? "" : `<details><summary class="muted" style="font-size:.78rem;cursor:pointer">Modifier les paramètres (JSON)</summary>
+          <textarea data-json>${esc(JSON.stringify(w.interactif, null, 1))}</textarea>
+          <div class="actions"><button class="btn petit" data-appliquer>Appliquer</button></div></details>`}`;
+      hote.appendChild(div);
+      apercuWidget(w.interactif, div.querySelector(".widget-apercu"), div.querySelector(".widget-err"));
+      if (fige) return;
+      div.querySelector("[data-q]").onchange = e => { w.question = e.target.value; sale(); dessinerSq(i); };
+      div.querySelector("[data-suppr]").onclick = () => { ws.splice(k, 1); sale(); dessinerWidgets(i); dessinerSq(i); };
+      div.querySelector("[data-appliquer]").onclick = () => {
+        try { const p = JSON.parse(div.querySelector("[data-json]").value);
+          if (!p.widget) throw new Error("le champ \"widget\" manque");
+          w.interactif = p; sale(); dessinerWidgets(i); dessinerSq(i); }
+        catch (e) { div.querySelector(".widget-err").textContent = "JSON invalide : " + e.message; }
+      };
+    });
+  }
+
+  /* Le widget tel que l'élève le verra, avec un bouton pour vérifier que la
+     réponse attendue est bien acceptée. */
+  function apercuWidget(p, hote, err) {
+    const def = WIDGETS[p && p.widget];
+    if (!def) { err.textContent = "Widget inconnu : " + (p && p.widget); return; }
+    const mod = window[def.mod];
+    if (!mod || !mod.installer) { err.textContent = "Le module " + def.mod + " n'est pas chargé."; return; }
+    try {
+      mod.installer(p, hote, { papier: false });
+      const problemes = [];
+      if (p.widget !== "solide" && !p.reponse) problemes.push("aucune réponse attendue (champ reponse)");
+      if (p.widget === "tableau" && p.reponse && p.reponse.cellules) {
+        Object.keys(p.reponse.cellules).forEach(k => { const [l, c] = k.split(",").map(Number);
+          const cel = ((p.lignes || [])[l] || {}).cellules || [];
+          if (!(c in cel)) problemes.push("la case " + k + " n'existe pas");
+          else if (cel[c] !== null && cel[c] !== "") problemes.push("la case " + k + " est déjà remplie dans l'énoncé"); });
+      }
+      if (p.widget === "axe" && p.reponse && p.reponse.points) p.reponse.points.forEach(pt => {
+        if (pt.x < p.min || pt.x > p.max) problemes.push("le point " + pt.nom + " est hors de l'axe"); });
+      err.textContent = problemes.length ? "⚠ " + problemes.join(" · ") : "";
+    } catch (e) { err.textContent = "Le widget ne s'affiche pas : " + e.message; }
+  }
+
+  function sale() { SALE = true; const e = $("etat-save"); if (e) { e.textContent = "Modifications non enregistrées."; e.classList.add("sale"); } }
+
+  function brancherExo(i, fige) {
+    $("corps").querySelector(`[data-tete="${i}"]`).onclick = () => {
+      const ex = $("ex-" + i); ex.classList.toggle("ouvert"); if (ex.classList.contains("ouvert")) chargerImages(i);
+    };
+    dessinerSq(i);
+    dessinerWidgets(i, fige);
+    if (fige) return;
+    $("ex-" + i).querySelectorAll("textarea[data-champ]").forEach(t => t.oninput = () => {
+      QS[i][t.dataset.champ] = t.value; sale();
+      if (t.dataset.champ === "enonce_correction") { dessinerSq(i); }
+    });
+    const aj = $("ex-" + i).querySelector("[data-ajout]");
+    if (aj) aj.onclick = () => {
+      const type = $("w-type-" + i).value;
+      const labels = sousQuestions(i).map(x => x.label);
+      QS[i].widgets = QS[i].widgets || [];
+      QS[i].widgets.push({ question: labels[0] || "", interactif: JSON.parse(JSON.stringify(MODELES[type])) });
+      sale(); dessinerWidgets(i); dessinerSq(i);
+    };
+    const re = $("ex-" + i).querySelector("[data-reanalyse]");
+    if (re) re.onclick = () => {
+      if ((QS[i].widgets || []).length || QS[i].figure_desc)
+        if (!confirm("La description de la figure et les widgets de cet exercice seront remplacés par la nouvelle analyse. Continuer ?")) return;
+      lancerAnalyse(i);
+    };
+  }
+
+  async function enregistrer() {
+    try {
+      COURANT = await api("/admin/depots/" + COURANT.id, { method: "PATCH", body: JSON.stringify({ questions: QS }) });
+      QS = JSON.parse(JSON.stringify(COURANT.analyse.questions));
+      SALE = false; chargerFile(true);
+      const ouverts = [...document.querySelectorAll(".exo.ouvert")].map(e => Number(e.id.slice(3)));
+      dessiner(); ouverts.forEach(i => ouvrirExo(i));
+      return true;
+    } catch (e) { alert("Enregistrement impossible : " + e.message); return false; }
+  }
+
+  async function ecarter(k) {
+    const anoms = COURANT.analyse.anomalies || [];
+    const cible = anoms[k];
+    const restantes = (COURANT.analyse.anomalies_ia || []).filter(a =>
+      !(a.message === cible.message && a.exercice === cible.exercice));
+    try {
+      COURANT = await api("/admin/depots/" + COURANT.id, { method: "PATCH", body: JSON.stringify({ anomalies_ia: restantes, questions: QS }) });
+      QS = JSON.parse(JSON.stringify(COURANT.analyse.questions)); SALE = false; dessiner();
+    } catch (e) { alert(e.message); }
+  }
+
+  /* ═════════ PHASE 3 : TEST ET PUBLICATION ═════════ */
+  function phaseTest() {
+    const d = COURANT;
+    if (d.statut === "publie") {
+      $("corps").innerHTML = `<div class="ok"><span class="i">✓</span><div>
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.15rem">Sujet publié dans la banque d'annales</div>
+        <div class="muted" style="font-size:.84rem">Annale n° ${d.annale_id} · <a href="app.html#annales">voir les annales</a></div></div></div>`;
+      return;
+    }
+    const anoms = (d.analyse && d.analyse.anomalies) || [];
+    const nErr = anoms.filter(a => a.gravite === "erreur").length;
+    $("corps").innerHTML = `
+      <div class="test">
+        <div class="carte">
+          <h3>Composer le sujet comme un élève</h3>
+          <p>Le sujet s'ouvre dans un nouvel onglet, sur la page Examen : lecture du sujet, chronomètre, questions une par une,
+            widgets et correction par l'IA — exactement ce que verront les élèves. Il reste invisible pour eux tant qu'il n'est pas publié.</p>
+          <a class="btn or" style="display:inline-block;text-decoration:none" href="app.html#test-depot=${d.id}" target="_blank" rel="noopener">Lancer l'épreuve de test ↗</a>
+        </div>
+        <div class="carte">
+          <h3>Publier</h3>
+          <p>Avant de publier, vérifie pendant le test :</p>
+          <ul class="verif">
+            <li><label><input type="checkbox"> Le découpage en questions suit bien le sujet.</label></li>
+            <li><label><input type="checkbox"> Les widgets s'affichent et acceptent la bonne réponse.</label></li>
+            <li><label><input type="checkbox"> La correction de l'IA est juste sur au moins une question avec figure.</label></li>
+          </ul>
+          ${nErr ? `<div class="msg on err" style="margin:0 0 .8rem">${nErr} erreur(s) restent signalées à l'étape 2.</div>` : ""}
+          <div class="actions">
+            ${d.statut !== "teste" ? `<button class="btn" id="b-teste">Marquer comme testé</button>` : ""}
+            <button class="btn or" id="b-publier" disabled>Publier dans les annales</button>
+          </div>
+          <div class="msg" id="m3"></div>
+        </div>
+      </div>`;
+    const cases = [...$("corps").querySelectorAll(".verif input")];
+    const maj = () => { $("b-publier").disabled = !cases.every(c => c.checked); };
+    cases.forEach(c => c.onchange = maj);
+    if ($("b-teste")) $("b-teste").onclick = async () => {
+      try { COURANT = await api("/admin/depots/" + d.id, { method: "PATCH", body: JSON.stringify({ statut: "teste" }) }); chargerFile(true); dessiner(); }
+      catch (e) { msg("m3", e.message); }
+    };
+    $("b-publier").onclick = async () => {
+      if (nErr && !confirm(nErr + " erreur(s) restent signalées. Publier quand même ?")) return;
+      try {
+        const r = await api("/admin/depots/" + d.id + "/publier", { method: "POST" });
+        COURANT = await api("/admin/depots/" + d.id); chargerFile(true); dessiner();
+        msg("m3", "Publié : annale n° " + r.annale_id, "info");
+      } catch (e) { msg("m3", e.message); }
+    };
+  }
+
+  window.addEventListener("beforeunload", e => { if (SALE) { e.preventDefault(); e.returnValue = ""; } });
+  /* auth.js renvoie les non-administrateurs ailleurs : inutile d'interroger le serveur pour eux. */
+  if (window.MB_AUTH && MB_AUTH.isAdmin()) chargerFile();
+})();
+</script>
+</body>
+</html>

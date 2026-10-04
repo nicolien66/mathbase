@@ -628,38 +628,66 @@
       </div>
 
       <!-- PANNEAU ANNALE -->
-      <div id="pane-annale" class="form-card" style="display:none">
-        <p class="form-note">Une annale s'ajoute uniquement en déposant son <strong>PDF</strong>.
-          L'IA découpe le sujet en exercices, associe chaque exercice à ses pages et décrit les figures
-          pour la correction.</p>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="an-title">Titre <span class="label-hint">— facultatif</span></label>
-            <input type="text" id="an-title" placeholder="Ex : Brevet — Asie 19 juin 2023">
-          </div>
-          <div class="form-group">
-            <label for="an-year">Année</label>
-            <input type="number" id="an-year" placeholder="2024" min="1990" max="2100">
-          </div>
-          <div class="form-group">
-            <label for="an-duration">Durée (min)</label>
-            <input type="number" id="an-duration" placeholder="120" min="10" max="300">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Fichier PDF du sujet</label>
-          <div class="dropzone" id="an-drop" onclick="document.getElementById('an-file').click()">
-            <div class="dz-ico">▤</div>
-            <div class="dz-txt">Dépose le PDF du sujet ici, ou clique pour parcourir</div>
+      <div id="pane-annale" class="an-pane" style="display:none">
+        <div class="form-card an-form">
+          <div class="dropzone an-drop" id="an-drop" onclick="document.getElementById('an-file').click()">
+            <svg class="an-drop-ico" viewBox="0 0 48 56" aria-hidden="true">
+              <path d="M6 2h26l14 14v36a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M32 2v14h14" fill="none" stroke="currentColor" stroke-width="2"/>
+              <text x="24" y="42" text-anchor="middle" font-size="11" font-family="DM Mono, monospace" fill="currentColor">PDF</text>
+            </svg>
+            <div class="an-drop-txt">
+              <strong>Dépose le PDF du sujet</strong>
+              <span>ou clique pour parcourir · un seul fichier PDF</span>
+            </div>
             <div class="dz-list" id="an-list"></div>
           </div>
           <input type="file" id="an-file" accept="application/pdf" style="display:none">
+
+          <div class="an-champs">
+            <div class="form-group an-large">
+              <label for="an-title">Titre <span class="label-hint">— facultatif</span></label>
+              <input type="text" id="an-title" placeholder="Ex : Brevet — Asie, 19 juin 2023">
+            </div>
+            <div class="form-group">
+              <label for="an-exam">Type de sujet</label>
+              <select id="an-exam">
+                <option>Brevet</option><option>Brevet blanc</option><option>Contrôle</option><option>DS</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="an-classe">Classe</label>
+              <select id="an-classe">
+                <option>6ème</option><option>5ème</option><option>4ème</option><option selected>3ème</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="an-year">Année</label>
+              <input type="number" id="an-year" placeholder="2024" min="1990" max="2100">
+            </div>
+            <div class="form-group">
+              <label for="an-duration">Durée <span class="label-hint">(min)</span></label>
+              <input type="number" id="an-duration" placeholder="120" min="10" max="300">
+            </div>
+            <div class="form-group an-large">
+              <label for="an-commentaire">Un mot pour l'équipe <span class="label-hint">— facultatif</span></label>
+              <input type="text" id="an-commentaire" placeholder="Ex : sujet de mon collège, corrigé à la fin du PDF" maxlength="300">
+            </div>
+          </div>
+
+          <p class="an-info">Ton sujet sera relu par l'équipe avant d'apparaître dans les annales.</p>
+          <div class="form-actions">
+            <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
+            <button class="btn-ai" id="an-btn" onclick="envoyerAnnale()" disabled>Envoyer le sujet →</button>
+          </div>
+          <div id="an-progress" class="an-resultat" style="display:none"></div>
         </div>
-        <div class="form-actions">
-          <button class="btn-ghost" onclick="showView('browse')">Annuler</button>
-          <button class="btn-ai" id="an-btn" onclick="envoyerAnnale()"><span class="ai-icon">✦</span> Analyser et ajouter →</button>
+
+        <!-- Les sujets que l'élève a déjà envoyés, avec leur état -->
+        <div class="an-mes" id="an-mes" hidden>
+          <p class="an-mes-tag">Mes sujets envoyés</p>
+          <ul id="an-mes-liste"></ul>
         </div>
-        <div id="an-progress" class="ai-block" style="display:none"></div>
       </div>
 
       <!-- ÉTAPE 2 : RÉSULTAT IA -->
