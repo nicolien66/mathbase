@@ -8,6 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 <script src="matiere.js"></script>
+<!-- Index des cours animés et des tutoriels (rubriques COURS et TUTORIEL) -->
+<script src="cours-index.js"></script>
+<script src="tutoriels-index.js"></script>
 <script src="auth.js" data-protect></script>
 <script src="ui.js" defer></script>
 <script src="grapheur.js" defer></script>
@@ -20,9 +23,16 @@
 <div id="toast" class="toast"></div>
 
   <!-- ══════════════════════════════════
-       VUE : ACCUEIL
+       ACCUEIL : un tiroir qui coulisse depuis la droite, par-dessus la page
+       principale. L'onglet « ‹ Accueil » l'ouvre, la flèche « › » le referme.
        ══════════════════════════════════ -->
-  <div id="view-home" class="view active">
+  <button type="button" id="tiroir-ouvrir" class="tiroir-onglet" onclick="ouvrirAccueil()"
+          aria-label="Ouvrir l'accueil" aria-controls="tiroir-accueil" aria-expanded="false">
+    <span class="tiroir-chevron">‹</span><span class="tiroir-libelle">Accueil</span>
+  </button>
+  <aside id="tiroir-accueil" class="tiroir" aria-hidden="true" aria-label="Accueil Mathématiques">
+    <button type="button" class="tiroir-fermer" onclick="fermerAccueil()" aria-label="Refermer l'accueil">›</button>
+    <div class="tiroir-contenu" id="tiroir-contenu">
     <div class="home-page">
       <!-- Le héros occupe deux colonnes : le titre à gauche, le suivi personnel
            à droite. Le tableau de bord n'est pas une rubrique parmi d'autres,
@@ -98,22 +108,29 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </aside>
 
   <!-- ══════════════════════════════════
-       VUE : LISTE
+       VUE : PAGE PRINCIPALE (frises, rubriques COURS · TUTORIEL · ENTRAÎNEMENT · ANNALES)
   ══════════════════════════════════ -->
-  <div id="view-browse" class="view">
+  <div id="view-browse" class="view active">
     <div class="browse-hero">
       <div class="browse-hero-inner">
-        <p class="hero-tag">Base de données ouverte</p>
-        <h1>Exercices de<br><em>mathématiques.</em></h1>
+        <p class="hero-tag">Polymates</p>
+        <h1><em>Mathématiques.</em></h1>
         <p class="hero-sub">Explore, filtre et résous des exercices classés par niveau — du primaire à l'université.</p>
       </div>
-      <div id="total-badge" class="total-badge">
-        <span id="total-num">—</span>
-        <span class="total-label">exercices</span>
+    </div>
+
+    <!-- Carrousel des rubriques : COURS · ENTRAÎNEMENT · ANNALES -->
+    <div class="rubriques" id="rubriques">
+      <button type="button" class="rb-fleche" onclick="tournerRubrique(-1)" aria-label="Rubrique précédente">‹</button>
+      <div class="rb-fenetre" id="rb-fenetre" tabindex="0" role="tablist" aria-label="Rubriques">
+        <div class="rb-piste" id="rb-piste"></div>
       </div>
+      <button type="button" class="rb-fleche" onclick="tournerRubrique(1)" aria-label="Rubrique suivante">›</button>
+      <div class="rb-points" id="rb-points"></div>
     </div>
 
     <div class="filter-section">
@@ -145,6 +162,9 @@
         <button class="btn-primary" id="empty-add-btn" onclick="showView('add')">Ajouter le premier →</button>
       </div>
     </div>
+
+    <!-- Rubrique ANNALES : la banque de sujets vient se ranger ici -->
+    <div id="browse-annales" class="browse-annales" hidden></div>
   </div>
 
   <!-- ══════════════════════════════════
@@ -168,6 +188,26 @@
         </a>
       </div>
       <div id="chapter-list" class="exercise-grid"></div>
+      <!-- Séance sur les familles cochées -->
+      <div id="chapter-launch" class="chap-launch" hidden>
+        <div class="chap-launch-info">
+          <span id="chap-launch-txt">Coche les familles à travailler</span>
+          <button type="button" id="chap-launch-all" class="chap-launch-all" onclick="toutCocherFamilles()">Tout cocher</button>
+        </div>
+        <button type="button" id="chap-launch-btn" class="chap-launch-btn" onclick="lancerSeanceFamilles()" disabled>Lancer la séance →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       VUE : LES COURS D'UN CHAPITRE (rubrique COURS)
+       ══════════════════════════════════ -->
+  <div id="view-cours" class="view">
+    <div class="chapter-page">
+      <button class="chapter-back" onclick="showView('browse')">← Tous les chapitres</button>
+      <h2 id="cours-title" class="chapter-title">Chapitre</h2>
+      <p id="cours-sub" class="chapter-sub"></p>
+      <div id="cours-list"></div>
     </div>
   </div>
 

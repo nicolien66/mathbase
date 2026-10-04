@@ -240,6 +240,12 @@ function demoCorrect(ex, answer){
 }
 
 function showView(name, tabName) {
+  /* L'ancien accueil n'est plus une vue : c'est un tiroir posé sur la page
+     principale. Toute navigation le referme ; « home » l'ouvre. */
+  if (name === "home") { name = "browse"; setTimeout(ouvrirAccueil, 0); }
+  else fermerAccueil();
+  document.body.classList.toggle("vue-principale", name === "browse");
+  rangerAnnales(name === "browse" && rubrique === "annales" ? "browse" : "annales");
   // Blindage : fermer toute surcouche/modal restée ouverte (sinon elle masque la page en noir)
   document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classList.remove("open"));
   document.body.style.overflow = "";
@@ -250,7 +256,7 @@ function showView(name, tabName) {
   target.classList.add("active");
   const tab = tabName || name;
   document.querySelector(`.tab[data-tab="${tab}"]`)?.classList.add("active");
-  if (name === "browse") loadExercises();
+  if (name === "browse") { appliquerRubrique(); loadExercises(); }
   if (name === "chapter") renderChapterView();
   if (name === "add") initAddView();
   if (name === "seance") resetSeanceWelcome();
@@ -370,8 +376,8 @@ function renderByChapter(data) {
   LOADED_EXERCISES = data;
   const list  = document.getElementById("list");
   const empty = document.getElementById("empty-state");
-  const badge = document.getElementById("total-num");
-  badge.textContent = data.length;
+  const badge = document.getElementById("total-num");   /* compteur retiré de la page */
+  if (badge) badge.textContent = data.length;
   empty.style.display = "none";
   list.innerHTML = "";
 
@@ -534,12 +540,18 @@ function renderByChapter(data) {
     section.style.setProperty("--sc", g.color);
     const compte = n => n.familles.reduce((s, [c, f]) => s + (parCle.get(c + "|" + normaliseTitre(f)) || []).length, 0);
     /* une notion sans aucun exercice n'est pas affichée (elle réapparaît dès qu'elle en reçoit) */
-    const notions = g.notions.filter(n => compte(n) > 0);
+    /* COURS et TUTORIEL : les frises comptent les ressources, plus les exercices. */
+    const enCours = rubrique === "cours" || rubrique === "tutoriel";
+    const nbCours = n => rubrique === "tutoriel" ? tutosDeNotion(n).length : coursDeNotion(n).cours.length;
+    const unite = k => rubrique === "tutoriel" ? k + " tutoriel" + (k > 1 ? "s" : "") : k + " cours";
+    const notions = g.notions.filter(n => compte(n) > 0 || (enCours && nbCours(n) > 0));
     const total = notions.reduce((s, n) => s + compte(n), 0);
     section.innerHTML =
       `<div class="fx-tete"><span class="fx-titre">${escapeHtml(g.nom)}</span>` +
       `<span class="fx-desc">${escapeHtml(g.desc)}</span>` +
-      `<span class="fx-total">${notions.length} notion${notions.length > 1 ? "s" : ""} · ${total} exercice${total > 1 ? "s" : ""}</span></div>`;
+      `<span class="fx-total">${notions.length} notion${notions.length > 1 ? "s" : ""} · ${enCours
+        ? unite(notions.reduce((k, n) => k + nbCours(n), 0))
+        : total + " exercice" + (total > 1 ? "s" : "")}</span></div>`;
     const ligne = document.createElement("div");
     ligne.className = "fx-ligne";
     const piste = document.createElement("div");
@@ -547,7 +559,8 @@ function renderByChapter(data) {
     piste.style.setProperty("--n", notions.length);
     ligne.appendChild(piste);
     notions.forEach((n, i) => {
-      const nb = compte(n);
+      const nbEx = compte(n), nbC = enCours ? nbCours(n) : 0;
+      const nb = enCours ? (nbC || nbEx) : nbEx;   /* en COURS, une notion sans cours mène au chapitre entier */
       const st = document.createElement(nb ? "button" : "div");
       /* la première notion de chaque classe porte l'étiquette de la classe */
       const nouvelleClasse = n.classe && (i === 0 || notions[i - 1].classe !== n.classe);
@@ -556,7 +569,9 @@ function renderByChapter(data) {
       st.innerHTML =
         `<span class="fx-classe${nouvelleClasse ? "" : " fx-classe-suite"}">${escapeHtml(n.classe || "")}</span><span class="fx-point"></span>` +
         `<span class="fx-nom">${escapeHtml(n.nom)}</span>` +
-        `<span class="fx-compte">${nb ? nb + " exercice" + (nb > 1 ? "s" : "") : "à venir"}</span>`;
+        `<span class="fx-compte">${enCours
+          ? (nbC ? unite(nbC) : "voir le chapitre")
+          : (nb ? nb + " exercice" + (nb > 1 ? "s" : "") : "à venir")}</span>`;
       piste.appendChild(st);
     });
     section.appendChild(coulissante(ligne));
@@ -580,6 +595,9 @@ let currentFiltre = null;   /* quand une notion est ouverte : ex => true si l'ex
 let currentClasse = "";     /* la classe de la notion ouverte (6e, 5e…) */
 
 function openNotion(idee, notion) {
+  if (rubrique === "cours") { ouvrirCoursNotion(notion); return; }
+  if (rubrique === "tutoriel") { ouvrirTutosNotion(notion); return; }
+  FAMILLES_COCHEES = new Set();
   const cles = new Set(notion.familles.map(([c, f]) => c + "|" + normaliseTitre(f)));
   currentFiltre = ex => cles.has((ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || ""));
   currentChapter = notion.nom;
@@ -589,6 +607,9 @@ function openNotion(idee, notion) {
 }
 
 function openChapter(chap) {
+  if (rubrique === "cours") { ouvrirCoursChapitre(chap); return; }
+  if (rubrique === "tutoriel") { ouvrirTutosChapitre(chap); return; }
+  FAMILLES_COCHEES = new Set();
   currentFiltre = null;
   currentClasse = "";
   currentChapter = chap;
@@ -644,6 +665,8 @@ function renderChapterView() {
   if (!shown.length) {
     const label = chapterMode === "probleme" ? "problème" : "exercice d'entraînement";
     grid.innerHTML = `<div class="chap-placeholder">Aucun ${label} pour ce chapitre — pour l'instant !</div>`;
+    FAMILLES = {};
+    majLancement();
     return;
   }
   // Regroupement par type d'exercice : les énoncés portant le même titre
@@ -661,22 +684,76 @@ function renderChapterView() {
   const ordonnes = [...groupes.values()].sort((a, b) =>
     b.items.length - a.items.length || a.titre.localeCompare(b.titre, "fr"));
 
-  // Chaque famille est un bouton : il ouvre une page dédiée listant les
-  // exercices de ce type. Le chapitre reste ainsi lisible même avec un
-  // très grand nombre d'énoncés.
+  /* Chaque famille est une ligne à cocher : on choisit les familles à
+     travailler, puis « Lancer la séance » ouvre une séance d'entraînement
+     sur ces familles uniquement. Les coches survivent au passage
+     Entraînement ↔ Problèmes, et sont remises à zéro à chaque notion. */
   FAMILLES = {};
   ordonnes.forEach(g => {
     const cle = normaliseTitre(g.titre);
     FAMILLES[cle] = g;
-    const tete = document.createElement("button");
-    tete.className = "chap-group-head";
-    tete.innerHTML =
-      `<span class="chap-group-title">${escapeHtml(g.titre)}</span>
-       <span class="chap-group-count">${g.items.length}</span>
-       <span class="chap-group-go">Voir →</span>`;
-    tete.onclick = () => ouvrirFamille(cle);
-    grid.appendChild(tete);
+    const ligne = document.createElement("label");
+    ligne.className = "chap-group-head chap-group-coche" + (FAMILLES_COCHEES.has(cle) ? " cochee" : "");
+    ligne.innerHTML =
+      `<input type="checkbox" class="chap-group-case"${FAMILLES_COCHEES.has(cle) ? " checked" : ""}>
+       <span class="chap-group-title">${escapeHtml(g.titre)}</span>
+       <span class="chap-group-count">${g.items.length}</span>`;
+    ligne.querySelector("input").onchange = e => {
+      if (e.target.checked) FAMILLES_COCHEES.add(cle); else FAMILLES_COCHEES.delete(cle);
+      ligne.classList.toggle("cochee", e.target.checked);
+      majLancement();
+    };
+    grid.appendChild(ligne);
   });
+  majLancement();
+}
+
+/* ── Séance sur les familles cochées ── */
+let FAMILLES_COCHEES = new Set();
+
+/* Seules comptent les familles cochées ET présentes dans la vue affichée. */
+function famillesCochees() {
+  return Object.keys(FAMILLES).filter(c => FAMILLES_COCHEES.has(c)).map(c => FAMILLES[c]);
+}
+
+function majLancement() {
+  const barre = document.getElementById("chapter-launch");
+  if (!barre) return;
+  const total = Object.keys(FAMILLES).length;
+  barre.hidden = total === 0;
+  const choix = famillesCochees();
+  const nbEx = choix.reduce((n, g) => n + g.items.length, 0);
+  document.getElementById("chap-launch-txt").textContent = choix.length
+    ? choix.length + " famille" + (choix.length > 1 ? "s" : "") + " cochée" + (choix.length > 1 ? "s" : "") +
+      " · " + nbEx + " exercice" + (nbEx > 1 ? "s" : "")
+    : "Coche les familles à travailler";
+  document.getElementById("chap-launch-all").textContent =
+    choix.length === total ? "Tout décocher" : "Tout cocher";
+  document.getElementById("chap-launch-btn").disabled = !choix.length;
+}
+
+function toutCocherFamilles() {
+  const tout = famillesCochees().length === Object.keys(FAMILLES).length;
+  Object.keys(FAMILLES).forEach(c => tout ? FAMILLES_COCHEES.delete(c) : FAMILLES_COCHEES.add(c));
+  renderChapterView();
+}
+
+/* Lance la séance directement sur les exercices des familles cochées : la
+   séance ordinaire ne sait filtrer que sur UNE famille, on lui fournit donc
+   la liste toute prête, mélangée, puis on ouvre le livre. */
+function lancerSeanceFamilles() {
+  const exos = famillesCochees().flatMap(g => g.items);
+  if (!exos.length) { showToast("Coche au moins une famille.", "error"); return; }
+  setSeanceMode(chapterMode === "probleme" ? "probleme" : "exercice");
+  showView("seance", "entrainement");
+  seanceCible = true;
+  seanceExercises = [...exos].sort(() => Math.random() - 0.5);
+  seanceHistory = seanceExercises.map(() => null);
+  seanceIndex = 0; seanceMax = 0;
+  seanceCorrect = 0; seanceWrong = 0; seanceSkipped = 0;
+  document.getElementById("seance-welcome").style.display = "none";
+  document.getElementById("seance-session").style.display = "";
+  paintAll();
 }
 
 /* Deux titres ne différant que par la casse, les accents, la ponctuation ou
@@ -3075,6 +3152,260 @@ function ouvrirKholleur(chapitre) {
   location.href = window.MB_MAT ? MB_MAT.lien(href) : href;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   RUBRIQUES DE LA PAGE EXERCICES : COURS · ENTRAÎNEMENT · ANNALES
+   Un carrousel, entre le titre et les niveaux, choisit ce que les frises
+   ouvrent :
+     · COURS        → un clic sur un chapitre propose les cours qui s'y
+                      rattachent (les familles du chapitre ↔ celles du cours) ;
+     · ENTRAÎNEMENT → les familles à cocher, puis « Lancer la séance » ;
+     · ANNALES      → la banque de sujets remplace les frises.
+   ═══════════════════════════════════════════════════════════════════════ */
+const RUBRIQUES = [
+  { id: "cours",        titre: "COURS",
+    sous: "Choisis un chapitre : les cours qui s'y rattachent s'affichent." },
+  { id: "tutoriel",     titre: "TUTORIEL",
+    sous: "Choisis un chapitre : son tutoriel interactif s'affiche, avec les étapes à manipuler." },
+  { id: "entrainement", titre: "ENTRAÎNEMENT",
+    sous: "Choisis un chapitre, coche les familles à travailler, puis lance ta séance." },
+  { id: "annales",      titre: "ANNALES",
+    sous: "Brevets, contrôles et devoirs surveillés, avec leur corrigé." },
+];
+/* Les index de cours et de tutoriels ne couvrent que les mathématiques :
+   ailleurs (physique-chimie), seules ENTRAÎNEMENT et ANNALES sont proposées. */
+if (window.MB_MAT && !MB_MAT.estMaths()) {
+  for (let k = RUBRIQUES.length - 1; k >= 0; k--)
+    if (RUBRIQUES[k].id === "cours" || RUBRIQUES[k].id === "tutoriel") RUBRIQUES.splice(k, 1);
+}
+let rubrique = "entrainement";
+
+function rangRubrique(id) { return RUBRIQUES.findIndex(r => r.id === id); }
+
+function tournerRubrique(pas) {
+  const i = rangRubrique(rubrique), n = RUBRIQUES.length;
+  choisirRubrique(RUBRIQUES[(i + pas + n) % n].id, pas);
+}
+
+function choisirRubrique(id, sens) {
+  if (id === rubrique) return;
+  rubrique = id;
+  dessinerCarrousel(sens || 0);
+  appliquerRubrique();
+  if (rubrique !== "annales" && LOADED_EXERCISES.length) renderByChapter(LOADED_EXERCISES);
+}
+
+/* Trois titres visibles : le précédent, le courant (au centre), le suivant. */
+function dessinerCarrousel(sens) {
+  const piste = document.getElementById("rb-piste");
+  if (!piste) return;
+  const i = rangRubrique(rubrique), n = RUBRIQUES.length;
+  piste.innerHTML = "";
+  /* Avec deux rubriques seulement, la voisine n'est montrée qu'une fois. */
+  const places = n >= 3 ? [[-1, "rb-cote"], [0, "rb-centre"], [1, "rb-cote"]]
+                        : n === 2 ? [[null], [0, "rb-centre"], [1, "rb-cote"]] : [[null], [0, "rb-centre"], [null]];
+  places.forEach(([d, cls]) => {
+    if (d === null) { piste.appendChild(document.createElement("span")); return; }
+    const r = RUBRIQUES[(i + d + n) % n];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "rb-item " + cls;
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", d === 0 ? "true" : "false");
+    b.textContent = r.titre;
+    if (d) b.onclick = () => tournerRubrique(d);
+    piste.appendChild(b);
+  });
+  piste.classList.remove("rb-de-droite", "rb-de-gauche");
+  if (sens) { void piste.offsetWidth; piste.classList.add(sens > 0 ? "rb-de-droite" : "rb-de-gauche"); }
+  const pts = document.getElementById("rb-points");
+  pts.innerHTML = RUBRIQUES.map((r, k) =>
+    `<button type="button" class="rb-point${k === i ? " actif" : ""}" aria-label="${r.titre}" onclick="choisirRubrique('${r.id}', ${k > i ? 1 : -1})"></button>`).join("");
+}
+
+/* Ce que montre la page selon la rubrique. */
+function appliquerRubrique() {
+  const ann = rubrique === "annales";
+  const vue = document.getElementById("view-browse");
+  if (!vue) return;
+  vue.querySelector(".filter-section").style.display = ann ? "none" : "";
+  vue.querySelector(".grid-section").style.display = ann ? "none" : "";
+  document.getElementById("browse-annales").hidden = !ann;
+  const sous = vue.querySelector(".browse-hero .hero-sub");
+  const r = RUBRIQUES[rangRubrique(rubrique)];
+  if (sous && r) sous.textContent = r.sous;
+  if (ann) { rangerAnnales("browse"); loadAnnales(); }
+}
+
+/* La banque de sujets (filtres + grille) n'existe qu'une fois : on la
+   déplace entre la vue « Annales » du menu et la rubrique ANNALES. */
+function rangerAnnales(ou) {
+  const filtres = document.getElementById("annales-filters");
+  const grille = document.getElementById("annales-grid");
+  const hote = ou === "browse"
+    ? document.getElementById("browse-annales")
+    : document.querySelector("#view-annales .annales-page");
+  if (!filtres || !grille || !hote || grille.parentNode === hote) return;
+  hote.append(filtres, grille);
+}
+
+/* ── Rubrique COURS ── */
+function indexCours() { return window.COURS_INDEX || []; }
+
+/* Les cours d'une notion : ceux des mêmes chapitres qui travaillent au moins
+   une des familles de la notion. Les chapitres concernés sont aussi rendus,
+   pour proposer le chapitre entier (vue d'ensemble, bilan). */
+function coursDeNotion(notion) {
+  const fam = new Set(notion.familles.map(([c, f]) => c + "|" + normaliseTitre(f)));
+  const chapitres = [...new Set(notion.familles.map(([c]) => c))];
+  const cours = indexCours().filter(l => chapitres.includes(l.chapter) && !l.bilan && l.competence &&
+    (l.familles || []).some(f => fam.has(l.chapter + "|" + normaliseTitre(f))));
+  return { cours, chapitres };
+}
+
+function ouvrirCoursNotion(notion) {
+  const { cours, chapitres } = coursDeNotion(notion);
+  afficherCours(notion.nom, notion.classe || "", cours, chapitres);
+}
+
+function ouvrirCoursChapitre(chap) {
+  const cours = indexCours().filter(l => l.chapter === chap && !l.bilan && l.competence);
+  afficherCours(chap, "", cours, [chap]);
+}
+
+function afficherCours(titre, classe, cours, chapitres) {
+  document.getElementById("cours-title").textContent = titre;
+  document.getElementById("cours-sub").textContent =
+    (classe ? classe + " · " : "") + (cours.length
+      ? cours.length + " cours en lien avec ce chapitre"
+      : "Pas encore de cours ciblé : le chapitre entier reste disponible");
+  const lien = t => (window.MB_MAT ? MB_MAT.lien("cours.html?open=" + encodeURIComponent(t)) : "cours.html?open=" + encodeURIComponent(t));
+  const hote = document.getElementById("cours-list");
+  let h = "";
+  if (cours.length) {
+    h += '<div class="cours-grille">' + cours.map(l =>
+      `<a class="cours-carte" href="${lien(l.title)}">
+         <span class="cours-meta">${escapeHtml(l.level || "")}${l.duration ? " · " + escapeHtml(l.duration) : ""}</span>
+         <span class="cours-titre">${escapeHtml(l.title)}</span>
+         <span class="cours-desc">${escapeHtml(l.desc || "")}</span>
+         <span class="cours-go">Ouvrir le cours →</span>
+       </a>`).join("") + "</div>";
+  }
+  const chaps = chapitres.filter(c => indexCours().some(l => l.chapter === c));
+  if (chaps.length) {
+    h += '<p class="cours-section">Revoir le chapitre en entier</p><div class="cours-chapitres">' +
+      chaps.map(c => `<a class="cours-chap" href="${lien(c)}">${escapeHtml(c)} <span>vue d'ensemble · bilan →</span></a>`).join("") + "</div>";
+  }
+  if (!h) h = '<div class="chap-placeholder">Aucun cours pour ce chapitre — pour l\'instant !</div>';
+  hote.innerHTML = h;
+  showView("cours", "browse");
+}
+
+/* ── Rubrique TUTORIEL ──
+   Un tutoriel par chapitre (tutoriels.html), découpé en parties qui portent
+   les mêmes noms que les cours. Pour une notion : les tutoriels de ses
+   chapitres, avec en évidence les parties qui la concernent. */
+function indexTutos() { return window.TUTOS_INDEX || []; }
+const TUTO_ALIAS = { "Aires et figures": "Aires" };   /* chapitre d'exercices → titre du tutoriel */
+function tutoDuChapitre(chap) {
+  const t = TUTO_ALIAS[chap] || chap;
+  return indexTutos().find(x => normaliseTitre(x.titre) === normaliseTitre(t)) || null;
+}
+function tutosDeNotion(notion) {
+  const chapitres = [...new Set(notion.familles.map(([c]) => c))];
+  return chapitres.map(tutoDuChapitre).filter(Boolean);
+}
+function ouvrirTutosNotion(notion) {
+  const parties = new Set(coursDeNotion(notion).cours.map(l => normaliseTitre(l.title)));
+  afficherTutos(notion.nom, notion.classe || "", tutosDeNotion(notion), parties);
+}
+function ouvrirTutosChapitre(chap) {
+  const t = tutoDuChapitre(chap);
+  afficherTutos(chap, "", t ? [t] : [], new Set());
+}
+function afficherTutos(titre, classe, tutos, parties) {
+  document.getElementById("cours-title").textContent = titre;
+  document.getElementById("cours-sub").textContent = (classe ? classe + " · " : "") + (tutos.length
+    ? tutos.length + " tutoriel" + (tutos.length > 1 ? "s" : "") + " interactif" + (tutos.length > 1 ? "s" : "") + " en lien avec ce chapitre"
+    : "Pas encore de tutoriel pour ce chapitre");
+  const lien = t => { const h = "tutoriel.html?ch=" + encodeURIComponent(t.id) + "&title=" + encodeURIComponent(t.titre);
+    return window.MB_MAT ? MB_MAT.lien(h) : h; };
+  const hote = document.getElementById("cours-list");
+  hote.innerHTML = tutos.length
+    ? '<div class="tuto-liste">' + tutos.map(t => {
+        const cibles = t.parties.filter(p => parties.has(normaliseTitre(p)));
+        return `<a class="tuto-carte" href="${lien(t)}">
+          <span class="tuto-tete"><span class="tuto-icone">▶</span>
+            <span><span class="cours-meta">Tutoriel interactif · ${t.etapes} étape${t.etapes > 1 ? "s" : ""}</span>
+            <span class="cours-titre">${escapeHtml(t.titre)}</span></span></span>
+          ${t.parties.length ? '<span class="tuto-parties">' + t.parties.map((p, k) =>
+            `<span class="tuto-partie${cibles.includes(p) ? " cible" : ""}">${k + 1}. ${escapeHtml(p)}</span>`).join("") + "</span>" : ""}
+          ${cibles.length ? `<span class="tuto-note">En surbrillance : ${cibles.length > 1 ? "les parties" : "la partie"} de cette notion</span>` : ""}
+          <span class="cours-go">Lancer le tutoriel →</span>
+        </a>`; }).join("") + "</div>"
+    : '<div class="chap-placeholder">Aucun tutoriel pour ce chapitre — pour l\'instant !</div>';
+  showView("cours", "browse");
+}
+
+/* Carrousel : glisser au doigt ou à la souris, flèches du clavier. */
+(function initCarrousel() {
+  const f = document.getElementById("rb-fenetre");
+  if (!f) return;
+  let x0 = null;
+  f.addEventListener("pointerdown", e => { x0 = e.clientX; });
+  f.addEventListener("pointerup", e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0; x0 = null;
+    if (Math.abs(dx) > 40) tournerRubrique(dx < 0 ? 1 : -1);
+  });
+  f.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { e.preventDefault(); tournerRubrique(1); }
+    if (e.key === "ArrowLeft")  { e.preventDefault(); tournerRubrique(-1); }
+  });
+  dessinerCarrousel(0);
+})();
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TIROIR D'ACCUEIL
+   La page principale des mathématiques est la page des frises. L'ancien
+   accueil (tableau de bord, arbre, cours, tutoriels…) coulisse depuis la
+   droite : onglet « ‹ Accueil » au bord droit de l'écran pour l'ouvrir,
+   flèche « › » (ou Échap, ou glisser vers la droite) pour le refermer.
+   ═══════════════════════════════════════════════════════════════════════ */
+function ouvrirAccueil() {
+  const t = document.getElementById("tiroir-accueil");
+  if (!t || t.classList.contains("ouvert")) return;
+  t.classList.add("ouvert");
+  t.setAttribute("aria-hidden", "false");
+  document.getElementById("tiroir-ouvrir").setAttribute("aria-expanded", "true");
+  document.body.classList.add("tiroir-ouvert");
+  document.getElementById("tiroir-contenu").scrollTop = 0;
+  setTimeout(() => t.querySelector(".tiroir-fermer").focus({ preventScroll: true }), 50);
+}
+function fermerAccueil() {
+  const t = document.getElementById("tiroir-accueil");
+  if (!t || !t.classList.contains("ouvert")) return;
+  t.classList.remove("ouvert");
+  t.setAttribute("aria-hidden", "true");
+  document.getElementById("tiroir-ouvrir").setAttribute("aria-expanded", "false");
+  document.body.classList.remove("tiroir-ouvert");
+}
+(function initTiroir() {
+  const t = document.getElementById("tiroir-accueil");
+  if (!t) return;
+  document.addEventListener("keydown", e => { if (e.key === "Escape") fermerAccueil(); });
+  /* Glisser vers la droite referme le tiroir (au doigt surtout). */
+  let x0 = null, y0 = 0;
+  t.addEventListener("pointerdown", e => { x0 = e.clientX; y0 = e.clientY; });
+  t.addEventListener("pointerup", e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0, dy = Math.abs(e.clientY - y0); x0 = null;
+    if (dx > 90 && dx > dy * 2) fermerAccueil();
+  });
+  document.body.classList.toggle("vue-principale",
+    !!document.querySelector("#view-browse.active"));
+})();
+
 /* ── Liens profonds : app.html#vue ouvre directement une section ── */
 function routeFromHash() {
   const h = (location.hash || "").replace("#", "");
@@ -3089,7 +3420,9 @@ function routeFromHash() {
     case "ajouter":
     case "add":          showView("add"); break;
     case "seance":       openSeance("exercice"); break; // rétrocompat
-    default:             showView("home");
+    case "accueil":
+    case "home":         showView("home"); break;      // la page principale, tiroir d'accueil ouvert
+    default:             showView("browse");            // la page principale
   }
 }
 // Sécurité au démarrage : aucune surcouche ne doit masquer la page
@@ -3117,3 +3450,4 @@ document.querySelectorAll(".modal-overlay, .annale-modal").forEach(m => m.classL
 
 routeFromHash();
 window.addEventListener("hashchange", routeFromHash);
+
