@@ -18,11 +18,9 @@
     { label: "Annales",      href: "app.html#annales",      hashes: ["annales"] },
     { label: "Entraînement", href: "app.html#entrainement", hashes: ["entrainement", "seance"] },
     { label: "Khôlleur",     href: "kholleur.html",         pages:  ["kholleur.html"] },
-    { label: "Examen",       href: "app.html#examen",       hashes: ["examen"] },
     { label: "Ajouter",      href: "app.html#add",          hashes: ["add", "ajouter"] },
     { label: "Cours animés", href: "cours.html",            pages:  ["cours.html"] },
     { label: "Tutoriels",    href: "tutoriels.html",        pages:  ["tutoriels.html", "tutoriel.html"] },
-    { label: "Arbre",        href: "tree.html",             pages:  ["tree.html"] },
   ];
 
   const NAV_CSS = `
