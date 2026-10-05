@@ -400,6 +400,11 @@ function exerciseCard(ex) {
    même matière alignés en colonnes sur une seule ligne (grille fluide).
    Tous les chapitres de l'arbre sont montrés, même sans exercice. */
 function renderByChapter(data) {
+  /* Les problèmes n'ont pas leur place dans l'entraînement ni dans les
+     frises : ils ne sont ni comptés ni affichés. Une notion qui ne contient
+     que des problèmes disparaît donc des frises (comme toute notion sans
+     exercice) jusqu'à ce qu'elle reçoive de vrais exercices. */
+  data = data.filter(ex => (ex.type || "exercice") !== "probleme");
   LOADED_EXERCISES = data;
   const list  = document.getElementById("list");
   const empty = document.getElementById("empty-state");
