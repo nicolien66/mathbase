@@ -2264,3 +2264,10 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
 /* Épreuve lancée depuis l'administration sur un sujet non publié */
 .exam-test-bandeau { margin-bottom:1rem; padding:.7rem 1rem; border-radius:10px; font-size:.86rem;
   color:#e6c27e; background:rgba(230,194,126,.08); border:1px dashed rgba(230,194,126,.45); }
+
+/* Rubrique ANNALES : accès direct à la page Ajouter */
+.browse-annales-tete { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+  margin-bottom:1.4rem; padding:1rem 1.2rem; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+.browse-annales-tete p { font-size:.88rem; color:var(--muted); margin:0; }
+.browse-annales-tete .btn-ai { cursor:pointer; }
+@media (max-width:600px) { .browse-annales-tete .btn-ai { width:100%; justify-content:center; } }
