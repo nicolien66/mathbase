@@ -29,7 +29,14 @@ h1{font-family:var(--serif);font-size:clamp(2rem,4.6vw,3rem);font-weight:700;lin
 h1 em{font-style:italic;color:var(--accent);}
 .sub{color:var(--muted);font-size:.96rem;line-height:1.7;max-width:520px;margin:0 auto;}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:1.1rem;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:1.1rem;}
+
+/* Groupes de matières : un simple repère (titre + filet), pas un cadre. */
+.groupe{margin-top:2.6rem;}
+.groupe:first-child{margin-top:0;}
+.groupe-titre{display:flex;align-items:center;gap:.9rem;margin-bottom:1.1rem;
+  font-family:var(--mono);font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);}
+.groupe-titre::after{content:'';flex:1;height:1px;background:var(--border2);}
 
 .subject{
   --sc:var(--accent);
@@ -95,7 +102,7 @@ h1 em{font-style:italic;color:var(--accent);}
     <a class="compte-btn" href="compte.html" title="Mon compte : profil, crédits, progression">Compte</a>
   </div>
 
-  <div class="grid" id="grid"></div>
+  <div id="groupes"></div>
 
   <p class="foot-link">Une matière que tu aimerais voir en priorité ? <a href="mailto:contact@polymates.fr">Écris-nous</a>.</p>
 </div>
@@ -104,20 +111,58 @@ h1 em{font-style:italic;color:var(--accent);}
 
 <script>
 (function(){
-  /* Le catalogue vit dans matiere.js : une seule liste pour tout le site.
-     Pour ouvrir une matière, il suffit d'y passer ouverte:true. */
-  const MATIERES = MB_MAT.liste().map(m => ({
+  /* Les matières scolaires viennent de matiere.js : une seule liste pour tout le site.
+     Pour ouvrir une matière, il suffit d'y passer ouverte:true.
+     Les autres groupes sont décrits ici ; leurs boutons sont « à venir » tant
+     qu'ils n'ont pas de href. */
+  const scolaires = MB_MAT.liste().map(m => ({
     nom: m.nom, icone: m.icone, couleur: m.couleur, desc: m.desc,
     href: m.ouverte ? (m.accueil + '?matiere=' + encodeURIComponent(m.id)) : null,
   }));
 
-  const grid = document.getElementById('grid');
-  MATIERES.forEach((m, i) => {
+  const GROUPES = [
+    { titre: "Matières scolaires", matieres: scolaires },
+    { titre: "Religion", matieres: [
+      { nom:"Bible", icone:"📜", couleur:"#c89a7a",
+        desc:"Lire et comprendre les textes, les personnages et les grands récits." },
+    ]},
+    { titre: "Permis", matieres: [
+      { nom:"Permis piéton", icone:"🚸", couleur:"#7ac8b4",
+        desc:"Se déplacer à pied en sécurité : traverser, signaux, dangers de la rue." },
+      { nom:"Permis de voiture", icone:"🚗", couleur:"#c87a7a",
+        desc:"Code de la route : signalisation, priorités, situations de conduite." },
+    ]},
+    { titre: "Matières manuelles", matieres: [
+      { nom:"Électricité", icone:"⚡", couleur:"#d4c46a",
+        desc:"Circuits, schémas, habilitation et installations du bac pro." },
+      { nom:"Menuiserie", icone:"🪚", couleur:"#b8916a",
+        desc:"Bois, assemblages, lecture de plans et fabrication." },
+      { nom:"Maintenance automobile", icone:"🔧", couleur:"#8a9aae",
+        desc:"Moteur, freinage, diagnostic et entretien des véhicules." },
+      { nom:"Cuisine", icone:"🍳", couleur:"#d48a6a",
+        desc:"Techniques de base, hygiène, préparations et organisation du poste." },
+    ]},
+  ];
+
+  const hote = document.getElementById('groupes');
+  let n = 0;
+  GROUPES.forEach(g => {
+    const sec = document.createElement('section');
+    sec.className = 'groupe';
+    sec.innerHTML = `<h2 class="groupe-titre">${g.titre}</h2>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    g.matieres.forEach(m => grid.appendChild(carte(m, n++)));
+    sec.appendChild(grid);
+    hote.appendChild(sec);
+  });
+
+  function carte(m, i) {
     const ouverte = !!m.href;
     const el = document.createElement(ouverte ? 'a' : 'button');
     el.className = 'subject ' + (ouverte ? 'ready' : 'soon');
     el.style.setProperty('--sc', m.couleur);
-    el.style.animationDelay = (i * 60) + 'ms';
+    el.style.animationDelay = (i * 50) + 'ms';
     if (ouverte) el.href = m.href;
     else el.type = 'button';
     el.innerHTML =
@@ -125,10 +170,10 @@ h1 em{font-style:italic;color:var(--accent);}
       `<div class="subject-title">${m.nom}</div>` +
       `<div class="subject-desc">${m.desc}</div>` +
       (ouverte ? `<div class="subject-go">Entrer →</div>`
-               : `<div class="subject-badge">Bientôt disponible</div>`);
+               : `<div class="subject-badge">À venir</div>`);
     if (!ouverte) el.onclick = () => toast(m.nom + " arrive bientôt sur Polymates.");
-    grid.appendChild(el);
-  });
+    return el;
+  }
 
   /* petit message éphémère */
   let tid;
