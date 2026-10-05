@@ -1711,6 +1711,7 @@ function annalesSeulement() {
 
 let ADD_TYPE = annalesSeulement() ? "annale" : "exercice";
 let AN_FILE = null;      // PDF de l'annale
+let AN_IMAGES = [];      // ou bien : images PNG/JPEG, une par page, dans l'ordre
 let PB_FILES = [];       // PDF joints au problème
 
 /* Prépare la vue « Ajouter » à chaque ouverture : dans les matières
@@ -1721,7 +1722,7 @@ function initAddView() {
   if (sw) sw.style.display = restreint ? "none" : "";
   const sub = document.getElementById("add-sub");
   if (sub && restreint) {
-    sub.textContent = "Tu as un sujet de brevet, de contrôle ou de DS ? Envoie-le en PDF : "
+    sub.textContent = "Tu as un sujet de brevet, de contrôle ou de DS ? Envoie-le en PDF ou en photos (PNG) : "
                     + "après relecture par l'équipe, il rejoindra la banque d'annales.";
   }
   const head = document.querySelector("#view-add .form-page-header h1");
@@ -1759,6 +1760,8 @@ function brancheDepot(zoneId, inputId, multiple) {
   const zone = document.getElementById(zoneId), input = document.getElementById(inputId);
   if (!zone || !input) return;
   const prendre = liste => {
+    /* Ajout d'un sujet : un PDF, ou des images (une par page). */
+    if (!multiple) { prendreSujet([...liste]); input.value = ""; return; }
     const pdfs = [...liste].filter(f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name));
     if (!pdfs.length) { showToast("Dépose un fichier PDF.", "error"); return; }
     if (multiple) PB_FILES = pdfs; else AN_FILE = pdfs[0];
@@ -1782,10 +1785,103 @@ function brancheDepot(zoneId, inputId, multiple) {
    L'élève dépose seulement le PDF et ses informations : le sujet part en
    attente. Le découpage, l'analyse par l'IA, le test et la publication se font
    dans l'administration (admin-sujets.html). */
+function sujetPret() { return !!AN_FILE || AN_IMAGES.length > 0; }
+
 function etatAnnale() {
   const btn = document.getElementById("an-btn");
-  if (btn) btn.disabled = !AN_FILE;
+  if (btn) btn.disabled = !sujetPret();
   chargerMesDepots();
+}
+
+/* Fichiers déposés pour un sujet : un PDF remplace tout ; des images
+   s'ajoutent aux précédentes (on peut déposer les pages en plusieurs fois). */
+function prendreSujet(fichiers) {
+  const estPdf = f => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name);
+  const estImage = f => /^image\/(png|jpeg)$/i.test(f.type) || /\.(png|jpe?g)$/i.test(f.name);
+  const pdf = fichiers.find(estPdf);
+  const images = fichiers.filter(estImage);
+  if (!pdf && !images.length) { showToast("Dépose un PDF ou des images PNG.", "error"); return; }
+  if (pdf) {
+    if (images.length) showToast("Un PDF a été choisi : les images déposées en même temps sont ignorées.", "info");
+    AN_IMAGES = []; AN_FILE = pdf; puceAnnale(pdf); return;
+  }
+  AN_FILE = null;
+  AN_IMAGES = AN_IMAGES.concat(images.sort((a, b) => a.name.localeCompare(b.name, "fr", { numeric: true })));
+  puceImages();
+}
+
+/* Les images choisies, numérotées comme les pages du futur PDF. */
+function puceImages() {
+  const cible = document.getElementById("an-list");
+  document.getElementById("an-drop").classList.toggle("rempli", AN_IMAGES.length > 0);
+  const btn = document.getElementById("an-btn");
+  if (btn) btn.disabled = !sujetPret();
+  if (!AN_IMAGES.length) { cible.innerHTML = ""; return; }
+  cible.innerHTML = `<div class="an-images" onclick="event.stopPropagation()">
+      ${AN_IMAGES.map((f, i) => `<div class="an-image">
+        <img src="${URL.createObjectURL(f)}" alt="Page ${i + 1}">
+        <span class="an-image-n">p. ${i + 1}</span>
+        <button type="button" class="an-fichier-x" aria-label="Retirer cette page" onclick="event.stopPropagation(); retirerImage(${i})">✕</button>
+      </div>`).join("")}
+      <button type="button" class="an-image-plus" onclick="event.stopPropagation(); document.getElementById('an-file').click()">＋<span>page</span></button>
+    </div>
+    <div class="an-images-info">${AN_IMAGES.length} image${AN_IMAGES.length > 1 ? "s" : ""} · elles seront assemblées en un PDF de
+      ${AN_IMAGES.length} page${AN_IMAGES.length > 1 ? "s" : ""}, dans cet ordre.</div>`;
+}
+function retirerImage(i) { AN_IMAGES.splice(i, 1); puceImages(); }
+
+/* Assemble des images en un PDF, une image par page, sans bibliothèque :
+   chaque image est redessinée en JPEG (taille maîtrisée) puis insérée telle
+   quelle dans le PDF (filtre DCTDecode). Tout le reste du circuit — lecture,
+   analyse, examen — fonctionne ensuite exactement comme pour un PDF. */
+async function imagesEnPdf(fichiers) {
+  const MAX = 1800;                                  // côté le plus long, en pixels
+  const pages = [];
+  for (const f of fichiers) {
+    const url = URL.createObjectURL(f);
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error("Image illisible : " + f.name)); i.src = url; });
+    const k = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const blob = await new Promise(ok => cv.toBlob(ok, "image/jpeg", 0.88));
+    pages.push({ w, h, jpeg: new Uint8Array(await blob.arrayBuffer()) });
+  }
+  const enc = new TextEncoder(), morceaux = [], offsets = [];
+  let pos = 0;
+  const ecrire = x => { const b = typeof x === "string" ? enc.encode(x) : x; morceaux.push(b); pos += b.length; };
+  const objet = (n, corps, flux) => {
+    offsets[n] = pos;
+    ecrire(n + " 0 obj\n" + corps + "\n");
+    if (flux) { ecrire("stream\n"); ecrire(flux); ecrire("\nendstream\n"); }
+    ecrire("endobj\n");
+  };
+  ecrire("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const n = pages.length, kids = [];
+  pages.forEach((p, i) => kids.push((3 + i * 3) + " 0 R"));
+  objet(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  objet(2, "<< /Type /Pages /Count " + n + " /Kids [" + kids.join(" ") + "] >>");
+  pages.forEach((p, i) => {
+    const pw = 595, ph = Math.round(595 * p.h / p.w);         // largeur A4 en points
+    const o = 3 + i * 3;
+    const contenu = enc.encode("q " + pw + " 0 0 " + ph + " 0 0 cm /Im0 Do Q");
+    objet(o, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + pw + " " + ph + "] /Resources << /XObject << /Im0 " + (o + 1) + " 0 R >> >> /Contents " + (o + 2) + " 0 R >>");
+    objet(o + 1, "<< /Type /XObject /Subtype /Image /Width " + p.w + " /Height " + p.h + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + p.jpeg.length + " >>", p.jpeg);
+    objet(o + 2, "<< /Length " + contenu.length + " >>", contenu);
+  });
+  const xref = pos, total = 3 + n * 3;
+  let table = "xref\n0 " + total + "\n0000000000 65535 f \n";
+  for (let i = 1; i < total; i++) table += String(offsets[i]).padStart(10, "0") + " 00000 n \n";
+  ecrire(table + "trailer\n<< /Size " + total + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+  const sortie = new Uint8Array(pos); let k = 0;
+  morceaux.forEach(b => { sortie.set(b, k); k += b.length; });
+  return sortie;
+}
+function enBase64(octets) {
+  let s = "";
+  for (let i = 0; i < octets.length; i += 0x8000) s += String.fromCharCode.apply(null, octets.subarray(i, i + 0x8000));
+  return btoa(s);
 }
 
 /* Puce du PDF choisi : nom, taille, nombre de pages (lu par pdf.js). */
@@ -1793,7 +1889,7 @@ function puceAnnale(f) {
   const cible = document.getElementById("an-list");
   document.getElementById("an-drop").classList.toggle("rempli", !!f);
   const btn = document.getElementById("an-btn");
-  if (btn) btn.disabled = !f;
+  if (btn) btn.disabled = !sujetPret();
   if (!f) { cible.innerHTML = ""; return; }
   cible.innerHTML = `<div class="an-fichier" onclick="event.stopPropagation()">
       <span class="an-fichier-ico">PDF</span>
@@ -1808,7 +1904,7 @@ function puceAnnale(f) {
     .catch(() => {});
 }
 function retirerAnnale() {
-  AN_FILE = null;
+  AN_FILE = null; AN_IMAGES = [];
   const inp = document.getElementById("an-file"); if (inp) inp.value = "";
   puceAnnale(null);
 }
@@ -1820,7 +1916,7 @@ function nouvelleAnnale() {
 }
 
 async function envoyerAnnale() {
-  if (!AN_FILE) { showToast("Dépose d'abord le PDF du sujet.", "error"); return; }
+  if (!sujetPret()) { showToast("Dépose d'abord le sujet (PDF ou images).", "error"); return; }
   const zone = document.getElementById("an-progress");
   const btn = document.getElementById("an-btn");
   btn.disabled = true;
@@ -1832,7 +1928,11 @@ async function envoyerAnnale() {
     const res = await MB_AUTH.apiFetch("/depots", {
       method: "POST",
       body: JSON.stringify({
-        nom: AN_FILE.name, pdf_base64: await litFichier(AN_FILE), matiere: matiereCourante(),
+        ...(AN_FILE
+          ? { nom: AN_FILE.name, pdf_base64: await litFichier(AN_FILE) }
+          : { nom: AN_IMAGES[0].name.replace(/\.(png|jpe?g)$/i, "") + ".pdf",
+              pdf_base64: enBase64(await imagesEnPdf(AN_IMAGES)), depuis_images: AN_IMAGES.length }),
+        matiere: matiereCourante(),
         title: val("an-title").trim() || null, exam: val("an-exam") || null, classe: val("an-classe") || null,
         year: val("an-year") || null, duration: val("an-duration") || null, commentaire: val("an-commentaire").trim() || null,
       }),
@@ -1849,11 +1949,11 @@ async function envoyerAnnale() {
         <button class="btn-ghost" onclick="nouvelleAnnale()">Envoyer un autre sujet</button>
         <button class="btn-ai" onclick="showView('annales')">Voir les annales →</button>
       </div>`;
-    AN_FILE = null;
+    AN_FILE = null; AN_IMAGES = [];
     chargerMesDepots();
   } catch (e) {
     zone.innerHTML = `<div class="an-erreur"><b>Envoi impossible</b><span>${escapeHtml(e.message || "erreur inconnue")}</span></div>`;
-    btn.disabled = !AN_FILE;
+    btn.disabled = !sujetPret();
   }
 }
 

@@ -299,7 +299,8 @@
         <div class="tete-m"><span class="etat ${d.statut}">${ETATS[d.statut] || d.statut}</span>
           <span>Envoyé par <strong>${esc(d.pseudo || "?")}</strong> ${d.email ? "(" + esc(d.email) + ")" : ""}</span>
           <span>le ${new Date(d.created_at).toLocaleString("fr-FR")}</span>
-          <span class="mono">${esc(d.nom_fichier)} · ${Math.round((d.taille || 0) / 1024)} Ko</span></div>
+          <span class="mono">${esc(d.nom_fichier)} · ${Math.round((d.taille || 0) / 1024)} Ko</span>
+          ${d.depuis_images ? `<span class="etat teste">envoyé en ${d.depuis_images} image${d.depuis_images > 1 ? "s" : ""}</span>` : ""}</div>
         ${d.commentaire ? `<div class="commentaire">« ${esc(d.commentaire)} »</div>` : ""}
         ${d.statut === "refuse" && d.motif_refus ? `<div class="commentaire" style="border-color:var(--coral)">Refusé : ${esc(d.motif_refus)}</div>` : ""}
       </div>

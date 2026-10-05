@@ -2271,3 +2271,17 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
 .browse-annales-tete p { font-size:.88rem; color:var(--muted); margin:0; }
 .browse-annales-tete .btn-ai { cursor:pointer; }
 @media (max-width:600px) { .browse-annales-tete .btn-ai { width:100%; justify-content:center; } }
+
+/* Sujet déposé en images : une vignette par page */
+.an-images { display:flex; flex-wrap:wrap; gap:.6rem; justify-content:center; cursor:default; }
+.an-image { position:relative; width:92px; height:124px; border-radius:8px; overflow:hidden; border:1px solid var(--border2); background:#fff; }
+.an-image img { width:100%; height:100%; object-fit:cover; }
+.an-image-n { position:absolute; left:4px; bottom:4px; font-family:var(--mono); font-size:.62rem; color:#0b0b09;
+  background:var(--accent); border-radius:4px; padding:.05rem .3rem; }
+.an-image .an-fichier-x { position:absolute; top:4px; right:4px; width:22px; height:22px; font-size:.6rem;
+  background:rgba(11,11,9,.8); color:#f0ece0; border-color:transparent; }
+.an-image-plus { width:92px; height:124px; border-radius:8px; border:1.5px dashed rgba(200,185,122,.45); background:none;
+  color:var(--accent); font-size:1.4rem; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.2rem; }
+.an-image-plus span { font-size:.7rem; }
+.an-image-plus:hover { background:rgba(200,185,122,.07); }
+.an-images-info { margin-top:.7rem; font-size:.78rem; color:var(--muted); text-align:center; }

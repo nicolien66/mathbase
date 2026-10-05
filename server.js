@@ -619,6 +619,9 @@ async function initDepots() {
       updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_depots_statut ON depots_sujets (statut)`);
+  /* Sujet envoyé en images (PNG/JPEG, une par page) : le navigateur les a
+     assemblées en PDF, mais ce PDF n'a pas de texte. Nombre d'images. */
+  await pool.query(`ALTER TABLE depots_sujets ADD COLUMN IF NOT EXISTS depuis_images INTEGER`);
   await restaurerPdfPublies();
 }
 
@@ -660,7 +663,7 @@ function depotVisible(d) {
 /* ── DÉPOSER (tout compte connecté) ── */
 app.post("/depots", auth, async (req, res) => {
   try {
-    const { nom, pdf_base64, title, exam, classe, year, duration, matiere, commentaire } = req.body || {};
+    const { nom, pdf_base64, title, exam, classe, year, duration, matiere, commentaire, depuis_images } = req.body || {};
     if (!pdf_base64) return res.status(400).json({ error: "Aucun PDF reçu." });
     const buffer = Buffer.from(String(pdf_base64).replace(/^data:.*?base64,/, ""), "base64");
     if (buffer.slice(0, 4).toString() !== "%PDF") return res.status(400).json({ error: "Le fichier n'est pas un PDF." });
@@ -672,11 +675,11 @@ app.post("/depots", auth, async (req, res) => {
     }
     const propre = String(nom || "sujet.pdf").replace(/[^A-Za-z0-9._-]/g, "_").replace(/_+/g, "_").slice(0, 120);
     const { rows } = await pool.query(
-      `INSERT INTO depots_sujets (user_id, nom_fichier, pdf, taille, title, exam, classe, year, duration, matiere, commentaire)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, statut, created_at`,
+      `INSERT INTO depots_sujets (user_id, nom_fichier, pdf, taille, title, exam, classe, year, duration, matiere, commentaire, depuis_images)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id, statut, created_at`,
       [req.user.id, propre, buffer, buffer.length, (title || "").trim() || null, exam || null, classe || null,
        year ? Number(year) : null, duration ? Number(duration) : null, matiere || "mathematiques",
-       (commentaire || "").trim().slice(0, 1000) || null]);
+       (commentaire || "").trim().slice(0, 1000) || null, Number(depuis_images) > 0 ? Number(depuis_images) : null]);
     res.json({ ok: true, id: rows[0].id, statut: rows[0].statut });
   } catch (e) { console.error("[dépôts] envoi :", e.message); res.status(500).json({ error: e.message }); }
 });
@@ -695,7 +698,7 @@ app.get("/depots/mes", auth, async (req, res) => {
 app.get("/admin/depots", auth, requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT d.id, d.nom_fichier, d.taille, d.title, d.exam, d.classe, d.year, d.duration, d.matiere,
+      `SELECT d.id, d.nom_fichier, d.taille, d.title, d.exam, d.classe, d.year, d.duration, d.matiere, d.depuis_images,
               d.commentaire, d.statut, d.motif_refus, d.annale_id, d.created_at, d.updated_at,
               u.pseudo, u.email,
               COALESCE(jsonb_array_length(d."analyse"->'questions'), 0) AS nb_exercices,
@@ -847,6 +850,33 @@ async function appelMistralJson(contenu, maxTokens) {
   return parsed;
 }
 
+/* Pages sans texte (sujet photographié ou envoyé en images) : l'IA lit
+   l'image de chaque page et en recopie le texte, mise en forme comprise,
+   pour que le découpage en exercices et en questions puisse se faire. */
+function pagesSansTexte(pages) {
+  return !pages.length || pages.join("").replace(/\s+/g, "").length < 30 * pages.length;
+}
+async function transcrirePages(rel, nbPages) {
+  const sortie = [];
+  for (let n = 1; n <= nbPages; n++) {
+    const img = await renderPageImage(rel, n, 2);
+    if (!img) throw new Error("impossible de dessiner la page " + n + " (moteur de rendu PDF indisponible)");
+    const r = await appelMistralJson([
+      { type: "text", text:
+        "Voici la page " + n + " d'un sujet de mathématiques (collège), photographiée ou scannée. " +
+        "Recopie FIDÈLEMENT tout son texte, dans l'ordre de lecture, sans rien résoudre ni ajouter. " +
+        "Une ligne par ligne du sujet. Garde les titres « Exercice 1 », « Exercice 2 »… (avec le barème « (5 points) » s'il est écrit), " +
+        "et les numéros de questions en début de ligne (« 1. », « 2. », « a. », « b. »). " +
+        "Écris les fractions a/b, les puissances x^2, les racines sqrt(…). Les figures ne se recopient pas : " +
+        "écris seulement [figure] à leur place. Les tableaux : une ligne par rangée, cellules séparées par « | ». " +
+        "Réponds UNIQUEMENT en JSON : {\"texte\":\"…\"}" },
+      { type: "image_url", image_url: img },
+    ], 3000);
+    sortie.push(String(r.texte || "").trim());
+  }
+  return sortie;
+}
+
 function sousQuestionsDe(texte) {
   if (!MB_SQ_SERVEUR) return null;
   try { return MB_SQ_SERVEUR.parse(texte); } catch (_) { return null; }
@@ -936,14 +966,20 @@ app.post("/admin/depots/:id/analyser", auth, requireAdmin, async (req, res) => {
     const rel = await assurerFichierDepot(id);
     const seul = Number.isInteger(req.body && req.body.exercice) ? req.body.exercice : null;
 
-    let questions, pagesTotal;
+    let questions, pagesTotal, transcrit = !!(d.analyse && d.analyse.transcrit);
     if (seul !== null && d.analyse && Array.isArray(d.analyse.questions) && d.analyse.questions[seul]) {
       /* Réanalyse d'un seul exercice : on garde le reste tel que l'admin l'a laissé. */
       questions = d.analyse.questions;
       if (req.body.question) questions[seul] = Object.assign({}, questions[seul], req.body.question);
       pagesTotal = d.analyse.pages_total || 0;
     } else {
-      const pages = await textePagesPourAnalyse(req.body && req.body.pages_texte, d.pdf);
+      let pages = await textePagesPourAnalyse(req.body && req.body.pages_texte, d.pdf);
+      if (pagesSansTexte(pages)) {
+        /* Sujet sans couche texte : transcription des pages par l'IA. */
+        const nb = pages.length || d.depuis_images || 1;
+        pages = await transcrirePages(rel, nb);
+        transcrit = true;
+      }
       pagesTotal = pages.length;
       questions = decouper(pages).map((b, i) => ({
         enonce: (b.titre || ("Exercice " + (i + 1))) + " — reporte-toi au sujet PDF ci-dessus.",
@@ -967,8 +1003,11 @@ app.post("/admin/depots/:id/analyser", auth, requireAdmin, async (req, res) => {
         anomaliesIa.push({ exercice: i, gravite: "attention", message: "Analyse IA impossible pour cet exercice : " + e.message, source: "ia" });
       }
     }
+    if (transcrit && seul === null)
+      anomaliesIa.unshift({ exercice: null, gravite: "attention", source: "ia",
+        message: "Le sujet n'avait pas de texte (images ou scan) : son texte a été recopié par l'IA à partir des images. Relis chaque exercice." });
     const analyse = {
-      questions, pages_total: pagesTotal, anomalies_ia: anomaliesIa,
+      questions, pages_total: pagesTotal, anomalies_ia: anomaliesIa, transcrit,
       anomalies: anomaliesDuSujet(questions, pagesTotal, anomaliesIa),
       ia: { reussies: iaOk, echouees: iaKo, erreur: derniereErreur, modele: MODELE_ANALYSE_SUJET },
       date: new Date().toISOString(),
