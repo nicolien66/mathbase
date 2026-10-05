@@ -145,7 +145,8 @@ h1 em{font-style:italic;color:var(--accent);}
      Pour ouvrir une matière, il suffit d'y passer ouverte:true.
      Les autres groupes sont décrits ici ; leurs boutons sont « à venir » tant
      qu'ils n'ont pas de href. */
-  const scolaires = MB_MAT.liste().map(m => ({
+  const RETIREES = ["anglais"];   /* matières de matiere.js qu'on ne montre pas ici */
+  const scolaires = MB_MAT.liste().filter(m => !RETIREES.includes(m.id)).map(m => ({
     nom: m.nom, icone: m.icone, couleur: m.couleur, desc: m.desc,
     href: m.ouverte ? (m.accueil + '?matiere=' + encodeURIComponent(m.id)) : null,
   }));
