@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signalements — Administration Polymates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0b09; --panel:#14130f; --panel2:#1a1914; --line:rgba(245,242,232,.1); --line2:rgba(245,242,232,.18);
+    --cream:#f0ece0; --muted:rgba(240,236,224,.55); --faint:rgba(240,236,224,.32);
+    --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; --blue:#7ac8e6; --amber:#e6c27e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,185,122,.07), transparent);}
+  button{font:inherit;color:inherit;}
+
+  /* ── En-tête ── */
+  /* À droite, la pastille de session (auth.js) est en position fixe : on lui laisse la place. */
+  .tete{display:flex;align-items:center;gap:.4rem 1rem;flex-wrap:wrap;padding:1.1rem 460px 1.1rem 1.4rem;border-bottom:1px solid var(--line);position:relative;z-index:1;}
+  .back{border:1px solid rgba(200,185,122,.35);color:var(--gold);padding:.4rem .95rem;border-radius:999px;
+    font-family:'DM Mono',monospace;font-size:.75rem;text-decoration:none;transition:.2s;white-space:nowrap;}
+  .back:hover{background:rgba(200,185,122,.12);}
+  .tete h1{font-family:'Playfair Display',Georgia,serif;font-weight:500;font-size:1.45rem;}
+  .tete .compte{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.04em;}
+  .tete .compte b{color:var(--coral);font-weight:500;}
+  .tete .esp{flex:1;}
+  .btn{background:none;border:1px solid var(--line2);color:var(--muted);border-radius:8px;padding:.38rem .75rem;
+    font-size:.78rem;cursor:pointer;transition:.18s;white-space:nowrap;}
+  .btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .btn.plein{background:var(--gold);border-color:var(--gold);color:#0b0b09;font-weight:500;}
+  .btn.plein:hover:not(:disabled){background:#d6c98e;color:#0b0b09;}
+  .btn.danger:hover:not(:disabled){border-color:var(--coral);color:var(--coral);}
+
+  .demo{display:none;margin:.8rem 1.4rem 0;font-size:.8rem;color:var(--coral);border:1px dashed rgba(230,130,110,.4);border-radius:10px;padding:.55rem .8rem;}
+
+  /* ── Deux colonnes : boîte de réception | lecture ── */
+  .boite{flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,390px) 1fr;position:relative;z-index:1;}
+  .liste-col{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;}
+  .filtres{padding:.9rem 1rem .7rem;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:.6rem;}
+  .onglets{display:flex;gap:.25rem;flex-wrap:wrap;}
+  .onglet{background:none;border:1px solid transparent;border-radius:999px;padding:.28rem .7rem;font-size:.78rem;
+    color:var(--muted);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:.35rem;}
+  .onglet:hover{color:var(--cream);}
+  .onglet.on{border-color:var(--line2);background:var(--panel2);color:var(--cream);}
+  .onglet .n{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--faint);}
+  .onglet.on .n{color:var(--gold);}
+  .ligne-f{display:flex;gap:.5rem;}
+  .ligne-o{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+  .ligne-o .onglets{flex:1;}
+  .lien{background:none;border:none;color:var(--gold);font-size:.74rem;cursor:pointer;padding:.2rem 0;white-space:nowrap;}
+  .lien:hover:not(:disabled){text-decoration:underline;}
+  .lien:disabled{color:var(--faint);cursor:default;}
+  .ligne-f input,.ligne-f select{background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--cream);
+    font:inherit;font-size:.8rem;padding:.42rem .6rem;min-width:0;}
+  .ligne-f input{flex:1;}
+  .ligne-f input:focus,.ligne-f select:focus{outline:none;border-color:rgba(200,185,122,.5);}
+
+  .liste{flex:1;overflow-y:auto;}
+  .jour{position:sticky;top:0;z-index:1;background:rgba(11,11,9,.94);backdrop-filter:blur(6px);
+    font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+    padding:.6rem 1rem .4rem;}
+  .msg{display:grid;grid-template-columns:10px 1fr auto;gap:.15rem .6rem;width:100%;text-align:left;background:none;border:none;
+    border-bottom:1px solid rgba(245,242,232,.05);padding:.75rem 1rem .8rem .8rem;cursor:pointer;transition:background .15s;}
+  .msg:hover{background:rgba(245,242,232,.03);}
+  .msg.actif{background:rgba(200,185,122,.08);box-shadow:inset 3px 0 0 var(--gold);}
+  .msg .pt{grid-row:1/span 3;width:8px;height:8px;border-radius:50%;margin-top:.38rem;background:transparent;}
+  .msg.non-lu .pt{background:var(--coral);}
+  .msg .de{font-size:.86rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .msg.non-lu .de{color:var(--cream);font-weight:500;}
+  .msg .heure{font-family:'DM Mono',monospace;font-size:.66rem;color:var(--faint);white-space:nowrap;}
+  .msg .sujet{grid-column:2/4;font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .msg.non-lu .sujet{color:rgba(240,236,224,.8);}
+  .msg .extrait{grid-column:2/4;font-size:.78rem;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .msg .traite{color:var(--green);font-family:'DM Mono',monospace;font-size:.62rem;margin-left:.3rem;}
+  .msg .notee{color:var(--gold);margin-left:.25rem;font-size:.72rem;}
+  .vide{padding:3rem 1.5rem;text-align:center;color:var(--muted);font-size:.88rem;line-height:1.6;}
+
+  .chip{display:inline-block;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;
+    border-radius:999px;padding:.12rem .5rem;border:1px solid var(--line2);color:var(--muted);vertical-align:middle;}
+  .chip.t-enonce{color:var(--blue);border-color:rgba(122,200,230,.35);}
+  .chip.t-correction,.chip.t-solution{color:var(--amber);border-color:rgba(230,194,126,.35);}
+  .chip.t-figure,.chip.t-plateau{color:#c4a3e6;border-color:rgba(196,163,230,.35);}
+  .chip.t-note{color:var(--coral);border-color:rgba(230,130,110,.35);}
+
+  /* ── Lecture ── */
+  .lecture{overflow-y:auto;min-height:0;}
+  .lecture .vide{padding-top:22vh;}
+  .lect-in{max-width:760px;padding:1.6rem 2rem 4rem;}
+  .retour-liste{display:none;margin-bottom:1rem;}
+  .actions{display:flex;gap:.45rem;flex-wrap:wrap;margin-bottom:1.4rem;}
+  .l-titre{font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:500;line-height:1.3;margin-bottom:.5rem;}
+  .l-meta{display:flex;gap:.5rem .9rem;flex-wrap:wrap;align-items:center;font-size:.82rem;color:var(--muted);margin-bottom:1.4rem;}
+  .l-meta .sep{color:var(--faint);}
+  .etat{font-family:'DM Mono',monospace;font-size:.66rem;letter-spacing:.06em;}
+  .etat.ok{color:var(--green);} .etat.ko{color:var(--coral);}
+
+  .bulle{background:var(--panel);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:1rem 1.15rem;}
+  .bulle .qui{display:flex;justify-content:space-between;gap:1rem;font-size:.78rem;color:var(--muted);margin-bottom:.55rem;}
+  .bulle .qui b{color:var(--cream);font-weight:500;}
+  .bulle .texte{font-size:.96rem;line-height:1.65;white-space:pre-wrap;word-wrap:break-word;}
+  .contexte{margin-top:.6rem;font-size:.78rem;color:var(--faint);line-height:1.6;}
+
+  .note{margin-top:1.4rem;}
+  .note label{display:block;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:.45rem;}
+  .note textarea{width:100%;min-height:68px;resize:vertical;background:rgba(200,185,122,.05);border:1px dashed rgba(200,185,122,.3);
+    border-radius:12px;color:var(--cream);font:inherit;font-size:.88rem;line-height:1.55;padding:.7rem .85rem;}
+  .note textarea:focus{outline:none;border-style:solid;border-color:rgba(200,185,122,.55);}
+  .note .etat-note{font-size:.72rem;color:var(--faint);margin-top:.3rem;min-height:1em;}
+
+  .histo{margin-top:2rem;}
+  .histo h3{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+    font-weight:400;margin-bottom:.6rem;display:flex;align-items:center;gap:.7rem;}
+  .histo h3::after{content:'';flex:1;height:1px;background:var(--line);}
+  .histo .resume{font-size:.82rem;color:var(--muted);margin-bottom:.5rem;line-height:1.55;}
+  .h-item{display:grid;grid-template-columns:8px auto 1fr auto;gap:.6rem;align-items:baseline;width:100%;text-align:left;
+    background:none;border:none;border-radius:8px;padding:.45rem .5rem;cursor:pointer;font-size:.82rem;color:var(--muted);}
+  .h-item:hover{background:rgba(245,242,232,.04);color:var(--cream);}
+  .h-item .pt{width:6px;height:6px;border-radius:50%;}
+  .h-item.non-lu .pt{background:var(--coral);}
+  .h-item .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .h-item .d{font-family:'DM Mono',monospace;font-size:.64rem;color:var(--faint);white-space:nowrap;}
+
+  .aide{font-size:.72rem;color:var(--faint);padding:.55rem 1rem;border-top:1px solid var(--line);}
+  .aide kbd{font-family:'DM Mono',monospace;font-size:.66rem;border:1px solid var(--line2);border-radius:4px;padding:0 .3rem;}
+
+  #toast{position:fixed;left:50%;bottom:1.6rem;transform:translate(-50%,160%);opacity:0;visibility:hidden;background:var(--panel2);border:1px solid var(--line2);
+    border-radius:999px;padding:.6rem 1.2rem;font-size:.84rem;z-index:50;transition:transform .3s cubic-bezier(.22,1,.36,1);}
+  #toast.on{transform:translate(-50%,0);opacity:1;visibility:visible;}
+
+  /* Téléphone : la liste, puis la lecture en plein écran. */
+  @media (max-width:1100px) and (min-width:761px){ .tete{padding-top:3.9rem;padding-right:1.4rem;} }
+  @media (max-width:760px){
+    .boite{grid-template-columns:1fr;}
+    .liste-col{border-right:none;}
+    .lecture{display:none;}
+    body.lit .liste-col{display:none;}
+    body.lit .lecture{display:block;}
+    .lect-in{padding:1.2rem 1.1rem 3rem;}
+    .retour-liste{display:inline-block;}
+    .aide{display:none;}
+    .tete{padding:4.2rem 1rem .8rem;}
+    #b-prec,#b-suiv{display:none;}
+  }
+</style>
+</head>
+<body>
+<header class="tete">
+  <a class="back" href="admin.html">← Administration</a>
+  <h1>Signalements</h1>
+  <span class="compte" id="compte"></span>
+  <button class="lien" id="tout-lu" title="Marquer comme lus tous les signalements (de la source choisie)">Tout marquer comme lu</button>
+</header>
+<div class="demo" id="demo">Mode démo : signalements fictifs, les actions ne sont pas enregistrées.</div>
+
+<main class="boite">
+  <section class="liste-col">
+    <div class="filtres">
+      <div class="onglets" id="onglets"></div>
+      <div class="ligne-f">
+        <input id="recherche" type="search" placeholder="Rechercher : élève, sujet, message…" autocomplete="off">
+        <select id="source">
+          <option value="">Tout</option>
+          <option value="exercice">Entraînement</option>
+          <option value="annale">Annales</option>
+        </select>
+        <button class="btn" id="rafraichir" title="Recharger">↻</button>
+      </div>
+    </div>
+    <div class="liste" id="liste"><div class="vide">Chargement…</div></div>
+    <div class="aide"><kbd>↑</kbd> <kbd>↓</kbd> naviguer · <kbd>u</kbd> non lu · <kbd>t</kbd> traité</div>
+  </section>
+  <section class="lecture" id="lecture"><div class="vide">Choisis un signalement pour le lire.</div></section>
+</main>
+<div id="toast"></div>
+
+<script src="auth.js" data-protect="admin"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const TYPES = { enonce:"énoncé", correction:"correction", solution:"solution", figure:"figure",
+                  plateau:"plateau", note:"note", autre:"autre" };
+  const ONGLETS = [
+    { id:"tous",     nom:"Tous",       f: s => true },
+    { id:"non-lus",  nom:"Non lus",    f: s => !s.lu_at },
+    { id:"a-traiter",nom:"À traiter",  f: s => s.statut !== "traite" },
+    { id:"traites",  nom:"Traités",    f: s => s.statut === "traite" },
+  ];
+  let SIGS = [], demo = false, onglet = "tous", actif = null;
+
+  const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  function toast(t){ const e = $("toast"); e.textContent = t; e.classList.add("on");
+    clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 2200); }
+
+  /* ── Dates lisibles ── */
+  const jourDe = d => { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime(); };
+  function libelleJour(d){
+    const auj = jourDe(Date.now()), j = jourDe(d), diff = Math.round((auj - j) / 864e5);
+    if (diff === 0) return "Aujourd'hui";
+    if (diff === 1) return "Hier";
+    if (diff < 7) return new Date(d).toLocaleDateString("fr-FR", { weekday:"long" });
+    return new Date(d).toLocaleDateString("fr-FR", { day:"numeric", month:"long",
+      year: new Date(d).getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+  }
+  const heure = d => new Date(d).toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+  const complet = d => new Date(d).toLocaleString("fr-FR", { weekday:"long", day:"numeric", month:"long", hour:"2-digit", minute:"2-digit" });
+  function court(d){ return jourDe(d) === jourDe(Date.now()) ? heure(d)
+    : new Date(d).toLocaleDateString("fr-FR", { day:"numeric", month:"short" }); }
+
+  /* Ce sur quoi porte le signalement : la famille pour l'entraînement, le sujet pour une annale. */
+  const estEx = s => (s.source || "annale") === "exercice";
+  const titreSujet = s => estEx(s) ? (s.famille || s.chapitre || s.annale_titre || "(exercice sans famille)")
+                                   : (s.annale_titre || "(sujet supprimé)");
+  const cleSujet = s => estEx(s) ? "f:" + (s.famille || s.chapitre || "?") : "a:" + (s.annale_id || s.annale_titre || 0);
+  const nomEleve = s => s.pseudo || (s.user_id ? "élève #" + s.user_id : "compte supprimé");
+
+  /* ── Données ── */
+  const DEMO = (() => {
+    const h = n => new Date(Date.now() - n * 36e5).toISOString();
+    return [
+      { id:9, source:"annale", annale_id:12, annale_titre:"Brevet 2024 — Amérique du Nord", question:"Exercice 3 · 2. b.", type:"figure",
+        message:"La figure de l'exercice 3 ne s'affiche pas, on ne voit que le texte.", pseudo:"Léa", user_id:2, statut:"nouveau", lu_at:null, created_at:h(1) },
+      { id:8, source:"exercice", exercise_id:301, annale_titre:"Équations du premier degré", chapitre:"Équations", famille:"Résoudre ax + b = c",
+        question:null, type:"correction", message:"J'ai écrit x = 3/2 et c'est compté faux alors que la correction dit 1,5.",
+        pseudo:"Tom", user_id:3, statut:"nouveau", lu_at:null, created_at:h(3) },
+      { id:7, source:"annale", annale_id:12, annale_titre:"Brevet 2024 — Amérique du Nord", question:"Exercice 3 · 1.", type:"figure",
+        message:"Pas de figure non plus pour la question 1.", pseudo:"Inès", user_id:4, statut:"nouveau", lu_at:null, created_at:h(20) },
+      { id:6, source:"exercice", exercise_id:118, annale_titre:"Fractions", chapitre:"Fractions", famille:"Simplifier une fraction",
+        type:"enonce", message:"L'énoncé dit « simplifier » mais la fraction est déjà irréductible.", pseudo:"Tom", user_id:3,
+        statut:"traite", lu_at:h(40), traite_at:h(30), note:"Exercice corrigé : fraction remplacée par 18/24.", created_at:h(50) },
+      { id:5, source:"annale", annale_id:7, annale_titre:"Brevet 2023 — Métropole", question:"Exercice 5", type:"note",
+        message:"J'avais tout juste à l'exercice 5 et j'ai 2 sur 6.", pseudo:"Léa", user_id:2, statut:"nouveau", lu_at:h(60), created_at:h(90) },
+      { id:4, source:"annale", annale_id:12, annale_titre:"Brevet 2024 — Amérique du Nord", question:"Exercice 1", type:"autre",
+        message:"Le chrono a continué pendant que j'avais fermé la page.", pseudo:"Sami", user_id:5, statut:"traite",
+        lu_at:h(200), traite_at:h(190), created_at:h(210) },
+    ];
+  })();
+
+  async function charger(){
+    try {
+      demo = !(await MB_AUTH.hasBackend()) || MB_AUTH.isDemo();
+    } catch (_) { demo = true; }
+    if (demo) {
+      $("demo").style.display = "block";
+      SIGS = DEMO.map(s => ({ ...s }));
+    } else {
+      try {
+        const r = await MB_AUTH.apiFetch("/admin/signalements");
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "HTTP " + r.status);
+        SIGS = d.signalements || [];
+      } catch (e) {
+        $("liste").innerHTML = `<div class="vide" style="color:var(--coral)">Chargement impossible : ${esc(e.message)}</div>`;
+        return;
+      }
+    }
+    dessinerTout();
+    const voulu = Number((location.hash.match(/^#(\d+)$/) || [])[1]);
+    if (voulu && SIGS.some(s => s.id === voulu)) ouvrir(voulu, true, true);
+  }
+
+  async function modifier(id, champs){
+    const s = SIGS.find(x => x.id === id);
+    if (!s) return;
+    const avant = { ...s };
+    /* On applique tout de suite à l'écran ; en cas d'échec on revient en arrière. */
+    const maintenant = new Date().toISOString();
+    if ("lu" in champs) s.lu_at = champs.lu ? (s.lu_at || maintenant) : null;
+    if ("statut" in champs) {
+      s.statut = champs.statut;
+      s.traite_at = champs.statut === "traite" ? maintenant : null;
+      if (champs.statut === "traite" && !("lu" in champs)) s.lu_at = s.lu_at || maintenant;
+    }
+    if ("note" in champs) s.note = champs.note.trim() || null;
+    dessinerTout();
+    if (demo) return true;
+    try {
+      const r = await MB_AUTH.apiFetch("/admin/signalements/" + id, { method:"PATCH", body: JSON.stringify(champs) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "HTTP " + r.status);
+      Object.assign(s, { statut:d.statut, lu_at:d.lu_at, traite_at:d.traite_at, note:d.note });
+      return true;
+    } catch (e) {
+      Object.assign(s, avant); dessinerTout();
+      toast("Échec : " + e.message);
+      return false;
+    }
+  }
+
+  async function supprimer(id){
+    const s = SIGS.find(x => x.id === id);
+    if (!s || !confirm("Supprimer définitivement ce signalement de " + nomEleve(s) + " ?")) return;
+    if (!demo) {
+      const r = await MB_AUTH.apiFetch("/admin/signalements/" + id, { method:"DELETE" });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); toast("Échec : " + (d.error || r.status)); return; }
+    }
+    const suivant = voisin(id, 1) || voisin(id, -1);
+    SIGS = SIGS.filter(x => x.id !== id);
+    actif = null;
+    if (suivant) ouvrir(suivant.id); else { dessinerTout(); $("lecture").innerHTML = `<div class="vide">Signalement supprimé.</div>`; }
+    toast("Signalement supprimé.");
+  }
+
+  async function toutLu(){
+    const src = $("source").value;
+    const cibles = SIGS.filter(s => !s.lu_at && (!src || (s.source || "annale") === src));
+    if (!cibles.length) { toast("Tout est déjà lu."); return; }
+    if (!demo) {
+      const r = await MB_AUTH.apiFetch("/admin/signalements/tout-lu", { method:"POST", body: JSON.stringify({ source: src || null }) });
+      if (!r.ok) { toast("Échec."); return; }
+    }
+    const t = new Date().toISOString();
+    cibles.forEach(s => s.lu_at = t);
+    dessinerTout();
+    toast(cibles.length + " signalement" + (cibles.length > 1 ? "s marqués" : " marqué") + " comme lu" + (cibles.length > 1 ? "s" : "") + ".");
+  }
+
+  /* ── Filtrage ── */
+  function visibles(sansOnglet){
+    const q = $("recherche").value.trim().toLowerCase();
+    const src = $("source").value;
+    const f = ONGLETS.find(o => o.id === onglet).f;
+    return SIGS.filter(s =>
+      (sansOnglet || f(s) || s.id === actif) &&   // celui qu'on lit reste dans la liste
+      (!src || (s.source || "annale") === src) &&
+      (!q || [nomEleve(s), titreSujet(s), s.annale_titre, s.chapitre, s.question, s.message, s.note, TYPES[s.type]]
+              .some(v => v && String(v).toLowerCase().includes(q))));
+  }
+  function voisin(id, sens){
+    const l = visibles(); const i = l.findIndex(s => s.id === id);
+    return i < 0 ? null : l[i + sens] || null;
+  }
+
+  /* ── Rendu ── */
+  function dessinerTout(){ dessinerCompte(); dessinerOnglets(); dessinerListe(); if (actif) dessinerLecture(); }
+
+  function dessinerCompte(){
+    const nl = SIGS.filter(s => !s.lu_at).length, at = SIGS.filter(s => s.statut !== "traite").length;
+    $("compte").innerHTML = (nl ? `<b>${nl} non lu${nl > 1 ? "s" : ""}</b>` : "tout est lu") + ` · ${at} à traiter · ${SIGS.length} au total`;
+    $("tout-lu").disabled = !nl;
+    document.title = (nl ? "(" + nl + ") " : "") + "Signalements — Administration Polymates";
+  }
+
+  function dessinerOnglets(){
+    const base = visibles(true);
+    $("onglets").innerHTML = ONGLETS.map(o =>
+      `<button class="onglet${o.id === onglet ? " on" : ""}" data-o="${o.id}">${o.nom} <span class="n">${base.filter(o.f).length}</span></button>`).join("");
+    $("onglets").querySelectorAll("[data-o]").forEach(b => b.onclick = () => { onglet = b.dataset.o; dessinerTout(); });
+  }
+
+  function dessinerListe(){
+    const l = visibles();
+    if (!l.length) {
+      const pourquoi = { "non-lus":"Aucun signalement non lu.", "a-traiter":"Rien à traiter.", "traites":"Aucun signalement traité." }[onglet];
+      $("liste").innerHTML = `<div class="vide">${$("recherche").value || $("source").value ? "Aucun résultat." : (pourquoi || "Aucun signalement pour l'instant.")}</div>`;
+      return;
+    }
+    let h = "", jour = null;
+    l.forEach(s => {
+      const j = libelleJour(s.created_at);
+      if (j !== jour) { h += `<div class="jour">${esc(j)}</div>`; jour = j; }
+      h += `<button class="msg${s.lu_at ? "" : " non-lu"}${s.id === actif ? " actif" : ""}" data-id="${s.id}">
+        <span class="pt"></span>
+        <span class="de">${esc(nomEleve(s))}${s.statut === "traite" ? '<span class="traite">✓ traité</span>' : ""}${s.note ? '<span class="notee" title="Note">✎</span>' : ""}</span>
+        <span class="heure">${court(s.created_at)}</span>
+        <span class="sujet"><span class="chip t-${esc(s.type)}">${esc(TYPES[s.type] || s.type)}</span> ${esc(titreSujet(s))}</span>
+        <span class="extrait">${esc(s.message)}</span>
+      </button>`;
+    });
+    $("liste").innerHTML = h;
+    $("liste").querySelectorAll("[data-id]").forEach(b => b.onclick = () => ouvrir(Number(b.dataset.id)));
+  }
+
+  /* sansLire : réouverture depuis l'adresse (rechargement) ; on ne touche pas à l'état « lu ». */
+  function ouvrir(id, defiler, sansLire){
+    actif = id;
+    const s = SIGS.find(x => x.id === id);
+    document.body.classList.add("lit");
+    history.replaceState(null, "", "#" + id);
+    if (s && !s.lu_at && !sansLire) modifier(id, { lu: true }); else dessinerTout();
+    $("lecture").scrollTop = 0;
+    const el = $("liste").querySelector(`[data-id="${id}"]`);
+    if (el && defiler !== false) el.scrollIntoView({ block: "nearest" });
+  }
+
+  function dessinerLecture(){
+    const s = SIGS.find(x => x.id === actif);
+    if (!s) { $("lecture").innerHTML = `<div class="vide">Choisis un signalement pour le lire.</div>`; return; }
+    /* Ne pas réécrire la page pendant qu'on tape la note. */
+    const zone = document.activeElement && document.activeElement.id === "note-txt" ? document.activeElement : null;
+    if (zone && Number(zone.dataset.id) === s.id) { majBoutons(s); return; }
+
+    const memeSujet = SIGS.filter(x => x.id !== s.id && cleSujet(x) === cleSujet(s));
+    const memeEleve = SIGS.filter(x => x.id !== s.id && (s.user_id ? x.user_id === s.user_id : x.pseudo && x.pseudo === s.pseudo));
+    const ligneH = (x, quoi) => `<button class="h-item${x.lu_at ? "" : " non-lu"}" data-h="${x.id}">
+        <span class="pt"></span><span class="chip t-${esc(x.type)}">${esc(TYPES[x.type] || x.type)}</span>
+        <span class="tx">${quoi === "eleve" ? esc(titreSujet(x)) + " — " : esc(nomEleve(x)) + " — "}${esc(x.message)}</span>
+        <span class="d">${x.statut === "traite" ? "✓ " : ""}${court(x.created_at)}</span></button>`;
+    const typesSujet = {};
+    [s, ...memeSujet].forEach(x => typesSujet[x.type] = (typesSujet[x.type] || 0) + 1);
+    const resumeSujet = Object.entries(typesSujet).map(([t, n]) => n + " " + (TYPES[t] || t)).join(", ");
+    const ouvertsSujet = [s, ...memeSujet].filter(x => x.statut !== "traite").length;
+
+    $("lecture").innerHTML = `<div class="lect-in">
+      <button class="btn retour-liste" id="retour">← Liste</button>
+      <div class="actions" id="actions"></div>
+      <div class="l-titre">${esc(titreSujet(s))}</div>
+      <div class="l-meta">
+        <span class="chip t-${esc(s.type)}">${esc(TYPES[s.type] || s.type)}</span>
+        <span>${estEx(s) ? "Entraînement" + (s.chapitre ? " · " + esc(s.chapitre) : "") : "Annale"}</span>
+        ${s.question ? `<span class="sep">·</span><span>${esc(s.question)}</span>` : ""}
+        <span class="sep">·</span><span class="etat ${s.statut === "traite" ? "ok" : "ko"}" id="etat"></span>
+      </div>
+      <div class="bulle">
+        <div class="qui"><span><b>${esc(nomEleve(s))}</b></span><span>${esc(complet(s.created_at))}</span></div>
+        <div class="texte">${esc(s.message)}</div>
+      </div>
+      <div class="contexte">${estEx(s)
+        ? (s.exercise_id ? "Exercice n° " + s.exercise_id : "Exercice supprimé depuis")
+          + (s.annale_titre && s.annale_titre !== titreSujet(s) ? " · « " + esc(s.annale_titre) + " »" : "")
+        : (s.annale_id ? "Sujet n° " + s.annale_id : "Sujet supprimé depuis")}
+        <span id="dates"></span></div>
+
+      <div class="note">
+        <label for="note-txt">Note pour moi</label>
+        <textarea id="note-txt" data-id="${s.id}" placeholder="Ce que tu as fait, ou pourquoi tu l'écartes. Seul l'administrateur la voit.">${esc(s.note || "")}</textarea>
+        <div class="etat-note" id="etat-note"></div>
+      </div>
+
+      <div class="histo">
+        <h3>Même ${estEx(s) ? "famille" : "sujet"} · ${memeSujet.length + 1} signalement${memeSujet.length ? "s" : ""}</h3>
+        ${memeSujet.length
+          ? `<div class="resume">${esc(resumeSujet)} — ${ouvertsSujet} encore à traiter.${memeSujet.length >= 2 ? " Plusieurs élèves butent au même endroit : c'est probablement un vrai défaut." : ""}</div>`
+            + memeSujet.map(x => ligneH(x, "sujet")).join("")
+          : `<div class="resume">Aucun autre signalement sur ce${estEx(s) ? "tte famille" : " sujet"}.</div>`}
+      </div>
+      <div class="histo">
+        <h3>Du même élève · ${memeEleve.length + 1} signalement${memeEleve.length ? "s" : ""}</h3>
+        ${memeEleve.length ? memeEleve.map(x => ligneH(x, "eleve")).join("")
+          : `<div class="resume">C'est son seul signalement.</div>`}
+      </div>
+    </div>`;
+    majBoutons(s);
+    $("retour").onclick = () => { document.body.classList.remove("lit"); };
+    $("lecture").querySelectorAll("[data-h]").forEach(b => b.onclick = () => ouvrir(Number(b.dataset.h)));
+
+    const ta = $("note-txt");
+    let minuteur = null;
+    const sauver = async () => {
+      clearTimeout(minuteur);
+      if ((ta.value.trim() || null) === (s.note || null)) return;
+      $("etat-note").textContent = "Enregistrement…";
+      const ok = await modifier(s.id, { note: ta.value });
+      $("etat-note").textContent = ok ? "Note enregistrée." : "";
+    };
+    ta.oninput = () => { $("etat-note").textContent = ""; clearTimeout(minuteur); minuteur = setTimeout(sauver, 900); };
+    ta.onblur = sauver;
+  }
+
+  /* Les boutons et l'état changent sans redessiner la note. */
+  function majBoutons(s){
+    const traite = s.statut === "traite";
+    $("actions").innerHTML = `
+      <button class="btn ${traite ? "" : "plein"}" id="b-traite">${traite ? "Rouvrir" : "✓ Marquer traité"}</button>
+      <button class="btn" id="b-lu">${s.lu_at ? "Marquer non lu" : "Marquer lu"}</button>
+      <button class="btn danger" id="b-suppr">Supprimer</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="b-prec" title="Précédent (↑)" ${voisin(s.id, -1) ? "" : "disabled"}>↑</button>
+      <button class="btn" id="b-suiv" title="Suivant (↓)" ${voisin(s.id, 1) ? "" : "disabled"}>↓</button>`;
+    $("b-traite").onclick = () => modifier(s.id, { statut: traite ? "nouveau" : "traite" })
+      .then(ok => ok && toast(traite ? "Signalement rouvert." : "Marqué traité."));
+    $("b-lu").onclick = () => {
+      const versNonLu = !!s.lu_at;
+      modifier(s.id, { lu: !versNonLu });
+      if (versNonLu) toast("Marqué non lu.");
+    };
+    $("b-suppr").onclick = () => supprimer(s.id);
+    $("b-prec").onclick = () => { const v = voisin(s.id, -1); if (v) ouvrir(v.id); };
+    $("b-suiv").onclick = () => { const v = voisin(s.id, 1); if (v) ouvrir(v.id); };
+    $("etat").textContent = traite ? "✓ traité" : "à traiter";
+    $("etat").className = "etat " + (traite ? "ok" : "ko");
+    const parts = [];
+    if (s.lu_at) parts.push("lu le " + new Date(s.lu_at).toLocaleDateString("fr-FR", { day:"numeric", month:"short" }));
+    if (s.traite_at) parts.push("traité le " + new Date(s.traite_at).toLocaleDateString("fr-FR", { day:"numeric", month:"short" }));
+    $("dates").textContent = parts.length ? " · " + parts.join(" · ") : "";
+  }
+
+  /* ── Commandes ── */
+  $("recherche").oninput = dessinerTout;
+  $("source").onchange = dessinerTout;
+  $("tout-lu").onclick = toutLu;
+  $("rafraichir").onclick = () => { $("liste").innerHTML = `<div class="vide">Chargement…</div>`; charger(); };
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input, textarea, select") || e.ctrlKey || e.metaKey || e.altKey) return;
+    const l = visibles();
+    if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "j" || e.key === "k") {
+      if (!l.length) return;
+      e.preventDefault();
+      const sens = (e.key === "ArrowDown" || e.key === "j") ? 1 : -1;
+      const v = actif ? voisin(actif, sens) : l[0];
+      if (v) ouvrir(v.id);
+    } else if (actif && e.key === "u") { const s = SIGS.find(x => x.id === actif); if (s) modifier(actif, { lu: !s.lu_at }); }
+    else if (actif && e.key === "t") { const s = SIGS.find(x => x.id === actif); if (s) modifier(actif, { statut: s.statut === "traite" ? "nouveau" : "traite" }); }
+  });
+
+  charger();
+})();
+</script>
+</body>
+</html>

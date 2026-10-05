@@ -53,7 +53,7 @@
 <div class="wrap">
   <a class="back" href="app.html">← Retour au site</a>
   <h1>Administration</h1>
-  <div class="sub">Gestion des comptes Polymates — promouvoir, rétrograder ou supprimer des utilisateurs.</div>
+  <div class="sub">Sujets déposés, signalements des élèves et gestion des comptes.</div>
   <div class="demo-banner" id="demo-banner">
     <strong>Mode démo</strong> — aucun serveur détecté : les comptes affichés sont fictifs et les actions simulées localement.
   </div>
@@ -68,62 +68,20 @@
     <span class="act">Ouvrir →</span>
   </a>
 
+  <!-- ── SIGNALEMENTS DES ÉLÈVES : messagerie dédiée ── -->
+  <a class="panel depots-lien" href="admin-signalements.html" style="display:flex;align-items:center;gap:1.2rem;padding:1.1rem 1.3rem;margin-bottom:1.6rem;text-decoration:none;color:inherit">
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:2rem;color:var(--gold);min-width:2.5rem;text-align:center" id="sig-n">—</div>
+    <div style="flex:1">
+      <div style="font-size:1rem">Signalements des élèves <span id="sig-sous" class="muted" style="font-size:.84rem"></span></div>
+      <div class="muted" style="font-size:.84rem;margin-top:.2rem">Messagerie : chaque retour d'élève, lu ou non lu, traité ou à traiter, avec l'historique par sujet et par élève.</div>
+    </div>
+    <span class="act">Ouvrir →</span>
+  </a>
+
   <div class="stats">
     <div class="stat"><div class="n" id="st-total">—</div><div class="l">comptes</div></div>
     <div class="stat"><div class="n" id="st-eleves">—</div><div class="l">élèves</div></div>
     <div class="stat"><div class="n" id="st-admins">—</div><div class="l">administrateurs</div></div>
-  </div>
-
-  <div class="panel" style="margin-bottom:1.6rem">
-    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
-      <span>Répartition du contenu par matière</span>
-      <button class="act" id="mat-run">Vérifier</button>
-    </div>
-    <div id="mat-body" class="empty">
-      Montre ce que contient réellement la base : combien d'exercices et d'annales portent quelle matière.
-    </div>
-  </div>
-
-  <div class="panel" style="margin-bottom:1.6rem">
-    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
-      <span>Signalements des élèves <span id="sig-badge"></span></span>
-      <button class="act" id="sig-load">Voir les signalements</button>
-      <button class="act" id="sig-load-new">Seulement les nouveaux</button>
-      <button class="act" id="sig-load-ex">Entraînement</button>
-      <button class="act" id="sig-load-an">Annales</button>
-    </div>
-    <div id="sig-body" class="empty">
-      Ce que les élèves remontent après une épreuve : énoncé illisible, figure absente,
-      correction douteuse. C'est la seule source qui dise ce qui cloche vraiment.
-    </div>
-  </div>
-
-  <!-- ── KHÔLLES : couverture des chapitres et génération ── -->
-  <div class="panel" style="margin-bottom:1.6rem">
-    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-      <span>Khôlleur — une khôlle par chapitre</span>
-      <button class="act" id="kh-etat">Voir la couverture</button>
-      <button class="act" id="kh-gen-maths">Générer les manquantes — Maths</button>
-      <button class="act" id="kh-gen-pc">Générer les manquantes — Physique-Chimie</button>
-      <button class="act" id="kh-stop" style="display:none">Arrêter</button>
-    </div>
-    <div id="kh-body" class="empty">
-      Chaque chapitre de mathématiques et de physique-chimie doit avoir sa khôlle. La génération se fait chapitre par chapitre
-      (une dizaine de secondes chacun) ; pour tout remplir d'un coup, lancez plutôt <code>node seed-kholles.js</code> sur le serveur.
-    </div>
-  </div>
-
-  <div class="panel" style="margin-bottom:1.6rem">
-    <div class="panel-head" style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
-      <span>Diagnostic des figures — le correcteur voit-il les sujets ?</span>
-      <button class="act" id="diag-run">Lancer le diagnostic</button>
-      <button class="act" id="rep-sim">Réparer les pages — simulation</button>
-      <button class="act" id="rep-go">Réparer les pages — appliquer</button>
-      <button class="act" id="constr-run">Questions à tracer</button>
-    </div>
-    <div id="diag-body" class="empty">
-      Vérifie, sujet par sujet, si les pages du PDF sont bien transmises à l'IA lors de la correction.
-    </div>
   </div>
 
   <div class="panel">
@@ -139,7 +97,7 @@
     </div>
     <div class="empty" id="empty" style="display:none">Aucun utilisateur.</div>
   </div>
-  <div class="msg err" id="msg"></div>
+  <div class="msg" id="msg"></div>
 </div>
 
 <script src="auth.js" data-protect="admin"></script>
@@ -203,68 +161,6 @@
   }
 
 
-  /* ── KHÔLLES ─────────────────────────────────────────────────────────── */
-  let khArret = false;
-  async function khCouverture(){
-    const body = $('kh-body');
-    body.classList.remove('empty'); body.innerHTML = 'Lecture…';
-    try {
-      const res = await MB_AUTH.apiFetch('/admin/kholles/couverture');
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-      const parMat = {};
-      d.chapitres.forEach(c => (parMat[c.matiere] = parMat[c.matiere] || []).push(c));
-      let h = '<div style="color:var(--muted);font-size:.82rem;margin-bottom:.8rem">Modèle de génération : <code>' + escapeHtml(d.modele) + '</code></div>';
-      for (const m of Object.keys(parMat)) {
-        const l = parMat[m], faits = l.filter(c => c.n > 0).length;
-        h += '<div style="margin:.6rem 0 .3rem;font-weight:500">' + escapeHtml(m) + ' — ' + faits + ' / ' + l.length + ' chapitres couverts</div>';
-        h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.3rem .8rem;font-size:.8rem">';
-        l.forEach(c => {
-          h += '<div style="display:flex;gap:.5rem;align-items:baseline;color:' + (c.n ? 'inherit' : 'var(--muted)') + '">'
-             + '<span style="font-family:monospace">' + (c.n ? '●' : '○') + '</span>'
-             + '<span style="flex:1">' + escapeHtml(c.chapitre) + (c.n ? ' <span style="color:var(--muted)">(' + c.n + ')</span>' : '') + '</span>'
-             + '<button class="act" style="padding:.1rem .5rem;font-size:.72rem" data-kh-gen="' + escapeHtml(m) + '|' + escapeHtml(c.chapitre) + '">+1</button></div>';
-        });
-        h += '</div>';
-      }
-      body.innerHTML = h;
-      body.querySelectorAll('[data-kh-gen]').forEach(b => b.onclick = async () => {
-        const [matiere, chapitre] = b.dataset.khGen.split('|');
-        b.disabled = true; b.textContent = '…';
-        try { await khGenererUn(matiere, chapitre); b.textContent = 'ok'; }
-        catch (e) { b.textContent = 'échec'; alert(e.message); }
-      });
-    } catch (e) { body.innerHTML = '<span style="color:var(--coral)">' + escapeHtml(e.message) + '</span>'; }
-  }
-  async function khGenererUn(matiere, chapitre){
-    const res = await MB_AUTH.apiFetch('/admin/kholles/generer', { method:'POST', body: JSON.stringify({ matiere, chapitre }) });
-    const d = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-    return d;
-  }
-  async function khGenererManquantes(matiere){
-    khArret = false;
-    $('kh-stop').style.display = '';
-    const body = $('kh-body'); body.classList.remove('empty');
-    const journal = document.createElement('div');
-    journal.style.cssText = 'font-family:monospace;font-size:.78rem;white-space:pre-wrap;margin-top:.8rem';
-    body.prepend(journal);
-    let n = 0;
-    while (!khArret) {
-      try {
-        const d = await khGenererUn(matiere, null);
-        if (!d.fait) { journal.textContent += '\n' + d.message; break; }
-        n++; journal.textContent += '\n✓ ' + d.chapitre + ' — « ' + d.titre + ' » (#' + d.id + ')';
-      } catch (e) { journal.textContent += '\n✗ ' + e.message; break; }
-    }
-    journal.textContent += '\nTerminé : ' + n + ' khôlle(s) générée(s).';
-    $('kh-stop').style.display = 'none';
-  }
-  $('kh-etat').onclick = khCouverture;
-  $('kh-gen-maths').onclick = () => khGenererManquantes('mathematiques');
-  $('kh-gen-pc').onclick = () => khGenererManquantes('physique-chimie');
-  $('kh-stop').onclick = () => { khArret = true; };
-
   async function load(){
     demo = !(await MB_AUTH.hasBackend()) || MB_AUTH.isDemo();
     if (demo) {
@@ -297,376 +193,6 @@
     USERS = USERS.filter(x => x.id !== u.id); render();
   }
 
-  /* ── Répartition par matière ────────────────────────────────────────── */
-  $('mat-run').onclick = async () => {
-    const body = $('mat-body');
-    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
-    $('mat-run').disabled = true;
-    body.innerHTML = `<div class="empty">Lecture de la base…</div>`;
-    try {
-      const res = await MB_AUTH.apiFetch('/admin/diagnostic-matieres');
-      if (res.status === 404) throw new Error(
-        "route inconnue du serveur : la version déployée est antérieure à cette fonctionnalité. "
-        + "Vérifie que le dernier commit est bien déployé.");
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-      const tableau = (titre, lignes) => {
-        if (!lignes.length) return `<div style="padding:0 1.3rem 1rem"><strong>${titre}</strong> — aucun contenu.</div>`;
-        return `<div style="padding:0 1.3rem 1.2rem">
-          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">${titre}</div>
-          ${lignes.map(l => `<div style="display:flex;justify-content:space-between;gap:1rem;
-              padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.88rem">
-              <span${l.matiere === '(vide)' ? ' style="color:var(--coral)"' : ''}>${escapeHtml(l.matiere)}</span>
-              <strong>${l.n}</strong></div>`).join('')}
-        </div>`;
-      };
-      const col = d.colonne_matiere;
-      const fichiers = (d.fichiers || []);
-      const manquants = fichiers.filter(f => !f.present || !f.a_jour);
-      const blocFichiers = fichiers.length ? `
-        <div style="padding:0 1.3rem 1.2rem">
-          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Fichiers déployés dans public/</div>
-          ${fichiers.map(f => `<div style="display:flex;justify-content:space-between;gap:1rem;
-              padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem">
-              <span>${escapeHtml(f.nom)}</span>
-              <span style="color:${f.present && f.a_jour ? 'var(--green)' : 'var(--coral)'}">
-                ${!f.present ? 'ABSENT' : (f.a_jour ? (f.modifie + ' · ' + f.ko + ' Ko') : 'version ancienne')}
-              </span></div>`).join('')}
-          ${manquants.length ? `<div style="margin-top:.9rem;padding:.75rem .9rem;border-radius:10px;
-              color:var(--coral);background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);
-              font-size:.85rem;line-height:1.6">
-              <strong>${manquants.length} fichier(s) non déployé(s).</strong> Le serveur est à jour mais pas le dossier
-              public/ : c'est ce qui fait apparaître le contenu de maths dans les autres matières.
-              Vérifie que ces fichiers sont bien commités et poussés.
-            </div>` : ''}
-        </div>` : '';
-      const ia = d.interactifs || [];
-      const blocIA = `
-        <div style="padding:0 1.3rem 1.2rem">
-          <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Exercices interactifs (plateaux)</div>
-          ${d.colonne_interactif === false
-            ? `<div style="color:var(--coral);font-size:.86rem">La colonne « interactif » n'existe pas :
-               le serveur déployé est antérieur aux plateaux.</div>`
-            : (ia.length
-              ? ia.map(x => `<div style="display:flex;justify-content:space-between;gap:1rem;
-                  padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem">
-                  <span>${escapeHtml(x.chapitre || '—')} · <em style="color:var(--accent)">${escapeHtml(x.widget)}</em></span>
-                  <strong>${x.n}</strong></div>`).join('')
-              : `<div style="color:var(--coral);font-size:.86rem">Aucun exercice ne porte de plateau interactif :
-                 les générateurs n'ont pas enregistré le champ, ou n'ont pas encore été lancés.</div>`)}
-        </div>`;
-      body.innerHTML =
-        `<div style="padding:1rem 1.3rem;font-size:.86rem;line-height:1.7;color:var(--muted)">
-           Version du serveur : <strong style="color:var(--cream)">${escapeHtml(d.version_serveur || '?')}</strong> ·
-           Colonne « matiere » : exercices <strong style="color:${col.exercises?'var(--green)':'var(--coral)'}">
-           ${col.exercises ? 'oui' : 'NON'}</strong>, annales
-           <strong style="color:${col.annales?'var(--green)':'var(--coral)'}">${col.annales ? 'oui' : 'NON'}</strong>
-         </div>`
-        + blocFichiers + blocIA + tableau('Exercices', d.exercices) + tableau('Annales', d.annales);
-    } catch (e) {
-      body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Vérification impossible : ${escapeHtml(e.message)}</div>`;
-    }
-    $('mat-run').disabled = false;
-  };
-
-  /* ── Diagnostic des figures ─────────────────────────────────────────── */
-  let DIAG = null;
-
-  $('diag-run').onclick = () => lancerDiag(null);
-
-  async function lancerDiag(renduPour){
-    const body = $('diag-body');
-    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur pour un diagnostic réel.</div>`; return; }
-    $('diag-run').disabled = true;
-    body.innerHTML = `<div class="empty">${renduPour ? 'Test de rendu du sujet…' : 'Analyse des sujets en cours…'}</div>`;
-    try {
-      const url = '/admin/diagnostic-figures' + (renduPour ? '?rendu=' + renduPour : '');
-      const res = await MB_AUTH.apiFetch(url);
-      if (res.status === 502 || res.status === 503) {
-        throw new Error("le serveur n'a pas répondu (502) — il a probablement manqué de mémoire "
-          + "pendant le rendu du PDF. Réessaie sur un seul sujet, ou augmente la mémoire du conteneur.");
-      }
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-      DIAG = d;
-      body.innerHTML = renderDiag(d);
-      brancherBoutons();
-    } catch (e) {
-      body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Diagnostic impossible : ${escapeHtml(e.message)}</div>`;
-    }
-    $('diag-run').disabled = false;
-  }
-
-  /* ── Réparation des numéros de page ──
-     Elle s'exécute SUR LE SERVEUR, là où sont les PDF : lancée depuis un
-     poste, elle ne trouverait aucun fichier. Le traitement se fait par lots ;
-     on relance tant qu'il reste des sujets. */
-  async function reparerPages(appliquer){
-    const body = $('diag-body');
-    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
-    ['rep-sim','rep-go','diag-run'].forEach(id => $(id).disabled = true);
-    let total = 0, questions = 0, tours = 0, methodes = {}, echecs = 0;
-    try {
-      let restants = 1;
-      while (restants > 0 && tours < 12) {
-        tours++;
-        body.innerHTML = `<div class="empty">Réparation en cours — lot ${tours}…<br>`
-          + `${total} sujet(s) traité(s), ${questions} question(s) rattachée(s).</div>`;
-        const res = await MB_AUTH.apiFetch('/admin/reparer-pages?lot=20'
-          + (appliquer ? '&execute=1' : ''), { method: 'POST' });
-        if (res.status === 502 || res.status === 503)
-          throw new Error("le serveur n'a pas répondu — réessaie, le traitement reprend là où il s'est arrêté.");
-        const d = await res.json();
-        if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-        total += d.sujets_repares; questions += d.questions_retrouvees; echecs += d.echecs;
-        Object.entries(d.methodes || {}).forEach(([m,n]) => methodes[m] = (methodes[m]||0)+n);
-        restants = appliquer ? d.restants : 0;   // en simulation, un seul lot suffit
-      }
-      const lignes = Object.entries(methodes)
-        .map(([m,n]) => `<div style="display:flex;justify-content:space-between;padding:.3rem 0;
-          border-bottom:1px solid rgba(255,255,255,.06)"><span>${escapeHtml(m)}</span><strong>${n}</strong></div>`)
-        .join('');
-      body.innerHTML = `<div style="padding:1rem 1.3rem;font-size:.88rem;line-height:1.8">
-        <strong style="color:var(--cream)">${appliquer ? 'Réparation appliquée' : 'Simulation'}</strong><br>
-        ${total} sujet(s) réparé(s) · ${questions} question(s) rattachée(s) à leur page
-        ${echecs ? ` · <span style="color:var(--coral)">${echecs} en échec (PDF absent du serveur)</span>` : ''}
-        <div style="margin-top:.8rem;color:var(--muted)">Comment les pages ont été retrouvées :</div>
-        ${lignes || '<div style="color:var(--muted)">aucune</div>'}
-        ${methodes['suite de la précédente'] ? `<div style="margin-top:.7rem;color:var(--accent)">
-          « suite de la précédente » est un repli : vérifiez quelques sujets avec « tester le rendu ».</div>` : ''}
-        <div style="margin-top:.9rem">${appliquer
-          ? 'Relancez le diagnostic pour confirmer.'
-          : 'Aucune écriture n\'a eu lieu. Utilisez « appliquer » pour enregistrer.'}</div>
-      </div>`;
-    } catch (e) {
-      body.innerHTML = `<div class="empty" style="color:var(--coral);line-height:1.6">Réparation impossible : ${escapeHtml(e.message)}</div>`;
-    }
-    ['rep-sim','rep-go','diag-run'].forEach(id => $(id).disabled = false);
-  }
-  /* ── Recensement des questions demandant un tracé ──
-     On regarde AVANT d'outiller : combien de questions, de quelle nature, et
-     combien renvoient à une annexe qu'il faudra afficher. */
-  /* ── Signalements ──
-     Regroupés par sujet : un signalement isolé peut être une méprise, cinq
-     sur le même sujet désignent un vrai défaut. */
-  const TYPES_SIG = { enonce: "énoncé", figure: "figure", correction: "correction",
-                      note: "note", autre: "autre" };
-
-  async function chargerSignalements(seulementNouveaux, source) {
-    const body = $('sig-body');
-    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
-    body.innerHTML = `<div class="empty">Chargement…</div>`;
-    try {
-      const q = [];
-      if (seulementNouveaux) q.push('statut=nouveau');
-      if (source) q.push('source=' + source);
-      const res = await MB_AUTH.apiFetch('/admin/signalements'
-        + (q.length ? '?' + q.join('&') : ''));
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-
-      $('sig-badge').innerHTML = d.nouveaux
-        ? `<span style="color:var(--coral)">${d.nouveaux} nouveau${d.nouveaux > 1 ? 'x' : ''}</span>` : '';
-
-      if (!d.total) {
-        body.innerHTML = `<div class="empty">Aucun signalement${seulementNouveaux ? ' nouveau' : ''}.</div>`;
-        return;
-      }
-
-      const parSujet = (d.par_sujet || []).slice(0, 12).map(s2 => {
-        const types = Object.entries(s2.types)
-          .map(([t, n]) => `${TYPES_SIG[t] || t} : ${n}`).join(' · ');
-        return `<tr>
-          <td>${escapeHtml(s2.titre)}<div class="muted" style="font-size:.75rem">${
-            s2.source === 'exercice'
-              ? 'entraînement' + (s2.chapitre ? ' · ' + escapeHtml(s2.chapitre) : '')
-              : 'annale · id ' + (s2.annale_id || '—')}</div></td>
-          <td><strong>${s2.total}</strong></td>
-          <td>${s2.nouveaux ? `<span style="color:var(--coral)">${s2.nouveaux}</span>` : ''}</td>
-          <td class="hide-sm">${escapeHtml(types)}</td>
-        </tr>`; }).join('');
-
-      const liste = d.signalements.map(x => {
-        const date = new Date(x.created_at).toLocaleDateString('fr-FR',
-          { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-        const neuf = x.statut === 'nouveau';
-        return `<div class="sig-item" style="border-bottom:1px solid rgba(255,255,255,.07);padding:.8rem 0"
-                     data-sig="${x.id}">
-          <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-            <div style="font-size:.86rem">
-              <strong style="color:var(--cream)">${escapeHtml(x.annale_titre || '(supprimé)')}</strong>
-              ${x.source === 'exercice'
-                ? `<span class="muted" style="font-size:.75rem"> · entraînement${x.famille ? ' · ' + escapeHtml(x.famille) : ''}</span>`
-                : ''}
-              ${x.question ? ` · ${escapeHtml(x.question)}` : ''}
-              <span style="color:var(--accent)"> · ${escapeHtml(TYPES_SIG[x.type] || x.type)}</span>
-            </div>
-            <div class="muted" style="font-size:.75rem">${escapeHtml(x.pseudo || '—')} · ${date}</div>
-          </div>
-          <div style="font-size:.9rem;line-height:1.6;margin:.4rem 0 .5rem;color:var(--muted)">
-            ${escapeHtml(x.message)}</div>
-          <div style="display:flex;gap:.5rem">
-            <button class="act" data-traiter="${x.id}" data-statut="${neuf ? 'traite' : 'nouveau'}">
-              ${neuf ? 'marquer traité' : 'rouvrir'}</button>
-            <button class="act" data-suppr-sig="${x.id}"
-              style="border-color:rgba(230,130,110,.45);color:var(--coral)">supprimer</button>
-          </div>
-        </div>`; }).join('');
-
-      body.innerHTML = `
-        <div style="padding:.9rem 1.3rem;font-size:.88rem;color:var(--muted)">
-          <strong style="color:var(--cream)">${d.total}</strong> signalement(s),
-          dont <strong style="color:var(--coral)">${d.nouveaux}</strong> non traité(s).
-          ${d.par_source ? ` · entraînement : <strong>${d.par_source.exercice}</strong>
-            · annales : <strong>${d.par_source.annale}</strong>` : ''}
-        </div>
-        <table><thead><tr><th>Sujet ou famille le plus signalé</th><th>total</th><th>nouveaux</th>
-          <th class="hide-sm">nature</th></tr></thead><tbody>${parSujet}</tbody></table>
-        <div style="padding:0 1.3rem 1rem">${liste}</div>`;
-
-      body.querySelectorAll('[data-traiter]').forEach(b => {
-        b.onclick = async () => {
-          b.disabled = true;
-          try {
-            await MB_AUTH.apiFetch('/admin/signalements/' + b.dataset.traiter,
-              { method: 'PATCH', body: JSON.stringify({ statut: b.dataset.statut }) });
-            chargerSignalements(seulementNouveaux, source);
-          } catch { b.disabled = false; }
-        };
-      });
-      body.querySelectorAll('[data-suppr-sig]').forEach(b => {
-        b.onclick = async () => {
-          if (!confirm('Supprimer définitivement ce signalement ?')) return;
-          b.disabled = true;
-          try {
-            await MB_AUTH.apiFetch('/admin/signalements/' + b.dataset.supprSig, { method: 'DELETE' });
-            chargerSignalements(seulementNouveaux, source);
-          } catch { b.disabled = false; }
-        };
-      });
-    } catch (e) {
-      body.innerHTML = `<div class="empty" style="color:var(--coral)">Chargement impossible : ${escapeHtml(e.message)}</div>`;
-    }
-  }
-  $('sig-load').onclick     = () => chargerSignalements(false);
-  $('sig-load-new').onclick = () => chargerSignalements(true);
-  $('sig-load-ex').onclick  = () => chargerSignalements(false, 'exercice');
-  $('sig-load-an').onclick  = () => chargerSignalements(false, 'annale');
-
-  $('constr-run').onclick = async () => {
-    const body = $('diag-body');
-    if (demo) { body.innerHTML = `<div class="empty">Mode démo : lance le serveur.</div>`; return; }
-    $('constr-run').disabled = true;
-    body.innerHTML = `<div class="empty">Recensement des questions de construction…</div>`;
-    try {
-      const res = await MB_AUTH.apiFetch('/admin/diagnostic-constructions');
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-      const t = d.par_type || {};
-      const lignes = (d.sujets || []).map(s2 => `<tr>
-        <td>${escapeHtml(s2.titre)}<div class="muted" style="font-size:.75rem">id ${s2.id}</div></td>
-        <td class="hide-sm">${s2.geometrie || ''}</td>
-        <td class="hide-sm">${s2.repere || ''}</td>
-        <td class="hide-sm">${s2.diagramme || ''}</td>
-        <td>${s2.annexe ? `<span style="color:var(--accent)">${s2.annexe} annexe(s)</span>` : ''}</td>
-        <td>${s2.sans_page ? `<span style="color:var(--coral)">${s2.sans_page} sans page</span>`
-                           : '<span style="color:var(--green)">pages connues</span>'}</td>
-      </tr>`).join('');
-      body.innerHTML = `<div style="padding:1rem 1.3rem;font-size:.88rem;line-height:1.8">
-          <strong style="color:var(--cream)">${d.questions_a_tracer}</strong> question(s) demandent un tracé,
-          réparties dans <strong style="color:var(--cream)">${d.sujets_concernes}</strong> sujets
-          (sur ${d.questions_analysees} questions analysées).<br>
-          Construction géométrique : <strong>${t.geometrie || 0}</strong> ·
-          Repère : <strong>${t.repere || 0}</strong> ·
-          Diagramme : <strong>${t.diagramme || 0}</strong><br>
-          <span style="color:var(--accent)">${d.renvoyant_a_une_annexe} renvoient à une annexe</span>
-          — leur page doit être connue pour être affichée à l'élève.
-        </div>
-        <table><thead><tr><th>Sujet</th><th class="hide-sm">géom.</th><th class="hide-sm">repère</th>
-          <th class="hide-sm">diagr.</th><th>annexe</th><th>pages</th></tr></thead>
-          <tbody>${lignes}</tbody></table>
-        ${d.sujets_total > 60 ? `<div class="muted" style="padding:.6rem 1.3rem">
-          … et ${d.sujets_total - 60} autre(s) sujet(s).</div>` : ''}`;
-    } catch (e) {
-      body.innerHTML = `<div class="empty" style="color:var(--coral)">Recensement impossible : ${escapeHtml(e.message)}</div>`;
-    }
-    $('constr-run').disabled = false;
-  };
-
-  $('rep-sim').onclick = () => reparerPages(false);
-  $('rep-go').onclick  = () => reparerPages(true);
-
-  function brancherBoutons(){
-    document.querySelectorAll('[data-rendu]').forEach(b => {
-      b.onclick = () => lancerDiag(Number(b.dataset.rendu));
-    });
-    document.querySelectorAll('[data-suppr]').forEach(b => {
-      b.onclick = async () => {
-        const id = Number(b.dataset.suppr), titre = b.dataset.titre;
-        if (!confirm(`Supprimer définitivement le sujet « ${titre} » (id ${id}) ?\n\n`
-          + `Ses questions et les résultats associés seront perdus. `
-          + `Le fichier PDF, lui, reste sur le serveur.`)) return;
-        b.disabled = true; b.textContent = 'suppression…';
-        try {
-          const res = await MB_AUTH.apiFetch('/annales/' + id, { method: 'DELETE' });
-          const d = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(d.error || 'HTTP ' + res.status);
-          b.closest('tr').style.opacity = '.35';
-          b.textContent = 'supprimé';
-        } catch (e) {
-          b.disabled = false; b.textContent = 'supprimer';
-          alert('Suppression impossible : ' + e.message);
-        }
-      };
-    });
-  }
-
-  function renderDiag(d){
-    const alerte = !d.moteur_rendu
-      ? `<div style="margin:1rem 1.3rem;padding:.8rem 1rem;border-radius:10px;color:var(--coral);
-           background:rgba(230,130,110,.08);border:1px solid rgba(230,130,110,.3);font-size:.86rem;line-height:1.6">
-           <strong>Moteur de rendu PDF indisponible.</strong> Aucun sujet ne peut fournir sa figure au correcteur.
-           Installe les dépendances : <code>npm i @napi-rs/canvas pdfjs-dist</code>, puis redéploie.
-         </div>` : "";
-    const entete = `<div style="padding:1rem 1.3rem;font-size:.86rem;line-height:1.7;color:var(--muted)">
-        Moteur de rendu : <strong style="color:${d.moteur_rendu?'var(--green)':'var(--coral)'}">
-        ${d.moteur_rendu ? 'disponible' : 'INDISPONIBLE'}</strong> ·
-        PDF présents sur le disque : <strong style="color:var(--cream)">${d.pdf_sur_disque}</strong> ·
-        Mémoire : <strong style="color:var(--cream)">${d.memoire_mo} Mo</strong> ·
-        Sujets exploitables : <strong style="color:${d.sujets_ok===d.sujets_total?'var(--green)':'var(--coral)'}">
-        ${d.sujets_ok} / ${d.sujets_total}</strong>
-      </div>`;
-    if (!d.sujets.length) return entete + `<div class="empty">Aucun sujet enregistré.</div>`;
-    const lignes = d.sujets.map(s => {
-      const etat = s.ok
-        ? (s.rendu && s.rendu.ok
-            ? `<span style="color:var(--green)">✔ figure rendue (page ${s.rendu.page}, ${s.rendu.ko} Ko)</span>`
-            : `<span style="color:var(--green)">✔ prêt</span>`)
-        : `<span style="color:var(--coral)">✘ ${escapeHtml(s.cause)}</span>`;
-      /* La route DELETE /annales/:id existait déjà côté serveur, mais aucune
-         interface ne l'appelait : les sujets « supprimés » ne l'étaient donc
-         jamais. On expose ici un bouton, avec confirmation. */
-      const bouton = (s.ok
-        ? `<button class="act" data-rendu="${s.id}">tester le rendu</button> ` : '')
-        + `<button class="act" data-suppr="${s.id}" data-titre="${escapeHtml(s.titre)}"
-             style="border-color:rgba(230,130,110,.45);color:var(--coral)">supprimer</button>`;
-      return `<tr>
-        <td>${escapeHtml(s.titre)}<div class="muted" style="font-size:.75rem">${escapeHtml(s.classe || '—')} · id ${s.id}</div></td>
-        <td class="hide-sm">${s.questions_avec_pages} / ${s.questions}</td>
-        <td class="hide-sm">${s.pdf_present ? 'oui' : '<span style="color:var(--coral)">non</span>'}</td>
-        <td>${etat}</td>
-        <td>${bouton}</td>
-      </tr>`;
-    }).join('');
-    return alerte + entete + `<div style="overflow-x:auto"><table>
-        <thead><tr><th>Sujet</th><th class="hide-sm">Questions avec pages</th>
-        <th class="hide-sm">PDF</th><th>État</th><th></th></tr></thead>
-        <tbody>${lignes}</tbody></table></div>
-      <div style="padding:.9rem 1.3rem;font-size:.78rem;color:var(--muted);line-height:1.6">
-        Le rendu d'une page consomme plusieurs Mo : il se teste un sujet à la fois.
-      </div>`;
-  }
-
   load();
 })();
 </script>
@@ -679,6 +205,20 @@
     if (!r.ok) return;
     const l = await r.json();
     document.getElementById("depots-n").textContent = l.filter(d => d.statut !== "publie" && d.statut !== "refuse").length;
+  } catch (_) {}
+})();
+/* Signalements non lus, et ceux qui restent à traiter. */
+(async function () {
+  try {
+    if (!window.MB_AUTH || !MB_AUTH.token()) return;
+    const r = await MB_AUTH.apiFetch("/admin/signalements/compte");
+    if (!r.ok) return;
+    const c = await r.json();
+    const n = document.getElementById("sig-n");
+    n.textContent = c.non_lus;
+    if (c.non_lus) n.style.color = "var(--coral)";
+    document.getElementById("sig-sous").textContent =
+      "· " + c.non_lus + " non lu" + (c.non_lus > 1 ? "s" : "") + " · " + c.a_traiter + " à traiter";
   } catch (_) {}
 })();
 </script>

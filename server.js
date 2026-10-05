@@ -1366,7 +1366,7 @@ app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
     if (source === "annale" || source === "exercice") { params.push(source); conds.push("COALESCE(source,'annale') = $" + params.length); }
     const { rows } = await pool.query(
       `SELECT * FROM signalements ${conds.length ? "WHERE " + conds.join(" AND ") : ""}
-        ORDER BY created_at DESC LIMIT 400`, params);
+        ORDER BY created_at DESC LIMIT 1000`, params);
 
     /* Regroupé par sujet : c'est ainsi qu'on repère un sujet qui pose
        vraiment problème, plutôt qu'un signalement isolé. */
@@ -1392,6 +1392,7 @@ app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
     res.json({
       total: rows.length,
       nouveaux: rows.filter(r => r.statut === "nouveau").length,
+      non_lus: rows.filter(r => !r.lu_at).length,
       par_source: {
         annale: rows.filter(r => (r.source || "annale") === "annale").length,
         exercice: rows.filter(r => r.source === "exercice").length },
@@ -1401,14 +1402,54 @@ app.get("/admin/signalements", auth, requireAdmin, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 });
 
-/* ── SIGNALEMENTS : marquer traité, ou supprimer ── */
+/* ── SIGNALEMENTS : la messagerie de l'administrateur ──
+   Trois informations indépendantes par signalement :
+   - lu_at  : l'administrateur l'a ouvert (rempli à l'ouverture, effaçable) ;
+   - statut : nouveau | traite (le problème a été corrigé ou écarté) ;
+   - note   : un mot pour soi (« corrigé dans la question 2 », « méprise »).
+   Seuls les champs envoyés sont modifiés. Traiter un signalement le marque lu. */
 app.patch("/admin/signalements/:id", auth, requireAdmin, async (req, res) => {
   try {
-    const statut = req.body && req.body.statut === "nouveau" ? "nouveau" : "traite";
-    const r = await pool.query("UPDATE signalements SET statut = $1 WHERE id = $2",
-      [statut, Number(req.params.id)]);
+    const b = req.body || {}, sets = [], params = [];
+    if (b.statut !== undefined) {
+      params.push(b.statut === "nouveau" ? "nouveau" : "traite");
+      sets.push("statut = $" + params.length);
+      sets.push("traite_at = " + (b.statut === "nouveau" ? "NULL" : "CURRENT_TIMESTAMP"));
+      if (b.statut !== "nouveau" && b.lu === undefined) sets.push("lu_at = COALESCE(lu_at, CURRENT_TIMESTAMP)");
+    }
+    if (b.lu !== undefined) sets.push(b.lu ? "lu_at = COALESCE(lu_at, CURRENT_TIMESTAMP)" : "lu_at = NULL");
+    if (b.note !== undefined) {
+      params.push(String(b.note || "").trim().slice(0, 2000) || null);
+      sets.push("note = $" + params.length);
+    }
+    if (!sets.length) return res.status(400).json({ error: "Rien à modifier." });
+    params.push(Number(req.params.id));
+    const r = await pool.query(`UPDATE signalements SET ${sets.join(", ")} WHERE id = $${params.length}
+                                RETURNING id, statut, lu_at, traite_at, note`, params);
     if (!r.rowCount) return res.status(404).json({ error: "Signalement introuvable." });
-    res.json({ ok: true, statut });
+    res.json({ ok: true, ...r.rows[0] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* Tout marquer comme lu (optionnellement une seule source). */
+app.post("/admin/signalements/tout-lu", auth, requireAdmin, async (req, res) => {
+  try {
+    const source = req.body && req.body.source;
+    const r = (source === "annale" || source === "exercice")
+      ? await pool.query("UPDATE signalements SET lu_at = CURRENT_TIMESTAMP WHERE lu_at IS NULL AND COALESCE(source,'annale') = $1", [source])
+      : await pool.query("UPDATE signalements SET lu_at = CURRENT_TIMESTAMP WHERE lu_at IS NULL");
+    res.json({ ok: true, marques: r.rowCount });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+/* Compteur pour la pastille de la page d'administration. */
+app.get("/admin/signalements/compte", auth, requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT
+        COUNT(*) FILTER (WHERE lu_at IS NULL)::int AS non_lus,
+        COUNT(*) FILTER (WHERE statut = 'nouveau')::int AS a_traiter,
+        COUNT(*)::int AS total FROM signalements`);
+    res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -1638,6 +1679,15 @@ async function initDB() {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_prog_famille ON progression (user_id, chapitre, famille)`);
 
   await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS famille TEXT`);
+  /* Messagerie : lu / traité / note. Au premier passage, les signalements déjà
+     traités sont considérés comme lus ; les autres arrivent « non lus ». */
+  const dejaLu = await pool.query(`SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'signalements' AND column_name = 'lu_at'`);
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS lu_at TIMESTAMP`);
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS traite_at TIMESTAMP`);
+  await pool.query(`ALTER TABLE signalements ADD COLUMN IF NOT EXISTS note TEXT`);
+  if (!dejaLu.rowCount)
+    await pool.query(`UPDATE signalements SET lu_at = created_at, traite_at = created_at WHERE statut = 'traite'`);
   await pool.query(`UPDATE signalements SET source = 'annale' WHERE source IS NULL`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_statut ON signalements (statut)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_signalements_exercice ON signalements (exercise_id)`);
