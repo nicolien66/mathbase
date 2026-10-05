@@ -152,6 +152,16 @@ h1 em{font-style:italic;color:var(--accent);}
 
   const GROUPES = [
     { titre: "Matières scolaires", matieres: scolaires },
+    { titre: "Médecine", matieres: [
+      { nom:"Biologie cellulaire", icone:"🧫", couleur:"#7ac8b4",
+        desc:"La cellule : membranes, organites, noyau, division et communication cellulaire." },
+      { nom:"Histologie", icone:"🔬", couleur:"#c87a9a",
+        desc:"Les tissus du corps humain : épithéliums, tissus conjonctifs, musculaires et nerveux." },
+      { nom:"Anatomie", icone:"🫀", couleur:"#c87a7a",
+        desc:"L'organisation du corps : os, muscles, organes et appareils, région par région." },
+      { nom:"Embryologie", icone:"🧬", couleur:"#a07ac8",
+        desc:"Le développement de l'embryon, de la fécondation à la mise en place des organes." },
+    ]},
     { titre: "Religion", matieres: [
       { nom:"Bible", icone:"📜", couleur:"#c89a7a",
         desc:"Lire et comprendre les textes, les personnages et les grands récits." },
@@ -162,7 +172,7 @@ h1 em{font-style:italic;color:var(--accent);}
       { nom:"Permis de voiture", icone:"🚗", couleur:"#c87a7a",
         desc:"Code de la route : signalisation, priorités, situations de conduite." },
     ]},
-    { titre: "Matières manuelles", note: "Les spécialités du bac professionnel, par domaine.", domaines: [
+    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par domaine.", domaines: [
       { titre: "Bâtiment et travaux publics", icone: "🏗️", bacs: [
         { nom: "Travaux publics", icone: "🚧" },
         { nom: "Technicien du bâtiment (gros œuvre)", icone: "🧱" },
