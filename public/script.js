@@ -1099,6 +1099,7 @@ function startExamen(id) {
 function relancerExamen() { if (EXAM && EXAM.annale) lancerExamen(EXAM.annale); }
 
 function lancerExamen(a) {
+  clearTimeout(MEMO.minuteur);
   const brutes = annaleQuestions(a);
   /* Un sujet en test arrive par une URL blob:, sans extension .pdf. */
   const isPdf = !!(a.image_url && (a.test || /\.pdf(\?|$)/i.test(a.image_url)));
@@ -1130,11 +1131,26 @@ function lancerExamen(a) {
             brutes.map((q, i) => escapeHtml(qLabel(q, i))).join(" \u00b7 ")
           }, soit ${qs.length} question(s) \u00e0 traiter une par une. Tout l'\u00e9nonc\u00e9 se trouve dans le PDF ci-dessus.</div>`
       : qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div>${annaleFigure(q.figure)}</div>`).join("")}`;
+  /* Sujet déjà commencé : proposer de reprendre là où l'élève s'était arrêté. */
+  if (!a.test && qs.length) listerEnCours().then(liste => {
+    const s = liste.find(x => Number(x.annale_id) === Number(a.id));
+    if (!s || !EXAM || EXAM.annale !== a) return;
+    const faites = (s.reponses || []).filter(r => r && !r.skipped).length;
+    const zone = document.getElementById("examen-sujet-body");
+    zone.insertAdjacentHTML("afterbegin", `<div class="exam-reprise">
+      <div><strong>Tu as déjà commencé ce sujet</strong> ${quandLisible(s.updated_at)} :
+        ${faites} question${faites > 1 ? "s" : ""} traitée${faites > 1 ? "s" : ""} sur ${s.nb_questions || qs.length}, ${dureeLisible(s.temps_sec)} au chrono.</div>
+      <div class="exam-reprise-actions">
+        <button class="annale-btn primary" onclick="reprendreExamen(${Number(a.id)})">Reprendre où j'en étais →</button>
+        <button class="annale-btn" onclick="this.closest('.exam-reprise').remove()">Recommencer à zéro</button>
+      </div></div>`);
+  });
 }
 
 /* ── EXAMEN : ③ question par question ── */
-function beginEpreuve() {
-  EXAM.start = Date.now();
+function beginEpreuve(reprise) {
+  /* Reprise d'une épreuve mémorisée : le chronomètre repart du temps déjà passé. */
+  EXAM.start = Date.now() - ((reprise && reprise.temps_sec) || 0) * 1000;
   clearInterval(examTimer);
   examTimer = setInterval(() => {
     const el = document.getElementById("exam-chrono");
@@ -1147,6 +1163,7 @@ function beginEpreuve() {
   document.getElementById("exam-run-title").textContent = EXAM.annale.title;
   examPhase("run");
   if (EXAM.pdf && !EXAM.qs.length) paintExamPdf(); else paintExamQuestion();
+  memoriserExamen(true);
 }
 
 /* Mode « copie unique » pour les sujets officiels PDF */
@@ -1231,6 +1248,7 @@ function examNavHTML() {
 function allerQuestion(i) {
   if (!EXAM || i < 0 || i >= EXAM.qs.length) return;
   EXAM.index = i;
+  memoriserExamen();
   paintExamQuestion();
   window.scrollTo(0, 0);
 }
@@ -1342,6 +1360,7 @@ async function submitExamAnswer() {
   }
   btn.disabled = false;
   EXAM.answers[EXAM.index] = { answer, result, skipped: false };
+  memoriserExamen(true);
   paintExamQuestion();
 }
 
@@ -1385,6 +1404,7 @@ function skipExamQuestion() {
 function nextExamQuestion() {
   if (EXAM.index >= EXAM.qs.length - 1) { finishExam(); return; }
   EXAM.index++;
+  memoriserExamen();
   paintExamQuestion();
   window.scrollTo(0, 0);
 }
@@ -1392,6 +1412,8 @@ function nextExamQuestion() {
 /* ── EXAMEN : ④ bilan ── */
 function finishExam() {
   clearInterval(examTimer);
+  /* Arrivé au bilan : le sujet n'est plus « en cours ». */
+  if (EXAM && EXAM.annale && !EXAM.annale.test) oublierExamen(EXAM.annale.id, true);
   examPhase("done");
   /* Bilan « copie unique » : réservé aux sujets PDF dont les questions n'ont
      PAS été découpées. Dès qu'il y a des questions, on passe au bilan noté —
@@ -3469,7 +3491,7 @@ function appliquerRubrique() {
   const sous = vue.querySelector(".browse-hero .hero-sub");
   const r = RUBRIQUES[rangRubrique(rubrique)];
   if (sous) sous.textContent = bibliotheque ? t.sous : (r ? r.sous : "");
-  if (ann) { rangerAnnales("browse"); loadAnnales(); }
+  if (ann) { rangerAnnales("browse"); loadAnnales(); choisirOngletAnnales(ongletAnnales); }
 }
 
 /* La banque de sujets (filtres + grille) n'existe qu'une fois : on la
@@ -3482,6 +3504,9 @@ function rangerAnnales(ou) {
     : document.querySelector("#view-annales .annales-page");
   if (!filtres || !grille || !hote || grille.parentNode === hote) return;
   hote.append(filtres, grille);
+  const enc = ou === "browse" && ongletAnnales === "encours";
+  filtres.style.display = enc ? "none" : "";
+  grille.style.display = enc ? "none" : "";
 }
 
 /* ── Rubrique COURS ── */
@@ -3642,6 +3667,173 @@ function fermerAccueil() {
     !!document.querySelector("#view-browse.active"));
 })();
 
+/* ═══════════════════════════════════════════════════════════════════════
+   MÉMOIRE DES ÉPREUVES EN COURS
+   Pendant une épreuve, l'état est enregistré à chaque réponse et à chaque
+   changement de question : la question courante, les réponses (corrigées
+   ou passées) et le temps écoulé. Sur le serveur pour un compte connecté,
+   dans le navigateur en mode démo. La rubrique ANNALES › En cours liste ces
+   épreuves et permet de reprendre exactement où l'on s'était arrêté.
+   ═══════════════════════════════════════════════════════════════════════ */
+const MEMO = { cle: "mb_examens_en_cours", minuteur: null, cache: null };
+
+function memoLocale() { return DEMO_MODE || !!(window.MB_AUTH && MB_AUTH.isDemo && MB_AUTH.isDemo()); }
+function lireMemoLocale() { try { return JSON.parse(localStorage.getItem(MEMO.cle) || "{}"); } catch (_) { return {}; } }
+function ecrireMemoLocale(o) { try { localStorage.setItem(MEMO.cle, JSON.stringify(o)); } catch (_) {} }
+
+async function listerEnCours() {
+  if (memoLocale()) {
+    const m = lireMemoLocale();
+    MEMO.cache = Object.values(m).filter(x => x.matiere === matiereCourante())
+      .sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+    return MEMO.cache;
+  }
+  try {
+    const r = await MB_AUTH.apiFetch(avecMatiere("/examens/en-cours"));
+    if (!r.ok) throw new Error();
+    MEMO.cache = await r.json();
+  } catch (_) { MEMO.cache = MEMO.cache || []; }
+  return MEMO.cache;
+}
+
+function etatEpreuve() {
+  return {
+    question_index: EXAM.index, nb_questions: EXAM.qs.length, matiere: matiereCourante(),
+    /* Les réponses sans le plateau de widget, qui ne se sérialise pas. */
+    reponses: EXAM.answers.map(a => a ? { answer: a.answer || "", result: a.result || null, skipped: !!a.skipped } : null),
+    temps_sec: Math.max(0, Math.round((Date.now() - EXAM.start) / 1000)),
+  };
+}
+
+/* Enregistre l'épreuve courante (regroupe les appels rapprochés). */
+function memoriserExamen(immediat) {
+  if (!EXAM || !EXAM.annale || EXAM.annale.test || !EXAM.qs.length || !EXAM.start) return;
+  clearTimeout(MEMO.minuteur);
+  MEMO.minuteur = setTimeout(() => envoyerMemo(false), immediat ? 0 : 800);
+}
+async function envoyerMemo(enPartant) {
+  if (!EXAM || !EXAM.annale || EXAM.annale.test || !EXAM.qs.length || !EXAM.start) return;
+  const id = EXAM.annale.id, etat = etatEpreuve();
+  if (memoLocale()) {
+    const m = lireMemoLocale();
+    const a = EXAM.annale;
+    m[id] = Object.assign({ annale_id: id, title: a.title, exam: a.exam, year: a.year, classe: a.classe, duration: a.duration,
+      created_at: (m[id] && m[id].created_at) || new Date().toISOString() }, etat, { updated_at: new Date().toISOString() });
+    ecrireMemoLocale(m);
+    return;
+  }
+  try {
+    await MB_AUTH.apiFetch("/examens/" + id, { method: "PUT", body: JSON.stringify(etat), keepalive: !!enPartant });
+  } catch (_) {}
+}
+/* L'élève ferme l'onglet ou change d'application en pleine épreuve. */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && EXAM && EXAM.start &&
+      document.getElementById("examen-run") && document.getElementById("examen-run").style.display !== "none")
+    envoyerMemo(true);
+});
+
+async function oublierExamen(annaleId, terminee) {
+  clearTimeout(MEMO.minuteur);
+  if (memoLocale()) { const m = lireMemoLocale(); delete m[annaleId]; ecrireMemoLocale(m); return; }
+  try {
+    await MB_AUTH.apiFetch("/examens/" + annaleId + (terminee ? "/terminer" : ""), { method: terminee ? "POST" : "DELETE" });
+  } catch (_) {}
+}
+
+/* Reprendre une épreuve mémorisée, à la question où l'élève s'était arrêté. */
+async function reprendreExamen(annaleId) {
+  if (!LOADED_ANNALES.length) await loadAnnales();
+  const a = LOADED_ANNALES.find(x => Number(x.id) === Number(annaleId));
+  const s = (await listerEnCours()).find(x => Number(x.annale_id) === Number(annaleId));
+  if (!a) { showToast("Ce sujet n'est plus disponible.", "error"); return; }
+  if (!s) { startExamen(a.id); return; }
+  lancerExamen(a);
+  const n = EXAM.qs.length;
+  const rep = Array.isArray(s.reponses) ? s.reponses : [];
+  EXAM.answers = Array.from({ length: n }, (_, i) => rep[i] || null);
+  /* Le sujet a pu être modifié depuis : on reste dans les bornes. */
+  EXAM.index = Math.min(Math.max(0, Number(s.question_index) || 0), Math.max(0, n - 1));
+  beginEpreuve({ temps_sec: Number(s.temps_sec) || 0 });
+  showToast("Reprise de l'épreuve : " + (EXAM.index + 1) + " / " + n, "info");
+}
+
+function dureeLisible(sec) {
+  const m = Math.round((Number(sec) || 0) / 60);
+  return m < 1 ? "moins d'une minute" : m < 60 ? m + " min" : Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0");
+}
+function quandLisible(d) {
+  const t = new Date(d); if (isNaN(t)) return "";
+  const min = Math.round((Date.now() - t) / 60000);
+  if (min < 2) return "à l'instant";
+  if (min < 60) return "il y a " + min + " min";
+  if (min < 24 * 60) return "il y a " + Math.round(min / 60) + " h";
+  return "le " + t.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+}
+
+/* ── Rubrique ANNALES : onglets « Banque de sujets » / « En cours » ── */
+let ongletAnnales = "banque";
+function choisirOngletAnnales(o) {
+  ongletAnnales = o === "encours" ? "encours" : "banque";
+  document.querySelectorAll("#ann-onglets button").forEach(b => b.classList.toggle("on", b.dataset.o === ongletAnnales));
+  const enc = ongletAnnales === "encours";
+  const hote = document.getElementById("browse-annales");
+  ["annales-filters", "annales-grid"].forEach(id => {
+    const e = document.getElementById(id);
+    if (e && e.parentNode === hote) e.style.display = enc ? "none" : "";
+  });
+  document.getElementById("ann-encours").hidden = !enc;
+  if (enc) dessinerEnCours(); else majCompteEnCours();
+}
+async function majCompteEnCours() {
+  const l = await listerEnCours();
+  const b = document.getElementById("ann-encours-n");
+  if (b) b.textContent = l.length ? l.length : "";
+  return l;
+}
+async function dessinerEnCours() {
+  const hote = document.getElementById("ann-encours");
+  hote.innerHTML = `<div class="chap-placeholder">Chargement…</div>`;
+  const l = await majCompteEnCours();
+  if (!l.length) {
+    hote.innerHTML = `<div class="ann-encours-vide">
+      <div class="ann-encours-vide-t">Aucun sujet en cours</div>
+      <p>Quand tu composes un sujet et que tu t'arrêtes avant la fin, il t'attend ici : tu reprendras à la question
+        où tu t'étais arrêté, avec tes réponses et ton chronomètre.</p>
+      <button class="annale-btn primary" onclick="choisirOngletAnnales('banque')">Choisir un sujet →</button></div>`;
+    return;
+  }
+  hote.innerHTML = `<div class="ann-encours-liste">${l.map(s => {
+    const n = Number(s.nb_questions) || (s.reponses || []).length || 1;
+    const faites = (s.reponses || []).filter(r => r && !r.skipped).length;
+    const passees = (s.reponses || []).filter(r => r && r.skipped).length;
+    const pct = Math.round(100 * faites / n);
+    return `<div class="ann-encours-carte">
+      <div class="annale-badges">
+        ${s.exam ? `<span class="annale-badge exam">${escapeHtml(s.exam)}</span>` : ""}
+        ${s.year ? `<span class="annale-badge">${s.year}</span>` : ""}
+        ${s.classe ? `<span class="annale-badge">${escapeHtml(s.classe)}</span>` : ""}
+      </div>
+      <div class="annale-title">${escapeHtml(s.title || "Sujet")}</div>
+      <div class="ann-encours-barre"><i style="width:${pct}%"></i></div>
+      <div class="ann-encours-meta">
+        <span><b>${faites}</b> / ${n} questions traitées${passees ? ` · ${passees} passée${passees > 1 ? "s" : ""}` : ""}</span>
+        <span>arrêté à la question ${Math.min(n, (Number(s.question_index) || 0) + 1)}</span>
+        <span>⏱ ${dureeLisible(s.temps_sec)}${s.duration ? " / " + s.duration + " min" : ""}</span>
+        <span>${quandLisible(s.updated_at)}</span>
+      </div>
+      <div class="annale-actions">
+        <button class="annale-btn primary" onclick="reprendreExamen(${Number(s.annale_id)})">Reprendre →</button>
+        <button class="annale-btn" onclick="abandonnerExamen(${Number(s.annale_id)})">Abandonner</button>
+      </div></div>`;
+  }).join("")}</div>`;
+}
+async function abandonnerExamen(annaleId) {
+  if (!confirm("Abandonner ce sujet ? Tes réponses enregistrées seront effacées.")) return;
+  await oublierExamen(annaleId, false);
+  dessinerEnCours();
+}
+
 /* ── TEST D'UN SUJET DÉPOSÉ (administrateurs) ──
    Le sujet n'est pas publié : on le charge depuis l'administration, son PDF
    arrive par une requête authentifiée (pas d'URL publique), puis l'épreuve se
@@ -3686,6 +3878,7 @@ function routeFromHash() {
     case "add":          showView("add"); break;
     case "seance":       openSeance("exercice"); break; // rétrocompat
     case "bibliotheque": ouvrirBibliotheque(); break;
+    case "annales-en-cours": rubrique = "annales"; ongletAnnales = "encours"; showView("browse"); dessinerCarrousel(0); break;
     case "accueil":
     case "home":         showView("home"); break;      // la page principale, tiroir d'accueil ouvert
     default:             showView("browse");            // la page principale

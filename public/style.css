@@ -2285,3 +2285,29 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
 .an-image-plus span { font-size:.7rem; }
 .an-image-plus:hover { background:rgba(200,185,122,.07); }
 .an-images-info { margin-top:.7rem; font-size:.78rem; color:var(--muted); text-align:center; }
+
+/* ══ Rubrique ANNALES : épreuves en cours ══ */
+.ann-onglets { display:flex; gap:.4rem; margin-bottom:1.3rem; border-bottom:1px solid var(--border); }
+.ann-onglets button { background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font:inherit;
+  font-size:.92rem; padding:.7rem 1rem; cursor:pointer; margin-bottom:-1px; transition:color .2s; }
+.ann-onglets button:hover { color:var(--text); }
+.ann-onglets button.on { color:var(--text); border-bottom-color:var(--accent); }
+.ann-onglets b { font-family:var(--mono); font-weight:400; font-size:.7rem; color:#0b0b09; background:var(--accent);
+  border-radius:999px; padding:.05rem .45rem; margin-left:.35rem; }
+.ann-onglets b:empty { display:none; }
+.ann-encours[hidden] { display:none; }
+.ann-encours-liste { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; }
+.ann-encours-carte { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
+  border-radius:14px; padding:1.2rem 1.3rem; display:flex; flex-direction:column; gap:.7rem; }
+.ann-encours-barre { height:6px; border-radius:999px; background:var(--surface2); overflow:hidden; }
+.ann-encours-barre i { display:block; height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2)); border-radius:999px; }
+.ann-encours-meta { display:flex; flex-wrap:wrap; gap:.4rem 1rem; font-size:.8rem; color:var(--muted); }
+.ann-encours-meta b { color:var(--text); font-weight:500; }
+.ann-encours-vide { text-align:center; padding:2.5rem 1rem; border:1px dashed var(--border2); border-radius:14px; }
+.ann-encours-vide-t { font-family:var(--serif); font-size:1.3rem; margin-bottom:.5rem; }
+.ann-encours-vide p { color:var(--muted); font-size:.88rem; line-height:1.6; max-width:520px; margin:0 auto 1.2rem; }
+/* Bandeau « Reprendre où j'en étais » sur un sujet déjà commencé */
+.exam-reprise { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+  margin-bottom:1.2rem; padding:1rem 1.2rem; border-radius:12px; font-size:.9rem; line-height:1.5;
+  background:rgba(200,185,122,.08); border:1px solid rgba(200,185,122,.4); }
+.exam-reprise-actions { display:flex; gap:.6rem; flex-wrap:wrap; }

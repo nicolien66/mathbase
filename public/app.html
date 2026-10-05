@@ -165,6 +165,12 @@
         <p>Tu as un sujet de brevet, de contrôle ou de DS ? Partage-le avec les autres élèves.</p>
         <button type="button" class="btn-ai" onclick="showView('add')">＋ Ajouter un sujet</button>
       </div>
+      <!-- Banque de sujets / épreuves commencées et pas terminées -->
+      <div class="ann-onglets" id="ann-onglets" role="tablist">
+        <button type="button" data-o="banque" class="on" onclick="choisirOngletAnnales('banque')">Banque de sujets</button>
+        <button type="button" data-o="encours" onclick="choisirOngletAnnales('encours')">En cours <b id="ann-encours-n"></b></button>
+      </div>
+      <div id="ann-encours" class="ann-encours" hidden></div>
     </div>
   </div>
 

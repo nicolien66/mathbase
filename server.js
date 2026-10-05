@@ -1070,6 +1070,83 @@ app.post("/admin/depots/:id/publier", auth, requireAdmin, async (req, res) => {
   } catch (e) { console.error("[dépôts] publication :", e.message); res.status(500).json({ error: e.message }); }
 });
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ÉPREUVES EN COURS : la mémoire des sujets commencés et pas terminés.
+   Une ligne par (élève, sujet) : la question où il s'est arrêté, ses réponses
+   déjà corrigées, le temps écoulé au chronomètre. Elle est mise à jour à
+   chaque réponse et à chaque changement de question ; « terminee » quand
+   l'élève arrive au bilan. En base, donc retrouvée sur n'importe quel appareil.
+   ═══════════════════════════════════════════════════════════════════════════ */
+async function initExamens() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS examen_sessions (
+      id             SERIAL PRIMARY KEY,
+      user_id        INTEGER NOT NULL,
+      annale_id      INTEGER NOT NULL,
+      matiere        TEXT DEFAULT 'mathematiques',
+      etat           TEXT NOT NULL DEFAULT 'en_cours',   -- en_cours | terminee
+      question_index INTEGER NOT NULL DEFAULT 0,
+      nb_questions   INTEGER,
+      reponses       JSONB NOT NULL DEFAULT '[]'::jsonb,
+      temps_sec      INTEGER NOT NULL DEFAULT 0,
+      created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (user_id, annale_id)
+    )`);
+}
+
+app.get("/examens/en-cours", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.annale_id, s.question_index, s.nb_questions, s.reponses, s.temps_sec, s.created_at, s.updated_at,
+              a.title, a.exam, a.year, a.classe, a.duration
+         FROM examen_sessions s JOIN annales a ON a.id = s.annale_id
+        WHERE s.user_id = $1 AND s.etat = 'en_cours' AND COALESCE(a.matiere, 'mathematiques') = $2
+        ORDER BY s.updated_at DESC`,
+      [req.user.id, req.query.matiere || "mathematiques"]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* Enregistre (ou crée) l'épreuve en cours de l'élève sur ce sujet. */
+app.put("/examens/:annaleId", auth, async (req, res) => {
+  try {
+    const annaleId = Number(req.params.annaleId);
+    if (!Number.isInteger(annaleId) || annaleId < 1) return res.status(400).json({ error: "Sujet invalide." });
+    const b = req.body || {};
+    const reponses = Array.isArray(b.reponses) ? b.reponses.slice(0, 300) : [];
+    const json = JSON.stringify(reponses);
+    if (json.length > 2000000) return res.status(413).json({ error: "Épreuve trop volumineuse." });
+    await pool.query(
+      `INSERT INTO examen_sessions (user_id, annale_id, matiere, question_index, nb_questions, reponses, temps_sec)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (user_id, annale_id) DO UPDATE SET
+         etat = 'en_cours', matiere = EXCLUDED.matiere, question_index = EXCLUDED.question_index,
+         nb_questions = EXCLUDED.nb_questions, reponses = EXCLUDED.reponses, temps_sec = EXCLUDED.temps_sec,
+         created_at = CASE WHEN examen_sessions.etat = 'terminee' THEN NOW() ELSE examen_sessions.created_at END,
+         updated_at = NOW()`,
+      [req.user.id, annaleId, b.matiere || "mathematiques", Math.max(0, Number(b.question_index) || 0),
+       Number(b.nb_questions) || null, json, Math.max(0, Math.round(Number(b.temps_sec) || 0))]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/examens/:annaleId/terminer", auth, async (req, res) => {
+  try {
+    await pool.query("UPDATE examen_sessions SET etat = 'terminee', updated_at = NOW() WHERE user_id = $1 AND annale_id = $2",
+      [req.user.id, Number(req.params.annaleId)]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete("/examens/:annaleId", auth, async (req, res) => {
+  try {
+    await pool.query("DELETE FROM examen_sessions WHERE user_id = $1 AND annale_id = $2",
+      [req.user.id, Number(req.params.annaleId)]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 /* ── Vérification qu'un énoncé est bien un PROBLÈME ─────────────────────── */
 /* ── Problème déposé en PDF ───────────────────────────────────────────────
    Le PDF est conservé (figures, annexes, documents-réponses). Son texte est
@@ -1689,7 +1766,7 @@ async function seedDB() {
   console.log(`Base initialisée avec ${SEED.length} exercices.`);
 }
 
-initDB().then(initDepots).catch(err => console.error("Erreur init DB :", err));
+initDB().then(initDepots).then(initExamens).catch(err => console.error("Erreur init DB :", err));
 /* ── ANALYSE MISTRAL ── */
 async function analyseWithMistral(title, content, existingExercises) {
   const MISTRAL_API_KEY = process.env.MISTRAL_KEY;
