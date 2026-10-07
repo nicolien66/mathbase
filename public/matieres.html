@@ -217,7 +217,13 @@ h1 em{font-style:italic;color:var(--accent);}
       { nom:"Hygiène alimentaire (HACCP)", href:"permis.html?permis=haccp", icone:"🧼", couleur:"#82d2a0",
         desc:"Microbes, températures, traçabilité et nettoyage en restauration." },
     ]},
-    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par domaine.", domaines: [
+    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par domaine.",
+      /* commun à toutes les spécialités, affiché avant les domaines */
+      matieres: [
+        { nom:"Prévention Santé Environnement (PSE)", href:"medecine.html?matiere=pse", icone:"🦺", couleur:"#82b4d2",
+          desc:"Le cours commun à tous les bacs pros : santé, environnement et prévention des risques professionnels." },
+      ],
+      domaines: [
       { titre: "Bâtiment et travaux publics", icone: "🏗️", bacs: [
         { nom: "Travaux publics", icone: "🚧" },
         { nom: "Technicien du bâtiment (gros œuvre)", icone: "🧱" },
@@ -307,6 +313,13 @@ h1 em{font-style:italic;color:var(--accent);}
     sec.className = 'groupe';
     sec.innerHTML = `<h2 class="groupe-titre">${g.titre}</h2>` + (g.note ? `<p class="groupe-note">${g.note}</p>` : '');
     if (g.domaines) {
+      if (g.matieres && g.matieres.length) {
+        const tete = document.createElement('div');
+        tete.className = 'grid';
+        tete.style.marginBottom = '1rem';
+        g.matieres.forEach(m => tete.appendChild(carte(m, n++)));
+        sec.appendChild(tete);
+      }
       /* Les bacs pros sont nombreux : un domaine par volet repliable,
          en boutons compacts. Le premier volet est ouvert sur grand écran ;
          sur téléphone, tous sont fermés pour garder la page courte. */
@@ -352,7 +365,7 @@ h1 em{font-style:italic;color:var(--accent);}
     const el = document.createElement(ouverte ? 'a' : 'button');
     el.className = 'subject ' + (ouverte ? 'ready' : 'soon');
     el.style.setProperty('--sc', m.couleur);
-    el.style.animationDelay = (i * 50) + 'ms';
+    el.style.animationDelay = Math.min(i * 50, 500) + 'ms';   /* plafonné : les cartes du bas n'attendent pas */
     if (ouverte) el.href = m.href;
     else el.type = 'button';
     el.innerHTML =

@@ -20,6 +20,9 @@
     { id: "histologie",          nom: "Histologie",          icone: "🔬", couleur: "#c87a9a" },
     { id: "anatomie",            nom: "Anatomie",            icone: "🫀", couleur: "#c87a7a" },
     { id: "embryologie",         nom: "Embryologie",         icone: "🧬", couleur: "#a07ac8" },
+    /* Hors médecine : même plateforme, autre groupe (le menu ⇄ ne propose que les matières du même groupe). */
+    { id: "pse", nom: "Prévention Santé Environnement", icone: "🦺", couleur: "#82b4d2", groupe: "pro",
+      fichier: "pro/pro-pse.js", sous: "Bac pro · toutes spécialités", eyebrow: "Filière professionnelle · bac pro" },
   ];
 
   const $ = id => document.getElementById(id);
@@ -52,7 +55,7 @@
 
   /* ── Menu de changement de matière ── */
   function dessinerMenu() {
-    $("som-menu").innerHTML = MATIERES.map(m =>
+    $("som-menu").innerHTML = MATIERES.filter(m => (m.groupe || "med") === ((META && META.groupe) || "med")).map(m =>
       `<a href="medecine.html?matiere=${m.id}" class="${m.id === matiereId ? "actif" : ""}"><span class="m-ic">${m.icone}</span>${esc(m.nom)}</a>`).join("");
     $("som-switch").onclick = e => { e.stopPropagation(); $("som-menu").classList.toggle("on"); };
     document.addEventListener("click", () => $("som-menu").classList.remove("on"));
@@ -75,14 +78,15 @@
   document.title = "Polymates — " + META.nom;
   $("som-icone").textContent = META.icone;
   $("som-nom").textContent = META.nom;
+  $("som-sous").textContent = META.sous || "PASS · 1re année";
   $("fil").innerHTML = `<b>${esc(META.nom)}</b>`;
   dessinerMenu();
   $("vue-accueil").innerHTML = `<div class="vide">Chargement du cours…</div>`;
 
   const s = document.createElement("script");
-  s.src = "med/med-" + matiereId + ".js";
+  s.src = META.fichier || ("med/med-" + matiereId + ".js");
   s.onload = () => { COURS = window.MED_COURS && window.MED_COURS[matiereId]; COURS ? demarrer() : erreur("Le cours est introuvable dans le fichier chargé."); };
-  s.onerror = () => erreur(`<p>Le cours de <strong>${esc(META.nom)}</strong> n'a pas pu être chargé.</p><p style="color:var(--muted);font-size:.9rem;margin-top:.5rem">Le fichier <code>med/med-${matiereId}.js</code> est absent du serveur.</p>`);
+  s.onerror = () => erreur(`<p>Le cours de <strong>${esc(META.nom)}</strong> n'a pas pu être chargé.</p><p style="color:var(--muted);font-size:.9rem;margin-top:.5rem">Le fichier <code>${esc(META.fichier || "med/med-" + matiereId + ".js")}</code> est absent du serveur.</p>`);
   document.head.appendChild(s);
 
   /* ── Démarrage ── */
@@ -103,8 +107,8 @@
   const chapParId = id => CHAPS.find(c => c.id === id) || null;
   const nbLus = () => CHAPS.filter(c => MEMO.lus[c.id]).length;
   const dureeTotale = () => CHAPS.reduce((n, c) => n + (Number(c.duree) || 20), 0);
-  const titrePartieCourt = p => String(p.titre).replace(/^Partie\s*\d+\s*[—–-]\s*/i, "");
-  const numPartie = p => (String(p.titre).match(/\d+/) || [""])[0];
+  const titrePartieCourt = p => String(p.titre).replace(/^Partie\s*[\dA-Z]+\s*[—–-]\s*/i, "");
+  const numPartie = p => (String(p.titre).match(/^Partie\s*([\dA-Z]+)\b/i) || String(p.titre).match(/(\d+)/) || ["", ""])[1];
 
   /* ── Sommaire ── */
   function dessinerSommaire() {
@@ -205,14 +209,14 @@
     const faits = nbLus();
     $("vue-accueil").innerHTML = `
       <div class="acc-tete">
-        <div class="acc-eyebrow">Médecine · PASS · 1re année</div>
+        <div class="acc-eyebrow">${esc(META.eyebrow || "Médecine · PASS · 1re année")}</div>
         <h1>${esc(COURS.nom)}<em>.</em></h1>
         <p class="acc-intro">${esc(COURS.intro || "")}</p>
       </div>
       <div class="acc-stats">
         <div class="stat"><div class="n">${COURS.parties.length}</div><div class="l">parties</div></div>
         <div class="stat"><div class="n">${CHAPS.length}</div><div class="l">chapitres</div></div>
-        <div class="stat"><div class="n">${nbQcm}</div><div class="l">QCM corrigés</div></div>
+        ${nbQcm ? `<div class="stat"><div class="n">${nbQcm}</div><div class="l">QCM corrigés</div></div>` : ""}
         <div class="stat"><div class="n">≈ ${heures} h</div><div class="l">de lecture</div></div>
         <div class="stat"><div class="n">${Math.round(100 * faits / CHAPS.length)} %</div><div class="l">du cours lu</div></div>
       </div>
@@ -229,7 +233,7 @@
           return `<button class="carte${MEMO.lus[c.id] ? " lu" : ""}" type="button" data-go="${esc(c.id)}">
             <span class="c-num">CHAPITRE ${f.num}</span>
             <span class="c-titre">${esc(c.titre)}</span>
-            <span class="c-meta"><span>${Number(c.duree) || 20} min</span><span>${(c.qcm || []).length} QCM</span>${sc ? `<span class="c-score">${sc.ok}/${sc.n}</span>` : ""}</span>
+            <span class="c-meta"><span>${Number(c.duree) || 20} min</span>${(c.qcm || []).length ? `<span>${c.qcm.length} QCM</span>` : ""}${sc ? `<span class="c-score">${sc.ok}/${sc.n}</span>` : ""}</span>
           </button>`; }).join("")}</div>
       </div>`).join("")}`;
     $("vue-accueil").querySelectorAll("[data-go]").forEach(b => b.onclick = () => location.hash = b.dataset.go);
@@ -248,7 +252,7 @@
       <div class="ch-tete">
         <div class="ch-partie">Partie ${esc(numPartie(c.partie))} · ${esc(titrePartieCourt(c.partie))}</div>
         <h1>${c.num}. ${esc(c.titre)}</h1>
-        <div class="ch-meta"><span>⏱ ${Number(c.duree) || 20} min</span><span>${(c.sections || []).length} sections</span><span>${mots.toLocaleString("fr-FR")} mots</span><span>${(c.qcm || []).length} QCM</span></div>
+        <div class="ch-meta"><span>⏱ ${Number(c.duree) || 20} min</span><span>${(c.sections || []).length} sections</span><span>${mots.toLocaleString("fr-FR")} mots</span>${(c.qcm || []).length ? `<span>${c.qcm.length} QCM</span>` : ""}</div>
       </div>
       ${(c.objectifs || []).length ? `<div class="objectifs"><h3>Objectifs du chapitre</h3><ol>${c.objectifs.map(o => `<li>${esc(o)}</li>`).join("")}</ol></div>` : ""}
       <div class="plan"><h3>Dans ce chapitre</h3><ol>${(c.sections || []).map((s2, i) => `<li><a href="#${esc(c.id)}/${i}">${esc(s2.titre)}</a></li>`).join("")}
