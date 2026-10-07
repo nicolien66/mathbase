@@ -109,8 +109,36 @@
     PASSAGE_PIETON:   { nom: "Passage pour piétons (bandes blanches)", svg: () => route(`<g fill="${W}">${[10, 26, 42, 58, 74].map(x => `<rect x="${x}" y="34" width="10" height="32"/>`).join("")}</g>`) },
     LIGNE_STOP:       { nom: "Ligne d'arrêt (ligne continue transversale)", svg: () => route(`<rect x="10" y="56" width="80" height="8" fill="${W}"/>` + texte("STOP", 16, W, 36)) },
     LIGNE_CEDEZ:      { nom: "Ligne « cédez le passage » (ligne discontinue transversale)", svg: () => route(`<path d="M10 60 H90" stroke="${W}" stroke-width="6" stroke-dasharray="8 6"/><path d="M38 20 H62 L50 42 Z" fill="none" stroke="${W}" stroke-width="3"/>`) },
+
+    /* ── Balisage maritime (système A, Europe) ── */
+    MER_BABORD:      { nom: "Marque latérale bâbord (rouge, voyant cylindre) — en entrant au port, à laisser à gauche", svg: () => bouee([R], `<rect x="42" y="6" width="16" height="18" fill="${R}" stroke="${N}" stroke-width="1"/>`) },
+    MER_TRIBORD:     { nom: "Marque latérale tribord (verte, voyant cône pointe en haut) — en entrant au port, à laisser à droite", svg: () => bouee([V], `<path d="M50 5 L60 24 H40 Z" fill="${V}" stroke="${N}" stroke-width="1"/>`) },
+    MER_CARD_NORD:   { nom: "Cardinale Nord (noir au-dessus du jaune, deux cônes pointes en haut) — passer au nord", svg: () => bouee([N, J], cones("hh")) },
+    MER_CARD_SUD:    { nom: "Cardinale Sud (jaune au-dessus du noir, deux cônes pointes en bas) — passer au sud", svg: () => bouee([J, N], cones("bb")) },
+    MER_CARD_EST:    { nom: "Cardinale Est (noir-jaune-noir, cônes opposés par la base) — passer à l'est", svg: () => bouee([N, J, N], cones("hb")) },
+    MER_CARD_OUEST:  { nom: "Cardinale Ouest (jaune-noir-jaune, cônes opposés par la pointe) — passer à l'ouest", svg: () => bouee([J, N, J], cones("bh")) },
+    MER_DANGER:      { nom: "Marque de danger isolé (noir avec bande rouge, deux sphères noires)", svg: () => bouee([N, R, N], `<circle cx="50" cy="9" r="5" fill="${N}"/><circle cx="50" cy="21" r="5" fill="${N}"/>`) },
+    MER_EAUX_SAINES: { nom: "Marque d'eaux saines (rayures verticales rouges et blanches, sphère rouge)", svg: () => bouee(["rayures"], `<circle cx="50" cy="16" r="7" fill="${R}"/>`) },
+    MER_SPECIALE:    { nom: "Marque spéciale (jaune, voyant en X)", svg: () => bouee([J], `<path d="M42 8 L58 24 M58 8 L42 24" stroke="${J}" stroke-width="4"/>`) },
   };
 
+  /* Bouée-espar : bandes de couleur de haut en bas, voyant au-dessus. */
+  function bouee(bandes, voyant) {
+    const haut = 34, bas = 84, h = (bas - haut) / bandes.length;
+    const clip = `<clipPath id="corps"><path d="M38 ${haut} H62 L68 ${bas} H32 Z"/></clipPath>`;
+    let corps;
+    if (bandes[0] === "rayures") corps = [0, 1, 2, 3, 4, 5].map(k => `<rect x="${32 + k * 6}" y="${haut}" width="6" height="${bas - haut}" fill="${k % 2 ? W : R}"/>`).join("");
+    else corps = bandes.map((c, k) => `<rect x="30" y="${haut + k * h}" width="40" height="${h + .5}" fill="${c}"/>`).join("");
+    return svg(`<defs>${clip}</defs><rect x="0" y="0" width="100" height="100" rx="8" fill="#9fd3ea"/>
+      <path d="M0 86 Q12 82 25 86 T50 86 T75 86 T100 86 V100 H0 Z" fill="#2f7fb0"/>
+      <line x1="50" y1="${haut}" x2="50" y2="25" stroke="${N}" stroke-width="2.5"/>${voyant}
+      <g clip-path="url(#corps)">${corps}</g><path d="M38 ${haut} H62 L68 ${bas} H32 Z" fill="none" stroke="${N}" stroke-width="1.5"/>`);
+  }
+  /* Deux cônes superposés : h = pointe en haut, b = pointe en bas. */
+  function cones(sens) {
+    const cone = (y, d) => d === "h" ? `<path d="M50 ${y} L58 ${y + 9} H42 Z" fill="${N}"/>` : `<path d="M42 ${y} H58 L50 ${y + 9} Z" fill="${N}"/>`;
+    return cone(3, sens[0]) + cone(14, sens[1]);
+  }
   function feu(allume, clignote) {
     const c = [R, O, V].map((col, i) => `<circle cx="50" cy="${22 + i * 28}" r="11" fill="${i === allume ? col : "#2b2b2b"}" ${i === allume ? `filter="url(#lueur)"` : ""}/>`).join("");
     return svg(`<defs><filter id="lueur"><feGaussianBlur stdDeviation="1.5"/></filter></defs><rect x="32" y="6" width="36" height="88" rx="8" fill="#151515" stroke="#444" stroke-width="2"/>${c}` +

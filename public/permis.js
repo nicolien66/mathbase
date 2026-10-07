@@ -38,6 +38,30 @@
         regle: "15 questions sur toutes les leçons, sans limite de temps. Le test est réussi à partir de 12 bonnes réponses." },
       themes: null,   // un thème par chapitre : on reprend leurs titres
     },
+    mer: {
+      nom: "Code de la mer", sous: "Permis plaisance · option côtière", icone: "⛵", couleur: "#7a9ec8",
+      fichiers: ["permis/permis-mer.js"],
+      intro: "Toute la théorie de l'option côtière du permis bateau : balisage, règles de barre et de route, feux et signaux, météo, sécurité, réglementation. Lis le cours, entraîne-toi, puis passe l'examen blanc.",
+      examen: { nb: 30, seuil: 25, chrono: 0, nom: "Examen blanc du code de la mer",
+        regle: "30 questions tirées dans tous les thèmes. Comme à l'examen, il faut au moins 25 bonnes réponses (5 erreurs au maximum)." },
+      themes: null,   // définis dans le fichier de données
+    },
+    caces: {
+      nom: "CACES", sous: "Préparation au test théorique", icone: "🏗️", couleur: "#d4c46a",
+      fichiers: ["permis/permis-caces.js"],
+      intro: "Uniquement ce qu'il faut pour réussir le QCM du test théorique : le tronc commun (réglementation, responsabilités, sécurité) puis les connaissances propres aux chariots, aux nacelles et aux engins de chantier.",
+      examen: { nb: 40, seuil: 28, chrono: 0, nom: "QCM d'évaluation blanc",
+        regle: "40 questions tirées dans tous les thèmes, sans limite de temps. Réussi à partir de 28 bonnes réponses (70 %). Le barème exact du vrai test dépend de l'organisme testeur." },
+      themes: null,
+    },
+    haccp: {
+      nom: "Hygiène alimentaire (HACCP)", sous: "Préparation au QCM d'évaluation", icone: "🧼", couleur: "#82d2a0",
+      fichiers: ["permis/permis-haccp.js"],
+      intro: "Tout ce que demande le QCM d'évaluation de la formation hygiène alimentaire en restauration : microbes, dangers, températures, nettoyage, traçabilité, allergènes, réglementation et méthode HACCP.",
+      examen: { nb: 30, seuil: 24, chrono: 0, nom: "QCM d'évaluation blanc",
+        regle: "30 questions tirées dans tous les thèmes, sans limite de temps. Réussi à partir de 24 bonnes réponses (80 %). Le seuil exact dépend de l'organisme de formation." },
+      themes: null,
+    },
   };
   const LETTRES = "ABCD";
   const SERIE = 20;            // nombre de questions d'une série d'entraînement
@@ -112,11 +136,13 @@
     D.chapitres.forEach(c => { c.num = ++num; });
     const parCode = new Map();
     D.chapitres.forEach(c => {
-      if (!parCode.has(c.theme)) parCode.set(c.theme, { code: c.theme, nom: (CFG.themes && CFG.themes[c.theme]) || c.titre, chapitres: [], questions: [] });
+      const noms = CFG.themes || D.themes;
+      if (!parCode.has(c.theme)) parCode.set(c.theme, { code: c.theme, nom: (noms && noms[c.theme]) || c.titre, chapitres: [], questions: [] });
       parCode.get(c.theme).chapitres.push(c);
     });
     /* ordre des thèmes : celui de la configuration, sinon celui des chapitres */
-    const ordre = CFG.themes ? Object.keys(CFG.themes) : [...parCode.keys()];
+    const noms = CFG.themes || D.themes;
+    const ordre = noms ? Object.keys(noms).concat([...parCode.keys()].filter(k => !(k in noms))) : [...parCode.keys()];
     THEMES = ordre.filter(k => parCode.has(k)).map(k => parCode.get(k));
     const chapDe = new Map(D.chapitres.map(c => [c.id, c]));
     D.questions.forEach(q => {
@@ -124,6 +150,9 @@
       const t = q.chap && THEMES.find(x => x.code === q.chap.theme);
       if (t) t.questions.push(q);
     });
+    const avecPanneaux = D.questions.some(q => q.panneau) || D.chapitres.some(c => (c.panneaux || []).length);
+    if (!avecPanneaux) { const o = document.querySelector('.som-onglet[data-vue="panneaux"]'); if (o) o.remove(); }
+    if (permisId === "mer") { const o = document.querySelector('.som-onglet[data-vue="panneaux"]'); if (o) o.textContent = "Balisage"; }
     chargerMemo();
     dessinerSommaire();
     majProgression();
@@ -205,7 +234,7 @@
       ouvrirChapitre(c, sec);
       return;
     }
-    $("fil").innerHTML = `<b>${esc(CFG.nom)}</b>` + ({ entrainement: " · s'entraîner", panneaux: " · panneaux", resultat: " · résultat", recherche: " · recherche" }[vueCourante] || "");
+    $("fil").innerHTML = `<b>${esc(CFG.nom)}</b>` + ({ entrainement: " · s'entraîner", panneaux: permisId === "mer" ? " · balisage" : " · panneaux", resultat: " · résultat", recherche: " · recherche" }[vueCourante] || "");
     majSommaire();
   }
   window.addEventListener("hashchange", router);
@@ -243,7 +272,7 @@
         <div class="stat"><div class="n">${lus} / ${D.chapitres.length}</div><div class="l">${permisId === "pieton" ? "leçons lues" : "chapitres lus"}</div></div>
         <div class="stat"><div class="n">${m.vues}</div><div class="l">questions vues</div></div>
         <div class="stat"><div class="n">${m.vues ? Math.round(100 * m.ok / m.vues) + " %" : "—"}</div><div class="l">de bonnes réponses</div></div>
-        <div class="stat"><div class="n">${MEMO.examens.length ? reussis + " / " + MEMO.examens.length : "—"}</div><div class="l">${permisId === "pieton" ? "tests réussis" : "examens blancs réussis"}</div></div>
+        <div class="stat"><div class="n">${MEMO.examens.length ? reussis + " / " + MEMO.examens.length : "—"}</div><div class="l">${permisId === "pieton" ? "tests réussis" : (permisId === "caces" || permisId === "haccp" ? "QCM blancs réussis" : "examens blancs réussis")}</div></div>
       </div>
       ${derniers.length ? `<div class="bloc" style="margin-top:0"><h2><span class="ic">📈</span>Tes derniers ${permisId === "pieton" ? "tests" : "examens blancs"}</h2>
         <div class="histo-ex">${derniers.map(e => `<div class="h${e.ok >= e.seuil ? " ok" : ""}" style="height:${Math.max(6, Math.round(100 * e.ok / e.nb))}%" title="${e.ok} / ${e.nb} — ${new Date(e.date).toLocaleDateString("fr-FR")}"></div>`).join("")}</div>
@@ -359,6 +388,7 @@
     ["Agglomération et zones", c => /^(EB|ZONE)/.test(c)],
     ["Feux", c => /^FEU/.test(c)],
     ["Marquages au sol", c => /^(LIGNE|PASSAGE)/.test(c)],
+    ["Balisage maritime", c => /^MER_/.test(c)],
   ];
   function dessinerPanneaux() {
     const usage = new Map();   // code de base → { code affiché, questions }
@@ -367,8 +397,8 @@
     D.questions.forEach(q => { if (q.panneau) note(q.panneau, q); });
     const codes = [...usage.keys()];
     $("vue-panneaux").innerHTML = `
-      <div class="acc-tete"><div class="acc-eyebrow">${esc(CFG.nom)}</div><h1>Les <em>panneaux</em></h1>
-        <p class="acc-intro">Les ${codes.length} panneaux, feux et marquages du cours. Clique sur un panneau pour répondre aux questions qui le montrent.</p></div>
+      <div class="acc-tete"><div class="acc-eyebrow">${esc(CFG.nom)}</div><h1>${permisId === "mer" ? "Le <em>balisage</em>" : "Les <em>panneaux</em>"}</h1>
+        <p class="acc-intro">${permisId === "mer" ? "Les " + codes.length + " marques de balisage du cours. Clique sur une marque pour répondre aux questions qui la montrent." : "Les " + codes.length + " panneaux, feux et marquages du cours. Clique sur un panneau pour répondre aux questions qui le montrent."}</p></div>
       ${FAMILLES.map(([nom, f]) => { const l = codes.filter(f); if (!l.length) return ""; return `<h2 style="font-family:var(--serif);font-size:1.2rem;margin:1.6rem 0 .7rem">${esc(nom)}</h2>
         <div class="galerie">${l.map(k => { const u = usage.get(k); return `<figure ${u.qs.length ? `data-pan="${esc(k)}" style="cursor:pointer" title="${u.qs.length} question(s)"` : ""}><div class="pan">${PANNEAU(u.code)}</div>
           <figcaption><b>${esc(k)}${u.qs.length ? " · " + u.qs.length + " q." : ""}</b>${esc(NOM_PANNEAU(u.code))}</figcaption></figure>`; }).join("")}</div>`; }).join("")}`;
@@ -401,6 +431,19 @@
     if (location.hash !== "#quiz") location.hash = "quiz"; else montrer("quiz");
   }
 
+  /* Ordre d'affichage des propositions. Les banques de questions placent
+     souvent la bonne réponse en premier : on mélange donc à chaque affichage,
+     sauf les paires Oui / Non (qu'on garde dans cet ordre) ; des réponses
+     chiffrées sont rangées par ordre croissant. Renvoie, pour chaque position
+     affichée, l'indice d'origine de la proposition. */
+  function ordreOptions(q) {
+    const idx = q.options.map((_, k) => k);
+    if (q.options.length === 2 && q.options.some(o => /^(oui|non)\b/i.test(String(o).trim()))) return idx;
+    const nombre = o => { const m = String(o).trim().replace(",", ".").match(/^[-+]?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : NaN; };
+    if (q.options.every(o => !isNaN(nombre(o)))) return idx.sort((a, b) => nombre(q.options[a]) - nombre(q.options[b]));
+    return melange(idx);
+  }
+
   function arreterChrono() { if (minuteur) { clearInterval(minuteur); minuteur = null; } }
 
   function afficherQuestion() {
@@ -410,6 +453,8 @@
     const t = q.chap && themeDe(q.chap.theme);
     const plusieurs = q.bonnes.length > 1;
     S.choix = new Set(); S.valide = false;
+    S.ordres = S.ordres || [];
+    const ordre = S.ordres[S.i] = ordreOptions(q);
     $("vue-quiz").innerHTML = `<div class="exam">
       <div class="ex-haut">
         <div><div class="ex-theme">${esc(S.titre)}${!examen && t && regroupe() ? " · " + esc(t.code) : ""}</div>
@@ -426,7 +471,7 @@
         <div class="q-corps">
           <div class="q-texte">${esc(q.q)}</div>
           <div class="q-aide">${examen ? "UNE OU PLUSIEURS RÉPONSES POSSIBLES" : (plusieurs ? "PLUSIEURS RÉPONSES SONT JUSTES" : "UNE OU PLUSIEURS RÉPONSES POSSIBLES")}</div>
-          <div class="q-opts">${q.options.map((o, k) => `<button class="q-opt" type="button" data-k="${k}"><span class="lettre-opt">${LETTRES[k]}</span><span>${esc(o)}</span></button>`).join("")}</div>
+          <div class="q-opts">${ordre.map((k, pos) => `<button class="q-opt" type="button" data-k="${k}"><span class="lettre-opt">${LETTRES[pos]}</span><span>${esc(q.options[k])}</span></button>`).join("")}</div>
           <div id="q-verdict"></div>
           <div class="q-pied">
             <span class="raccourcis">Touches ${LETTRES.slice(0, q.options.length).split("").join(" ")} pour choisir · Entrée pour valider</span>
@@ -492,7 +537,7 @@
       else if (!bon && pris) b.classList.add("faux");
       else if (bon) b.classList.add("oubli");
     });
-    const bonnes = q.bonnes.map(k => LETTRES[k]).join(", ");
+    const bonnes = S.ordres[S.i].map((k, pos) => q.bonnes.includes(k) ? LETTRES[pos] : null).filter(Boolean).join(", ");
     $("q-verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "ko"}"><b class="titre">${ok ? (permisId === "pieton" ? "Bravo, c'est juste !" : "Bonne réponse") : "Réponse " + (q.bonnes.length > 1 ? "attendue : " : "attendue : ") + bonnes}</b>
       ${esc(q.explication)}
       ${q.chap ? `<br><a class="lien-cours" href="#${esc(q.chap.id)}">Revoir le cours : ${esc(q.chap.titre)} →</a>` : ""}</div>`;
@@ -543,8 +588,8 @@
       <summary><span class="rv-n">${k + 1}</span><span class="rv-ok">${r && r.ok ? "✅" : "❌"}</span><span class="rv-q">${esc(q.q)}</span></summary>
       <div class="rv-corps">
         ${q.panneau || q.situation ? `<div style="display:flex;gap:.9rem;align-items:center;margin-bottom:.7rem">${q.panneau ? `<div class="q-pan" style="width:70px;height:70px">${PANNEAU(q.panneau)}</div>` : ""}<div class="q-situation" style="font-size:.9rem">${esc(q.situation || "")}</div></div>` : ""}
-        <div class="q-opts">${q.options.map((o, j) => { const bon = q.bonnes.includes(j), pris = r && r.choix.includes(j);
-          return `<div class="q-opt ${bon && pris ? "juste" : !bon && pris ? "faux" : bon ? "oubli" : ""}"><span class="lettre-opt">${LETTRES[j]}</span><span>${esc(o)}</span></div>`; }).join("")}</div>
+        <div class="q-opts">${((S.ordres && S.ordres[k]) || q.options.map((_, j) => j)).map((j, pos) => { const bon = q.bonnes.includes(j), pris = r && r.choix.includes(j);
+          return `<div class="q-opt ${bon && pris ? "juste" : !bon && pris ? "faux" : bon ? "oubli" : ""}"><span class="lettre-opt">${LETTRES[pos]}</span><span>${esc(q.options[j])}</span></div>`; }).join("")}</div>
         ${r && r.tempsEcoule ? `<p style="font-family:var(--mono);font-size:.66rem;color:var(--amber);margin-top:.5rem">TEMPS ÉCOULÉ</p>` : ""}
         <div class="verdict ${r && r.ok ? "ok" : "ko"}" style="margin-top:.7rem">${esc(q.explication)}${q.chap ? `<br><a class="lien-cours" href="#${esc(q.chap.id)}">Revoir : ${esc(q.chap.titre)} →</a>` : ""}</div>
       </div></details>`;
@@ -632,7 +677,7 @@
       if (e.target.matches("input, textarea, select") || e.ctrlKey || e.metaKey || e.altKey) return;
       if (vueCourante === "quiz" && SESSION) {
         const k = "abcd".indexOf(e.key.toLowerCase()), n = "1234".indexOf(e.key);
-        if (k >= 0 || n >= 0) { e.preventDefault(); basculerChoix(k >= 0 ? k : n); return; }
+        if (k >= 0 || n >= 0) { e.preventDefault(); const pos = k >= 0 ? k : n, o = SESSION.ordres && SESSION.ordres[SESSION.i]; if (o && pos < o.length) basculerChoix(o[pos]); return; }
         if (e.key === "Enter") { e.preventDefault(); const b = $("q-valider"); if (b && !b.disabled) b.click(); return; }
         return;
       }
