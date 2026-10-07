@@ -23,6 +23,10 @@
     /* Hors médecine : même plateforme, autre groupe (le menu ⇄ ne propose que les matières du même groupe). */
     { id: "pse", nom: "Prévention Santé Environnement", icone: "🦺", couleur: "#82b4d2", groupe: "pro",
       fichier: "pro/pro-pse.js", sous: "Bac pro · toutes spécialités", eyebrow: "Filière professionnelle · bac pro" },
+    { id: "eco-gestion", nom: "Économie-gestion", icone: "📊", couleur: "#d2a56e", groupe: "pro",
+      fichier: "pro/pro-eco-gestion.js", sous: "Bac pro · spécialités de la production", eyebrow: "Filière professionnelle · bac pro" },
+    { id: "eco-droit", nom: "Économie-droit", icone: "⚖️", couleur: "#9aa8d8", groupe: "pro",
+      fichier: "pro/pro-eco-droit.js", sous: "Bac pro · spécialités du tertiaire", eyebrow: "Filière professionnelle · bac pro" },
   ];
 
   const $ = id => document.getElementById(id);
