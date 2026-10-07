@@ -346,6 +346,26 @@ a{color:var(--sc);}
 .histo-ex .seuil{position:absolute;}
 .histo-legende{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.6rem;color:var(--faint);}
 
+/* Choix du parcours */
+.som-parcours:empty{display:none;}
+.som-parcours{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;margin-top:.8rem;font-size:.76rem;color:var(--muted);
+  background:color-mix(in srgb,var(--sc) 10%,transparent);border:1px solid color-mix(in srgb,var(--sc) 30%,transparent);border-radius:10px;padding:.45rem .65rem;}
+.som-parcours b{color:var(--text);font-weight:500;}
+.som-parcours a{font-family:var(--mono);font-size:.62rem;color:var(--sc);white-space:nowrap;}
+.parcours-liste{display:grid;gap:.8rem;}
+.pc-groupe{font-family:var(--mono);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sc);font-weight:500;margin:1.8rem 0 .8rem;display:flex;align-items:center;gap:.8rem;}
+.pc-groupe::after{content:"";flex:1;height:1px;background:var(--border2);}
+.parcours{display:flex;gap:1rem;align-items:center;text-align:left;border:1px solid var(--border2);border-radius:16px;padding:1.1rem 1.2rem;background:var(--surface);transition:.18s;}
+.parcours:hover{border-color:var(--sc);transform:translateY(-2px);}
+.parcours.actuel{border-color:color-mix(in srgb,var(--sc) 60%,transparent);background:color-mix(in srgb,var(--sc) 8%,var(--surface));}
+.parcours .pc-ic{font-size:1.9rem;flex:none;width:3rem;text-align:center;}
+.parcours .pc-corps{flex:1;display:flex;flex-direction:column;gap:.25rem;}
+.parcours .pc-nom{font-family:var(--serif);font-size:1.25rem;}
+.parcours .pc-titres{font-family:var(--mono);font-size:.7rem;color:var(--sc);letter-spacing:.04em;}
+.parcours .pc-desc{font-size:.88rem;color:var(--muted);line-height:1.5;}
+.parcours .pc-n{font-family:var(--mono);font-size:.6rem;color:var(--faint);letter-spacing:.06em;margin-top:.2rem;}
+.parcours .pc-go{color:var(--sc);font-size:1.2rem;}
+
 /* La pastille de session (auth.js) descend en bas à droite, comme en médecine. */
 #mb-chip{top:auto !important;bottom:14px !important;}
 body.en-examen #mb-chip{display:none;}
@@ -391,6 +411,7 @@ body.en-examen #mb-chip{display:none;}
         <button class="som-switch" id="som-switch" title="Changer de permis" aria-haspopup="true">⇄</button>
         <div class="som-menu" id="som-menu"></div>
       </div>
+      <div class="som-parcours" id="som-parcours"></div>
       <div class="som-progres">
         <div class="som-progres-txt"><span>Cours lu</span><b id="som-progres-n">0 / 0</b></div>
         <div class="barre"><i id="som-progres-b"></i></div>
@@ -423,6 +444,7 @@ body.en-examen #mb-chip{display:none;}
       <section class="vue" id="vue-resultat"></section>
       <section class="vue" id="vue-panneaux"></section>
       <section class="vue" id="vue-recherche"></section>
+      <section class="vue" id="vue-parcours"></section>
     </div>
   </main>
 </div>

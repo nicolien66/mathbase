@@ -62,6 +62,14 @@
         regle: "30 questions tirées dans tous les thèmes, sans limite de temps. Réussi à partir de 24 bonnes réponses (80 %). Le seuil exact dépend de l'organisme de formation." },
       themes: null,
     },
+    elec: {
+      nom: "Habilitation électrique", sous: "Préparation au QCM · NF C 18-510", icone: "⚡", couleur: "#e6c27e",
+      fichiers: ["permis/permis-elec-0.js", "permis/permis-elec-1.js", "permis/permis-elec-2.js", "permis/permis-elec-3.js"],
+      intro: "Le tronc commun que toute personne habilitée doit connaître, puis ce qui est propre à ton parcours. Tout est centré sur ce qu'on te demandera au QCM de fin de formation.",
+      examen: { nb: 30, seuil: 24, chrono: 0, nom: "QCM d'évaluation blanc",
+        regle: "30 questions tirées dans le tronc commun et dans ton parcours, sans limite de temps. Réussi à partir de 24 bonnes réponses (80 %). Le barème exact dépend de l'organisme de formation." },
+      themes: null,
+    },
   };
   const LETTRES = "ABCD";
   const SERIE = 20;            // nombre de questions d'une série d'entraînement
@@ -120,8 +128,13 @@
 
   (function charger(i) {
     if (i >= CFG.fichiers.length) {
-      D = window.PERMIS_COURS && window.PERMIS_COURS[permisId];
-      return D && D.chapitres.length ? demarrer() : erreur("Le cours est introuvable.");
+      D_TOUT = window.PERMIS_COURS && window.PERMIS_COURS[permisId];
+      if (!D_TOUT || !D_TOUT.chapitres.length) return erreur("Le cours est introuvable.");
+      chargerMemo();
+      brancher();
+      if (D_TOUT.parcours && !parcoursValide(MEMO.parcours)) { montrerChoixParcours(); return; }
+      demarrer();
+      return;
     }
     const s = document.createElement("script");
     s.src = CFG.fichiers[i];
@@ -130,8 +143,65 @@
     document.head.appendChild(s);
   })(0);
 
+  /* ── Formations à parcours (habilitation électrique) ──
+     D_TOUT contient tout ; D ne garde que le tronc commun et le parcours choisi. */
+  let D_TOUT = null;
+  const parcoursValide = id => !!(D_TOUT && D_TOUT.parcours && D_TOUT.parcours.some(p => p.id === id));
+  const parcoursCourant = () => D_TOUT && D_TOUT.parcours ? D_TOUT.parcours.find(p => p.id === MEMO.parcours) : null;
+
+  /* Contenu d'un parcours : le tronc commun et ses chapitres ; un parcours
+     « basse tension seule » (ht: false) ne reçoit pas les questions HT. */
+  function contenuParcours(pc) {
+    const p = D_TOUT.parcours.find(x => x.id === pc);
+    const chapitres = D_TOUT.chapitres.filter(c => !c.parcours || c.parcours.includes("tous") || c.parcours.includes(pc));
+    const ids = new Set(chapitres.map(c => c.id));
+    const questions = D_TOUT.questions.filter(q => ids.has(q.chapitre) && !(p && p.ht === false && q.domaine === "HT"));
+    return { chapitres, questions };
+  }
+  function filtrer() {
+    if (!D_TOUT.parcours) { D = D_TOUT; return; }
+    const c = contenuParcours(MEMO.parcours);
+    D = { chapitres: c.chapitres, questions: c.questions, themes: D_TOUT.themes, parcours: D_TOUT.parcours };
+  }
+
+  function montrerChoixParcours() {
+    /* premier choix : rien d'autre à montrer tant qu'aucun parcours n'est choisi */
+    if (!parcoursValide(MEMO.parcours)) {
+      $("som-liste").innerHTML = "";
+      document.querySelectorAll(".som-onglet").forEach(o => o.style.visibility = "hidden");
+      $("som-parcours").innerHTML = "";
+    }
+    const actuel = MEMO.parcours;
+    $("vue-parcours").innerHTML = `
+      <div class="acc-tete"><div class="acc-eyebrow">${esc(CFG.nom)}</div><h1>Quel est ton <em>parcours</em> ?</h1>
+        <p class="acc-intro">Choisis l'habilitation que tu prépares. Tu verras le tronc commun, que tout le monde doit connaître, puis uniquement les chapitres et les questions de ton parcours. Tu pourras en changer à tout moment.</p></div>
+      ${(D_TOUT.groupes_parcours || [{ id: null, nom: "" }]).map(g => `
+      ${g.nom ? `<h2 class="pc-groupe">${esc(g.nom)}</h2>` : ""}
+      <div class="parcours-liste">${D_TOUT.parcours.filter(p => !g.id || p.groupe === g.id).map(p => {
+        const nc = D_TOUT.chapitres.filter(c => c.parcours && c.parcours.includes(p.id)).length;
+        const nq = contenuParcours(p.id).questions.length;
+        return `<button class="parcours${p.id === actuel ? " actuel" : ""}" type="button" data-parcours="${esc(p.id)}">
+          <span class="pc-ic">${p.icone || "•"}</span>
+          <span class="pc-corps"><span class="pc-nom">${esc(p.nom)}</span><span class="pc-titres">${esc(p.titres)}</span>
+          <span class="pc-desc">${esc(p.desc)}</span>
+          <span class="pc-n">${nc} chapitre${nc > 1 ? "s" : ""} propres + tronc commun · ${nq} questions${p.id === actuel ? " · parcours actuel" : ""}</span></span>
+          <span class="pc-go">→</span></button>`; }).join("")}</div>`).join("")}`;
+    montrer("parcours");
+    $("fil").innerHTML = `<b>${esc(CFG.nom)}</b> · choix du parcours`;
+    $("vue-parcours").querySelectorAll("[data-parcours]").forEach(b => b.onclick = () => {
+      MEMO.parcours = b.dataset.parcours; sauverMemo();
+      document.querySelectorAll(".som-onglet").forEach(o => o.style.visibility = "");
+      demarrer();
+      if (location.hash && location.hash !== "#accueil") location.hash = "accueil"; else router();
+    });
+  }
+
   /* ── démarrage ── */
   function demarrer() {
+    filtrer();
+    THEMES = []; chapCourant = null;
+    const pc = parcoursCourant();
+    $("som-parcours").innerHTML = pc ? `<span>Parcours : <b>${esc(pc.nom)}</b></span><a href="#parcours">changer</a>` : "";
     let num = 0;
     D.chapitres.forEach(c => { c.num = ++num; });
     const parCode = new Map();
@@ -153,11 +223,9 @@
     const avecPanneaux = D.questions.some(q => q.panneau) || D.chapitres.some(c => (c.panneaux || []).length);
     if (!avecPanneaux) { const o = document.querySelector('.som-onglet[data-vue="panneaux"]'); if (o) o.remove(); }
     if (permisId === "mer") { const o = document.querySelector('.som-onglet[data-vue="panneaux"]'); if (o) o.textContent = "Balisage"; }
-    chargerMemo();
     dessinerSommaire();
     majProgression();
-    brancher();
-    router();
+    if (!demarrer.fait) { demarrer.fait = true; router(); }
   }
 
   const chapParId = id => D.chapitres.find(c => c.id === id) || null;
@@ -221,6 +289,8 @@
       quitterSession();
     }
     if (h === "quiz") { if (SESSION) { montrer("quiz"); return; } location.replace("#accueil"); return; }
+    if (h === "parcours" && D_TOUT && D_TOUT.parcours) { chapCourant = null; montrerChoixParcours(); return; }
+    if (D_TOUT && D_TOUT.parcours && !parcoursValide(MEMO.parcours)) { montrerChoixParcours(); return; }
     chapCourant = null;
     if (!h || h === "accueil") { dessinerAccueil(); montrer("accueil"); }
     else if (h === "entrainement") { dessinerEntrainement(); montrer("entrainement"); }
@@ -272,7 +342,7 @@
         <div class="stat"><div class="n">${lus} / ${D.chapitres.length}</div><div class="l">${permisId === "pieton" ? "leçons lues" : "chapitres lus"}</div></div>
         <div class="stat"><div class="n">${m.vues}</div><div class="l">questions vues</div></div>
         <div class="stat"><div class="n">${m.vues ? Math.round(100 * m.ok / m.vues) + " %" : "—"}</div><div class="l">de bonnes réponses</div></div>
-        <div class="stat"><div class="n">${MEMO.examens.length ? reussis + " / " + MEMO.examens.length : "—"}</div><div class="l">${permisId === "pieton" ? "tests réussis" : (permisId === "caces" || permisId === "haccp" ? "QCM blancs réussis" : "examens blancs réussis")}</div></div>
+        <div class="stat"><div class="n">${MEMO.examens.length ? reussis + " / " + MEMO.examens.length : "—"}</div><div class="l">${permisId === "pieton" ? "tests réussis" : (permisId === "caces" || permisId === "haccp" || permisId === "elec" ? "QCM blancs réussis" : "examens blancs réussis")}</div></div>
       </div>
       ${derniers.length ? `<div class="bloc" style="margin-top:0"><h2><span class="ic">📈</span>Tes derniers ${permisId === "pieton" ? "tests" : "examens blancs"}</h2>
         <div class="histo-ex">${derniers.map(e => `<div class="h${e.ok >= e.seuil ? " ok" : ""}" style="height:${Math.max(6, Math.round(100 * e.ok / e.nb))}%" title="${e.ok} / ${e.nb} — ${new Date(e.date).toLocaleDateString("fr-FR")}"></div>`).join("")}</div>
