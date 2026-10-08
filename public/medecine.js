@@ -27,6 +27,8 @@
       fichier: "pro/pro-eco-gestion.js", sous: "Bac pro · spécialités de la production", eyebrow: "Filière professionnelle · bac pro" },
     { id: "eco-droit", nom: "Économie-droit", icone: "⚖️", couleur: "#9aa8d8", groupe: "pro",
       fichier: "pro/pro-eco-droit.js", sous: "Bac pro · spécialités du tertiaire", eyebrow: "Filière professionnelle · bac pro" },
+    { id: "macroeconomie", nom: "Macroéconomie", icone: "🌐", couleur: "#7ab4c8", groupe: "eco",
+      fichier: "eco/eco-macroeconomie.js", sous: "Licence · L1 à L3", eyebrow: "Économie et gestion · licence" },
   ];
 
   const $ = id => document.getElementById(id);
@@ -237,7 +239,7 @@
           return `<button class="carte${MEMO.lus[c.id] ? " lu" : ""}" type="button" data-go="${esc(c.id)}">
             <span class="c-num">CHAPITRE ${f.num}</span>
             <span class="c-titre">${esc(c.titre)}</span>
-            <span class="c-meta"><span>${Number(c.duree) || 20} min</span>${(c.qcm || []).length ? `<span>${c.qcm.length} QCM</span>` : ""}${sc ? `<span class="c-score">${sc.ok}/${sc.n}</span>` : ""}</span>
+            <span class="c-meta">${c.niveau ? `<span class="c-niv">${esc(c.niveau)}</span>` : ""}<span>${Number(c.duree) || 20} min</span>${(c.qcm || []).length ? `<span>${c.qcm.length} QCM</span>` : ""}${sc ? `<span class="c-score">${sc.ok}/${sc.n}</span>` : ""}</span>
           </button>`; }).join("")}</div>
       </div>`).join("")}`;
     $("vue-accueil").querySelectorAll("[data-go]").forEach(b => b.onclick = () => location.hash = b.dataset.go);
@@ -256,7 +258,7 @@
       <div class="ch-tete">
         <div class="ch-partie">Partie ${esc(numPartie(c.partie))} · ${esc(titrePartieCourt(c.partie))}</div>
         <h1>${c.num}. ${esc(c.titre)}</h1>
-        <div class="ch-meta"><span>⏱ ${Number(c.duree) || 20} min</span><span>${(c.sections || []).length} sections</span><span>${mots.toLocaleString("fr-FR")} mots</span>${(c.qcm || []).length ? `<span>${c.qcm.length} QCM</span>` : ""}</div>
+        <div class="ch-meta">${c.niveau ? `<span>Niveau ${esc(c.niveau)}</span>` : ""}<span>⏱ ${Number(c.duree) || 20} min</span><span>${(c.sections || []).length} sections</span><span>${mots.toLocaleString("fr-FR")} mots</span>${(c.qcm || []).length ? `<span>${c.qcm.length} QCM</span>` : ""}</div>
       </div>
       ${(c.objectifs || []).length ? `<div class="objectifs"><h3>Objectifs du chapitre</h3><ol>${c.objectifs.map(o => `<li>${esc(o)}</li>`).join("")}</ol></div>` : ""}
       <div class="plan"><h3>Dans ce chapitre</h3><ol>${(c.sections || []).map((s2, i) => `<li><a href="#${esc(c.id)}/${i}">${esc(s2.titre)}</a></li>`).join("")}
