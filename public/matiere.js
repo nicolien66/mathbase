@@ -28,7 +28,8 @@
      (francais.html, qui ouvre son atelier), l'histoire (histoire.html) et
      la géographie (geographie.html) ont la leur, sur papier.
      humanites.html reste le gabarit des matières littéraires réduites à
-     un sommaire. */
+     un sommaire. La SVT ouvre sur la plateforme de cours (medecine.html),
+     qui lit le même paramètre ?matiere= et charge college/svt-college.js. */
   const MATIERES = [
     { id:"mathematiques",   nom:"Mathématiques",       icone:"📐", couleur:"#7ac8a0", ouverte:true,
       accueil:"app.html",
@@ -48,9 +49,9 @@
     { id:"anglais",         nom:"Anglais",             icone:"🗣️", couleur:"#c8b97a", ouverte:false,
       accueil:"app.html",
       desc:"Vocabulaire, grammaire et compréhension orale et écrite." },
-    { id:"svt",             nom:"SVT",                 icone:"🧬", couleur:"#c87a9a", ouverte:false,
-      accueil:"app.html",
-      desc:"Sciences de la vie et de la Terre." },
+    { id:"svt",             nom:"SVT",                 icone:"🧬", couleur:"#c87a9a", ouverte:true,
+      accueil:"medecine.html",
+      desc:"Tout le programme du collège, de la 6e à la 3e : cours, méthodes du brevet et QCM." },
   ];
 
   /* Identifiants abandonnés, conservés pour ne casser ni les liens déjà
@@ -59,18 +60,24 @@
      l'Histoire — c'est elle qui hérite de la page et de son contenu. */
   const ANCIENS = { "histoire-geo": "histoire" };
 
+  /* Matières qui ont leur propre plateforme (accueil hors app.html) et ne
+     doivent pas devenir la matière « mémorisée » des pages app.html, arbre,
+     exercices… : on ne les retient que si l'URL les demande explicitement. */
+  const HORS_APP = ["svt"];
+
   /* ── Quelle matière ? l'URL prime, sinon le dernier choix, sinon maths ── */
   function resoudre() {
-    let id = null;
-    try { id = new URLSearchParams(location.search).get("matiere"); } catch (_) {}
+    let id = null, depuisUrl = false;
+    try { id = new URLSearchParams(location.search).get("matiere"); depuisUrl = !!id; } catch (_) {}
     if (!id) { try { id = localStorage.getItem(CLE); } catch (_) {} }
     if (id && ANCIENS[id]) id = ANCIENS[id];
+    if (!depuisUrl && HORS_APP.includes(id)) id = null;
     const m = MATIERES.find(x => x.id === id && x.ouverte);
     return m || MATIERES.find(x => x.id === DEFAUT);
   }
 
   const courante = resoudre();
-  try { localStorage.setItem(CLE, courante.id); } catch (_) {}
+  try { if (!HORS_APP.includes(courante.id)) localStorage.setItem(CLE, courante.id); } catch (_) {}
 
   /* ── Liens qui conservent la matière (le hash reste en fin d'URL) ── */
   function lien(href) {

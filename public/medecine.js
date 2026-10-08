@@ -29,6 +29,8 @@
       fichier: "pro/pro-eco-droit.js", sous: "Bac pro · spécialités du tertiaire", eyebrow: "Filière professionnelle · bac pro" },
     { id: "macroeconomie", nom: "Macroéconomie", icone: "🌐", couleur: "#7ab4c8", groupe: "eco",
       fichier: "eco/eco-macroeconomie.js", sous: "Licence · L1 à L3", eyebrow: "Économie et gestion · licence" },
+    { id: "svt", nom: "SVT", icone: "🧬", couleur: "#c87a9a", groupe: "college",
+      fichier: "college/svt-college.js", sous: "Collège · de la 6e à la 3e", eyebrow: "Matières scolaires · collège" },
   ];
 
   const $ = id => document.getElementById(id);
