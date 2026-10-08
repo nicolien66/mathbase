@@ -52,6 +52,9 @@
     { id:"svt",             nom:"SVT",                 icone:"🧬", couleur:"#c87a9a", ouverte:true,
       accueil:"medecine.html",
       desc:"Tout le programme du collège, de la 6e à la 3e : cours, méthodes du brevet et QCM." },
+    { id:"sciences-industrielles", nom:"Sciences industrielles", icone:"⚙️", couleur:"#c8a07a", ouverte:false,
+      accueil:"app.html",
+      desc:"Analyser, modéliser et concevoir des systèmes techniques : mécanique, énergie, information." },
   ];
 
   /* Identifiants abandonnés, conservés pour ne casser ni les liens déjà
