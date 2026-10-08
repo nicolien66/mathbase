@@ -66,34 +66,49 @@ h1 em{font-style:italic;color:var(--accent);}
   letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:.22rem .6rem;
   color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border2);}
 
-/* Bacs pros : volets repliables par domaine, boutons compacts. */
+/* Filière professionnelle : une grosse tuile par famille de métiers ;
+   ses spécialités se déplient au survol, par-dessus les tuiles voisines. */
 .groupe-note{font-size:.84rem;color:var(--muted);margin:-.4rem 0 1rem;}
-.domaine{border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.015);margin-bottom:.7rem;}
-.domaine[open]{border-color:var(--border2);}
-.domaine summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.75rem;padding:.85rem 1.1rem;
-  border-radius:14px;transition:background .2s;user-select:none;}
-.domaine summary::-webkit-details-marker{display:none;}
-.domaine summary:hover{background:rgba(255,255,255,.03);}
-.domaine summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-.domaine summary::after{content:'›';margin-left:.2rem;color:var(--muted);font-size:1.2rem;transition:transform .2s;}
-.domaine[open] summary::after{transform:rotate(90deg);}
-.domaine-icone{font-size:1.15rem;}
-.domaine-nom{flex:1;font-family:var(--serif);font-size:1.08rem;}
-.domaine-n{font-family:var(--mono);font-size:.66rem;color:var(--muted);border:1px solid var(--border2);border-radius:999px;padding:.1rem .5rem;}
-.grid-bacs{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.6rem;padding:.2rem 1rem 1rem;}
-.bac{display:flex;align-items:center;gap:.7rem;min-height:58px;text-align:left;font:inherit;color:inherit;text-decoration:none;
-  background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:.6rem .85rem;cursor:pointer;
-  transition:border-color .2s,background .2s,opacity .2s;opacity:0;animation:cardIn .4s cubic-bezier(.22,1,.36,1) forwards;}
-.bac.soon{animation-name:bacIn;}
-@keyframes bacIn{to{opacity:.6;transform:none;}}
-.bac.soon:hover{opacity:.85;}
-.bac.ready{animation-name:cardIn;}
-.bac:hover{border-color:var(--accent);background:var(--surface2);}
-.bac:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-.bac-icone{font-size:1.2rem;flex:none;}
-.bac-nom{flex:1;font-size:.86rem;line-height:1.35;}
+.grid-familles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;}
+.famille{position:relative;opacity:0;transform:translateY(10px);animation:cardIn .45s cubic-bezier(.22,1,.36,1) forwards;}
+.famille.ouvert{z-index:20;}
+.famille-btn{width:100%;min-height:150px;display:flex;flex-direction:column;align-items:flex-start;gap:.55rem;text-align:left;
+  font:inherit;color:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--border2);border-top:2px solid rgba(200,185,122,.55);
+  border-radius:16px;padding:1.3rem 3rem 1.1rem 1.3rem;transition:border-color .2s,background .2s,border-radius .15s;}
+.famille.hors .famille-btn{border-top-color:rgba(122,180,200,.6);border-style:dashed;border-top-style:solid;}
+.famille-btn:hover,.famille.ouvert .famille-btn{background:var(--surface2);border-color:var(--accent);}
+.famille.ouvert .famille-btn{border-bottom-left-radius:4px;border-bottom-right-radius:4px;}
+.famille-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.famille-icone{font-size:1.7rem;}
+.famille-nom{font-family:var(--serif);font-size:1.18rem;line-height:1.3;}
+.famille-pied{margin-top:auto;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+.famille-n{font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;color:var(--muted);}
+.famille-fleche{position:absolute;top:.9rem;right:.9rem;width:2rem;height:2rem;border-radius:999px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);font-size:1.15rem;line-height:1;cursor:pointer;transition:transform .2s,color .2s,border-color .2s;}
+.famille-fleche:hover,.famille.ouvert .famille-fleche{color:var(--accent);border-color:var(--accent);}
+.famille.ouvert .famille-fleche{transform:rotate(90deg);}
+.famille-panneau{display:none;position:absolute;left:0;right:0;top:calc(100% - 2px);max-height:min(430px,62vh);overflow-y:auto;
+  background:var(--surface2);border:1px solid var(--accent);border-top:none;border-radius:0 0 16px 16px;
+  padding:.6rem;flex-direction:column;gap:.45rem;box-shadow:0 26px 50px -18px rgba(0,0,0,.85);}
+.famille.ouvert .famille-panneau{display:flex;}
+.famille-desc{font-size:.78rem;color:var(--muted);margin:.1rem .3rem .2rem;}
+.bac{display:flex;align-items:center;gap:.7rem;min-height:50px;text-align:left;font:inherit;color:inherit;text-decoration:none;
+  background:var(--surface);border:1px solid var(--border2);border-radius:11px;padding:.55rem .8rem;cursor:pointer;
+  transition:border-color .2s,background .2s;flex:none;}
+.bac.soon .bac-icone,.bac.soon .bac-nom{opacity:.75;}
+.bac:hover{border-color:var(--accent);background:var(--bg,#0f0f0d);}
+.bac:hover .bac-icone,.bac:hover .bac-nom{opacity:1;}
+.bac:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.bac-icone{font-size:1.15rem;flex:none;}
+.bac-nom{flex:1;font-size:.85rem;line-height:1.35;display:flex;flex-direction:column;gap:.15rem;}
+.bac-options{font-size:.72rem;color:var(--muted);line-height:1.35;}
 .bac-badge{flex:none;font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
   border:1px solid var(--border2);border-radius:999px;padding:.15rem .45rem;}
+/* écrans tactiles et petits écrans : la liste se déplie dans le flux */
+@media (hover:none),(max-width:600px){
+  .famille-panneau{position:static;max-height:none;box-shadow:none;}
+  .famille.ouvert .famille-btn{border-bottom-left-radius:4px;border-bottom-right-radius:4px;}
+}
 
 .foot-link{text-align:center;margin-top:3.2rem;font-size:.85rem;color:var(--muted);}
 .foot-link a{color:var(--accent);text-decoration:none;}
@@ -117,8 +132,8 @@ h1 em{font-style:italic;color:var(--accent);}
 
 @media(max-width:600px){.wrap{padding:5rem 1.2rem 4rem;}
   .compte-btn{position:static;margin-top:1.3rem;padding:.65rem 1.6rem;font-size:.86rem;}}
-@media(max-width:600px){.grid-bacs{grid-template-columns:1fr;padding:.2rem .7rem .8rem;}.domaine summary{padding:.8rem .9rem;}}
-@media (prefers-reduced-motion:reduce){.subject{animation:none;opacity:1;transform:none;}.bac{animation:none;opacity:1;}.bac.soon{opacity:.6;}}
+@media(max-width:600px){.grid-familles{grid-template-columns:1fr;}.famille-btn{min-height:120px;}}
+@media (prefers-reduced-motion:reduce){.subject{animation:none;opacity:1;transform:none;}.famille{animation:none;opacity:1;transform:none;}}
 </style>
 <script src="matiere.js"></script>
 <script src="auth.js" data-protect></script>
@@ -217,8 +232,8 @@ h1 em{font-style:italic;color:var(--accent);}
       { nom:"Hygiène alimentaire (HACCP)", href:"permis.html?permis=haccp", icone:"🧼", couleur:"#82d2a0",
         desc:"Microbes, températures, traçabilité et nettoyage en restauration." },
     ]},
-    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par domaine.",
-      /* commun à toutes les spécialités, affiché avant les domaines */
+    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par famille de métiers. Passe la souris sur une famille pour voir ses spécialités.",
+      /* commun à toutes les spécialités, affiché avant les familles de métiers */
       matieres: [
         { nom:"Prévention Santé Environnement (PSE)", href:"medecine.html?matiere=pse", icone:"🦺", couleur:"#82b4d2",
           desc:"Le cours commun à tous les bacs pros : santé, environnement et prévention des risques professionnels." },
@@ -227,118 +242,128 @@ h1 em{font-style:italic;color:var(--accent);}
         { nom:"Économie-droit", href:"medecine.html?matiere=eco-droit", icone:"⚖️", couleur:"#9aa8d8",
           desc:"Bacs pros du tertiaire : cadre juridique, consommation, production, rôle de l'État, travail. Cours et QCM." },
       ],
-      domaines: [
-      { titre: "Bâtiment et travaux publics", icone: "🏗️", bacs: [
+      familles: [
+      { titre: "Construction durable, bâtiment et travaux publics", icone: "🏗️", bacs: [
         { nom: "Travaux publics", icone: "🚧" },
-        { nom: "Technicien du bâtiment (gros œuvre)", icone: "🧱" },
-        { nom: "Ouvrages du bâtiment : métallerie", icone: "🔩" },
-        { nom: "Interventions sur le patrimoine bâti", icone: "🏛️" },
-        { nom: "Aménagement et finition du bâtiment", icone: "🖌️" },
+        { nom: "Technicien du bâtiment : organisation et réalisation du gros œuvre", icone: "🧱" },
+        { nom: "Interventions sur le patrimoine bâti", icone: "🏛️", options: ["maçonnerie", "charpente", "couverture"] },
         { nom: "Menuiserie aluminium-verre", icone: "🪟" },
-        { nom: "Métiers et arts de la pierre", icone: "🪨" },
+        { nom: "Aménagement et finitions du bâtiment", icone: "🖌️" },
+        { nom: "Ouvrages du bâtiment : métallerie", icone: "🔩" }
+      ]},
+      { titre: "Études et modélisation numérique du bâtiment", icone: "📐", bacs: [
+        { nom: "Technicien d'études du bâtiment", icone: "📐", options: ["études et économie", "assistant en architecture"] },
+        { nom: "Géomètre", icone: "🗺️" }
+      ]},
+      { titre: "Agencement, menuiserie et ameublement", icone: "🪚", bacs: [
+        { nom: "Technicien menuisier agenceur", icone: "🚪" },
+        { nom: "Technicien de fabrication bois et matériaux associés", icone: "🪵" },
+        { nom: "Étude et réalisation d'agencement", icone: "🛋️" }
+      ]},
+      { titre: "Réalisation d'ensembles mécaniques et industriels", icone: "⚙️", bacs: [
+        { nom: "Fonderie", icone: "🔥" },
+        { nom: "Microtechniques", icone: "🔬" },
+        { nom: "Technicien modeleur", icone: "🧩" },
+        { nom: "Technicien en chaudronnerie industrielle", icone: "🛢️" },
+        { nom: "Traitements des matériaux", icone: "🧪" },
+        { nom: "Technicien en réalisation de produits mécaniques", icone: "⚙️", options: ["réalisation et suivi de production", "réalisation et maintenance des outillages"] }
+      ]},
+      { titre: "Pilotage et maintenance d'installations automatisées", icone: "🏭", bacs: [
+        { nom: "Pilote de ligne de production", icone: "🏭" },
+        { nom: "Procédés de la chimie, de l'eau et des papiers-cartons", icone: "⚗️" },
+        { nom: "Maintenance des systèmes de production connectés", icone: "🛠️" },
+        { nom: "Technicien de scierie", icone: "🪓" }
+      ]},
+      { titre: "Transitions numérique et énergétique", icone: "⚡", bacs: [
         { nom: "MELEC (électricité et environnements connectés)", icone: "⚡" },
         { nom: "Installateur en chauffage, climatisation et énergies renouvelables", icone: "🔥" },
         { nom: "Métiers du froid et des énergies renouvelables", icone: "❄️" },
-        { nom: "Technicien d'études du bâtiment", icone: "📐" },
-        { nom: "Technicien géomètre-topographe", icone: "🗺️" }
+        { nom: "Maintenance et efficacité énergétique", icone: "🌡️" },
+        { nom: "CIEL (cybersécurité, informatique et réseaux, électronique)", icone: "💻" }
       ]},
-      { titre: "Bois et ameublement", icone: "🪵", bacs: [
-        { nom: "Technicien de fabrication bois et matériaux associés", icone: "🪵" },
-        { nom: "Technicien constructeur bois", icone: "🏠" },
-        { nom: "Technicien menuisier agenceur", icone: "🪚" },
-        { nom: "Étude et réalisation d'agencement", icone: "📏" }
+      { titre: "Maintenance des matériels et des véhicules", icone: "🔧", bacs: [
+        { nom: "Maintenance des véhicules", icone: "🚗", options: ["voitures particulières", "véhicules de transport routier", "motocycles"] },
+        { nom: "Maintenance des matériels", icone: "🚜", options: ["matériels agricoles", "matériels de construction et de manutention", "matériels d'espaces verts"] }
       ]},
-      { titre: "Industrie et production", icone: "🏭", bacs: [
-        { nom: "Fonderie", icone: "🫕" },
-        { nom: "Technicien en chaudronnerie industrielle", icone: "🛠️" },
-        { nom: "Technicien en réalisation de produits mécaniques", icone: "⚙️" },
-        { nom: "Maintenance des systèmes de production connectés", icone: "🔧" },
-        { nom: "Pilote de ligne de production", icone: "🏭" },
-        { nom: "Microtechniques", icone: "🔬" },
-        { nom: "Technicien modeleur", icone: "🧩" },
-        { nom: "Traitements des matériaux", icone: "🧪" },
-        { nom: "Plastiques et composites", icone: "🧴" },
-        { nom: "Procédés de la chimie, de l'eau et des papiers-cartons", icone: "⚗️" },
-        { nom: "Production en industries pharmaceutiques, alimentaires et cosmétiques", icone: "💊" },
-        { nom: "Modélisation et prototypage 3D", icone: "🖨️" },
-        { nom: "Techniques d'interventions sur installations nucléaires", icone: "☢️" },
-        { nom: "Systèmes numériques", icone: "💻" }
+      { titre: "Aéronautique", icone: "✈️", bacs: [
+        { nom: "Aéronautique", icone: "✈️", options: ["avionique", "systèmes", "structure"] },
+        { nom: "Aviation générale", icone: "🛩️" }
       ]},
-      { titre: "Véhicules, transport et logistique", icone: "🚚", bacs: [
-        { nom: "Maintenance des véhicules", icone: "🚗" },
-        { nom: "Carrossier peintre automobile", icone: "🎨" },
-        { nom: "Maintenance des matériels", icone: "🚜" },
-        { nom: "Aéronautique", icone: "✈️" },
-        { nom: "Maintenance nautique", icone: "⛵" },
-        { nom: "Transport fluvial", icone: "🚢" },
-        { nom: "Conducteur transport routier de marchandises", icone: "🚛" },
-        { nom: "Organisation de transport de marchandises", icone: "📋" },
-        { nom: "Logistique", icone: "📦" }
+      { titre: "Gestion administrative, transport et logistique", icone: "🗂️", bacs: [
+        { nom: "AGOrA (gestion administrative)", icone: "🗂️" },
+        { nom: "Métiers de la logistique", icone: "📦" },
+        { nom: "Organisation de transport de marchandises", icone: "🚛" }
       ]},
-      { titre: "Alimentation, hôtellerie et restauration", icone: "🍽️", bacs: [
-        { nom: "Cuisine", icone: "🍳" },
-        { nom: "Commercialisation et services en restauration", icone: "🍽️" },
+      { titre: "Relation client", icone: "🛎️", bacs: [
+        { nom: "Métiers du commerce et de la vente", icone: "🛒", options: ["animation et gestion de l'espace commercial", "prospection clientèle et valorisation de l'offre commerciale"] },
+        { nom: "Métiers de l'accueil", icone: "🛎️" }
+      ]},
+      { titre: "Industries graphiques et communication", icone: "🖨️", bacs: [
+        { nom: "Façonnage de produits imprimés, routage", icone: "📰" },
+        { nom: "Réalisation de produits imprimés et plurimédia", icone: "🖼️", options: ["productions graphiques", "productions imprimées"] }
+      ]},
+      { titre: "Hôtellerie-restauration", icone: "🍽️", bacs: [
+        { nom: "Cuisine", icone: "👨‍🍳" },
+        { nom: "Commercialisation et services en restauration", icone: "🍷" }
+      ]},
+      { titre: "Alimentation", icone: "🥖", bacs: [
         { nom: "Boulanger-pâtissier", icone: "🥐" },
         { nom: "Boucher charcutier traiteur", icone: "🥩" },
         { nom: "Poissonnier écailler traiteur", icone: "🐟" }
       ]},
-      { titre: "Santé, beauté et services à la personne", icone: "🩺", bacs: [
+      { titre: "Beauté et bien-être", icone: "💄", bacs: [
+        { nom: "Esthétique cosmétique parfumerie", icone: "💄" },
+        { nom: "Métiers de la coiffure", icone: "💇" }
+      ]},
+      { titre: "Hors famille", icone: "🧭", horsFamille: true,
+        desc: "Spécialités choisies directement en seconde.", bacs: [
         { nom: "Accompagnement, soins et services à la personne", icone: "🤝" },
         { nom: "Animation enfance et personnes âgées", icone: "🧸" },
-        { nom: "Hygiène, propreté et stérilisation", icone: "🧼" },
-        { nom: "Esthétique cosmétique parfumerie", icone: "💄" },
-        { nom: "Métiers de la coiffure", icone: "💇" },
-        { nom: "Perruquier posticheur", icone: "💈" },
+        { nom: "Hygiène, propreté et stérilisation", icone: "🧽" },
         { nom: "Optique lunetterie", icone: "👓" },
         { nom: "Technicien en prothèse dentaire", icone: "🦷" },
-        { nom: "Technicien en appareillage orthopédique", icone: "🦿" }
-      ]},
-      { titre: "Mode, artisanat et arts graphiques", icone: "🧵", bacs: [
+        { nom: "Technicien en appareillage orthopédique", icone: "🦿" },
+        { nom: "Perruquier posticheur", icone: "💇" },
         { nom: "Métiers de la couture et de la confection", icone: "🧵" },
-        { nom: "Métiers du cuir", icone: "👜" },
+        { nom: "Métiers du cuir", icone: "👜", options: ["chaussures", "maroquinerie", "sellerie garnissage"] },
         { nom: "Photographie", icone: "📷" },
-        { nom: "Réalisation de produits imprimés et plurimédia", icone: "🖼️" },
-        { nom: "Façonnage de produits imprimés, routage", icone: "📰" }
-      ]},
-      { titre: "Commerce, accueil, sécurité et environnement", icone: "🛎️", bacs: [
-        { nom: "Métiers du commerce et de la vente", icone: "🛒" },
-        { nom: "Métiers de l'accueil", icone: "🛎️" },
-        { nom: "AGOrA (gestion administrative)", icone: "🗂️" },
+        { nom: "Carrossier peintre automobile", icone: "🎨" },
+        { nom: "Maintenance nautique", icone: "⛵" },
+        { nom: "Transport fluvial", icone: "🚢" },
+        { nom: "Conducteur transport routier de marchandises", icone: "🚚" },
+        { nom: "Plastiques et composites", icone: "🧴" },
+        { nom: "Modélisation et prototypage 3D", icone: "🖨️" },
+        { nom: "Techniques d'interventions sur installations nucléaires", icone: "☢️" },
+        { nom: "Production en industries pharmaceutiques, alimentaires et cosmétiques", icone: "💊" },
+        { nom: "Technicien constructeur bois", icone: "🏠" },
+        { nom: "Métiers et arts de la pierre", icone: "🪨" },
         { nom: "Métiers de la sécurité", icone: "🛡️" },
         { nom: "Gestion des pollutions et protection de l'environnement", icone: "♻️" }
       ]},
     ]},
   ];
 
+  /* famille de métiers dépliée (une seule à la fois) ; survol possible ou non */
+  const SURVOL = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  let ouverte = null;
   const hote = document.getElementById('groupes');
   let n = 0;
   GROUPES.forEach(g => {
     const sec = document.createElement('section');
     sec.className = 'groupe';
     sec.innerHTML = `<h2 class="groupe-titre">${g.titre}</h2>` + (g.note ? `<p class="groupe-note">${g.note}</p>` : '');
-    if (g.domaines) {
+    if (g.familles) {
       if (g.matieres && g.matieres.length) {
         const tete = document.createElement('div');
         tete.className = 'grid';
-        tete.style.marginBottom = '1rem';
+        tete.style.marginBottom = '1.4rem';
         g.matieres.forEach(m => tete.appendChild(carte(m, n++)));
         sec.appendChild(tete);
       }
-      /* Les bacs pros sont nombreux : un domaine par volet repliable,
-         en boutons compacts. Le premier volet est ouvert sur grand écran ;
-         sur téléphone, tous sont fermés pour garder la page courte. */
-      g.domaines.forEach((d, k) => {
-        const vol = document.createElement('details');
-        vol.className = 'domaine';
-        if (k === 0 && window.matchMedia('(min-width:601px)').matches) vol.open = true;
-        vol.innerHTML = `<summary><span class="domaine-icone">${d.icone}</span>`
-          + `<span class="domaine-nom">${d.titre}</span><span class="domaine-n">${d.bacs.length}</span></summary>`;
-        const grid = document.createElement('div');
-        grid.className = 'grid grid-bacs';
-        d.bacs.forEach((m, i) => grid.appendChild(carteBac(m, i)));
-        vol.appendChild(grid);
-        sec.appendChild(vol);
-      });
+      const grille = document.createElement('div');
+      grille.className = 'grid-familles';
+      g.familles.forEach((f, k) => grille.appendChild(carteFamille(f, k)));
+      sec.appendChild(grille);
       hote.appendChild(sec);
       return;
     }
@@ -349,18 +374,62 @@ h1 em{font-style:italic;color:var(--accent);}
     hote.appendChild(sec);
   });
 
-  /* Bouton compact d'un bac pro. Comme les autres matières, il s'ouvre dès
-     qu'on lui donne un href ; sans href, il est « à venir ». */
+  /* Famille de métiers : un gros bouton (cliquable) qui déplie la liste de
+     ses spécialités au survol de la souris. Sur écran tactile, la flèche
+     déplie la liste ; au clavier, elle s'ouvre dès que le focus y entre. */
+  function ouvrir(el, oui) {
+    if (oui && ouverte && ouverte !== el) ouvrir(ouverte, false);
+    el.classList.toggle('ouvert', oui);
+    el.querySelector('.famille-fleche').setAttribute('aria-expanded', oui ? 'true' : 'false');
+    ouverte = oui ? el : (ouverte === el ? null : ouverte);
+  }
+  function carteFamille(f, k) {
+    const el = document.createElement('div');
+    el.className = 'famille' + (f.horsFamille ? ' hors' : '');
+    el.style.animationDelay = Math.min(k * 35, 500) + 'ms';
+    const nb = f.bacs.length;
+    el.innerHTML =
+      `<button type="button" class="famille-btn" title="${f.horsFamille ? 'Bacs pros hors famille de métiers' : 'Famille de métiers : ' + f.titre}">`
+      + `<span class="famille-icone">${f.icone}</span>`
+      + `<span class="famille-nom">${f.titre}</span>`
+      + `<span class="famille-pied"><span class="famille-n">${nb} spécialité${nb > 1 ? 's' : ''}</span>`
+      + `<span class="bac-badge">À venir</span></span></button>`
+      + `<button type="button" class="famille-fleche" aria-expanded="false" aria-label="Voir les spécialités : ${f.titre}">›</button>`
+      + `<div class="famille-panneau">`
+      + (f.desc ? `<p class="famille-desc">${f.desc}</p>` : '')
+      + `</div>`;
+    const pan = el.querySelector('.famille-panneau');
+    f.bacs.forEach((m, i) => pan.appendChild(carteBac(m, i)));
+    el.querySelector('.famille-btn').onclick = () =>
+      toast((f.horsFamille ? 'Les bacs pros hors famille arrivent' : 'La famille « ' + f.titre + ' » arrive') + ' bientôt sur Polymates.');
+    el.querySelector('.famille-fleche').onclick = e => { e.stopPropagation(); ouvrir(el, !el.classList.contains('ouvert')); };
+    if (SURVOL) {
+      let t;
+      el.addEventListener('mouseenter', () => { clearTimeout(t); ouvrir(el, true); });
+      el.addEventListener('mouseleave', () => { t = setTimeout(() => ouvrir(el, false), 140); });
+    }
+    /* clavier seulement : un clic ou un toucher passe par le survol ou la flèche */
+    el.addEventListener('focusin', e => { if (!el.dataset.ferme && e.target.matches(':focus-visible')) ouvrir(el, true); delete el.dataset.ferme; });
+    el.addEventListener('focusout', e => { if (!el.contains(e.relatedTarget)) ouvrir(el, false); });
+    el.addEventListener('keydown', e => { if (e.key === 'Escape') { ouvrir(el, false); el.dataset.ferme = '1'; el.querySelector('.famille-btn').focus(); } });
+    return el;
+  }
+  /* un toucher en dehors referme la famille ouverte (écrans tactiles) */
+  document.addEventListener('click', e => { if (ouverte && !ouverte.contains(e.target)) ouvrir(ouverte, false); });
+
+  /* Bouton compact d'une spécialité. Il s'ouvre dès qu'on lui donne un href ;
+     sans href, il est « à venir ». Les options éventuelles sont rappelées dessous. */
   function carteBac(m, i) {
-    const ouverte = !!m.href;
-    const el = document.createElement(ouverte ? 'a' : 'button');
-    el.className = 'bac ' + (ouverte ? 'ready' : 'soon');
-    el.style.animationDelay = (i * 25) + 'ms';
+    const dispo = !!m.href;
+    const el = document.createElement(dispo ? 'a' : 'button');
+    el.className = 'bac ' + (dispo ? 'ready' : 'soon');
     el.title = 'Bac pro ' + m.nom;
-    if (ouverte) el.href = m.href; else el.type = 'button';
-    el.innerHTML = `<span class="bac-icone">${m.icone}</span><span class="bac-nom">${m.nom}</span>`
-      + (ouverte ? '' : '<span class="bac-badge">À venir</span>');
-    if (!ouverte) el.onclick = () => toast('Le bac pro ' + m.nom + ' arrive bientôt sur Polymates.');
+    if (dispo) el.href = m.href; else el.type = 'button';
+    const opts = m.options && m.options.length
+      ? `<span class="bac-options">${m.options.length} options : ${m.options.join(' · ')}</span>` : '';
+    el.innerHTML = `<span class="bac-icone">${m.icone}</span><span class="bac-nom">${m.nom}${opts}</span>`
+      + (dispo ? '' : '<span class="bac-badge">À venir</span>');
+    if (!dispo) el.onclick = e => { e.stopPropagation(); toast('Le bac pro ' + m.nom + ' arrive bientôt sur Polymates.'); };
     return el;
   }
 
