@@ -78,6 +78,8 @@ h1 em{font-style:italic;color:var(--accent);}
 .famille.hors .famille-btn{border-top-color:rgba(122,180,200,.6);border-style:dashed;border-top-style:solid;}
 .famille-btn:hover,.famille.ouvert .famille-btn{background:var(--surface2);border-color:var(--accent);}
 .famille.ouvert .famille-btn{border-bottom-left-radius:4px;border-bottom-right-radius:4px;}
+.famille-btn{text-decoration:none;}
+.famille-pret{font-family:var(--mono);font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);border:1px solid rgba(200,185,122,.45);border-radius:999px;padding:.15rem .5rem;}
 .famille-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .famille-icone{font-size:1.7rem;}
 .famille-nom{font-family:var(--serif);font-size:1.18rem;line-height:1.3;}
@@ -232,7 +234,7 @@ h1 em{font-style:italic;color:var(--accent);}
       { nom:"Hygiène alimentaire (HACCP)", href:"permis.html?permis=haccp", icone:"🧼", couleur:"#82d2a0",
         desc:"Microbes, températures, traçabilité et nettoyage en restauration." },
     ]},
-    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par famille de métiers. Passe la souris sur une famille pour voir ses spécialités.",
+    { titre: "Filière professionnelle", note: "Les spécialités du bac professionnel, par famille de métiers. Chaque famille ouvre son cours de seconde ; passe la souris dessus pour voir ses spécialités.",
       /* commun à toutes les spécialités, affiché avant les familles de métiers */
       matieres: [
         { nom:"Prévention Santé Environnement (PSE)", href:"medecine.html?matiere=pse", icone:"🦺", couleur:"#82b4d2",
@@ -243,7 +245,7 @@ h1 em{font-style:italic;color:var(--accent);}
           desc:"Bacs pros du tertiaire : cadre juridique, consommation, production, rôle de l'État, travail. Cours et QCM." },
       ],
       familles: [
-      { titre: "Construction durable, bâtiment et travaux publics", icone: "🏗️", bacs: [
+      { titre: "Construction durable, bâtiment et travaux publics", href: "medecine.html?matiere=fam-construction", icone: "🏗️", bacs: [
         { nom: "Travaux publics", icone: "🚧" },
         { nom: "Technicien du bâtiment : organisation et réalisation du gros œuvre", icone: "🧱" },
         { nom: "Interventions sur le patrimoine bâti", icone: "🏛️", options: ["maçonnerie", "charpente", "couverture"] },
@@ -251,16 +253,16 @@ h1 em{font-style:italic;color:var(--accent);}
         { nom: "Aménagement et finitions du bâtiment", icone: "🖌️" },
         { nom: "Ouvrages du bâtiment : métallerie", icone: "🔩" }
       ]},
-      { titre: "Études et modélisation numérique du bâtiment", icone: "📐", bacs: [
+      { titre: "Études et modélisation numérique du bâtiment", href: "medecine.html?matiere=fam-etudes-batiment", icone: "📐", bacs: [
         { nom: "Technicien d'études du bâtiment", icone: "📐", options: ["études et économie", "assistant en architecture"] },
         { nom: "Géomètre", icone: "🗺️" }
       ]},
-      { titre: "Agencement, menuiserie et ameublement", icone: "🪚", bacs: [
+      { titre: "Agencement, menuiserie et ameublement", href: "medecine.html?matiere=fam-agencement", icone: "🪚", bacs: [
         { nom: "Technicien menuisier agenceur", icone: "🚪" },
         { nom: "Technicien de fabrication bois et matériaux associés", icone: "🪵" },
         { nom: "Étude et réalisation d'agencement", icone: "🛋️" }
       ]},
-      { titre: "Réalisation d'ensembles mécaniques et industriels", icone: "⚙️", bacs: [
+      { titre: "Réalisation d'ensembles mécaniques et industriels", href: "medecine.html?matiere=fam-mecanique", icone: "⚙️", bacs: [
         { nom: "Fonderie", icone: "🔥" },
         { nom: "Microtechniques", icone: "🔬" },
         { nom: "Technicien modeleur", icone: "🧩" },
@@ -268,50 +270,50 @@ h1 em{font-style:italic;color:var(--accent);}
         { nom: "Traitements des matériaux", icone: "🧪" },
         { nom: "Technicien en réalisation de produits mécaniques", icone: "⚙️", options: ["réalisation et suivi de production", "réalisation et maintenance des outillages"] }
       ]},
-      { titre: "Pilotage et maintenance d'installations automatisées", icone: "🏭", bacs: [
+      { titre: "Pilotage et maintenance d'installations automatisées", href: "medecine.html?matiere=fam-pilotage", icone: "🏭", bacs: [
         { nom: "Pilote de ligne de production", icone: "🏭" },
         { nom: "Procédés de la chimie, de l'eau et des papiers-cartons", icone: "⚗️" },
         { nom: "Maintenance des systèmes de production connectés", icone: "🛠️" },
         { nom: "Technicien de scierie", icone: "🪓" }
       ]},
-      { titre: "Transitions numérique et énergétique", icone: "⚡", bacs: [
+      { titre: "Transitions numérique et énergétique", href: "medecine.html?matiere=fam-tne", icone: "⚡", bacs: [
         { nom: "MELEC (électricité et environnements connectés)", icone: "⚡" },
         { nom: "Installateur en chauffage, climatisation et énergies renouvelables", icone: "🔥" },
         { nom: "Métiers du froid et des énergies renouvelables", icone: "❄️" },
         { nom: "Maintenance et efficacité énergétique", icone: "🌡️" },
         { nom: "CIEL (cybersécurité, informatique et réseaux, électronique)", icone: "💻" }
       ]},
-      { titre: "Maintenance des matériels et des véhicules", icone: "🔧", bacs: [
+      { titre: "Maintenance des matériels et des véhicules", href: "medecine.html?matiere=fam-maintenance", icone: "🔧", bacs: [
         { nom: "Maintenance des véhicules", icone: "🚗", options: ["voitures particulières", "véhicules de transport routier", "motocycles"] },
         { nom: "Maintenance des matériels", icone: "🚜", options: ["matériels agricoles", "matériels de construction et de manutention", "matériels d'espaces verts"] }
       ]},
-      { titre: "Aéronautique", icone: "✈️", bacs: [
+      { titre: "Aéronautique", href: "medecine.html?matiere=fam-aeronautique", icone: "✈️", bacs: [
         { nom: "Aéronautique", icone: "✈️", options: ["avionique", "systèmes", "structure"] },
         { nom: "Aviation générale", icone: "🛩️" }
       ]},
-      { titre: "Gestion administrative, transport et logistique", icone: "🗂️", bacs: [
+      { titre: "Gestion administrative, transport et logistique", href: "medecine.html?matiere=fam-gatl", icone: "🗂️", bacs: [
         { nom: "AGOrA (gestion administrative)", icone: "🗂️" },
         { nom: "Métiers de la logistique", icone: "📦" },
         { nom: "Organisation de transport de marchandises", icone: "🚛" }
       ]},
-      { titre: "Relation client", icone: "🛎️", bacs: [
+      { titre: "Relation client", href: "medecine.html?matiere=fam-relation-client", icone: "🛎️", bacs: [
         { nom: "Métiers du commerce et de la vente", icone: "🛒", options: ["animation et gestion de l'espace commercial", "prospection clientèle et valorisation de l'offre commerciale"] },
         { nom: "Métiers de l'accueil", icone: "🛎️" }
       ]},
-      { titre: "Industries graphiques et communication", icone: "🖨️", bacs: [
+      { titre: "Industries graphiques et communication", href: "medecine.html?matiere=fam-graphiques", icone: "🖨️", bacs: [
         { nom: "Façonnage de produits imprimés, routage", icone: "📰" },
         { nom: "Réalisation de produits imprimés et plurimédia", icone: "🖼️", options: ["productions graphiques", "productions imprimées"] }
       ]},
-      { titre: "Hôtellerie-restauration", icone: "🍽️", bacs: [
+      { titre: "Hôtellerie-restauration", href: "medecine.html?matiere=fam-hotellerie", icone: "🍽️", bacs: [
         { nom: "Cuisine", icone: "👨‍🍳" },
         { nom: "Commercialisation et services en restauration", icone: "🍷" }
       ]},
-      { titre: "Alimentation", icone: "🥖", bacs: [
+      { titre: "Alimentation", href: "medecine.html?matiere=fam-alimentation", icone: "🥖", bacs: [
         { nom: "Boulanger-pâtissier", icone: "🥐" },
         { nom: "Boucher charcutier traiteur", icone: "🥩" },
         { nom: "Poissonnier écailler traiteur", icone: "🐟" }
       ]},
-      { titre: "Beauté et bien-être", icone: "💄", bacs: [
+      { titre: "Beauté et bien-être", href: "medecine.html?matiere=fam-beaute", icone: "💄", bacs: [
         { nom: "Esthétique cosmétique parfumerie", icone: "💄" },
         { nom: "Métiers de la coiffure", icone: "💇" }
       ]},
@@ -389,18 +391,20 @@ h1 em{font-style:italic;color:var(--accent);}
     el.style.animationDelay = Math.min(k * 35, 500) + 'ms';
     const nb = f.bacs.length;
     el.innerHTML =
-      `<button type="button" class="famille-btn" title="${f.horsFamille ? 'Bacs pros hors famille de métiers' : 'Famille de métiers : ' + f.titre}">`
+      (f.href ? `<a class="famille-btn" href="${f.href}" title="Cours de seconde : ${f.titre}">`
+              : `<button type="button" class="famille-btn" title="${f.horsFamille ? 'Bacs pros hors famille de métiers' : 'Famille de métiers : ' + f.titre}">`)
       + `<span class="famille-icone">${f.icone}</span>`
       + `<span class="famille-nom">${f.titre}</span>`
       + `<span class="famille-pied"><span class="famille-n">${nb} spécialité${nb > 1 ? 's' : ''}</span>`
-      + `<span class="bac-badge">À venir</span></span></button>`
+      + (f.href ? `<span class="famille-pret">Cours de seconde · QCM →</span></span></a>`
+                : `<span class="bac-badge">À venir</span></span></button>`)
       + `<button type="button" class="famille-fleche" aria-expanded="false" aria-label="Voir les spécialités : ${f.titre}">›</button>`
       + `<div class="famille-panneau">`
       + (f.desc ? `<p class="famille-desc">${f.desc}</p>` : '')
       + `</div>`;
     const pan = el.querySelector('.famille-panneau');
     f.bacs.forEach((m, i) => pan.appendChild(carteBac(m, i)));
-    el.querySelector('.famille-btn').onclick = () =>
+    if (!f.href) el.querySelector('.famille-btn').onclick = () =>
       toast((f.horsFamille ? 'Les bacs pros hors famille arrivent' : 'La famille « ' + f.titre + ' » arrive') + ' bientôt sur Polymates.');
     el.querySelector('.famille-fleche').onclick = e => { e.stopPropagation(); ouvrir(el, !el.classList.contains('ouvert')); };
     if (SURVOL) {
