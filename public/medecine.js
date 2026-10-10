@@ -60,6 +60,140 @@
       fichier: "pro/familles/fam-alimentation.js", sous: "Seconde pro · famille de métiers", eyebrow: "Filière professionnelle · seconde" },
     { id: "fam-beaute", nom: "Beauté et bien-être", icone: "💄", couleur: "#e09ab8", groupe: "familles",
       fichier: "pro/familles/fam-beaute.js", sous: "Seconde pro · famille de métiers", eyebrow: "Filière professionnelle · seconde" },
+    /* BACPRO:debut — généré : spécialités de bac pro (1re et terminale), menu ⇄ par famille */
+    { id: "bp-travaux-publics", nom: "Travaux publics", icone: "🎓", couleur: "#c8a07a", groupe: "bp-construction",
+      fichier: "pro/bacpro/bp-travaux-publics.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Construction durable" },
+    { id: "bp-gros-oeuvre", nom: "Technicien du bâtiment : organisation et réalisation du gros œuvre", icone: "🎓", couleur: "#c8a07a", groupe: "bp-construction",
+      fichier: "pro/bacpro/bp-gros-oeuvre.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Construction durable" },
+    { id: "bp-patrimoine-bati", nom: "Interventions sur le patrimoine bâti", icone: "🎓", couleur: "#c8a07a", groupe: "bp-construction",
+      fichier: "pro/bacpro/bp-patrimoine-bati.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Construction durable" },
+    { id: "bp-menuiserie-alu-verre", nom: "Menuiserie aluminium-verre", icone: "🎓", couleur: "#c8a07a", groupe: "bp-construction",
+      fichier: "pro/bacpro/bp-menuiserie-alu-verre.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Construction durable" },
+    { id: "bp-amenagement-finitions", nom: "Aménagement et finitions du bâtiment", icone: "🎓", couleur: "#c8a07a", groupe: "bp-construction",
+      fichier: "pro/bacpro/bp-amenagement-finitions.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Construction durable" },
+    { id: "bp-metallerie", nom: "Ouvrages du bâtiment : métallerie", icone: "🎓", couleur: "#c8a07a", groupe: "bp-construction",
+      fichier: "pro/bacpro/bp-metallerie.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Construction durable" },
+    { id: "bp-etudes-batiment", nom: "Technicien d'études du bâtiment", icone: "🎓", couleur: "#7ab4c8", groupe: "bp-etudes-batiment",
+      fichier: "pro/bacpro/bp-etudes-batiment.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Études du bâtiment" },
+    { id: "bp-geometre", nom: "Géomètre", icone: "🎓", couleur: "#7ab4c8", groupe: "bp-etudes-batiment",
+      fichier: "pro/bacpro/bp-geometre.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Études du bâtiment" },
+    { id: "bp-menuisier-agenceur", nom: "Technicien menuisier agenceur", icone: "🎓", couleur: "#c89a6a", groupe: "bp-agencement",
+      fichier: "pro/bacpro/bp-menuisier-agenceur.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Agencement, menuiserie" },
+    { id: "bp-fabrication-bois", nom: "Technicien de fabrication bois et matériaux associés", icone: "🎓", couleur: "#c89a6a", groupe: "bp-agencement",
+      fichier: "pro/bacpro/bp-fabrication-bois.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Agencement, menuiserie" },
+    { id: "bp-etude-agencement", nom: "Étude et réalisation d'agencement", icone: "🎓", couleur: "#c89a6a", groupe: "bp-agencement",
+      fichier: "pro/bacpro/bp-etude-agencement.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Agencement, menuiserie" },
+    { id: "bp-fonderie", nom: "Fonderie", icone: "🎓", couleur: "#9aa8b8", groupe: "bp-mecanique",
+      fichier: "pro/bacpro/bp-fonderie.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Ensembles mécaniques" },
+    { id: "bp-microtechniques", nom: "Microtechniques", icone: "🎓", couleur: "#9aa8b8", groupe: "bp-mecanique",
+      fichier: "pro/bacpro/bp-microtechniques.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Ensembles mécaniques" },
+    { id: "bp-modeleur", nom: "Technicien modeleur", icone: "🎓", couleur: "#9aa8b8", groupe: "bp-mecanique",
+      fichier: "pro/bacpro/bp-modeleur.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Ensembles mécaniques" },
+    { id: "bp-chaudronnerie", nom: "Technicien en chaudronnerie industrielle", icone: "🎓", couleur: "#9aa8b8", groupe: "bp-mecanique",
+      fichier: "pro/bacpro/bp-chaudronnerie.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Ensembles mécaniques" },
+    { id: "bp-traitements-materiaux", nom: "Traitements des matériaux", icone: "🎓", couleur: "#9aa8b8", groupe: "bp-mecanique",
+      fichier: "pro/bacpro/bp-traitements-materiaux.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Ensembles mécaniques" },
+    { id: "bp-produits-mecaniques", nom: "Technicien en réalisation de produits mécaniques", icone: "🎓", couleur: "#9aa8b8", groupe: "bp-mecanique",
+      fichier: "pro/bacpro/bp-produits-mecaniques.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Ensembles mécaniques" },
+    { id: "bp-pilote-ligne", nom: "Pilote de ligne de production", icone: "🎓", couleur: "#8ab89a", groupe: "bp-pilotage",
+      fichier: "pro/bacpro/bp-pilote-ligne.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Installations automatisées" },
+    { id: "bp-chimie-eau-papier", nom: "Procédés de la chimie, de l'eau et des papiers-cartons", icone: "🎓", couleur: "#8ab89a", groupe: "bp-pilotage",
+      fichier: "pro/bacpro/bp-chimie-eau-papier.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Installations automatisées" },
+    { id: "bp-mspc", nom: "Maintenance des systèmes de production connectés", icone: "🎓", couleur: "#8ab89a", groupe: "bp-pilotage",
+      fichier: "pro/bacpro/bp-mspc.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Installations automatisées" },
+    { id: "bp-scierie", nom: "Technicien de scierie", icone: "🎓", couleur: "#8ab89a", groupe: "bp-pilotage",
+      fichier: "pro/bacpro/bp-scierie.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Installations automatisées" },
+    { id: "bp-melec", nom: "MELEC (électricité et environnements connectés)", icone: "🎓", couleur: "#e6c27e", groupe: "bp-tne",
+      fichier: "pro/bacpro/bp-melec.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Transitions numérique et énergétique" },
+    { id: "bp-chauffage-clim", nom: "Installateur en chauffage, climatisation et énergies renouvelables", icone: "🎓", couleur: "#e6c27e", groupe: "bp-tne",
+      fichier: "pro/bacpro/bp-chauffage-clim.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Transitions numérique et énergétique" },
+    { id: "bp-froid", nom: "Métiers du froid et des énergies renouvelables", icone: "🎓", couleur: "#e6c27e", groupe: "bp-tne",
+      fichier: "pro/bacpro/bp-froid.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Transitions numérique et énergétique" },
+    { id: "bp-efficacite-energetique", nom: "Maintenance et efficacité énergétique", icone: "🎓", couleur: "#e6c27e", groupe: "bp-tne",
+      fichier: "pro/bacpro/bp-efficacite-energetique.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Transitions numérique et énergétique" },
+    { id: "bp-ciel", nom: "CIEL (cybersécurité, informatique et réseaux, électronique)", icone: "🎓", couleur: "#e6c27e", groupe: "bp-tne",
+      fichier: "pro/bacpro/bp-ciel.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Transitions numérique et énergétique" },
+    { id: "bp-maintenance-vehicules", nom: "Maintenance des véhicules", icone: "🎓", couleur: "#c8887a", groupe: "bp-maintenance",
+      fichier: "pro/bacpro/bp-maintenance-vehicules.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Maintenance matériels et véhicules" },
+    { id: "bp-maintenance-materiels", nom: "Maintenance des matériels", icone: "🎓", couleur: "#c8887a", groupe: "bp-maintenance",
+      fichier: "pro/bacpro/bp-maintenance-materiels.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Maintenance matériels et véhicules" },
+    { id: "bp-aeronautique", nom: "Aéronautique", icone: "🎓", couleur: "#7aa0d8", groupe: "bp-aeronautique",
+      fichier: "pro/bacpro/bp-aeronautique.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Aéronautique" },
+    { id: "bp-aviation-generale", nom: "Aviation générale", icone: "🎓", couleur: "#7aa0d8", groupe: "bp-aeronautique",
+      fichier: "pro/bacpro/bp-aviation-generale.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Aéronautique" },
+    { id: "bp-agora", nom: "AGOrA (gestion administrative)", icone: "🎓", couleur: "#a0b47a", groupe: "bp-gatl",
+      fichier: "pro/bacpro/bp-agora.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Gestion, transport, logistique" },
+    { id: "bp-logistique", nom: "Métiers de la logistique", icone: "🎓", couleur: "#a0b47a", groupe: "bp-gatl",
+      fichier: "pro/bacpro/bp-logistique.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Gestion, transport, logistique" },
+    { id: "bp-otm", nom: "Organisation de transport de marchandises", icone: "🎓", couleur: "#a0b47a", groupe: "bp-gatl",
+      fichier: "pro/bacpro/bp-otm.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Gestion, transport, logistique" },
+    { id: "bp-commerce-vente", nom: "Métiers du commerce et de la vente", icone: "🎓", couleur: "#d88aa8", groupe: "bp-relation-client",
+      fichier: "pro/bacpro/bp-commerce-vente.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Relation client" },
+    { id: "bp-accueil", nom: "Métiers de l'accueil", icone: "🎓", couleur: "#d88aa8", groupe: "bp-relation-client",
+      fichier: "pro/bacpro/bp-accueil.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Relation client" },
+    { id: "bp-faconnage", nom: "Façonnage de produits imprimés, routage", icone: "🎓", couleur: "#b48ad8", groupe: "bp-graphiques",
+      fichier: "pro/bacpro/bp-faconnage.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Industries graphiques" },
+    { id: "bp-rpip", nom: "Réalisation de produits imprimés et plurimédia", icone: "🎓", couleur: "#b48ad8", groupe: "bp-graphiques",
+      fichier: "pro/bacpro/bp-rpip.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Industries graphiques" },
+    { id: "bp-cuisine", nom: "Cuisine", icone: "🎓", couleur: "#d8a87a", groupe: "bp-hotellerie",
+      fichier: "pro/bacpro/bp-cuisine.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hôtellerie-restauration" },
+    { id: "bp-csr", nom: "Commercialisation et services en restauration", icone: "🎓", couleur: "#d8a87a", groupe: "bp-hotellerie",
+      fichier: "pro/bacpro/bp-csr.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hôtellerie-restauration" },
+    { id: "bp-boulanger-patissier", nom: "Boulanger-pâtissier", icone: "🎓", couleur: "#d8c07a", groupe: "bp-alimentation",
+      fichier: "pro/bacpro/bp-boulanger-patissier.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Alimentation" },
+    { id: "bp-boucher", nom: "Boucher charcutier traiteur", icone: "🎓", couleur: "#d8c07a", groupe: "bp-alimentation",
+      fichier: "pro/bacpro/bp-boucher.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Alimentation" },
+    { id: "bp-poissonnier", nom: "Poissonnier écailler traiteur", icone: "🎓", couleur: "#d8c07a", groupe: "bp-alimentation",
+      fichier: "pro/bacpro/bp-poissonnier.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Alimentation" },
+    { id: "bp-esthetique", nom: "Esthétique cosmétique parfumerie", icone: "🎓", couleur: "#e09ab8", groupe: "bp-beaute",
+      fichier: "pro/bacpro/bp-esthetique.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Beauté et bien-être" },
+    { id: "bp-coiffure", nom: "Métiers de la coiffure", icone: "🎓", couleur: "#e09ab8", groupe: "bp-beaute",
+      fichier: "pro/bacpro/bp-coiffure.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Beauté et bien-être" },
+    { id: "bp-assp", nom: "Accompagnement, soins et services à la personne", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-assp.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-aepa", nom: "Animation enfance et personnes âgées", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-aepa.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-hps", nom: "Hygiène, propreté et stérilisation", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-hps.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-optique", nom: "Optique lunetterie", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-optique.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-prothese-dentaire", nom: "Technicien en prothèse dentaire", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-prothese-dentaire.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-orthopedie", nom: "Technicien en appareillage orthopédique", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-orthopedie.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-perruquier", nom: "Perruquier posticheur", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-perruquier.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-couture", nom: "Métiers de la couture et de la confection", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-couture.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-cuir", nom: "Métiers du cuir", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-cuir.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-photographie", nom: "Photographie", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-photographie.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-securite", nom: "Métiers de la sécurité", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-securite.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-carrossier", nom: "Carrossier peintre automobile", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-carrossier.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-nautique", nom: "Maintenance nautique", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-nautique.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-fluvial", nom: "Transport fluvial", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-fluvial.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-conducteur-routier", nom: "Conducteur transport routier de marchandises", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-conducteur-routier.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-plastiques", nom: "Plastiques et composites", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-plastiques.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-prototypage-3d", nom: "Modélisation et prototypage 3D", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-prototypage-3d.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-nucleaire", nom: "Techniques d'interventions sur installations nucléaires", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-nucleaire.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-pipac", nom: "Production en industries pharmaceutiques, alimentaires et cosmétiques", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-pipac.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-constructeur-bois", nom: "Technicien constructeur bois", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-constructeur-bois.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-pierre", nom: "Métiers et arts de la pierre", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-pierre.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    { id: "bp-gppe", nom: "Gestion des pollutions et protection de l'environnement", icone: "🎓", couleur: "#82b4d2", groupe: "bp-hors",
+      fichier: "pro/bacpro/bp-gppe.js", sous: "Bac pro · 1re et terminale", eyebrow: "Filière professionnelle · bac pro · Hors famille" },
+    /* BACPRO:fin */
   ];
 
   const $ = id => document.getElementById(id);
@@ -127,18 +261,69 @@
   document.head.appendChild(s);
 
   /* ── Démarrage ── */
+  /* ── Spécialités à options : COURS.options = [{ id, nom, desc, icone }] ;
+     un chapitre marqué options: ["a"] n'apparaît que pour l'option a,
+     les autres chapitres sont communs. Le choix est mémorisé (MEMO.option). ── */
+  let COURS_COMPLET = null;
+  const nomOption = o => /^option\b/i.test(o.nom) ? o.nom : "Option : " + o.nom;
+  const optionChoisie = () => (COURS_COMPLET && COURS_COMPLET.options || []).find(o => o.id === MEMO.option) || null;
+  function filtrerOption() {
+    const o = optionChoisie();
+    COURS = Object.assign({}, COURS_COMPLET, {
+      parties: COURS_COMPLET.parties.map(p => Object.assign({}, p, {
+        chapitres: p.chapitres.filter(c => !c.options || !c.options.length || (o && c.options.includes(o.id)))
+      })).filter(p => p.chapitres.length)
+    });
+  }
+  function choixOption() {
+    chapCourant = null;
+    $("som-liste").innerHTML = "";
+    $("fil").innerHTML = `<b>${esc(META.nom)}</b> · choix de l'option`;
+    const opts = COURS_COMPLET.options;
+    $("vue-accueil").innerHTML = `
+      <div class="acc-tete">
+        <div class="acc-eyebrow">${esc(META.eyebrow || "")}</div>
+        <h1>${esc(COURS_COMPLET.nom)}<em>.</em></h1>
+        <p class="acc-intro">${esc(COURS_COMPLET.intro || "")}</p>
+      </div>
+      <h2 class="opt-titre">Choisis ton option</h2>
+      <p class="opt-sous">Le cours commun à toutes les options reste visible ; seuls les chapitres propres à ton option s'ajoutent. Tu pourras changer d'option à tout moment.</p>
+      <div class="opt-grille">${opts.map(o => `<button type="button" class="opt-carte${MEMO.option === o.id ? " actif" : ""}" data-opt="${esc(o.id)}">
+        <span class="opt-ic">${esc(o.icone || META.icone)}</span>
+        <span class="opt-nom">${esc(o.nom)}</span>
+        ${o.desc ? `<span class="opt-desc">${esc(o.desc)}</span>` : ""}
+        <span class="opt-n">${COURS_COMPLET.parties.reduce((n, p) => n + p.chapitres.filter(c => !c.options || !c.options.length || c.options.includes(o.id)).length, 0)} chapitres</span>
+      </button>`).join("")}</div>`;
+    $("vue-accueil").querySelectorAll("[data-opt]").forEach(b => b.onclick = () => {
+      MEMO.option = b.dataset.opt; MEMO.dernier = null; sauverMemo();
+      lancer(); if (location.hash) location.hash = ""; else router();
+    });
+    montrer("accueil");
+  }
+  function majSousTitre() {
+    const o = optionChoisie();
+    $("som-sous").innerHTML = esc(META.sous || "PASS · 1re année")
+      + (o ? `<br><a href="#option" class="som-opt">${esc(nomOption(o))} · changer</a>` : "");
+  }
+
   function demarrer() {
+    COURS_COMPLET = COURS;
+    chargerMemo();
+    brancher();
+    lancer();
+    router();
+  }
+  function lancer() {
+    if (COURS_COMPLET.options && COURS_COMPLET.options.length) filtrerOption();
+    majSousTitre();
     CHAPS = [];
     let num = 0;
     COURS.parties.forEach((p, pi) => p.chapitres.forEach((c, ci) => {
       num++;
       CHAPS.push(Object.assign({}, c, { pi, ci, num, partie: p }));
     }));
-    chargerMemo();
     dessinerSommaire();
     majProgression();
-    brancher();
-    router();
   }
 
   const chapParId = id => CHAPS.find(c => c.id === id) || null;
@@ -151,7 +336,8 @@
   function dessinerSommaire() {
     const h = COURS.parties.map((p, pi) => {
       const faits = p.chapitres.filter(c => MEMO.lus[c.id]).length;
-      return `<div class="partie" data-pi="${pi}">
+      const bloc = p.bloc && (pi === 0 || COURS.parties[pi - 1].bloc !== p.bloc) ? `<div class="som-bloc">${esc(p.bloc)}</div>` : "";
+      return bloc + `<div class="partie" data-pi="${pi}">
         <button class="partie-tete" type="button">
           <span class="num">${esc(numPartie(p)) || pi + 1}</span>
           <span class="pt">${esc(titrePartieCourt(p))}</span>
@@ -211,6 +397,7 @@
 
   function router() {
     const h = decodeURIComponent((location.hash || "").replace(/^#/, ""));
+    if (COURS_COMPLET && COURS_COMPLET.options && COURS_COMPLET.options.length && (h === "option" || !optionChoisie())) { choixOption(); return; }
     if (!h || h === "accueil") { chapCourant = null; dessinerAccueil(); montrer("accueil"); majSommaire(); return; }
     if (h === "fiches")  { chapCourant = null; dessinerFiches();  montrer("fiches");  majSommaire(); return; }
     if (h === "lexique") { chapCourant = null; dessinerLexique(); montrer("lexique"); majSommaire(); return; }
@@ -249,6 +436,7 @@
         <div class="acc-eyebrow">${esc(META.eyebrow || "Médecine · PASS · 1re année")}</div>
         <h1>${esc(COURS.nom)}<em>.</em></h1>
         <p class="acc-intro">${esc(COURS.intro || "")}</p>
+        ${optionChoisie() ? `<a class="acc-opt" href="#option"><b>${esc(nomOption(optionChoisie()))}</b> · changer d'option</a>` : ""}
       </div>
       <div class="acc-stats">
         <div class="stat"><div class="n">${COURS.parties.length}</div><div class="l">parties</div></div>
@@ -262,7 +450,7 @@
         <div class="r-t">${reprise.num}. ${esc(reprise.titre)}</div></div>
         <span class="r-go">Ouvrir →</span></a>`
         : `<div class="reprendre" style="border-color:rgba(130,210,160,.4)"><div><div class="r-l" style="color:var(--green)">Bravo</div><div class="r-t">Tu as lu tout le cours de ${esc(COURS.nom)}.</div></div></div>`}
-      ${COURS.parties.map((p, pi) => `<div class="acc-partie">
+      ${COURS.parties.map((p, pi) => (p.bloc && (pi === 0 || COURS.parties[pi - 1].bloc !== p.bloc) ? `<div class="acc-bloc">${esc(p.bloc)}</div>` : "") + `<div class="acc-partie">
         <h2><span class="pn">PARTIE ${esc(numPartie(p)) || pi + 1}</span>${esc(titrePartieCourt(p))}
           <span class="pf">${p.chapitres.filter(c => MEMO.lus[c.id]).length} / ${p.chapitres.length} lus</span></h2>
         <div class="acc-grille">${p.chapitres.map(c => {
