@@ -363,7 +363,7 @@ const SERVEUR_VERSION = "2026-09-24-cours";
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
   setHeaders(res, chemin) {
-    if (/\.(html|js|css)$/i.test(chemin)) res.setHeader("Cache-Control", "no-cache");
+    if (/\.(html|js|css|json)$/i.test(chemin)) res.setHeader("Cache-Control", "no-cache");
     else if (/\.(png|jpe?g|svg|woff2?|pdf)$/i.test(chemin)) res.setHeader("Cache-Control", "public, max-age=86400");
   },
 }));

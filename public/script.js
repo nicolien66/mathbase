@@ -1060,8 +1060,62 @@ function parseSousQuestions(texte) {
   return MB_SQ.parse(texte);
 }
 
+/* ── Découpage vérifié des annales ──
+   Pour chaque sujet publié, public/annales-decoupage/<id>.json donne la liste
+   exacte des questions, relue à la main contre le PDF : bon nombre, bonne
+   numérotation ; une question sans numéro a pour libellé la question elle-même.
+   Le fichier garde une empreinte du texte de chaque exercice : si le sujet est
+   modifié depuis, il est ignoré et on revient au découpage automatique. */
+const DECOUPAGES = {};
+function empreinteTexte(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+async function chargerDecoupage(a) {
+  if (!a || a.test || !a.id) return null;
+  const id = Number(a.id);
+  if (id in DECOUPAGES) return DECOUPAGES[id];
+  let d = null;
+  try {
+    const r = await fetch("/annales-decoupage/" + id + ".json");
+    if (r.ok) d = await r.json();
+  } catch (e) { d = null; }
+  DECOUPAGES[id] = d;
+  return d;
+}
+function decoupageValide(d, brutes) {
+  return !!(d && Array.isArray(d.h) && Array.isArray(d.q) && d.h.length === brutes.length &&
+    brutes.every((q, i) => empreinteTexte(q.enonce_correction || q.enonce || "") === d.h[i]));
+}
+function expanserDecoupage(brutes, d) {
+  const nl = l => String(l || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return d.q.map(s => {
+    const q = s.s >= 0 ? brutes[s.s] : { enonce: s.t };
+    const exo = s.e || (s.s >= 0 ? qLabel(q, s.s) : "Exercice");
+    const numerote = /^\d+\.(\s|$)/.test(s.l || "");
+    const ws = Array.isArray(q.widgets) ? q.widgets : [];
+    const w = s.l ? ws.find(x => nl(x.question) === nl(s.l)) : (ws.find(x => !x.question) || ws[0]);
+    const ctx = s.c >= 0 && d.c ? d.c[s.c] : "";
+    return Object.assign({}, q, w ? { interactif: w.interactif } : {}, {
+      _label: exo + (s.l ? (numerote ? " · question " : " · ") + s.l : ""),
+      _exercice: exo,
+      enonce_correction: (ctx ? ctx + "\n\n" : "") + (numerote ? "Question " + s.l + " " : "") + s.t,
+    });
+  });
+}
+
+/* Liste des exercices d'un sujet, dans l'ordre, telle qu'affichée à l'élève. */
+function exercicesDe(qs, brutes) {
+  const vus = [];
+  (qs.length ? qs.map(q => q._exercice) : brutes.map((q, i) => qLabel(q, i)))
+    .forEach(e => { if (e && !vus.includes(e)) vus.push(e); });
+  return vus;
+}
+
 /* Développe la liste des exercices en une liste de sous-questions. */
-function expanserQuestions(qs) {
+function expanserQuestions(qs, decoupage) {
+  if (decoupageValide(decoupage, qs)) return expanserDecoupage(qs, decoupage);
   const out = [];
   qs.forEach((q, i) => {
     // Le texte de l'énoncé est dans enonce_correction (questions migrées) ou,
@@ -1103,14 +1157,15 @@ function startExamen(id) {
 /* Recommencer le sujet en cours (annale publiée ou sujet en test). */
 function relancerExamen() { if (EXAM && EXAM.annale) lancerExamen(EXAM.annale); }
 
-function lancerExamen(a) {
+async function lancerExamen(a) {
   clearTimeout(MEMO.minuteur);
   const brutes = annaleQuestions(a);
+  const decoupage = await chargerDecoupage(a);
   /* Un sujet en test arrive par une URL blob:, sans extension .pdf. */
   const isPdf = !!(a.image_url && (a.test || /\.pdf(\?|$)/i.test(a.image_url)));
   if (!brutes.length && !isPdf) { showToast("Ce sujet n'a pas encore de questions détaillées.", "error"); return; }
   // On compose sous-question par sous-question.
-  const qs = expanserQuestions(brutes);
+  const qs = expanserQuestions(brutes, decoupage);
   clearInterval(examTimer);
   EXAM = { annale: a, qs, brutes, pdf: isPdf, index: 0, answers: Array(qs.length).fill(null), start: null };
   showView("examen", "examen");
@@ -1132,8 +1187,8 @@ function lancerExamen(a) {
       : (a.image_url ? `<img class="annale-img" src="${escapeHtml(a.image_url)}" alt="Sujet complet">` : "")}
     <div class="annale-content">${nl2br(a.content)}</div>
     ${isPdf
-      ? `<div class="exam-notice">Ce sujet comporte ${brutes.length} exercice(s) : ${
-            brutes.map((q, i) => escapeHtml(qLabel(q, i))).join(" \u00b7 ")
+      ? `<div class="exam-notice">Ce sujet comporte ${exercicesDe(qs, brutes).length} exercice(s) : ${
+            exercicesDe(qs, brutes).map(escapeHtml).join(" \u00b7 ")
           }, soit ${qs.length} question(s) \u00e0 traiter une par une. Tout l'\u00e9nonc\u00e9 se trouve dans le PDF ci-dessus.</div>`
       : qs.map(q => `<div class="annale-q"><div class="annale-q-enonce">${nl2br(q.enonce)}</div>${annaleFigure(q.figure)}</div>`).join("")}`;
   /* Sujet déjà commencé : proposer de reprendre là où l'élève s'était arrêté. */
@@ -3753,9 +3808,18 @@ async function reprendreExamen(annaleId) {
   const s = (await listerEnCours()).find(x => Number(x.annale_id) === Number(annaleId));
   if (!a) { showToast("Ce sujet n'est plus disponible.", "error"); return; }
   if (!s) { startExamen(a.id); return; }
-  lancerExamen(a);
+  await lancerExamen(a);
   const n = EXAM.qs.length;
   const rep = Array.isArray(s.reponses) ? s.reponses : [];
+  /* Le découpage du sujet a changé depuis (questions corrigées) : les réponses
+     mémorisées ne correspondent plus aux mêmes questions, on repart de zéro. */
+  if (s.nb_questions && Number(s.nb_questions) !== n) {
+    EXAM.answers = Array(n).fill(null);
+    EXAM.index = 0;
+    beginEpreuve({ temps_sec: 0 });
+    showToast("Les questions de ce sujet ont été corrigées depuis ta dernière séance : l'épreuve repart du début.", "info");
+    return;
+  }
   EXAM.answers = Array.from({ length: n }, (_, i) => rep[i] || null);
   /* Le sujet a pu être modifié depuis : on reste dans les bornes. */
   EXAM.index = Math.min(Math.max(0, Number(s.question_index) || 0), Math.max(0, n - 1));
