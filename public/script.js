@@ -1091,7 +1091,10 @@ function decoupageValide(d, brutes) {
 function expanserDecoupage(brutes, d) {
   const nl = l => String(l || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
   return d.q.map(s => {
-    const q = s.s >= 0 ? brutes[s.s] : { enonce: s.t };
+    /* Question ajoutée (absente du texte stocké) : on reprend les pages du PDF
+       de l'exercice voisin, pour que le correcteur voie la bonne page. */
+    const q = s.s >= 0 ? brutes[s.s]
+      : { enonce: s.t, pages: Array.isArray(s.p) ? s.p : null, pages_total: (brutes[0] || {}).pages_total };
     const exo = s.e || (s.s >= 0 ? qLabel(q, s.s) : "Exercice");
     const numerote = /^\d+\.(\s|$)/.test(s.l || "");
     const ws = Array.isArray(q.widgets) ? q.widgets : [];
