@@ -168,6 +168,64 @@ h1 em{font-style:italic;color:var(--accent);}
     href: m.ouverte ? (m.accueil + '?matiere=' + encodeURIComponent(m.id)) : null,
   }));
 
+  /* Licences : les mentions de licence générale (nomenclature nationale, arrêté du 22 janvier 2014 modifié).
+     Chaque mention est un bouton « à venir ». La couleur indique le domaine :
+     doré = droit, économie, gestion ; rose = sciences humaines et sociales ;
+     violet = arts, lettres, langues ; bleu = sciences, technologies, santé. */
+  const DEG = "#c8b97a", SHS = "#c87a9a", ALL = "#a07ac8", STS = "#7ab4c8";
+  const LICENCES = [
+    ["Administration publique","🏛️",DEG,"Institutions, services publics et action de l'État et des collectivités."],
+    ["Droit","⚖️",DEG,"Droit privé et droit public : les règles qui organisent la société."],
+    ["Économie","📈",DEG,"Marchés, croissance, monnaie et politiques économiques."],
+    ["Gestion","💼",DEG,"Management, comptabilité, finance et marketing des organisations."],
+    ["Économie et gestion","📊",DEG,"Le double socle : comprendre l'économie et piloter une entreprise."],
+    ["Administration économique et sociale (AES)","🤝",DEG,"Économie, droit, gestion et sociologie réunis pour les métiers de l'organisation."],
+    ["Science politique","🗳️",DEG,"Pouvoir, institutions, partis et relations internationales."],
+    ["Sciences sanitaires et sociales","🩺",SHS,"Santé publique, protection sociale et intervention sociale."],
+    ["Humanités","📚",SHS,"Lettres, histoire, philosophie et langues anciennes : une culture large."],
+    ["Histoire","🏺",SHS,"Étudier les sociétés du passé, de l'Antiquité à nos jours."],
+    ["Histoire de l'art et archéologie","🗿",SHS,"Œuvres, monuments et vestiges matériels à travers les époques."],
+    ["Géographie et aménagement","🗺️",SHS,"Territoires, paysages, environnement et aménagement de l'espace."],
+    ["Sociologie","👥",SHS,"Comprendre les groupes sociaux, les inégalités et les institutions."],
+    ["Psychologie","🧠",SHS,"Comportements, développement, cognition et santé mentale."],
+    ["Professorat des écoles","🍎",SHS,"Se former au métier de professeur des écoles."],
+    ["Sciences de l'éducation et de la formation","🎓",SHS,"Apprentissage, enseignement et formation tout au long de la vie."],
+    ["Philosophie","🦉",SHS,"Penser le savoir, la morale, la politique et l'existence."],
+    ["Théologie","🕊️",SHS,"Étude des textes et des traditions religieuses (Alsace-Moselle)."],
+    ["Sciences sociales","🔎",SHS,"Sociologie, anthropologie, économie et science politique croisées."],
+    ["Sciences de l'homme, anthropologie, ethnologie","🌍",SHS,"Cultures, sociétés et modes de vie à travers le monde."],
+    ["Information-communication","📣",SHS,"Médias, communication des organisations, numérique et information."],
+    ["Sciences du langage","🗣️",ALL,"Comment les langues fonctionnent : sons, mots, phrases et sens."],
+    ["Arts","🎭",ALL,"Pratiques et histoire des arts : création et analyse."],
+    ["Arts plastiques","🖌️",ALL,"Peinture, dessin, sculpture, image : pratique et théorie."],
+    ["Arts du spectacle","🎬",ALL,"Théâtre, cinéma, danse et audiovisuel."],
+    ["Musicologie","🎼",ALL,"Histoire, théorie et analyse de la musique."],
+    ["Lettres","✒️",ALL,"Littérature française, textes et grandes œuvres."],
+    ["Langues, littératures et civilisations étrangères et régionales (LLCER)","🌐",ALL,"Une langue, sa littérature et sa civilisation."],
+    ["Langues étrangères appliquées (LEA)","💬",ALL,"Deux langues vivantes appliquées à l'économie, au droit et au commerce."],
+    ["Lettres, langues","📖",ALL,"Littérature et langues réunies dans un même cursus."],
+    ["Informatique","💻",STS,"Programmation, algorithmique, systèmes, réseaux et données."],
+    ["Mathématiques","➗",STS,"Algèbre, analyse, probabilités : le raisonnement et la démonstration."],
+    ["Mathématiques et informatique appliquées aux sciences humaines et sociales (MIASHS)","📐",STS,"Maths et informatique au service des sciences humaines et sociales."],
+    ["Physique","⚛️",STS,"Mécanique, électromagnétisme, optique et physique quantique."],
+    ["Chimie","🧪",STS,"Structure, réactions et propriétés de la matière."],
+    ["Physique, chimie","🔬",STS,"Les deux disciplines réunies, de l'atome aux matériaux."],
+    ["Sciences de la vie","🧬",STS,"Biologie cellulaire, génétique, physiologie et écologie."],
+    ["Sciences de la Terre","🌋",STS,"Géologie, climat, ressources et dynamique de la planète."],
+    ["Sciences de la vie et de la Terre","🌱",STS,"Biologie et géologie : le vivant et son environnement."],
+    ["STAPS : activité physique adaptée et santé","🦽",STS,"Le sport comme outil de prévention et de réhabilitation."],
+    ["STAPS : éducation et motricité","🏃",STS,"Enseigner et encadrer l'éducation physique et sportive."],
+    ["STAPS : entraînement sportif","🏋️",STS,"Préparer et entraîner des sportifs, du loisir à la performance."],
+    ["STAPS : management du sport","🏟️",STS,"Gérer des structures, des événements et des projets sportifs."],
+    ["STAPS : ergonomie du sport et performance motrice","⏱️",STS,"Analyser le geste et optimiser l'équipement et la performance."],
+    ["Électronique, énergie électrique, automatique (EEA)","🔌",STS,"Circuits, énergie, signal et systèmes automatisés."],
+    ["Mécanique","🔧",STS,"Mouvement, structures, matériaux et fluides."],
+    ["Génie civil","🏗️",STS,"Concevoir et construire bâtiments, routes et ouvrages."],
+    ["Sciences pour la santé","💊",STS,"Biologie, chimie et physiologie pour les métiers de la santé."],
+    ["Sciences et technologies","🛠️",STS,"Un socle scientifique large avant de se spécialiser."],
+    ["Sciences pour l'ingénieur","⚙️",STS,"Mécanique, électronique, informatique et conception de systèmes."],
+  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
+
   const GROUPES = [
     { titre: "Matières scolaires", matieres: scolaires },
     { titre: "Médecine", matieres: [
@@ -335,6 +393,7 @@ h1 em{font-style:italic;color:var(--accent);}
         { nom: "Gestion des pollutions et protection de l'environnement", href: "medecine.html?matiere=bp-gppe", icone: "♻️" }
       ]},
     ]},
+    { titre: "Licences", note: "Les mentions de licence générale de l'université, par domaine : droit-économie-gestion, sciences humaines et sociales, arts-lettres-langues, sciences-technologies-santé.", matieres: LICENCES },
   ];
 
   /* famille de métiers dépliée (une seule à la fois) ; survol possible ou non */
