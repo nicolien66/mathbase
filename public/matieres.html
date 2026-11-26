@@ -120,7 +120,8 @@ h1 em{font-style:italic;color:var(--accent);}
   background:var(--surface2);border:1px solid var(--border2);border-radius:999px;
   padding:.7rem 1.3rem;font-size:.86rem;color:var(--text);z-index:200;
   box-shadow:0 18px 40px -20px rgba(0,0,0,.8);transition:transform .35s cubic-bezier(.22,1,.36,1);}
-#toast.on{transform:translate(-50%,0);}
+#toast{visibility:hidden;transition:transform .35s cubic-bezier(.22,1,.36,1),visibility 0s .35s;}
+#toast.on{transform:translate(-50%,0);visibility:visible;transition:transform .35s cubic-bezier(.22,1,.36,1);}
 
 /* Bouton « Compte » : même apparence que dans la barre de navigation du site.
    En haut à gauche sur grand écran, pour ne pas chevaucher la pastille de
@@ -136,6 +137,50 @@ h1 em{font-style:italic;color:var(--accent);}
   .compte-btn{position:static;margin-top:1.3rem;padding:.65rem 1.6rem;font-size:.86rem;}}
 @media(max-width:600px){.grid-familles{grid-template-columns:1fr;}.famille-btn{min-height:120px;}}
 @media (prefers-reduced-motion:reduce){.subject{animation:none;opacity:1;transform:none;}.famille{animation:none;opacity:1;transform:none;}}
+/* Carrousel des parties de la page, à gauche : la partie en cours au centre,
+   ses voisines en fondu ; flèches pour monter et descendre. Il suit le défilement. */
+.rail{position:fixed;left:max(14px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);z-index:80;
+  width:200px;display:flex;flex-direction:column;align-items:center;gap:.55rem;}
+.rail-fl{width:2.4rem;height:2.4rem;flex:none;border-radius:999px;border:1px solid var(--border2);background:var(--surface);
+  color:var(--accent);font-size:.8rem;line-height:1;cursor:pointer;display:grid;place-items:center;
+  transition:border-color .2s,background .2s,opacity .2s,transform .15s;}
+.rail-fl:hover:not(:disabled){border-color:var(--accent);background:var(--surface2);}
+.rail-fl:active:not(:disabled){transform:scale(.92);}
+.rail-fl:disabled{opacity:.25;cursor:default;}
+.rail-fl:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.rail-fenetre{position:relative;width:100%;--rh:2.6rem;}
+.rail-liste::before{content:'';position:absolute;left:calc(.5rem + 3px);top:calc(var(--rh) / 2);bottom:calc(var(--rh) / 2);width:1px;background:var(--border2);}
+.rail-liste{position:relative;}
+.rail-liste{list-style:none;}
+.rail-item{min-height:var(--rh);display:flex;transition:opacity .4s;}
+.rail-item button{width:100%;min-height:var(--rh);display:flex;align-items:center;gap:.65rem;padding:0 .5rem;background:none;border:0;
+  color:rgba(240,236,224,.62);font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;line-height:1.3;text-transform:uppercase;
+  text-align:left;cursor:pointer;border-radius:10px;transition:color .3s,font-size .3s,background .3s;}
+.rail-item button:hover{color:var(--text);}
+.rail-item button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:8px;}
+.rail-pt{position:relative;width:7px;height:7px;flex:none;border-radius:50%;background:#3a3a34;border:1px solid var(--border2);transition:background .3s,box-shadow .3s,transform .3s;}
+.rail-item.actif button{color:var(--accent);font-size:.8rem;font-weight:500;letter-spacing:.12em;background:rgba(200,185,122,.08);padding-top:.45rem;padding-bottom:.45rem;}
+.rail-item.actif .rail-pt{background:var(--accent);border-color:var(--accent);transform:scale(1.5);box-shadow:0 0 0 4px rgba(200,185,122,.16);}
+.rail-num{font-size:.55rem;color:var(--muted);letter-spacing:.1em;}
+/* écran moyen : on garde la place du carrousel à gauche du contenu */
+@media (max-width:1559px) and (min-width:901px){ .wrap{padding-left:calc(2rem + 205px);} }
+/* petit écran : une pastille en bas à gauche, une seule partie visible */
+@media (max-width:900px){
+  .rail{top:auto;bottom:max(12px,env(safe-area-inset-bottom,0px));transform:none;left:max(12px,env(safe-area-inset-left,0px));
+    width:auto;max-width:calc(100vw - 24px);flex-direction:row;gap:.3rem;padding:.3rem;
+    background:rgba(17,17,16,.92);border:1px solid var(--border2);border-radius:999px;box-shadow:0 14px 34px -16px rgba(0,0,0,.9);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .rail-fl{width:2.2rem;height:2.2rem;}
+  .rail-fenetre{width:min(200px,calc(100vw - 130px));height:var(--rh);--rh:2.2rem;overflow:hidden;}
+  .rail-liste{transition:transform .5s cubic-bezier(.22,1,.36,1);}
+  .rail-liste::before{display:none;}
+  .rail-item{height:var(--rh);}
+  .rail-item.actif button{font-size:.6rem;background:none;padding-top:0;padding-bottom:0;}
+  .rail-num{display:none;}
+  .wrap{padding-bottom:6rem;}
+  #toast{bottom:5rem;}
+}
+@media (prefers-reduced-motion:reduce){.rail-liste,.rail-item{transition:none;}}
 </style>
 <script src="matiere.js"></script>
 <script src="auth.js" data-protect></script>
@@ -168,340 +213,6 @@ h1 em{font-style:italic;color:var(--accent);}
     href: m.ouverte ? (m.accueil + '?matiere=' + encodeURIComponent(m.id)) : null,
   }));
 
-  /* Licences : les mentions de licence générale (nomenclature nationale, arrêté du 22 janvier 2014 modifié).
-     Chaque mention est un bouton « à venir ». La couleur indique le domaine :
-     doré = droit, économie, gestion ; rose = sciences humaines et sociales ;
-     violet = arts, lettres, langues ; bleu = sciences, technologies, santé. */
-  const DEG = "#c8b97a", SHS = "#c87a9a", ALL = "#a07ac8", STS = "#7ab4c8";
-  const LICENCES = [
-    ["Administration publique","🏛️",DEG,"Institutions, services publics et action de l'État et des collectivités."],
-    ["Droit","⚖️",DEG,"Droit privé et droit public : les règles qui organisent la société."],
-    ["Économie","📈",DEG,"Marchés, croissance, monnaie et politiques économiques."],
-    ["Gestion","💼",DEG,"Management, comptabilité, finance et marketing des organisations."],
-    ["Économie et gestion","📊",DEG,"Le double socle : comprendre l'économie et piloter une entreprise."],
-    ["Administration économique et sociale (AES)","🤝",DEG,"Économie, droit, gestion et sociologie réunis pour les métiers de l'organisation."],
-    ["Science politique","🗳️",DEG,"Pouvoir, institutions, partis et relations internationales."],
-    ["Sciences sanitaires et sociales","🩺",SHS,"Santé publique, protection sociale et intervention sociale."],
-    ["Humanités","📚",SHS,"Lettres, histoire, philosophie et langues anciennes : une culture large."],
-    ["Histoire","🏺",SHS,"Étudier les sociétés du passé, de l'Antiquité à nos jours."],
-    ["Histoire de l'art et archéologie","🗿",SHS,"Œuvres, monuments et vestiges matériels à travers les époques."],
-    ["Géographie et aménagement","🗺️",SHS,"Territoires, paysages, environnement et aménagement de l'espace."],
-    ["Sociologie","👥",SHS,"Comprendre les groupes sociaux, les inégalités et les institutions."],
-    ["Psychologie","🧠",SHS,"Comportements, développement, cognition et santé mentale."],
-    ["Professorat des écoles","🍎",SHS,"Se former au métier de professeur des écoles."],
-    ["Sciences de l'éducation et de la formation","🎓",SHS,"Apprentissage, enseignement et formation tout au long de la vie."],
-    ["Philosophie","🦉",SHS,"Penser le savoir, la morale, la politique et l'existence."],
-    ["Théologie","🕊️",SHS,"Étude des textes et des traditions religieuses (Alsace-Moselle)."],
-    ["Sciences sociales","🔎",SHS,"Sociologie, anthropologie, économie et science politique croisées."],
-    ["Sciences de l'homme, anthropologie, ethnologie","🌍",SHS,"Cultures, sociétés et modes de vie à travers le monde."],
-    ["Information-communication","📣",SHS,"Médias, communication des organisations, numérique et information."],
-    ["Sciences du langage","🗣️",ALL,"Comment les langues fonctionnent : sons, mots, phrases et sens."],
-    ["Arts","🎭",ALL,"Pratiques et histoire des arts : création et analyse."],
-    ["Arts plastiques","🖌️",ALL,"Peinture, dessin, sculpture, image : pratique et théorie."],
-    ["Arts du spectacle","🎬",ALL,"Théâtre, cinéma, danse et audiovisuel."],
-    ["Musicologie","🎼",ALL,"Histoire, théorie et analyse de la musique."],
-    ["Lettres","✒️",ALL,"Littérature française, textes et grandes œuvres."],
-    ["Langues, littératures et civilisations étrangères et régionales (LLCER)","🌐",ALL,"Une langue, sa littérature et sa civilisation."],
-    ["Langues étrangères appliquées (LEA)","💬",ALL,"Deux langues vivantes appliquées à l'économie, au droit et au commerce."],
-    ["Lettres, langues","📖",ALL,"Littérature et langues réunies dans un même cursus."],
-    ["Informatique","💻",STS,"Programmation, algorithmique, systèmes, réseaux et données."],
-    ["Mathématiques","➗",STS,"Algèbre, analyse, probabilités : le raisonnement et la démonstration."],
-    ["Mathématiques et informatique appliquées aux sciences humaines et sociales (MIASHS)","📐",STS,"Maths et informatique au service des sciences humaines et sociales."],
-    ["Physique","⚛️",STS,"Mécanique, électromagnétisme, optique et physique quantique."],
-    ["Chimie","🧪",STS,"Structure, réactions et propriétés de la matière."],
-    ["Physique, chimie","🔬",STS,"Les deux disciplines réunies, de l'atome aux matériaux."],
-    ["Sciences de la vie","🧬",STS,"Biologie cellulaire, génétique, physiologie et écologie."],
-    ["Sciences de la Terre","🌋",STS,"Géologie, climat, ressources et dynamique de la planète."],
-    ["Sciences de la vie et de la Terre","🌱",STS,"Biologie et géologie : le vivant et son environnement."],
-    ["STAPS : activité physique adaptée et santé","🦽",STS,"Le sport comme outil de prévention et de réhabilitation."],
-    ["STAPS : éducation et motricité","🏃",STS,"Enseigner et encadrer l'éducation physique et sportive."],
-    ["STAPS : entraînement sportif","🏋️",STS,"Préparer et entraîner des sportifs, du loisir à la performance."],
-    ["STAPS : management du sport","🏟️",STS,"Gérer des structures, des événements et des projets sportifs."],
-    ["STAPS : ergonomie du sport et performance motrice","⏱️",STS,"Analyser le geste et optimiser l'équipement et la performance."],
-    ["Électronique, énergie électrique, automatique (EEA)","🔌",STS,"Circuits, énergie, signal et systèmes automatisés."],
-    ["Mécanique","🔧",STS,"Mouvement, structures, matériaux et fluides."],
-    ["Génie civil","🏗️",STS,"Concevoir et construire bâtiments, routes et ouvrages."],
-    ["Sciences pour la santé","💊",STS,"Biologie, chimie et physiologie pour les métiers de la santé."],
-    ["Sciences et technologies","🛠️",STS,"Un socle scientifique large avant de se spécialiser."],
-    ["Sciences pour l'ingénieur","⚙️",STS,"Mécanique, électronique, informatique et conception de systèmes."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-
-  /* BTS : une carte par spécialité, « à venir ». Couleur par secteur :
-     doré = commerce, gestion, communication ; gris = informatique et industrie ;
-     bleu = maritime ; orange = bâtiment ; vert d'eau = santé et social ;
-     violet = audiovisuel, mode, arts ; vert = agricole et environnement. */
-  const BTS = [
-    ["Management commercial opérationnel (MCO)","🛒","#c8b97a","Gérer une unité commerciale : vente, équipe, approvisionnement et animation."],
-    ["Négociation et digitalisation de la relation client (NDRC)","🤝","#c8b97a","Prospecter, négocier et fidéliser, en face à face comme en ligne."],
-    ["Conseil et commercialisation de solutions techniques (CCST)","🧰","#c8b97a","Vendre des solutions techniques à des clients professionnels."],
-    ["Technico-commercial","📦","#c8b97a","Conseiller et vendre des produits techniques, de l'industrie ou de l'agricole."],
-    ["Gestion de la PME (GPME)","🏪","#c8b97a","Seconder le dirigeant d'une petite entreprise : administratif, gestion, relation client."],
-    ["Comptabilité et gestion (CG)","🧾","#c8b97a","Opérations comptables, fiscales et financières d'une entreprise."],
-    ["Assurance","🛡️","#c8b97a","Conseiller les clients et gérer les contrats et les sinistres."],
-    ["Professions immobilières","🏠","#c8b97a","Vente, location et gestion de biens immobiliers."],
-    ["Support à l'action managériale (SAM)","🗂️","#c8b97a","Assister un manager : organisation, communication et suivi de projets."],
-    ["Collaborateur juriste notarial","📜","#c8b97a","Préparer et suivre les actes et dossiers d'un office notarial."],
-    ["Commerce international","🚢","#c8b97a","Prospecter les marchés étrangers et gérer les opérations import-export."],
-    ["Tourisme","🧳","#c8b97a","Concevoir, vendre et promouvoir des produits touristiques."],
-    ["Management en hôtellerie restauration (MHR)","🍽️","#c8b97a","Encadrer l'accueil, la restauration ou l'hébergement."],
-    ["Management opérationnel de la sécurité (MOS)","🚨","#c8b97a","Organiser et diriger la sécurité privée et la prévention des risques."],
-    ["Banque","🏦","#c8b97a","Conseiller la clientèle et vendre des produits et services bancaires."],
-    ["Communication","📣","#c8b97a","Concevoir et mener des actions de communication pour une organisation."],
-    ["Études de réalisation d'un projet de communication (ERPC)","🖨️","#c8b97a","Fabriquer des supports imprimés et numériques, de la conception à la production."],
-    ["Gestion des transports et logistique associée (GTLA)","🚚","#c8b97a","Organiser les flux de marchandises et les transports."],
-    ["Administration, management et ressources humaines","👔","#c8b97a","Nouveau BTS : administration, gestion du personnel et management (première session en 2029)."],
-    ["Services informatiques aux organisations (SIO)","🖥️","#8a9aae","Développer des applications (SLAM) ou administrer les réseaux (SISR)."],
-    ["Cybersécurité, informatique et réseaux, électronique (CIEL)","🔐","#8a9aae","Réseaux, systèmes embarqués et protection des systèmes numériques."],
-    ["Systèmes photoniques","💡","#8a9aae","Optique, lumière et lasers appliqués à l'industrie et à la santé."],
-    ["Photonique : technologies et sciences de la lumière","🔦","#8a9aae","Nouveau BTS (rentrée 2026) : technologies et sciences de la lumière."],
-    ["Aéronautique","✈️","#8a9aae","Maintenance et fabrication d'aéronefs et de leurs systèmes."],
-    ["Assistance technique d'ingénieur (ATI)","📐","#8a9aae","Seconder un ingénieur : études, essais, suivi technique et commercial."],
-    ["Contrôle industriel et régulation automatique (CIRA)","🎛️","#8a9aae","Mesurer, réguler et automatiser les procédés industriels."],
-    ["Conception de produits industriels (CPI)","🧩","#8a9aae","Concevoir des produits : modélisation 3D et développement."],
-    ["Conception des processus de réalisation de produits (CPRP)","🏭","#8a9aae","Préparer la fabrication : méthodes, production unitaire ou sérielle."],
-    ["Conception et réalisation de systèmes automatiques (CRSA)","🤖","#8a9aae","Concevoir, réaliser et mettre au point des machines automatisées."],
-    ["Conception et réalisation en chaudronnerie industrielle (CRCI)","🔥","#8a9aae","Concevoir et fabriquer des ensembles chaudronnés."],
-    ["Conception et industrialisation en microtechniques (CIM)","⌚","#8a9aae","Pièces et mécanismes de très petite taille : horlogerie, médical, optique."],
-    ["Électrotechnique","⚡","#8a9aae","Installations et équipements électriques : conception, mise en service, maintenance."],
-    ["EuroPlastics et Composites","🧪","#8a9aae","Plasturgie et matériaux composites : conception et fabrication."],
-    ["Maintenance des systèmes","🔧","#8a9aae","Maintenir des systèmes de production, éoliens ou énergétiques et fluidiques."],
-    ["Maintenance des véhicules","🚗","#8a9aae","Diagnostic et maintenance des véhicules : voitures, camions, motos."],
-    ["Motorisations toutes énergies (MTE)","⚙️","#8a9aae","Moteurs thermiques, hybrides et électriques : diagnostic et mise au point."],
-    ["Construction et aménagement de véhicules","🚐","#8a9aae","Carrosserie et aménagement de véhicules (nouveau BTS, rentrée 2027)."],
-    ["Pilotage des procédés","🏗️","#8a9aae","Conduire et optimiser les installations de production industrielle."],
-    ["Métiers de la mesure","📏","#8a9aae","Mesurer, contrôler et garantir la qualité en métrologie."],
-    ["Techniques physiques pour l'industrie et le laboratoire (TPIL)","🔬","#8a9aae","Instrumentation, mesures physiques et essais en industrie et laboratoire."],
-    ["Traitement des matériaux","🧲","#8a9aae","Traitements de surface ou traitements thermiques des matériaux."],
-    ["Métiers de la chimie","⚗️","#8a9aae","Conduite d'installations de chimie, de la paillasse à l'usine."],
-    ["Environnement nucléaire","☢️","#8a9aae","Radioprotection, sûreté et gestion des déchets nucléaires."],
-    ["Fonderie","🌋","#8a9aae","Moulage et coulée des métaux : procédés et contrôle."],
-    ["Pêche et gestion de l'environnement marin","🎣","#7a9ec8","BTS maritime : navigation, pêche et gestion de l'environnement marin."],
-    ["Maintenance des systèmes électro-navals","⚓","#7a9ec8","BTS maritime : maintenance des systèmes électriques et automatisés des navires."],
-    ["Mécatronique navale","🚤","#7a9ec8","Maintenance mécanique, électrique et automatisée des navires."],
-    ["Architectures en métal : conception et réalisation","🏛️","#d4a56e","Structures et ouvrages métalliques : étude et réalisation."],
-    ["Conducteur de chantier","👷","#d4a56e","Organiser et diriger les travaux et les équipes sur un chantier."],
-    ["Développement et réalisation bois","🪵","#d4a56e","Conception et fabrication de produits en bois."],
-    ["Enveloppe des bâtiments : conception et réalisation","🏠","#d4a56e","Façades, toitures et isolation des bâtiments."],
-    ["Étude et réalisation d'agencement","🛋️","#d4a56e","Aménagements intérieurs et mobilier sur mesure."],
-    ["Finitions, aménagement des bâtiments : conception et réalisation","🖌️","#d4a56e","Peinture, revêtements, plâtrerie et aménagements intérieurs."],
-    ["Management économique de la construction","💶","#d4a56e","Estimer, chiffrer et suivre le coût d'un projet de construction."],
-    ["Maintenance des matériels de construction et de manutention","🏗️","#d4a56e","Dépanner et entretenir les engins de chantier et de manutention."],
-    ["Métiers du géomètre-topographe et de la modélisation numérique","🗺️","#d4a56e","Relevés de terrain, plans et maquettes numériques."],
-    ["Systèmes constructifs bois et habitat","🏡","#d4a56e","Concevoir et construire des ouvrages en bois."],
-    ["Bâtiment","🧱","#d4a56e","Organiser et réaliser le gros œuvre d'un bâtiment."],
-    ["Travaux publics","🚧","#d4a56e","Routes, réseaux et ouvrages d'art : études et chantiers."],
-    ["Fluides, énergies, domotique","🌡️","#d4a56e","Chauffage, climatisation, froid et domotique du bâtiment."],
-    ["Géologie appliquée","🪨","#d4a56e","Sols, eau et risques : géologie pour les travaux et l'environnement."],
-    ["Études et travaux géographiques","🧭","#d4a56e","Cartographie, systèmes d'information géographique et relevés."],
-    ["Services et prestations des secteurs sanitaire et social (SP3S)","🏥","#7ac8b4","Accueillir, orienter et gérer les dossiers en structures sanitaires et sociales."],
-    ["Économie sociale et familiale (ESF)","👨‍👩‍👧","#7ac8b4","Accompagner les familles dans le budget, le logement et la consommation."],
-    ["Bioanalyses en laboratoire de contrôle","🧫","#7ac8b4","Analyses et contrôles en laboratoire (rentrée 2026)."],
-    ["Biologie médicale","🩸","#7ac8b4","Analyses de biologie médicale en laboratoire (rentrée 2027)."],
-    ["Bioqualité","✅","#7ac8b4","Qualité et sécurité dans les industries alimentaires et les bio-industries."],
-    ["Opticien-lunetier","👓","#7ac8b4","Mesurer la vue, conseiller, adapter et vendre des équipements optiques."],
-    ["Métiers de l'esthétique, de la cosmétique et de la parfumerie","💄","#7ac8b4","Soins, cosmétiques, conseil et gestion d'un institut."],
-    ["Diététique et nutrition","🥗","#7ac8b4","Alimentation, nutrition et éducation diététique."],
-    ["Podo-orthésiste","🦶","#7ac8b4","Concevoir et adapter des orthèses du pied et du membre inférieur."],
-    ["Prothésiste dentaire","🦷","#7ac8b4","Fabriquer des prothèses et appareils dentaires."],
-    ["Biotechnologie en recherche et en production","🧬","#7ac8b4","Techniques de laboratoire et de production en biotechnologies."],
-    ["Métiers de l'audiovisuel : gestion de la production","🎬","#a07ac8","Organiser le budget, le planning et la production d'un projet audiovisuel."],
-    ["Métiers de l'audiovisuel : métiers de l'image","🎥","#a07ac8","Cadrage, lumière et prise de vue."],
-    ["Métiers de l'audiovisuel : montage et postproduction","🎞️","#a07ac8","Montage, étalonnage et effets visuels."],
-    ["Métiers de l'audiovisuel : techniques d'ingénierie et exploitation des équipements","🎚️","#a07ac8","Exploitation et maintenance des équipements audiovisuels."],
-    ["Métiers de la mode : chaussure et maroquinerie","👞","#a07ac8","Concevoir et développer chaussures et articles de maroquinerie."],
-    ["Métiers de la mode : vêtements","👗","#a07ac8","Concevoir et industrialiser des vêtements."],
-    ["Photographie","📷","#a07ac8","Prise de vue, retouche et traitement de l'image photographique."],
-    ["BTSA Agronomie et cultures durables","🌾","#82b46a","Produire des cultures en respectant le sol et l'environnement."],
-    ["BTSA Aménagements paysagers","🌳","#82b46a","Concevoir et réaliser jardins, parcs et espaces verts."],
-    ["BTSA Analyse, conduite et stratégie de l'entreprise agricole (ACSE)","🚜","#82b46a","Piloter une exploitation agricole : technique, économie et stratégie."],
-    ["BTSA ANABIOTEC","🔍","#82b46a","Analyses et biotechnologies : laboratoire et contrôle."],
-    ["BTSA Aquaculture","🐟","#82b46a","Élevage de poissons, coquillages et autres espèces aquatiques."],
-    ["BTSA BIOQUALIM","🥫","#82b46a","Qualité, alimentation, innovation et maîtrise sanitaire."],
-    ["BTSA Développement, animation des territoires ruraux (DATR)","🏘️","#82b46a","Animer et développer des projets dans les territoires ruraux."],
-    ["BTSA Génie des équipements agricoles","🚜","#82b46a","Machines et équipements agricoles : conseil, vente et maintenance."],
-    ["BTSA Gestion et maîtrise de l'eau (GEMEAU)","💧","#82b46a","Irrigation, assainissement et gestion de la ressource en eau."],
-    ["BTSA Gestion et protection de la nature","🦋","#82b46a","Gérer et préserver les milieux naturels et la biodiversité."],
-    ["BTSA Gestion forestière","🌲","#82b46a","Gérer, exploiter et protéger les forêts."],
-    ["BTSA Métiers de l'eau","🚰","#82b46a","Eau potable et assainissement : exploitation des installations."],
-    ["BTSA Métiers du végétal : alimentation, ornement et environnement","🌱","#82b46a","Produire et commercialiser fruits, légumes, fleurs et plantes."],
-    ["BTSA Productions animales","🐄","#82b46a","Élevage : conduite des troupeaux et gestion de l'exploitation."],
-    ["BTSA Technico-commercial","🛍️","#82b46a","Conseiller et vendre aux professionnels de l'agriculture."],
-    ["BTSA Viticulture-œnologie","🍇","#82b46a","Cultiver la vigne et élaborer le vin."],
-    ["BTSA Développement de l'agriculture des régions chaudes (DARC)","🌴","#82b46a","Agriculture et développement en régions tropicales."],
-    ["Métiers des services à l'environnement","♻️","#82b46a","Collecte, tri, traitement des déchets et propreté (rentrée 2027 : version rénovée)."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-
-  /* BUT (ex-DUT) : les 24 spécialités (mentions) du bachelor universitaire de technologie, préparé en IUT.
-     Doré = secteur des services (8) ; gris = secteur industriel (16). */
-  const BUT = [
-    ["Carrières juridiques (CJ)","⚖️","#c8b97a","Droit appliqué : administration et justice, patrimoine et finance, entreprise et association. Ex-DUT CJ."],
-    ["Carrières sociales (CS)","🤲","#c8b97a","Animation sociale, éducation spécialisée, insertion et services à la personne. Ex-DUT CS."],
-    ["Gestion administrative et commerciale des organisations (GACO)","🗂️","#c8b97a","Projet, fonctions support, commerce et marketing omnicanal, activités culturelles et touristiques. Ex-DUT GACO."],
-    ["Gestion des entreprises et des administrations (GEA)","📊","#c8b97a","Comptabilité, finance, ressources humaines et entrepreneuriat. Ex-DUT GEA."],
-    ["Management de la logistique et des transports (MLT)","🚚","#c8b97a","Flux, supply chain et transports durables. Ex-DUT GLT (gestion logistique et transport)."],
-    ["Information-communication","📣","#c8b97a","Journalisme, communication des organisations, publicité, métiers du livre et du patrimoine. Ex-DUT Info-Com."],
-    ["Science des données","📈","#c8b97a","Statistique, informatique décisionnelle et analyse de données. Ex-DUT STID."],
-    ["Techniques de commercialisation (TC)","🛍️","#c8b97a","Vente, marketing, négociation et relation client. Ex-DUT TC."],
-    ["Chimie","⚗️","#8a9aae","Analyse et contrôle qualité, matériaux et produits formulés, chimie industrielle, synthèse. Ex-DUT Chimie."],
-    ["Génie biologique (GB)","🧫","#8a9aae","Biologie, analyses biomédicales, agronomie, environnement, industries alimentaires. Ex-DUT GB."],
-    ["Génie chimique, génie des procédés (GCGP)","🏭","#8a9aae","Conduire et optimiser des procédés industriels. Ex-DUT GCGP."],
-    ["Génie civil, construction durable (GCCD)","🏗️","#8a9aae","Bâtiment, travaux publics, bureaux d'études et construction durable. Ex-DUT GCCD."],
-    ["Génie électrique et informatique industrielle (GEII)","⚡","#8a9aae","Électricité, automatismes, électronique embarquée et énergie. Ex-DUT GEII."],
-    ["Génie industriel et maintenance (GIM)","🔧","#8a9aae","Organiser la production et maintenir les équipements industriels. Ex-DUT GIM."],
-    ["Génie mécanique et productique (GMP)","⚙️","#8a9aae","Conception, fabrication et industrialisation de pièces mécaniques. Ex-DUT GMP."],
-    ["Métiers de la transition et de l'efficacité énergétiques (MT2E)","🌡️","#8a9aae","Énergies renouvelables, efficacité énergétique, thermique et climatisation. Ex-DUT GTE (génie thermique et énergie)."],
-    ["Hygiène, sécurité, environnement (HSE)","🦺","#8a9aae","Prévention des risques, sécurité au travail, qualité environnementale. Ex-DUT HSE."],
-    ["Informatique","💻","#8a9aae","Développement d'applications, déploiement, données et systèmes d'information. Ex-DUT Informatique."],
-    ["Mesures physiques","📏","#8a9aae","Instrumentation, métrologie, contrôle et laboratoires industriels. Ex-DUT MP."],
-    ["Métiers du multimédia et de l'internet (MMI)","🎨","#8a9aae","Web, création numérique, audiovisuel et communication interactive. Ex-DUT MMI."],
-    ["Packaging, emballage et conditionnement (PEC)","📦","#8a9aae","Concevoir et produire emballages et conditionnements. Ex-DUT PEC."],
-    ["Qualité, logistique industrielle et organisation (QLIO)","✅","#8a9aae","Qualité, organisation de la production et logistique industrielle. Ex-DUT QLIO."],
-    ["Réseaux et télécommunications (R&T)","📡","#8a9aae","Réseaux, télécoms, cybersécurité et objets connectés. Ex-DUT R&T."],
-    ["Science et génie des matériaux (SGM)","🧱","#8a9aae","Métaux, polymères, céramiques et composites : propriétés et mise en œuvre. Ex-DUT SGM."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-
-  /* Grandes écoles : un groupe par type d'école, un bouton par spécialité (« à venir »).
-     Les listes de spécialités sont indicatives : elles regroupent les domaines qu'on retrouve dans ces écoles. */
-  const ECOLES_INGENIEURS = [
-    ["Aéronautique et espace","🚀","#8a9aae","Avions, lanceurs, satellites : conception, structures et propulsion."],
-    ["Agronomie et agroalimentaire","🌾","#8a9aae","Production agricole, industries alimentaires, qualité et environnement."],
-    ["Armement et défense","🛡️","#8a9aae","Systèmes d'armes, défense et technologies militaires."],
-    ["Bâtiment et travaux publics (génie civil)","🏗️","#8a9aae","Bâtiments, ouvrages d'art, infrastructures et urbanisme."],
-    ["Biotechnologies","🧬","#8a9aae","Biologie appliquée : santé, industrie, agro, environnement."],
-    ["Génie biomédical","🩻","#8a9aae","Dispositifs médicaux, imagerie, biomécanique et biomatériaux."],
-    ["Chimie et génie des procédés","⚗️","#8a9aae","Procédés chimiques, formulation et production industrielle."],
-    ["Électricité et électrotechnique","⚡","#8a9aae","Réseaux électriques, machines et énergie électrique."],
-    ["Électronique et microélectronique","🔌","#8a9aae","Composants, circuits, instrumentation et microtechniques."],
-    ["Énergie","🔋","#8a9aae","Production, transport, efficacité et transition énergétique."],
-    ["Nucléaire","☢️","#8a9aae","Réacteurs, sûreté, démantèlement et radioprotection."],
-    ["Environnement et génie de l'eau","💧","#8a9aae","Eau, déchets, pollution, hydraulique et géothermie."],
-    ["Informatique","💻","#8a9aae","Logiciels, systèmes, réseaux et architectures avancées."],
-    ["Intelligence artificielle et science des données","🤖","#8a9aae","Apprentissage automatique, données massives et statistique."],
-    ["Cybersécurité","🔐","#8a9aae","Sécurité des systèmes, des réseaux et des données."],
-    ["Mécanique","🔧","#8a9aae","Conception, structures, fluides et fabrication mécanique."],
-    ["Matériaux","🧱","#8a9aae","Métaux, polymères, céramiques et composites."],
-    ["Mécatronique, automatique et robotique","🦾","#8a9aae","Systèmes automatisés, robots et commande."],
-    ["Télécommunications et réseaux","📡","#8a9aae","Transmission, réseaux, objets connectés et signal."],
-    ["Transports : automobile, ferroviaire, maritime","🚄","#8a9aae","Véhicules, trains, navires et systèmes de transport."],
-    ["Génie industriel et logistique","🏭","#8a9aae","Organisation de la production, qualité et chaîne logistique."],
-    ["Mathématiques appliquées et modélisation","📐","#8a9aae","Modélisation, calcul scientifique et probabilités."],
-    ["Physique, optique et nanotechnologies","🔬","#8a9aae","Physique appliquée, photonique et nanosciences."],
-    ["Géosciences, mines et pétrole","⛏️","#8a9aae","Ressources du sous-sol, géologie et exploitation."],
-    ["Textile et matériaux souples","🧵","#8a9aae","Fibres, textiles techniques et procédés de fabrication."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const ECOLES_COMMERCE = [
-    ["Finance","💹","#c8b97a","Finance de marché, d'entreprise, banque et gestion d'actifs."],
-    ["Marketing","🎯","#c8b97a","Marque, études de marché, marketing digital et relation client."],
-    ["Entrepreneuriat et innovation","💡","#c8b97a","Créer, financer et développer une entreprise."],
-    ["Data science et intelligence artificielle","📊","#c8b97a","Données, analytique et IA appliquées à l'entreprise."],
-    ["Management international","🌍","#c8b97a","Commerce et gestion à l'international."],
-    ["Luxe et mode","👜","#c8b97a","Marques de luxe, mode, retail et image."],
-    ["Systèmes d'information","🖥️","#c8b97a","Pilotage et gouvernance des systèmes d'information."],
-    ["Ressources humaines","🧑‍💼","#c8b97a","Recrutement, développement des talents et relations sociales."],
-    ["Supply chain, achats et logistique","📦","#c8b97a","Flux, approvisionnement, achats et opérations."],
-    ["Management du sport","🏟️","#c8b97a","Marketing sportif, événements et organisations sportives."],
-    ["Vin et spiritueux","🍷","#c8b97a","Business du vin, des spiritueux et de l'agro-alimentaire."],
-    ["RSE et développement durable","🌱","#c8b97a","Stratégie responsable, transition écologique et impact."],
-    ["Transformation digitale","🔁","#c8b97a","Pilotage du changement numérique des organisations."],
-    ["Conseil et stratégie","🧭","#c8b97a","Conseil en management et stratégie d'entreprise."],
-    ["Audit, contrôle de gestion et comptabilité","🧾","#c8b97a","Audit, contrôle, comptabilité et expertise."],
-    ["Banque et assurance","🏦","#c8b97a","Métiers de la banque, de la gestion de patrimoine et de l'assurance."],
-    ["Immobilier","🏢","#c8b97a","Promotion, gestion et investissement immobilier."],
-    ["Management de la santé","🏥","#c8b97a","Gestion des établissements et des industries de santé."],
-    ["Hôtellerie, tourisme et gastronomie","🛎️","#c8b97a","Management hôtelier, tourisme et restauration."],
-    ["Communication, médias et industries culturelles","🎬","#c8b97a","Communication, médias, culture et divertissement."],
-    ["Droit des affaires et fiscalité","⚖️","#c8b97a","Droit, fiscalité et compliance de l'entreprise."],
-    ["Agrobusiness et alimentation","🥖","#c8b97a","Filières agricoles et alimentaires, du champ à l'assiette."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const ENS = [
-    ["ENS : lettres et langues","📚","#a07ac8","Littérature, langues anciennes et modernes, linguistique."],
-    ["ENS : histoire, géographie et sciences sociales","🏺","#a07ac8","Histoire, géographie, sociologie, anthropologie, sciences politiques."],
-    ["ENS : philosophie","🦉","#a07ac8","Philosophie et histoire des idées."],
-    ["ENS : économie et gestion","📈","#a07ac8","Économie, gestion et sciences sociales quantitatives."],
-    ["ENS : droit","⚖️","#a07ac8","Droit et sciences juridiques (ENS Rennes)."],
-    ["ENS : mathématiques","➗","#a07ac8","Mathématiques fondamentales et appliquées."],
-    ["ENS : informatique","💻","#a07ac8","Informatique fondamentale et recherche."],
-    ["ENS : physique","⚛️","#a07ac8","Physique fondamentale et appliquée."],
-    ["ENS : chimie","🧪","#a07ac8","Chimie, matériaux et sciences moléculaires."],
-    ["ENS : biologie et sciences de la Terre","🧬","#a07ac8","Biologie, géosciences, environnement."],
-    ["ENS : sciences de l'ingénieur et mécatronique","⚙️","#a07ac8","Génie mécanique, électrique et mécatronique."],
-    ["ENS : sciences du sport","🏃","#a07ac8","Sciences du sport et du mouvement (ENS Rennes)."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const IEP = [
-    ["Affaires publiques","🏛️","#c87a9a","Politiques publiques, administration et collectivités."],
-    ["Affaires internationales","🌐","#c87a9a","Relations internationales, diplomatie et organisations."],
-    ["Droit","⚖️","#c87a9a","Droit public, droit privé et droit international."],
-    ["Économie et finance","💶","#c87a9a","Économie, finance et politique économique."],
-    ["Journalisme et médias","🎙️","#c87a9a","Journalisme, médias et information."],
-    ["Communication et culture","🎭","#c87a9a","Communication, politiques culturelles et médias."],
-    ["Politiques urbaines et territoires","🏙️","#c87a9a","Aménagement, ville et développement local."],
-    ["Environnement et transitions","🌍","#c87a9a","Politiques environnementales et transitions écologiques."],
-    ["Ressources humaines et gestion","🤝","#c87a9a","Management, RH et gestion des organisations."],
-    ["Recherche en sciences sociales","🔎","#c87a9a","Science politique, sociologie, histoire et recherche."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const ARCHI = [
-    ["Architecture (diplôme d'État)","🏛️","#d4a56e","Concevoir bâtiments et espaces : les trois années de licence puis le master."],
-    ["Architecte : habilitation à la maîtrise d'œuvre (HMONP)","📐","#d4a56e","Se former à l'exercice libéral et à la conduite de projet."],
-    ["Architecture d'intérieur et design d'espace","🛋️","#d4a56e","Aménager, scénographier et concevoir les espaces intérieurs."],
-    ["Paysage","🌳","#d4a56e","Concevoir et gérer jardins, parcs et paysages."],
-    ["Urbanisme et aménagement","🏙️","#d4a56e","Planifier les villes et les territoires."],
-    ["Patrimoine et conservation","🏰","#d4a56e","Étudier, restaurer et valoriser le patrimoine bâti."],
-    ["Architecture et ingénierie","🏗️","#d4a56e","Double compétence : structures, construction et conception."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const VETO = [
-    ["Médecine vétérinaire : animaux de compagnie","🐕","#82b46a","Chiens, chats et nouveaux animaux de compagnie : clinique et chirurgie."],
-    ["Médecine vétérinaire : équine","🐎","#82b46a","Chevaux : médecine, chirurgie et médecine du sport."],
-    ["Médecine vétérinaire : rurale et production","🐄","#82b46a","Élevages bovins, porcins, volailles et filières animales."],
-    ["Santé publique vétérinaire et sécurité sanitaire","🥩","#82b46a","Contrôle sanitaire des aliments, épidémiologie et santé publique."],
-    ["Recherche et industrie vétérinaire","🔬","#82b46a","Recherche, pharmacie vétérinaire et industries du médicament."],
-    ["Faune sauvage et biodiversité","🦌","#82b46a","Faune sauvage, parcs zoologiques et conservation."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const MIL = [
-    ["École polytechnique","🎓","#7a9ec8","Formation d'ingénieurs et de cadres de haut niveau, cycle ingénieur polytechnicien."],
-    ["Saint-Cyr Coëtquidan : armée de terre","🪖","#7a9ec8","Formation des officiers de l'armée de terre."],
-    ["École navale : Marine nationale","⚓","#7a9ec8","Formation des officiers de marine."],
-    ["École de l'air et de l'espace : armée de l'air","✈️","#7a9ec8","Formation des officiers de l'armée de l'air et de l'espace."],
-    ["Gendarmerie : officiers (EOGN)","🚓","#7a9ec8","Formation des officiers de gendarmerie nationale."],
-    ["Commissariat des armées","📋","#7a9ec8","Gestion, finances, droit et soutien aux armées."],
-    ["Service de santé des armées","⚕️","#7a9ec8","Médecins, pharmaciens et infirmiers des armées."],
-    ["Ingénieurs de l'armement (ENSTA, ISAE-SUPAERO...)","🛰️","#7a9ec8","Écoles d'ingénieurs sous tutelle de la défense."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const JOURNALISME = [
-    ["Journalisme : presse écrite et web","📰","#e6c27e","Reportage, enquête, écriture et édition numérique."],
-    ["Journalisme : radio","🎙️","#e6c27e","Journalisme radiophonique, reportage et antenne."],
-    ["Journalisme : télévision et vidéo","📺","#e6c27e","Reportage, montage et présentation télévisée."],
-    ["Journalisme : photographie et photojournalisme","📷","#e6c27e","Photographie de reportage et image d'actualité."],
-    ["Journalisme de données et numérique","💾","#e6c27e","Données, visualisation et journalisme en ligne."],
-    ["Communication des organisations","📣","#e6c27e","Communication institutionnelle, d'entreprise et publique."],
-    ["Communication et relations publiques","🤝","#e6c27e","Relations presse, influence et gestion de crise."],
-    ["Édition, livre et métiers de la culture","📚","#e6c27e","Édition, médiation culturelle et industries créatives."],
-    ["Traduction et interprétation","🗣️","#e6c27e","Traduction écrite, interprétation et communication multilingue."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const ART = [
-    ["Arts plastiques et beaux-arts","🖼️","#d48a6a","Peinture, sculpture, dessin et pratiques contemporaines."],
-    ["Design graphique et communication visuelle","✒️","#d48a6a","Identité visuelle, édition, typographie et interface."],
-    ["Design d'espace","🪑","#d48a6a","Scénographie, architecture d'intérieur et aménagement."],
-    ["Design de produit et d'objet","🧴","#d48a6a","Conception d'objets et de produits industriels."],
-    ["Mode et textile","👗","#d48a6a","Création de vêtements, stylisme et modélisme."],
-    ["Cinéma et audiovisuel","🎬","#d48a6a","Réalisation, image, son, montage et scénario."],
-    ["Animation et jeu vidéo","🎮","#d48a6a","Film d'animation, effets visuels et création de jeux."],
-    ["Photographie","📷","#d48a6a","Photographie d'art, de presse et de création."],
-    ["Arts décoratifs et métiers d'art","🏺","#d48a6a","Céramique, verre, bijou, métal et savoir-faire d'exception."],
-    ["Conservation et restauration d'œuvres","🧴","#d48a6a","Préserver et restaurer le patrimoine artistique."],
-    ["Spectacle vivant : théâtre, danse, musique","🎭","#d48a6a","Écoles supérieures du théâtre, de la danse et de la musique."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-  const PUBLIC = [
-    ["Institut national du service public (INSP)","🏛️","#9aa8d8","Haute fonction publique d'État : administrateurs civils, diplomates, préfets."],
-    ["École nationale de la magistrature (ENM)","⚖️","#9aa8d8","Formation des magistrats judiciaires."],
-    ["École des hautes études en santé publique (EHESP)","🏥","#9aa8d8","Cadres de la santé : directeurs d'hôpital, inspecteurs, santé publique."],
-    ["Instituts régionaux d'administration (IRA)","📑","#9aa8d8","Cadres administratifs de la fonction publique d'État."],
-    ["École nationale supérieure de la police","🚔","#9aa8d8","Formation des commissaires et officiers de police."],
-    ["Institut national des études territoriales (INET)","🏙️","#9aa8d8","Cadres dirigeants de la fonction publique territoriale."],
-    ["École nationale des finances publiques (DGFiP)","💶","#9aa8d8","Inspecteurs et cadres des finances publiques."],
-    ["École nationale supérieure de sécurité sociale (EN3S)","🧾","#9aa8d8","Cadres dirigeants de la protection sociale."],
-    ["École nationale des greffes et de l'administration pénitentiaire","🔒","#9aa8d8","Greffiers, directeurs de services pénitentiaires et cadres de la justice."],
-  ].map(([nom, icone, couleur, desc]) => ({ nom, icone, couleur, desc }));
-
   const GROUPES = [
     { titre: "Matières scolaires", matieres: scolaires },
     { titre: "Médecine", matieres: [
@@ -531,6 +242,16 @@ h1 em{font-style:italic;color:var(--accent);}
         desc:"Rendre une page interactive : événements, DOM et logique côté navigateur." },
       { nom:"Bases de données et SQL", icone:"🗄️", couleur:"#82b4d2",
         desc:"Tables, clés et relations ; interroger les données avec SELECT, JOIN et GROUP BY." },
+    ]},
+    { titre: "Bureautique", matieres: [
+      { nom:"Word", icone:"📝", couleur:"#7a9ec8",
+        desc:"Rédiger et mettre en page : styles, tableaux, sommaire automatique, publipostage." },
+      { nom:"Excel", icone:"📊", couleur:"#7ac8a0",
+        desc:"Formules, fonctions, graphiques et tableaux croisés dynamiques." },
+      { nom:"PowerPoint", icone:"📽️", couleur:"#d48a6a",
+        desc:"Construire une présentation claire : diapositives, masques, animations." },
+      { nom:"Certification Pix", icone:"🏅", couleur:"#a07ac8",
+        desc:"Préparer la certification des compétences numériques : information, communication, création de contenus, sécurité." },
     ]},
     { titre: "Économie et gestion", matieres: [
       { nom:"Microéconomie", icone:"🛍️", couleur:"#c8b97a",
@@ -669,19 +390,6 @@ h1 em{font-style:italic;color:var(--accent);}
         { nom: "Gestion des pollutions et protection de l'environnement", href: "medecine.html?matiere=bp-gppe", icone: "♻️" }
       ]},
     ]},
-    { titre: "Licences", note: "Les mentions de licence générale de l'université, par domaine : droit-économie-gestion, sciences humaines et sociales, arts-lettres-langues, sciences-technologies-santé.", matieres: LICENCES },
-    { titre: "BTS", note: "Les spécialités de brevet de technicien supérieur (bac +2), par secteur : commerce, industrie, bâtiment, santé, arts, agricole.", matieres: BTS },
-    { titre: "BUT (ex-DUT)", note: "Le bachelor universitaire de technologie, préparé en trois ans en IUT. Il a remplacé le DUT en 2021 ; les 24 spécialités sont les mêmes (le DUT reste délivré après deux ans).", matieres: BUT },
-    { titre: "Écoles d'ingénieurs", note: "Diplôme d'ingénieur (bac +5, habilité par la CTI), par domaine de spécialité : on y entre après une classe préparatoire, un BUT, un BTS ou une licence, ou directement après le bac.", matieres: ECOLES_INGENIEURS },
-    { titre: "Écoles de commerce et de management", note: "Programme grande école (bac +5), puis spécialisation en master ou en MSc : on y entre après une prépa, un bac +2 ou bac +3, ou directement après le bac.", matieres: ECOLES_COMMERCE },
-    { titre: "Écoles normales supérieures (ENS)", note: "Quatre ENS (Paris, Paris-Saclay, Lyon, Rennes) forment des chercheurs et des enseignants-chercheurs, par discipline : on y entre par concours après une classe préparatoire.", matieres: ENS },
-    { titre: "Instituts d'études politiques (Sciences Po)", note: "Dix IEP (Paris, Aix, Bordeaux, Grenoble, Lille, Lyon, Rennes, Saint-Germain-en-Laye, Strasbourg, Toulouse) : cursus pluridisciplinaire bac +5, par domaine de master.", matieres: IEP },
-    { titre: "Écoles d'architecture, de paysage et d'urbanisme", note: "Études d'architecture en 5 ans (diplôme d'État puis habilitation), et formations voisines en paysage et urbanisme.", matieres: ARCHI },
-    { titre: "Écoles vétérinaires", note: "Quatre écoles nationales vétérinaires (Maisons-Alfort, Lyon, Nantes, Toulouse), recrutées en prépa, en admissions parallèles ou après le bac ; diplôme d'État de docteur vétérinaire.", matieres: VETO },
-    { titre: "Écoles militaires et de la défense", note: "Les grandes écoles d'officiers, avec leurs concours et leurs spécialités par armée.", matieres: MIL },
-    { titre: "Écoles de journalisme et de communication", note: "Écoles reconnues par la profession (CFJ, ESJ Lille, IPJ, Sciences Po, CUEJ, IJBA…), plus CELSA et écoles de communication.", matieres: JOURNALISME },
-    { titre: "Écoles d'art et de design", note: "Écoles supérieures d'art, de design, de cinéma et de mode : diplômes de niveau bac +3 à bac +5, souvent sur concours ou dossier.", matieres: ART },
-    { titre: "Écoles du service public", note: "Les écoles qui forment les hauts fonctionnaires et les cadres de l'État, sur concours.", matieres: PUBLIC },
   ];
 
   /* famille de métiers dépliée (une seule à la fois) ; survol possible ou non */
@@ -793,6 +501,81 @@ h1 em{font-style:italic;color:var(--accent);}
     if (!ouverte) el.onclick = () => toast(m.nom + " arrive bientôt sur Polymates.");
     return el;
   }
+
+  /* ── Carrousel des parties (à gauche) ──
+     Une entrée par section de la page. La partie en cours est au centre ;
+     ▲ ▼ font défiler jusqu'à la partie précédente ou suivante, un clic sur
+     un nom y mène directement. Le carrousel suit aussi le défilement. */
+  (function rail(){
+    const secs = Array.from(hote.querySelectorAll('section.groupe'));
+    if (secs.length < 2) return;
+    const nav = document.createElement('nav');
+    nav.className = 'rail';
+    nav.setAttribute('aria-label', 'Parties de la page');
+    nav.innerHTML =
+      '<button type="button" class="rail-fl" data-d="-1" aria-label="Partie précédente">▲</button>' +
+      '<div class="rail-fenetre"><ol class="rail-liste"></ol></div>' +
+      '<button type="button" class="rail-fl" data-d="1" aria-label="Partie suivante">▼</button>';
+    const liste = nav.querySelector('.rail-liste');
+    const items = secs.map((s, k) => {
+      s.id = s.id || 'partie-' + (k + 1);
+      const titre = s.querySelector('.groupe-titre').textContent;
+      const li = document.createElement('li');
+      li.className = 'rail-item';
+      li.innerHTML = `<button type="button" title="Aller à : ${titre}"><span class="rail-pt"></span><span>${titre}</span></button>`;
+      li.querySelector('button').onclick = () => aller(k);
+      liste.appendChild(li);
+      return li;
+    });
+    const [haut, bas] = nav.querySelectorAll('.rail-fl');
+    haut.onclick = () => aller(actif - 1);
+    bas.onclick = () => aller(actif + 1);
+    document.body.appendChild(nav);
+
+    const DOUX = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let actif = -1, cible = null, minuterie;
+
+    function maj(i) {
+      i = Math.max(0, Math.min(secs.length - 1, i));
+      /* sur téléphone, une seule partie visible : la liste glisse ; sinon, toute la liste est affichée */
+      const visibles = window.matchMedia('(max-width:900px)').matches ? 1 : secs.length;
+      const h = items[i].offsetHeight || 1;
+      liste.style.transform = visibles === 1 ? `translateY(${-i * h}px)` : '';
+      items.forEach((li, k) => {
+        const d = Math.abs(k - i);
+        li.classList.toggle('actif', k === i);
+        li.style.opacity = visibles === 1 ? (d ? 0 : 1) : 1;
+        li.querySelector('button').tabIndex = (visibles === 1 && d) ? -1 : 0;
+        if (k === i) li.querySelector('button').setAttribute('aria-current', 'true');
+        else li.querySelector('button').removeAttribute('aria-current');
+      });
+      haut.disabled = i === 0 && window.scrollY < 8;
+      bas.disabled = i === secs.length - 1;
+      actif = i;
+    }
+    /* la partie en cours : la dernière dont le titre a atteint le haut de l'écran */
+    function courante() {
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) return secs.length - 1;
+      let i = 0;
+      secs.forEach((s, k) => { if (s.getBoundingClientRect().top <= Math.min(160, window.innerHeight * 0.2)) i = k; });
+      return i;
+    }
+    function aller(i) {
+      if (i < 0) { cible = 0; window.scrollTo({ top: 0, behavior: DOUX ? 'smooth' : 'auto' }); maj(0); return; }
+      if (i >= secs.length) return;
+      const y = Math.max(0, secs[i].getBoundingClientRect().top + window.scrollY - 28);
+      cible = i; maj(i);
+      clearTimeout(minuterie); minuterie = setTimeout(() => { cible = null; maj(courante()); }, 1200);
+      window.scrollTo({ top: y, behavior: DOUX ? 'smooth' : 'auto' });
+    }
+    let attente = false;
+    window.addEventListener('scroll', () => {
+      if (attente) return; attente = true;
+      requestAnimationFrame(() => { attente = false; if (cible === null) maj(courante()); else haut.disabled = cible === 0 && window.scrollY < 8; });
+    }, { passive: true });
+    window.addEventListener('resize', () => maj(cible === null ? courante() : cible));
+    maj(courante());
+  })();
 
   /* petit message éphémère */
   let tid;
