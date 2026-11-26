@@ -320,8 +320,8 @@ select{appearance:none; cursor:pointer}
         </div>
 
         <form id="form-login">
-          <label for="l-email">Adresse e-mail</label>
-          <input type="email" id="l-email" required autocomplete="email" placeholder="vous@exemple.fr">
+          <label for="l-email">Pseudo</label>
+          <input type="text" id="l-email" required autocomplete="username" autocapitalize="none" placeholder="Ton pseudo">
           <label for="l-password">Mot de passe</label>
           <div class="pw">
             <input type="password" id="l-password" required autocomplete="current-password" placeholder="••••••••">
@@ -332,9 +332,7 @@ select{appearance:none; cursor:pointer}
 
         <form id="form-register" class="hidden">
           <label for="r-pseudo">Pseudo</label>
-          <input type="text" id="r-pseudo" required minlength="2" placeholder="Comment t'appelles-tu ?">
-          <label for="r-email">Adresse e-mail</label>
-          <input type="email" id="r-email" required autocomplete="email" placeholder="vous@exemple.fr">
+          <input type="text" id="r-pseudo" required minlength="2" maxlength="40" autocomplete="username" autocapitalize="none" placeholder="Comment t'appelles-tu ?">
           <label for="r-password">Mot de passe (6 caractères minimum)</label>
           <div class="pw">
             <input type="password" id="r-password" required minlength="6" autocomplete="new-password" placeholder="••••••••">
@@ -460,9 +458,9 @@ select{appearance:none; cursor:pointer}
   function showMsg(text, ok){ const m=$('msg'); m.textContent=text; m.className='msg '+(ok?'ok':'err'); }
   function hideMsg(){ $('msg').className='msg'; }
 
-  function demoSession(email, pseudo, classe){
-    const role = /^admin/i.test(email) ? 'admin' : 'eleve';
-    MB_AUTH.save(null, { pseudo: pseudo || email.split('@')[0], email, role, classe: classe || null, demo: true });
+  function demoSession(identifiant, pseudo, classe){
+    const role = /^admin/i.test(identifiant) ? 'admin' : 'eleve';
+    MB_AUTH.save(null, { pseudo: pseudo || identifiant.split('@')[0], email: null, role, classe: classe || null, demo: true });
     location.href = next;
   }
 
@@ -483,14 +481,14 @@ select{appearance:none; cursor:pointer}
   $('form-login').onsubmit = (e) => {
     e.preventDefault();
     if (demo) return demoSession($('l-email').value.trim());
-    submit('/auth/login', { email: $('l-email').value.trim(), password: $('l-password').value }, e.submitter);
+    submit('/auth/login', { identifiant: $('l-email').value.trim(), password: $('l-password').value }, e.submitter);
   };
 
   $('form-register').onsubmit = (e) => {
     e.preventDefault();
-    if (demo) return demoSession($('r-email').value.trim(), $('r-pseudo').value.trim(), $('r-classe').value);
+    if (demo) return demoSession($('r-pseudo').value.trim(), $('r-pseudo').value.trim(), $('r-classe').value);
     submit('/auth/register', {
-      pseudo: $('r-pseudo').value.trim(), email: $('r-email').value.trim(),
+      pseudo: $('r-pseudo').value.trim(),
       password: $('r-password').value, classe: $('r-classe').value || null,
     }, e.submitter);
   };

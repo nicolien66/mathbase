@@ -402,32 +402,57 @@ async function debiterCredits(userId, montant, motif, detail) {
 
 app.get("/auth/ping", (req, res) => res.json({ ok: true }));
 
+/* Un pseudo : 2 à 40 caractères, sans « @ » (le « @ » sert à reconnaître une
+   adresse e-mail à la connexion, pour les anciens comptes et l'administrateur). */
+function pseudoValide(p) {
+  const t = String(p || "").trim();
+  if (t.length < 2)  return { erreur: "Pseudo trop court (2 caractères min)." };
+  if (t.length > 40) return { erreur: "Pseudo trop long (40 caractères max)." };
+  if (t.includes("@")) return { erreur: "Le pseudo ne peut pas contenir de « @ »." };
+  return { pseudo: t };
+}
+async function pseudoPris(pseudo, sauf) {
+  const { rows } = await pool.query(
+    "SELECT id FROM users WHERE lower(pseudo) = lower($1) AND id <> $2 LIMIT 1", [pseudo, sauf || 0]);
+  return rows.length > 0;
+}
+
+/* L'inscription ne demande plus que le pseudo et le mot de passe (la classe
+   reste facultative). L'adresse e-mail n'est plus recueillie : la colonne est
+   facultative, les anciens comptes gardent la leur. */
 app.post("/auth/register", async (req, res) => {
   try {
-    const { pseudo, email, password, classe } = req.body || {};
-    if (!pseudo || pseudo.trim().length < 2)  return res.status(400).json({ error: "Pseudo trop court (2 caractères min)." });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || "")) return res.status(400).json({ error: "Adresse e-mail invalide." });
-    if (!password || password.length < 6)     return res.status(400).json({ error: "Mot de passe trop court (6 caractères min)." });
+    const { pseudo, password, classe } = req.body || {};
+    const v = pseudoValide(pseudo);
+    if (v.erreur) return res.status(400).json({ error: v.erreur });
+    if (!password || password.length < 6) return res.status(400).json({ error: "Mot de passe trop court (6 caractères min)." });
+    if (await pseudoPris(v.pseudo)) return res.status(409).json({ error: "Ce pseudo est déjà pris." });
     const { rows } = await pool.query(
       `INSERT INTO users (email, pseudo, password_hash, classe)
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [email.toLowerCase().trim(), pseudo.trim(), hashPassword(password), classe || null]
+       VALUES (NULL, $1, $2, $3) RETURNING *`,
+      [v.pseudo, hashPassword(password), classe || null]
     );
     const user = rows[0];
     res.status(201).json({ token: signToken(pubUser(user)), user: pubUser(user) });
   } catch (e) {
-    if (e.code === "23505") return res.status(409).json({ error: "Un compte existe déjà avec cette adresse." });
+    if (e.code === "23505") return res.status(409).json({ error: "Ce pseudo est déjà pris." });
     console.error(e); res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
+/* Connexion par pseudo + mot de passe. Un identifiant contenant « @ » est lu
+   comme une adresse e-mail : l'administrateur et les anciens comptes peuvent
+   continuer à se connecter ainsi. */
 app.post("/auth/login", async (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [(email || "").toLowerCase().trim()]);
-    if (!rows.length || !verifyPassword(password || "", rows[0].password_hash))
-      return res.status(401).json({ error: "E-mail ou mot de passe incorrect." });
-    const user = rows[0];
+    const { identifiant, pseudo, email, password } = req.body || {};
+    const id = String(identifiant || pseudo || email || "").trim();
+    const { rows } = id.includes("@")
+      ? await pool.query("SELECT * FROM users WHERE email = $1", [id.toLowerCase()])
+      : await pool.query("SELECT * FROM users WHERE lower(pseudo) = lower($1)", [id]);
+    /* deux anciens comptes pourraient porter le même pseudo : on essaie chacun */
+    const user = rows.find(u => verifyPassword(password || "", u.password_hash));
+    if (!user) return res.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
     res.json({ token: signToken(pubUser(user)), user: pubUser(user) });
   } catch (e) { console.error(e); res.status(500).json({ error: "Erreur serveur." }); }
 });
@@ -1570,7 +1595,7 @@ async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id            SERIAL PRIMARY KEY,
-      email         TEXT UNIQUE NOT NULL,
+      email         TEXT UNIQUE,
       pseudo        TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       role          TEXT NOT NULL DEFAULT 'eleve',
@@ -1578,6 +1603,17 @@ async function initDB() {
       created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  /* Inscription sans adresse e-mail : la colonne devient facultative (les
+     adresses déjà enregistrées sont conservées) et le pseudo doit être unique,
+     sans tenir compte des majuscules. Si d'anciens comptes partagent un pseudo,
+     l'index ne peut pas se créer : on le signale, et l'inscription vérifie
+     quand même l'unicité côté code. */
+  await pool.query("ALTER TABLE users ALTER COLUMN email DROP NOT NULL");
+  try {
+    await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS users_pseudo_unique ON users (lower(pseudo))");
+  } catch (e) {
+    console.warn("[auth] pseudos en double parmi les anciens comptes : index d'unicité non créé (" + e.message + ")");
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS annales (
       id          SERIAL PRIMARY KEY,
@@ -2675,17 +2711,21 @@ app.patch("/auth/me", auth, async (req, res) => {
     const champs = [], vals = [];
     let i = 1;
     if (pseudo !== undefined) {
-      const p = String(pseudo).trim();
-      if (p.length < 2) return res.status(400).json({ error: "Pseudo trop court." });
-      champs.push(`pseudo = $${i++}`); vals.push(p.slice(0, 60));
+      const v = pseudoValide(pseudo);
+      if (v.erreur) return res.status(400).json({ error: v.erreur });
+      if (await pseudoPris(v.pseudo, req.user.id)) return res.status(409).json({ error: "Ce pseudo est déjà pris." });
+      champs.push(`pseudo = $${i++}`); vals.push(v.pseudo);
     }
     if (classe !== undefined) { champs.push(`classe = $${i++}`); vals.push(String(classe).slice(0, 40) || null); }
     if (email !== undefined) {
       const e = String(email).trim().toLowerCase();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return res.status(400).json({ error: "Adresse invalide." });
-      const { rows } = await pool.query("SELECT id FROM users WHERE email = $1 AND id <> $2", [e, req.user.id]);
-      if (rows.length) return res.status(409).json({ error: "Cette adresse est déjà utilisée." });
-      champs.push(`email = $${i++}`); vals.push(e);
+      if (e === "") { champs.push(`email = $${i++}`); vals.push(null); }   /* adresse facultative : on peut la retirer */
+      else {
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return res.status(400).json({ error: "Adresse invalide." });
+        const { rows } = await pool.query("SELECT id FROM users WHERE email = $1 AND id <> $2", [e, req.user.id]);
+        if (rows.length) return res.status(409).json({ error: "Cette adresse est déjà utilisée." });
+        champs.push(`email = $${i++}`); vals.push(e);
+      }
     }
 
     /* Changer de mot de passe exige l'ancien : sans cela, un jeton volé
