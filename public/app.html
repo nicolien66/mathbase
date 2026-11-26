@@ -118,6 +118,17 @@
       </div>
     </div>
 
+    <!-- Carrousel des classes : TOUS · 6e-5e · 4e-3e · SECONDE-1ère · TERMINALE.
+         Il ne garde, dans les frises de COURS, TUTORIEL et ENTRAÎNEMENT, que les chapitres des classes choisies. -->
+    <div class="rubriques classes-carrousel" id="classes">
+      <button type="button" class="rb-fleche" onclick="tournerClasse(-1)" aria-label="Classe précédente">‹</button>
+      <div class="rb-fenetre" id="cl-fenetre" tabindex="0" role="tablist" aria-label="Classes">
+        <div class="rb-piste" id="cl-piste"></div>
+      </div>
+      <button type="button" class="rb-fleche" onclick="tournerClasse(1)" aria-label="Classe suivante">›</button>
+      <div class="rb-points" id="cl-points"></div>
+    </div>
+
     <!-- Carrousel des rubriques : COURS · ENTRAÎNEMENT · ANNALES -->
     <div class="rubriques" id="rubriques">
       <button type="button" class="rb-fleche" onclick="tournerRubrique(-1)" aria-label="Rubrique précédente">‹</button>

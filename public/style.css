@@ -2068,6 +2068,16 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.6; }
 @media (max-width:600px) { .rb-fleche { width:34px; height:34px; font-size:1.1rem; }
   .rb-piste { grid-template-columns:1fr 2.2fr 1fr; } .rb-cote { letter-spacing:.08em; } }
 
+/* Carrousel des classes : au-dessus de celui des rubriques, en plus discret */
+.classes-carrousel { padding-top:1.2rem; padding-bottom:0; max-width:620px; }
+.classes-carrousel .rb-fleche { width:34px; height:34px; font-size:1.1rem; }
+.classes-carrousel .rb-centre { font-size:clamp(1.05rem,2.8vw,1.5rem); letter-spacing:.06em; }
+.classes-carrousel .rb-cote { font-size:clamp(.56rem,1.4vw,.7rem); letter-spacing:.14em; }
+.classes-carrousel .rb-piste { grid-template-columns:1fr 1.7fr 1fr; }
+.classes-carrousel .rb-points { margin-top:-.15rem; }
+.classes-carrousel .rb-point { width:6px; height:6px; }
+@media (max-width:600px) { .classes-carrousel .rb-fleche { width:30px; height:30px; } }
+
 /* Rubrique ANNALES : la banque de sujets prend la place des frises */
 .browse-annales { padding:1.4rem 3rem 4rem; }
 .browse-annales[hidden] { display:none; }
@@ -2148,6 +2158,7 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
 #view-browse:not(.mode-bibliotheque) #total-badge,
 #view-browse:not(.mode-bibliotheque) .biblio-retour { display:none; }
 #view-browse.mode-bibliotheque #rubriques,
+#view-browse.mode-bibliotheque #classes,
 #view-browse.mode-bibliotheque #browse-annales { display:none; }
 .biblio-retour { margin-top:1.3rem; background:none; border:1px solid rgba(200,185,122,.35);
   border-radius:999px; color:var(--accent,#c8b97a); font:inherit; font-size:.82rem;

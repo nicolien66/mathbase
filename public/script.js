@@ -374,6 +374,8 @@ function setFilter(btn, level) {
   document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   currentFilter = level;
+  /* choisir un niveau à la main remet le carrousel des classes sur « Tous » */
+  if (typeof classeGroupe !== "undefined" && classeGroupe !== "tous") { classeGroupe = "tous"; dessinerClasses(0); }
   loadExercises();
 }
 
@@ -432,7 +434,9 @@ function renderByChapter(data) {
   catalogue.forEach(m => {
     const chapitres = m.chapters || [];
     const duNiveau = !currentFilter || !m.niveaux || m.niveaux.includes(currentFilter);
-    const gardes = duNiveau ? chapitres : chapitres.filter(c => byChap.has(c));
+    let gardes = duNiveau ? chapitres : chapitres.filter(c => byChap.has(c));
+    /* carrousel des classes : au lycée, on ne garde que les chapitres de la ou des classes choisies */
+    if (classeGroupe !== "tous" && (m.niveaux || []).includes("lycee")) gardes = gardes.filter(chapitreDeLaClasse);
     if (gardes.length) structure.push(Object.assign({}, m, { chapters: gardes }));
   });
 
@@ -554,7 +558,9 @@ function renderByChapter(data) {
   /* Collège : les chapitres sont cassés, chaque famille est rangée sous une
      notion de l'une des six grandes idées (GRANDES_IDEES, dans contenu.js). */
   const idees = (typeof GRANDES_IDEES !== "undefined" && (!window.MB_MAT || MB_MAT.estMaths())) ? GRANDES_IDEES : null;
-  const avecIdees = idees && (!currentFilter || currentFilter === "college" || currentFilter === "primaire");
+  const gClasse = classeGroupe === "tous" ? null : CLASSES.find(c => c.id === classeGroupe);
+  const avecIdees = idees && (!currentFilter || currentFilter === "college" || currentFilter === "primaire")
+    && (!gClasse || gClasse.niveau === "college");
   if (idees) {
     /* ces chapitres ne s'affichent plus en tant que tels, où que ce soit */
     idees.forEach(g => g.notions.forEach(n => n.familles.forEach(([c]) => known.add(c))));
@@ -563,7 +569,7 @@ function renderByChapter(data) {
     const cleEx = ex => (ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || "");
     const parCle = new Map();
     data.forEach(ex => { const k = cleEx(ex); if (!parCle.has(k)) parCle.set(k, []); parCle.get(k).push(ex); });
-    idees.forEach(g => frag.appendChild(friseIdee(g, parCle)));
+    idees.forEach(g => { const f = friseIdee(g, parCle); if (f) frag.appendChild(f); });
   }
 
   function friseIdee(g, parCle) {
@@ -576,7 +582,9 @@ function renderByChapter(data) {
     const enCours = rubriqueActive() === "cours" || rubriqueActive() === "tutoriel";
     const nbCours = n => rubriqueActive() === "tutoriel" ? tutosDeNotion(n).length : coursDeNotion(n).cours.length;
     const unite = k => rubriqueActive() === "tutoriel" ? k + " tutoriel" + (k > 1 ? "s" : "") : k + " cours";
-    const notions = g.notions.filter(n => compte(n) > 0 || (enCours && nbCours(n) > 0));
+    const notions = g.notions.filter(n => (compte(n) > 0 || (enCours && nbCours(n) > 0)) && notionDeLaClasse(n));
+    /* sous un filtre de classe, une grande idée sans notion de ces classes disparaît */
+    if (gClasse && !notions.length) return null;
     const total = notions.reduce((s, n) => s + compte(n), 0);
     section.innerHTML =
       `<div class="fx-tete"><span class="fx-titre">${escapeHtml(g.nom)}</span>` +
@@ -616,7 +624,7 @@ function renderByChapter(data) {
   });
 
   // intitulés hors-arbre → section « Autres »
-  const extras = [...byChap.keys()].filter(k => !known.has(k));
+  const extras = gClasse ? [] : [...byChap.keys()].filter(k => !known.has(k));
   if (extras.length) frag.appendChild(frise("AUTRES", "Chapitres sans catégorie.", "#9b8fb0", extras));
 
   list.appendChild(frag);
@@ -2871,11 +2879,37 @@ function corrigerInteractif(ex) {
       ? "Ta construction est exacte : chaque élément est au bon endroit."
       : "Sur " + r.attendus + " élément" + (r.attendus > 1 ? "s" : "") + " attendu" +
         (r.attendus > 1 ? "s" : "") + " : " + (morceaux.join(", ") || "rien de posé") + ".",
-    demarche: "Chaque point a son image de l'autre côté de l'axe, à la même distance : " +
-      "l'axe est la médiatrice du segment qui joint un point et son image.",
+    demarche: demarcheQuadrillage(ex, params),
     solution: ex.solution || "",
     score: r.score
   };
+}
+
+/* La « bonne démarche » dépend de la transformation demandée : le même
+   quadrillage sert aux symétries, à l'homothétie, à la translation et à la
+   rotation. On la déduit du chapitre et de l'énoncé, puis du type de repère. */
+function demarcheQuadrillage(ex, params) {
+  const t = String([ex && ex.chapitre, ex && ex.title, ex && ex.content].join(" "))
+    .toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const axe = params && params.axe;
+  if (/homothetie/.test(t))
+    return "Pour chaque sommet M, on place son image M′ sur la droite (OM), avec OM′ = k × OM : " +
+      "du même côté que M si le rapport k est positif, de l'autre côté de O s'il est négatif. " +
+      "On relie ensuite les images dans le même ordre : l'image est parallèle à la figure de départ.";
+  if (/translation/.test(t) && !/rotation/.test(t))
+    return "Chaque point glisse de la même façon : même direction, même sens et même longueur " +
+      "que la translation (compte les carreaux comme sur la flèche), puis on relie les images dans le même ordre.";
+  if (/rotation/.test(t) && !/translation/.test(t))
+    return "Chaque point tourne autour du centre, du même angle et dans le même sens ; " +
+      "sa distance au centre ne change pas. On relie ensuite les images dans le même ordre.";
+  if (/translation|rotation/.test(t))
+    return "On construit l'image de chaque sommet selon la transformation demandée (glissement pour " +
+      "une translation, quart de tour autour du centre pour une rotation), puis on relie les images dans le même ordre.";
+  if (/symetrie centrale/.test(t) || (axe && axe.type === "c"))
+    return "Chaque point a son image de l'autre côté du centre, à la même distance : " +
+      "le centre est le milieu du segment qui joint un point et son image.";
+  return "Chaque point a son image de l'autre côté de l'axe, à la même distance : " +
+    "l'axe est la médiatrice du segment qui joint un point et son image.";
 }
 
 /* Le bouton de suppression n'apparaît que pour un administrateur connecté :
@@ -3548,6 +3582,8 @@ function appliquerRubrique() {
   const t = TITRES_VUE[bibliotheque ? "bibliotheque" : "principale"];
   vue.querySelector(".browse-hero .hero-tag").textContent = t.tag;
   vue.querySelector(".browse-hero h1").innerHTML = t.h1;
+  const cl = document.getElementById("classes");
+  if (cl) cl.style.display = (ann || (window.MB_MAT && !MB_MAT.estMaths())) ? "none" : "";
   vue.querySelector(".filter-section").style.display = ann ? "none" : "";
   vue.querySelector(".grid-section").style.display = ann ? "none" : "";
   document.getElementById("browse-annales").hidden = !ann;
@@ -3669,6 +3705,143 @@ function afficherTutos(titre, classe, tutos, parties) {
     : '<div class="chap-placeholder">Aucun tutoriel pour ce chapitre — pour l\'instant !</div>';
   showView("cours", "browse");
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CARROUSEL DES CLASSES : TOUS · 6e-5e · 4e-3e · SECONDE-1ère · TERMINALE
+   Au-dessus de celui des rubriques. Il ne garde, dans les frises de COURS,
+   TUTORIEL et ENTRAÎNEMENT, que les chapitres des classes choisies.
+     · collège : chaque notion porte sa classe (6e, 5e, 4e, 3e) dans GRANDES_IDEES ;
+     · lycée   : les chapitres n'ont pas de classe dans le catalogue, on les
+                 rattache ici d'après les programmes (LYCEE_CLASSE).
+   Choisir une classe règle aussi le filtre de niveau (collège / lycée) ;
+   choisir un niveau à la main remet les classes sur « Tous ».
+   ═══════════════════════════════════════════════════════════════════════ */
+const CLASSES = [
+  { id: "tous",     titre: "TOUS",            niveau: "",        classes: null },
+  { id: "6e5e",     titre: "6e · 5e",         niveau: "college", classes: ["6e", "5e"] },
+  { id: "4e3e",     titre: "4e · 3e",         niveau: "college", classes: ["4e", "3e"] },
+  { id: "2nde1ere", titre: "SECONDE · 1ère",  niveau: "lycee",   classes: ["2nde", "1ere"] },
+  { id: "terminale", titre: "TERMINALE",      niveau: "lycee",   classes: ["term"] },
+];
+let classeGroupe = "tous";
+
+/* Chapitres de lycée → classe du programme (spécialité mathématiques). */
+const LYCEE_CLASSE = {
+  "Ensembles de nombres et intervalles": "2nde",
+  "Calcul littéral et équations (2nde)": "2nde",
+  "Inéquations et tableaux de signes": "2nde",
+  "Fonctions de référence (2nde)": "2nde",
+  "Variations et lectures graphiques (2nde)": "2nde",
+  "Repérage et vecteurs du plan": "2nde",
+  "Équations de droites et colinéarité": "2nde",
+  "Statistiques descriptives et écart-type (2nde)": "2nde",
+  "Probabilités sur un ensemble fini (2nde)": "2nde",
+  "Algorithmes et programmes en Python": "2nde",
+  "Boucles, listes et fonctions Python": "1ere",
+  "Second degré : forme canonique et racines": "1ere",
+  "Suites numériques : définition et variations": "1ere",
+  "Dérivation et tangentes": "1ere",
+  "Applications de la dérivation : variations et extremums": "1ere",
+  "Fonction exponentielle": "1ere",
+  "Fonctions trigonométriques": "1ere",
+  "Trigonométrie et cercle trigonométrique": "1ere",
+  "Produit scalaire dans le plan": "1ere",
+  "Géométrie repérée : droites et cercles": "1ere",
+  "Probabilités conditionnelles et indépendance": "1ere",
+  "Variables aléatoires : loi, espérance et variance": "1ere",
+  "Succession d'épreuves et loi binomiale": "1ere",
+  "Suites : limites et raisonnement par récurrence": "term",
+  "Convexité et dérivée seconde": "term",
+  "Fonction logarithme népérien": "term",
+  "Limites de fonctions et asymptotes": "term",
+  "Continuité et théorème des valeurs intermédiaires": "term",
+  "Primitives et équations différentielles": "term",
+  "Calcul intégral": "term",
+  "Vecteurs, droites et plans de l'espace": "term",
+  "Produit scalaire dans l'espace et équations de plans": "term",
+  "Représentations paramétriques et distances": "term",
+  "Somme de variables aléatoires et concentration": "term",
+  "Échantillonnage et loi des grands nombres": "term",
+  "Dénombrement et combinaisons": "term",
+};
+
+function classesChoisies() {
+  const g = CLASSES.find(c => c.id === classeGroupe);
+  return g && g.classes ? g.classes : null;
+}
+/* « 6e », « 6ème », « 3eme »… → clé de classe */
+function cleClasse(c) {
+  const t = String(c || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+  const m = t.match(/^([3-6])(e|eme)$/);
+  return m ? m[1] + "e" : t;
+}
+function notionDeLaClasse(n) {
+  const cl = classesChoisies();
+  return !cl || cl.includes(cleClasse(n.classe));
+}
+function chapitreDeLaClasse(chap) {
+  const cl = classesChoisies();
+  return !cl || cl.includes(LYCEE_CLASSE[chap]);
+}
+
+function rangClasse() { return CLASSES.findIndex(c => c.id === classeGroupe); }
+function tournerClasse(pas) {
+  const n = CLASSES.length;
+  choisirClasse(CLASSES[(rangClasse() + pas + n) % n].id, pas);
+}
+function choisirClasse(id, sens) {
+  if (id === classeGroupe) return;
+  classeGroupe = id;
+  dessinerClasses(sens || 0);
+  /* le niveau suit la classe : collège pour 6e-5e et 4e-3e, lycée sinon, tous pour « Tous » */
+  const g = CLASSES.find(c => c.id === id);
+  const niveau = g ? g.niveau : "";
+  if (niveau !== currentFilter) {
+    currentFilter = niveau;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.toggle("active", (b.dataset.level || "") === niveau));
+    loadExercises();
+  } else if (LOADED_EXERCISES.length) {
+    renderByChapter(LOADED_EXERCISES);
+  }
+}
+function dessinerClasses(sens) {
+  const piste = document.getElementById("cl-piste");
+  if (!piste) return;
+  const i = rangClasse(), n = CLASSES.length;
+  piste.innerHTML = "";
+  [[-1, "rb-cote"], [0, "rb-centre"], [1, "rb-cote"]].forEach(([d, cls]) => {
+    const c = CLASSES[(i + d + n) % n];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "rb-item " + cls;
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", d === 0 ? "true" : "false");
+    b.textContent = c.titre;
+    if (d) b.onclick = () => tournerClasse(d);
+    piste.appendChild(b);
+  });
+  piste.classList.remove("rb-de-droite", "rb-de-gauche");
+  if (sens) { void piste.offsetWidth; piste.classList.add(sens > 0 ? "rb-de-droite" : "rb-de-gauche"); }
+  const pts = document.getElementById("cl-points");
+  pts.innerHTML = CLASSES.map((c, k) =>
+    `<button type="button" class="rb-point${k === i ? " actif" : ""}" aria-label="${c.titre}" onclick="choisirClasse('${c.id}', ${k > i ? 1 : -1})"></button>`).join("");
+}
+(function initCarrouselClasses() {
+  const f = document.getElementById("cl-fenetre");
+  if (!f) return;
+  let x0 = null;
+  f.addEventListener("pointerdown", e => { x0 = e.clientX; });
+  f.addEventListener("pointerup", e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0; x0 = null;
+    if (Math.abs(dx) > 40) tournerClasse(dx < 0 ? 1 : -1);
+  });
+  f.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { e.preventDefault(); tournerClasse(1); }
+    if (e.key === "ArrowLeft")  { e.preventDefault(); tournerClasse(-1); }
+  });
+  dessinerClasses(0);
+})();
 
 /* Carrousel : glisser au doigt ou à la souris, flèches du clavier. */
 (function initCarrousel() {
