@@ -2345,3 +2345,15 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
 .th-retour-nom .th-icone{width:2.6rem;height:2.6rem;font-size:.75rem;}
 .th-vide{color:rgba(240,236,224,.55);padding:1.5rem 0;}
 @media (max-width:760px){.th-grille{grid-template-columns:1fr;}}
+
+
+/* ── Rubrique COMPÉTITIONS ── */
+.browse-competitions{width:100%;max-width:1000px;margin:0 auto;padding:0 0 3rem;}
+.cp-niveau{font-family:'DM Mono',monospace;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold,#c8b97a);font-weight:400;margin:1.6rem 0 .8rem;}
+.cp-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.9rem;}
+.cp-carte{background:var(--panel,#14130f);border:1px solid rgba(245,242,232,.1);border-radius:14px;padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.45rem;}
+.cp-nom{font-family:'Playfair Display',Georgia,serif;font-size:1.08rem;font-weight:500;line-height:1.25;}
+.cp-classes{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:#7ac8e6;}
+.cp-desc{font-size:.88rem;line-height:1.55;color:rgba(240,236,224,.72);flex:1;}
+.cp-etat{align-self:flex-start;font-family:'DM Mono',monospace;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(240,236,224,.5);border:1px solid rgba(245,242,232,.14);border-radius:999px;padding:.2rem .6rem;margin-top:.3rem;}
+.cp-note{margin-top:1.6rem;font-size:.82rem;color:rgba(240,236,224,.5);}

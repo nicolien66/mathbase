@@ -3597,12 +3597,14 @@ const RUBRIQUES = [
     sous: "Choisis un chapitre, coche les familles à travailler, puis lance ta séance." },
   { id: "annales",      titre: "ANNALES",
     sous: "Brevets, contrôles et devoirs surveillés, avec leur corrigé." },
+  { id: "competitions", titre: "COMPÉTITIONS",
+    sous: "Kangourou, olympiades, concours général… les épreuves à connaître, classe par classe." },
 ];
 /* Les index de cours et de tutoriels ne couvrent que les mathématiques :
    ailleurs (physique-chimie), seules ENTRAÎNEMENT et ANNALES sont proposées. */
 if (window.MB_MAT && !MB_MAT.estMaths()) {
   for (let k = RUBRIQUES.length - 1; k >= 0; k--)
-    if (RUBRIQUES[k].id === "cours" || RUBRIQUES[k].id === "tutoriel") RUBRIQUES.splice(k, 1);
+    if (["cours", "tutoriel", "competitions"].includes(RUBRIQUES[k].id)) RUBRIQUES.splice(k, 1);
 }
 let rubrique = "entrainement";
 
@@ -3618,7 +3620,7 @@ function choisirRubrique(id, sens) {
   rubrique = id;
   dessinerCarrousel(sens || 0);
   appliquerRubrique();
-  if (rubrique !== "annales" && LOADED_EXERCISES.length) renderByChapter(LOADED_EXERCISES);
+  if (rubrique !== "annales" && rubrique !== "competitions" && LOADED_EXERCISES.length) renderByChapter(LOADED_EXERCISES);
 }
 
 /* Trois titres visibles : le précédent, le courant (au centre), le suivant. */
@@ -3658,16 +3660,19 @@ const TITRES_VUE = {
 };
 function appliquerRubrique() {
   const ann = rubriqueActive() === "annales";
+  const comp = rubriqueActive() === "competitions";
   const vue = document.getElementById("view-browse");
   if (!vue) return;
   const t = TITRES_VUE[bibliotheque ? "bibliotheque" : "principale"];
   vue.querySelector(".browse-hero .hero-tag").textContent = t.tag;
   vue.querySelector(".browse-hero h1").innerHTML = t.h1;
   const cl = document.getElementById("classes");
-  if (cl) cl.style.display = (ann || (window.MB_MAT && !MB_MAT.estMaths())) ? "none" : "";
-  vue.querySelector(".filter-section").style.display = ann ? "none" : "";
-  vue.querySelector(".grid-section").style.display = ann ? "none" : "";
+  if (cl) cl.style.display = (ann || comp || (window.MB_MAT && !MB_MAT.estMaths())) ? "none" : "";
+  vue.querySelector(".filter-section").style.display = (ann || comp) ? "none" : "";
+  vue.querySelector(".grid-section").style.display = (ann || comp) ? "none" : "";
   document.getElementById("browse-annales").hidden = !ann;
+  const bc = document.getElementById("browse-competitions");
+  if (bc) { bc.hidden = !comp; if (comp) dessinerCompetitions(bc); }
   const sous = vue.querySelector(".browse-hero .hero-sub");
   const r = RUBRIQUES[rangRubrique(rubrique)];
   if (sous) sous.textContent = bibliotheque ? t.sous : (r ? r.sous : "");
@@ -3687,6 +3692,45 @@ function rangerAnnales(ou) {
   const enc = ou === "browse" && ongletAnnales === "encours";
   filtres.style.display = enc ? "none" : "";
   grille.style.display = enc ? "none" : "";
+}
+
+/* ── Rubrique COMPÉTITIONS ──
+   Fiches d'information sur les épreuves de mathématiques, classées par
+   niveau. Les entraînements dédiés arriveront ensuite : ils se brancheront
+   sur ces fiches. */
+const COMPETITIONS = [
+  { niveau: "Collège et lycée", items: [
+    { nom: "Kangourou des mathématiques", classes: "du CE2 à la terminale",
+      desc: "Un questionnaire à choix multiples d'une heure, passé en classe en mars, avec des questions de plus en plus difficiles." },
+    { nom: "Rallye mathématique", classes: "collège et lycée",
+      desc: "Une épreuve par classe : on résout ensemble, en temps limité, des problèmes variés et on rend une seule copie." },
+    { nom: "Mathématiques sans frontières", classes: "3e, 2nde et lycée professionnel",
+      desc: "Une classe entière cherche des exercices et rédige une réponse commune, parfois dans une langue étrangère." },
+    { nom: "Championnat des jeux mathématiques et logiques", classes: "tous niveaux",
+      desc: "Des énigmes de logique et de jeux, en plusieurs étapes, de la demi-finale à la finale internationale." },
+  ] },
+  { niveau: "Lycée", items: [
+    { nom: "Olympiades de mathématiques", classes: "première",
+      desc: "Des exercices nationaux et académiques, à chercher longuement, sans formule à appliquer : il faut raisonner et rédiger." },
+    { nom: "Concours général", classes: "première et terminale",
+      desc: "Une épreuve très sélective, d'après les programmes, qui récompense les meilleurs lycéens du pays." },
+    { nom: "Tournoi français des jeunes mathématiciennes et mathématiciens", classes: "lycée",
+      desc: "Des équipes cherchent des problèmes ouverts pendant des semaines, puis les défendent à l'oral." },
+    { nom: "Olympiades internationales de mathématiques", classes: "lycéens sélectionnés",
+      desc: "Une équipe de six élèves par pays, deux épreuves de quatre heures et demie : le sommet des compétitions de lycée." },
+  ] },
+];
+function dessinerCompetitions(hote) {
+  if (hote.dataset.fait) return;
+  hote.dataset.fait = "1";
+  hote.innerHTML = COMPETITIONS.map(g =>
+    `<section class="cp-groupe"><h3 class="cp-niveau">${escapeHtml(g.niveau)}</h3><div class="cp-grille">` +
+    g.items.map(c =>
+      `<article class="cp-carte"><h4 class="cp-nom">${escapeHtml(c.nom)}</h4>` +
+      `<p class="cp-classes">${escapeHtml(c.classes)}</p><p class="cp-desc">${escapeHtml(c.desc)}</p>` +
+      `<span class="cp-etat">Entraînement · à venir</span></article>`).join("") +
+    `</div></section>`).join("") +
+    `<p class="cp-note">Dates, inscriptions et règlements : voir le site officiel de chaque épreuve ou ton professeur de mathématiques.</p>`;
 }
 
 /* ── Rubrique COURS ── */
