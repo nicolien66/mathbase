@@ -565,11 +565,92 @@ function renderByChapter(data) {
     /* ces chapitres ne s'affichent plus en tant que tels, où que ce soit */
     idees.forEach(g => g.notions.forEach(n => n.familles.forEach(([c]) => known.add(c))));
   }
+  /* Carrousel des classes sur « Tous » : les chapitres sont rangés par THÈME
+     (NOMBRES / GÉOMÉTRIE), un bouton par thème ; un clic ouvre les frises du thème. */
+  if (idees && classeGroupe === "tous") {
+    rendreThemes();
+    list.appendChild(frag);
+    return;
+  }
   if (avecIdees) {
     const cleEx = ex => (ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || "");
     const parCle = new Map();
     data.forEach(ex => { const k = cleEx(ex); if (!parCle.has(k)) parCle.set(k, []); parCle.get(k).push(ex); });
     idees.forEach(g => { const f = friseIdee(g, parCle); if (f) frag.appendChild(f); });
+  }
+
+  /* ── Vue par thèmes ── */
+  function rendreThemes() {
+    const cleEx = ex => (ex.chapitre || "") + "|" + normaliseTitre((ex.famille && String(ex.famille).trim()) || ex.title || "");
+    const parCle = new Map();
+    data.forEach(ex => { const k = cleEx(ex); if (!parCle.has(k)) parCle.set(k, []); parCle.get(k).push(ex); });
+    const college = !currentFilter || currentFilter === "college" || currentFilter === "primaire";
+    const lycee   = !currentFilter || currentFilter === "lycee";
+    const chapLycee = new Set();
+    structure.forEach(m => { if ((m.niveaux || []).includes("lycee")) m.chapters.forEach(c => chapLycee.add(c)); });
+
+    /* contenu d'un thème : ses notions de collège (rangées par grande idée) + ses chapitres de lycée */
+    function contenuTheme(t) {
+      const frises = [];
+      if (college) idees.forEach(g => {
+        const notions = g.notions.filter(n => t.notions.includes(n.nom));
+        if (notions.length) { const f = friseIdee(Object.assign({}, g, { notions }), parCle); if (f) frises.push(f); }
+      });
+      if (lycee) {
+        const chs = t.chapitres.filter(c => chapLycee.has(c));
+        if (chs.length) frises.push(frise("LYCÉE", "Seconde, première et terminale.", t.couleur, chs));
+      }
+      return frises;
+    }
+    const vivant = fr => fr.reduce((k, f) => k + f.querySelectorAll(".fx-station:not(.fx-vide)").length, 0);
+
+    /* notions ou chapitres qu'aucun thème ne réclame : thème « Autres », pour ne rien perdre */
+    const pris = new Set(), prisC = new Set();
+    THEMES_MATHS.forEach(t => { t.notions.forEach(n => pris.add(n)); t.chapitres.forEach(c => prisC.add(c)); });
+    const orphelines = []; idees.forEach(g => g.notions.forEach(n => { if (!pris.has(n.nom)) orphelines.push(n.nom); }));
+    const orphC = [...chapLycee].filter(c => !prisC.has(c));
+    const themes = THEMES_MATHS.slice();
+    if (orphelines.length || orphC.length)
+      themes.push({ id: "autres", colonne: "GÉOMÉTRIE", nom: "Autres notions", sous: "Hors des thèmes ci-dessus", icone: "…", couleur: "#9b8fb0", notions: orphelines, chapitres: orphC });
+
+    /* un thème est ouvert : ses frises, avec un retour */
+    const ouvert = themes.find(t => t.id === themeOuvert);
+    if (ouvert) {
+      const retour = document.createElement("div");
+      retour.className = "th-retour";
+      retour.innerHTML = `<button type="button" class="th-retour-btn">← Tous les thèmes</button>` +
+        `<span class="th-retour-nom"><span class="th-icone" style="--tc:${ouvert.couleur}">${ouvert.icone}</span>${escapeHtml(ouvert.nom)}</span>`;
+      retour.querySelector("button").onclick = () => { themeOuvert = null; renderByChapter(LOADED_EXERCISES); window.scrollTo({ top: 0 }); };
+      frag.appendChild(retour);
+      const frises = contenuTheme(ouvert);
+      if (vivant(frises)) frises.forEach(f => frag.appendChild(f));
+      else { const v = document.createElement("p"); v.className = "th-vide"; v.textContent = "Rien dans cette rubrique pour ce thème pour l'instant."; frag.appendChild(v); }
+      return;
+    }
+
+    /* la grille des thèmes, en deux colonnes */
+    const grille = document.createElement("div");
+    grille.className = "th-grille";
+    ["NOMBRES", "GÉOMÉTRIE"].forEach(col => {
+      const c = document.createElement("div");
+      c.className = "th-col";
+      c.innerHTML = `<h3 class="th-colonne">${col}</h3>`;
+      themes.filter(t => t.colonne === col).forEach(t => {
+        const n = vivant(contenuTheme(t));
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "th-btn" + (n ? "" : " th-vide-btn");
+        b.style.setProperty("--tc", t.couleur);
+        b.innerHTML =
+          `<span class="th-icone">${t.icone}</span>` +
+          `<span class="th-texte"><span class="th-nom">${escapeHtml(t.nom)}</span>` +
+          `<span class="th-sous">${escapeHtml(t.sous)}</span></span>`;
+        b.onclick = () => { themeOuvert = t.id; renderByChapter(LOADED_EXERCISES); window.scrollTo({ top: 0 }); };
+        c.appendChild(b);
+      });
+      grille.appendChild(c);
+    });
+    frag.appendChild(grille);
   }
 
   function friseIdee(g, parCle) {
@@ -3716,6 +3797,72 @@ function afficherTutos(titre, classe, tutos, parties) {
    Choisir une classe règle aussi le filtre de niveau (collège / lycée) ;
    choisir un niveau à la main remet les classes sur « Tous ».
    ═══════════════════════════════════════════════════════════════════════ */
+/* ── THÈMES de la vue « Tous » : deux colonnes, un bouton par thème ──
+   `notions` : notions de collège (noms exacts dans GRANDES_IDEES) ;
+   `chapitres` : chapitres de lycée (noms exacts dans CHAPTER_STRUCTURE). */
+let themeOuvert = null;
+const THEMES_MATHS = [
+  { id: "regles", colonne: "NOMBRES", nom: "Règles de calcul", icone: "+−×÷", couleur: "#5aa469",
+    sous: "Décimaux · relatifs · fractions · puissances · racines · réels",
+    notions: ["Numération décimale", "Calcul mental réfléchi", "Priorités opératoires", "Nombres relatifs", "Fractions irréductibles",
+      "Mise au même dénominateur", "Règles de calcul sur les puissances", "Comparaison et rangement", "Encadrements et valeurs approchées",
+      "Opérations à trou et opérations inverses", "Puissances de 10, notation scientifique, ordres de grandeur",
+      "Fractions : proportion et fraction d'une quantité"],
+    chapitres: ["Ensembles de nombres et intervalles"] },
+  { id: "algebre", colonne: "NOMBRES", nom: "Calcul algébrique", icone: "x²+3", couleur: "#5aa469",
+    sous: "Expressions · développement · factorisation · équations · inéquations · systèmes",
+    notions: ["Réduction d'expressions", "Distributivité simple et double", "Développement et factorisation", "Opposé d'une expression",
+      "Démonstrations par le calcul littéral", "Identités remarquables", "Tester si une égalité est vraie", "Équations", "Remonter un programme de calcul",
+      "Inéquations", "Équation produit nul", "Équation x² = a et racine carrée", "Programmes de calcul"],
+    chapitres: ["Calcul littéral et équations (2nde)", "Inéquations et tableaux de signes", "Second degré : forme canonique et racines"] },
+  { id: "arithmetique", colonne: "NOMBRES", nom: "Arithmétique", icone: "3 7", couleur: "#5aa469",
+    sous: "Divisibilité · division euclidienne · nombres premiers",
+    notions: ["Multiples et diviseurs", "Critères de divisibilité", "Division euclidienne", "Décomposition en facteurs premiers"],
+    chapitres: [] },
+  { id: "fonctions", colonne: "NOMBRES", nom: "Fonctions, suites", icone: "f(x)", couleur: "#5aa469",
+    sous: "Fonctions · dérivation · intégrales · limites · continuité · suites",
+    notions: ["Fonctions linéaires", "« En fonction de »", "Suites de motifs et régularités", "Formules exprimant une dépendance", "Lire et tracer un graphique",
+      "Tableaux de valeurs", "Image et antécédent", "Fonctions affines et fonction carré", "Résolution graphique"],
+    chapitres: ["Fonctions de référence (2nde)", "Variations et lectures graphiques (2nde)", "Suites numériques : définition et variations",
+      "Suites : limites et raisonnement par récurrence", "Dérivation et tangentes", "Applications de la dérivation : variations et extremums",
+      "Convexité et dérivée seconde", "Fonction exponentielle", "Fonction logarithme népérien", "Limites de fonctions et asymptotes",
+      "Continuité et théorème des valeurs intermédiaires", "Primitives et équations différentielles", "Calcul intégral"] },
+  { id: "donnees", colonne: "NOMBRES", nom: "Gestion de données", icone: "▂▅▇", couleur: "#5aa469",
+    sous: "Proportionnalité · pourcentages · probabilités · statistiques · échantillonnage · algorithmique",
+    notions: ["Pourcentages et coefficient multiplicateur", "Quatrième proportionnelle", "Échelles", "Ratios et partage proportionnel",
+      "Recueil et organisation de données", "Tableaux et diagrammes", "Effectifs et fréquences", "Moyenne simple et pondérée",
+      "Vocabulaire des probabilités", "Équiprobabilité", "Tableur", "Médiane", "Étendue", "Effectifs cumulés", "Événement contraire",
+      "Quartiles et boîtes à moustaches", "Comparer des séries", "Réunion et intersection", "Expériences à deux épreuves",
+      "Fluctuation et stabilisation des fréquences", "Algorithmique", "Déplacements en programmation"],
+    chapitres: ["Statistiques descriptives et écart-type (2nde)", "Probabilités sur un ensemble fini (2nde)", "Probabilités conditionnelles et indépendance",
+      "Variables aléatoires : loi, espérance et variance", "Succession d'épreuves et loi binomiale", "Somme de variables aléatoires et concentration",
+      "Échantillonnage et loi des grands nombres", "Dénombrement et combinaisons", "Algorithmes et programmes en Python", "Boucles, listes et fonctions Python"] },
+  { id: "plane", colonne: "GÉOMÉTRIE", nom: "Notions de géométrie plane", icone: "◿", couleur: "#5aa469",
+    sous: "Figures · Pythagore et Thalès · transformations",
+    notions: ["Symétrie axiale", "Médiatrice et bissectrice", "Parallélogrammes et quadrilatères particuliers", "Symétrie centrale",
+      "Frises, pavages et polygones réguliers", "Angles : opposés, alternes-internes, correspondants", "Démonstration de la somme des angles d'un triangle",
+      "Triangles particuliers et droites remarquables", "Inégalité triangulaire et construction de triangles", "Angle manquant par la somme des angles",
+      "Translation", "Cercle circonscrit au triangle rectangle", "Théorème de Pythagore, réciproque et contraposée", "Droite des milieux",
+      "Théorème de Thalès", "Agrandissement et réduction"],
+    chapitres: [] },
+  { id: "vecteurs", colonne: "GÉOMÉTRIE", nom: "Vecteurs, repérage", icone: "AB→", couleur: "#5aa469",
+    sous: "Vecteurs · produit scalaire · repérage",
+    notions: ["Vecteurs et relation de Chasles", "Droite graduée et repère du plan"],
+    chapitres: ["Repérage et vecteurs du plan", "Équations de droites et colinéarité", "Produit scalaire dans le plan", "Géométrie repérée : droites et cercles"] },
+  { id: "trigo", colonne: "GÉOMÉTRIE", nom: "Trigonométrie", icone: "∿", couleur: "#5aa469",
+    sous: "Dans le triangle · cercle trigonométrique · fonctions trigonométriques",
+    notions: ["Trigonométrie"],
+    chapitres: ["Trigonométrie et cercle trigonométrique", "Fonctions trigonométriques"] },
+  { id: "grandeurs", colonne: "GÉOMÉTRIE", nom: "Grandeurs et mesures", icone: "cm²", couleur: "#5aa469",
+    sous: "Périmètres · aires · volumes · conversions · vitesses",
+    notions: ["Formules de périmètre, d'aire et de volume", "Conversions d'unités", "Vitesse et grandeurs quotients", "Aires par découpage et recollement"],
+    chapitres: [] },
+  { id: "espace", colonne: "GÉOMÉTRIE", nom: "Espace", icone: "⬡", couleur: "#5aa469",
+    sous: "Solides · vecteurs, droites et plans",
+    notions: ["Représentations de solides", "Sections de solides"],
+    chapitres: ["Vecteurs, droites et plans de l'espace", "Produit scalaire dans l'espace et équations de plans", "Représentations paramétriques et distances"] },
+];
+
 const CLASSES = [
   { id: "tous",     titre: "TOUS",            niveau: "",        classes: null },
   { id: "6e5e",     titre: "6e · 5e",         niveau: "college", classes: ["6e", "5e"] },
@@ -3792,6 +3939,7 @@ function tournerClasse(pas) {
 function choisirClasse(id, sens) {
   if (id === classeGroupe) return;
   classeGroupe = id;
+  themeOuvert = null;
   dessinerClasses(sens || 0);
   /* le niveau suit la classe : collège pour 6e-5e et 4e-3e, lycée sinon, tous pour « Tous » */
   const g = CLASSES.find(c => c.id === id);

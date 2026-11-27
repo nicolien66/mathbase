@@ -2322,3 +2322,26 @@ body:not(.vue-principale) .tiroir-onglet, body.tiroir-ouvert .tiroir-onglet { di
   margin-bottom:1.2rem; padding:1rem 1.2rem; border-radius:12px; font-size:.9rem; line-height:1.5;
   background:rgba(200,185,122,.08); border:1px solid rgba(200,185,122,.4); }
 .exam-reprise-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
+
+
+/* ── Vue « Tous » : thèmes en deux colonnes (NOMBRES / GÉOMÉTRIE) ── */
+.th-grille{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem 2.2rem;width:100%;}
+.th-col{display:flex;flex-direction:column;gap:.8rem;min-width:0;}
+.th-colonne{text-align:center;font-family:'DM Mono',monospace;font-size:.78rem;letter-spacing:.2em;font-weight:500;color:#82d2a0;margin:.2rem 0 .3rem;}
+.th-btn{display:flex;align-items:center;gap:1rem;text-align:left;width:100%;padding:.85rem 1rem;
+  background:var(--panel,#14130f);border:1px solid rgba(245,242,232,.1);border-radius:14px;color:inherit;font:inherit;cursor:pointer;
+  transition:border-color .2s,transform .2s,background .2s;}
+.th-btn:hover,.th-btn:focus-visible{border-color:var(--tc,#5aa469);background:rgba(245,242,232,.03);transform:translateY(-1px);outline:none;}
+.th-vide-btn{opacity:.5;}
+.th-icone{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:3.4rem;height:3.4rem;border-radius:12px;
+  background:var(--tc,#5aa469);color:#fff;font-family:'DM Mono',monospace;font-size:.9rem;font-weight:500;letter-spacing:-.02em;box-shadow:0 2px 6px rgba(0,0,0,.35);}
+.th-texte{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
+.th-nom{font-family:'Playfair Display',Georgia,serif;font-size:1.12rem;color:#e6826e;line-height:1.2;}
+.th-sous{font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:rgba(240,236,224,.6);line-height:1.45;}
+.th-retour{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin-bottom:.4rem;}
+.th-retour-btn{background:none;border:1px solid rgba(200,185,122,.35);color:var(--gold,#c8b97a);border-radius:999px;padding:.45rem 1rem;font-family:'DM Mono',monospace;font-size:.78rem;cursor:pointer;}
+.th-retour-btn:hover{background:rgba(200,185,122,.12);}
+.th-retour-nom{display:inline-flex;align-items:center;gap:.7rem;font-family:'Playfair Display',Georgia,serif;font-size:1.3rem;}
+.th-retour-nom .th-icone{width:2.6rem;height:2.6rem;font-size:.75rem;}
+.th-vide{color:rgba(240,236,224,.55);padding:1.5rem 0;}
+@media (max-width:760px){.th-grille{grid-template-columns:1fr;}}
