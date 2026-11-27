@@ -3667,7 +3667,7 @@ function appliquerRubrique() {
   vue.querySelector(".browse-hero .hero-tag").textContent = t.tag;
   vue.querySelector(".browse-hero h1").innerHTML = t.h1;
   const cl = document.getElementById("classes");
-  if (cl) cl.style.display = (ann || comp || (window.MB_MAT && !MB_MAT.estMaths())) ? "none" : "";
+  if (cl) cl.style.display = (ann || (window.MB_MAT && !MB_MAT.estMaths())) ? "none" : "";
   vue.querySelector(".filter-section").style.display = (ann || comp) ? "none" : "";
   vue.querySelector(".grid-section").style.display = (ann || comp) ? "none" : "";
   document.getElementById("browse-annales").hidden = !ann;
@@ -3700,30 +3700,34 @@ function rangerAnnales(ou) {
    sur ces fiches. */
 const COMPETITIONS = [
   { niveau: "Collège et lycée", items: [
-    { nom: "Kangourou des mathématiques", classes: "du CE2 à la terminale",
+    { nom: "Kangourou des mathématiques", pour: ["6e5e","4e3e","2nde1ere","terminale"], classes: "du CE2 à la terminale",
       desc: "Un questionnaire à choix multiples d'une heure, passé en classe en mars, avec des questions de plus en plus difficiles." },
-    { nom: "Rallye mathématique", classes: "collège et lycée",
+    { nom: "Rallye mathématique", pour: ["6e5e","4e3e","2nde1ere","terminale"], classes: "collège et lycée",
       desc: "Une épreuve par classe : on résout ensemble, en temps limité, des problèmes variés et on rend une seule copie." },
-    { nom: "Mathématiques sans frontières", classes: "3e, 2nde et lycée professionnel",
+    { nom: "Mathématiques sans frontières", pour: ["4e3e","2nde1ere"], classes: "3e, 2nde et lycée professionnel",
       desc: "Une classe entière cherche des exercices et rédige une réponse commune, parfois dans une langue étrangère." },
-    { nom: "Championnat des jeux mathématiques et logiques", classes: "tous niveaux",
+    { nom: "Championnat des jeux mathématiques et logiques", pour: ["6e5e","4e3e","2nde1ere","terminale"], classes: "tous niveaux",
       desc: "Des énigmes de logique et de jeux, en plusieurs étapes, de la demi-finale à la finale internationale." },
   ] },
   { niveau: "Lycée", items: [
-    { nom: "Olympiades de mathématiques", classes: "première",
+    { nom: "Olympiades de mathématiques", pour: ["2nde1ere"], classes: "première",
       desc: "Des exercices nationaux et académiques, à chercher longuement, sans formule à appliquer : il faut raisonner et rédiger." },
-    { nom: "Concours général", classes: "première et terminale",
+    { nom: "Concours général", pour: ["2nde1ere","terminale"], classes: "première et terminale",
       desc: "Une épreuve très sélective, d'après les programmes, qui récompense les meilleurs lycéens du pays." },
-    { nom: "Tournoi français des jeunes mathématiciennes et mathématiciens", classes: "lycée",
+    { nom: "Tournoi français des jeunes mathématiciennes et mathématiciens", pour: ["2nde1ere","terminale"], classes: "lycée",
       desc: "Des équipes cherchent des problèmes ouverts pendant des semaines, puis les défendent à l'oral." },
-    { nom: "Olympiades internationales de mathématiques", classes: "lycéens sélectionnés",
+    { nom: "Olympiades internationales de mathématiques", pour: ["2nde1ere","terminale"], classes: "lycéens sélectionnés",
       desc: "Une équipe de six élèves par pays, deux épreuves de quatre heures et demie : le sommet des compétitions de lycée." },
   ] },
 ];
+/* Le carrousel des classes trie les épreuves : on ne garde que celles où la classe choisie peut concourir. */
 function dessinerCompetitions(hote) {
-  if (hote.dataset.fait) return;
-  hote.dataset.fait = "1";
-  hote.innerHTML = COMPETITIONS.map(g =>
+  hote = hote || document.getElementById("browse-competitions");
+  if (!hote) return;
+  const garde = c => classeGroupe === "tous" || (c.pour || []).includes(classeGroupe);
+  const groupes = COMPETITIONS.map(g => ({ niveau: g.niveau, items: g.items.filter(garde) })).filter(g => g.items.length);
+  if (!groupes.length) { hote.innerHTML = `<p class="cp-note">Aucune compétition répertoriée pour ces classes pour l'instant.</p>`; return; }
+  hote.innerHTML = groupes.map(g =>
     `<section class="cp-groupe"><h3 class="cp-niveau">${escapeHtml(g.niveau)}</h3><div class="cp-grille">` +
     g.items.map(c =>
       `<article class="cp-carte"><h4 class="cp-nom">${escapeHtml(c.nom)}</h4>` +
@@ -3988,6 +3992,12 @@ function choisirClasse(id, sens) {
   /* le niveau suit la classe : collège pour 6e-5e et 4e-3e, lycée sinon, tous pour « Tous » */
   const g = CLASSES.find(c => c.id === id);
   const niveau = g ? g.niveau : "";
+  if (rubriqueActive() === "competitions") {
+    currentFilter = niveau;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.toggle("active", (b.dataset.level || "") === niveau));
+    dessinerCompetitions();
+    return;
+  }
   if (niveau !== currentFilter) {
     currentFilter = niveau;
     document.querySelectorAll(".filter-btn").forEach(b => b.classList.toggle("active", (b.dataset.level || "") === niveau));
