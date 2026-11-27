@@ -747,9 +747,30 @@ h1 em{font-style:italic;color:var(--accent);}
     { titre: "Écoles du service public", note: "Les écoles qui forment les hauts fonctionnaires et les cadres de l'État, sur concours.", matieres: PUBLIC },
   ];
 
+  /* Le catalogue complet est exposé pour la page d'administration (admin-matieres.html),
+     qui s'en sert pour lister les boutons dont elle règle l'état. */
+  window.MB_CATALOGUE = GROUPES;
+
+  /* ── Boutons « à venir » décidés par l'administrateur ──
+     Un bouton qui a un href mais que l'administrateur a mis « à venir » reste ouvert
+     pour l'administrateur (signalé en rouge) et devient « à venir » pour les élèves.
+     La clé d'un bouton est son href. Sans serveur (mode démo), tout reste accessible. */
+  const FERME = new Set();
+  const SUIS_ADMIN = !!(window.MB_AUTH && MB_AUTH.user() && MB_AUTH.user().role === 'admin');
+  function etatMatieres() {
+    if (!window.MB_AUTH || MB_AUTH.isDemo()) return Promise.resolve();
+    const lecture = MB_AUTH.apiFetch('/matieres/etat')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && Array.isArray(d.a_venir)) d.a_venir.forEach(c => FERME.add(c)); })
+      .catch(() => {});
+    /* serveur trop lent : on affiche quand même (tout accessible) plutôt que de bloquer la page */
+    return Promise.race([lecture, new Promise(r => setTimeout(r, 2500))]);
+  }
+
   /* famille de métiers dépliée (une seule à la fois) ; survol possible ou non */
   const SURVOL = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
   let ouverte = null;
+  function demarrer() {
   const hote = document.getElementById('groupes');
   let n = 0;
   GROUPES.forEach(g => {
@@ -792,13 +813,15 @@ h1 em{font-style:italic;color:var(--accent);}
     el.className = 'famille' + (f.horsFamille ? ' hors' : '');
     el.style.animationDelay = Math.min(k * 35, 500) + 'ms';
     const nb = f.bacs.length;
+    const fermeF = !!f.href && FERME.has(f.href);
+    const lien = !!f.href && (!fermeF || SUIS_ADMIN);
     el.innerHTML =
-      (f.href ? `<a class="famille-btn" href="${f.href}" title="Cours de seconde : ${f.titre}">`
+      (lien ? `<a class="famille-btn" href="${f.href}" title="Cours de seconde : ${f.titre}">`
               : `<button type="button" class="famille-btn" title="${f.horsFamille ? 'Bacs pros hors famille de métiers' : 'Famille de métiers : ' + f.titre}">`)
       + `<span class="famille-icone">${f.icone}</span>`
       + `<span class="famille-nom">${f.titre}</span>`
       + `<span class="famille-pied"><span class="famille-n">${nb} spécialité${nb > 1 ? 's' : ''}</span>`
-      + (f.href ? `<span class="famille-pret">Cours de seconde · QCM →</span></span></a>`
+      + (lien ? `<span class="famille-pret"${fermeF ? ' style="color:#e6826e"' : ''}>${fermeF ? 'À venir pour les élèves · ' : ''}Cours de seconde · QCM →</span></span></a>`
                 : `<span class="bac-badge">À venir</span></span></button>`)
       + `<button type="button" class="famille-fleche" aria-expanded="false" aria-label="Voir les spécialités : ${f.titre}">›</button>`
       + `<div class="famille-panneau">`
@@ -806,7 +829,7 @@ h1 em{font-style:italic;color:var(--accent);}
       + `</div>`;
     const pan = el.querySelector('.famille-panneau');
     f.bacs.forEach((m, i) => pan.appendChild(carteBac(m, i)));
-    if (!f.href) el.querySelector('.famille-btn').onclick = () =>
+    if (!lien) el.querySelector('.famille-btn').onclick = () =>
       toast((f.horsFamille ? 'Les bacs pros hors famille arrivent' : 'La famille « ' + f.titre + ' » arrive') + ' bientôt sur Polymates.');
     el.querySelector('.famille-fleche').onclick = e => { e.stopPropagation(); ouvrir(el, !el.classList.contains('ouvert')); };
     if (SURVOL) {
@@ -826,7 +849,8 @@ h1 em{font-style:italic;color:var(--accent);}
   /* Bouton compact d'une spécialité. Il s'ouvre dès qu'on lui donne un href ;
      sans href, il est « à venir ». Les options éventuelles sont rappelées dessous. */
   function carteBac(m, i) {
-    const dispo = !!m.href;
+    const ferme = !!m.href && FERME.has(m.href);
+    const dispo = !!m.href && (!ferme || SUIS_ADMIN);
     const el = document.createElement(dispo ? 'a' : 'button');
     el.className = 'bac ' + (dispo ? 'ready' : 'soon');
     el.title = 'Bac pro ' + m.nom;
@@ -834,13 +858,15 @@ h1 em{font-style:italic;color:var(--accent);}
     const opts = m.options && m.options.length
       ? `<span class="bac-options">${m.options.length} options : ${m.options.join(' · ')}</span>` : '';
     el.innerHTML = `<span class="bac-icone">${m.icone}</span><span class="bac-nom">${m.nom}${opts}</span>`
-      + (dispo ? '' : '<span class="bac-badge">À venir</span>');
+      + (!dispo ? '<span class="bac-badge">À venir</span>'
+         : ferme ? '<span class="bac-badge" style="color:#e6826e;border-color:rgba(230,130,110,.45)">À venir (élèves)</span>' : '');
     if (!dispo) el.onclick = e => { e.stopPropagation(); toast('Le bac pro ' + m.nom + ' arrive bientôt sur Polymates.'); };
     return el;
   }
 
   function carte(m, i) {
-    const ouverte = !!m.href;
+    const ferme = !!m.href && FERME.has(m.href);
+    const ouverte = !!m.href && (!ferme || SUIS_ADMIN);
     const el = document.createElement(ouverte ? 'a' : 'button');
     el.className = 'subject ' + (ouverte ? 'ready' : 'soon');
     el.style.setProperty('--sc', m.couleur);
@@ -851,7 +877,8 @@ h1 em{font-style:italic;color:var(--accent);}
       `<div class="subject-icon">${m.icone}</div>` +
       `<div class="subject-title">${m.nom}</div>` +
       `<div class="subject-desc">${m.desc}</div>` +
-      (ouverte ? `<div class="subject-go">Entrer →</div>`
+      (ouverte ? (ferme ? `<div class="subject-go" style="color:#e6826e">À venir pour les élèves · Entrer →</div>`
+                        : `<div class="subject-go">Entrer →</div>`)
                : `<div class="subject-badge">À venir</div>`);
     if (!ouverte) el.onclick = () => toast(m.nom + " arrive bientôt sur Polymates.");
     return el;
@@ -949,6 +976,8 @@ h1 em{font-style:italic;color:var(--accent);}
     window.addEventListener('hashchange', () => depuisAdresse(true));
     depuisAdresse(false);
   })();
+  }
+  etatMatieres().then(demarrer);
 
   /* petit message éphémère */
   let tid;

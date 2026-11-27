@@ -457,6 +457,41 @@ app.post("/auth/login", async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: "Erreur serveur." }); }
 });
 
+/* ── ACCÈS AUX MATIÈRES : « accessible » ou « à venir » ──
+   Un bouton « à venir » qui contient quelque chose reste ouvert à l'administrateur ;
+   seuls les élèves en sont privés. La liste est lisible par tout compte connecté
+   (la page Matières et le garde d'accès des pages en ont besoin) ; seul
+   l'administrateur peut la modifier. */
+app.get("/matieres/etat", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT cle FROM matieres_a_venir ORDER BY cle");
+    res.json({ a_venir: rows.map(r => r.cle) });
+  } catch (e) { console.error(e); res.status(500).json({ error: "Erreur serveur." }); }
+});
+
+app.put("/admin/matieres/etat", auth, requireAdmin, async (req, res) => {
+  try {
+    const { cles, etat } = req.body || {};
+    if (!Array.isArray(cles) || !cles.length || cles.length > 1500)
+      return res.status(400).json({ error: "Liste de boutons invalide." });
+    if (etat !== "a_venir" && etat !== "accessible")
+      return res.status(400).json({ error: "État inconnu (a_venir ou accessible)." });
+    const propres = [...new Set(cles.map(c => String(c || "").trim()).filter(c => c && c.length <= 300))];
+    if (!propres.length) return res.status(400).json({ error: "Liste de boutons vide." });
+    if (etat === "a_venir") {
+      await pool.query(
+        `INSERT INTO matieres_a_venir (cle, modifie_par)
+         SELECT c, $2 FROM unnest($1::text[]) AS c
+         ON CONFLICT (cle) DO UPDATE SET modifie_par = EXCLUDED.modifie_par, modifie_le = CURRENT_TIMESTAMP`,
+        [propres, req.user.pseudo || String(req.user.id)]);
+    } else {
+      await pool.query("DELETE FROM matieres_a_venir WHERE cle = ANY($1::text[])", [propres]);
+    }
+    const { rows } = await pool.query("SELECT cle FROM matieres_a_venir ORDER BY cle");
+    res.json({ ok: true, modifies: propres.length, a_venir: rows.map(r => r.cle) });
+  } catch (e) { console.error(e); res.status(500).json({ error: "Erreur serveur." }); }
+});
+
 app.get("/auth/me", auth, async (req, res) => {
   const { rows } = await pool.query("SELECT * FROM users WHERE id = $1", [req.user.id]);
   if (!rows.length) return res.status(401).json({ error: "Compte introuvable." });
@@ -1614,6 +1649,16 @@ async function initDB() {
   } catch (e) {
     console.warn("[auth] pseudos en double parmi les anciens comptes : index d'unicité non créé (" + e.message + ")");
   }
+  /* Boutons de la page « Matières » mis « à venir » par l'administrateur.
+     On ne garde que les exceptions : un bouton absent de cette table est accessible.
+     La clé est l'adresse du bouton (ex. « medecine.html?matiere=anatomie »). */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS matieres_a_venir (
+      cle         TEXT PRIMARY KEY,
+      modifie_par TEXT,
+      modifie_le  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS annales (
       id          SERIAL PRIMARY KEY,

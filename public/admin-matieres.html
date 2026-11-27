@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutons des matières — Administration</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b0b09; --panel:#14130f; --line:rgba(245,242,232,.1); --cream:#f0ece0; --muted:rgba(240,236,224,.55); --gold:#c8b97a; --coral:#e6826e; --green:#82d2a0; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--cream);font-family:'DM Sans',sans-serif;min-height:100vh;padding:3rem 1rem 6rem;}
+  .wrap{width:min(980px,100%);margin:0 auto;}
+  .back{display:inline-block;border:1px solid rgba(200,185,122,.35);color:var(--gold);padding:.5rem 1.1rem;border-radius:999px;font-family:'DM Mono',monospace;font-size:.8rem;text-decoration:none;}
+  h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.6rem,4vw,2.2rem);margin:1.6rem 0 .4rem;}
+  .sub{color:var(--muted);font-size:.9rem;line-height:1.55;margin-bottom:1.4rem;max-width:70ch;}
+  .barre{position:sticky;top:0;z-index:5;background:rgba(11,11,9,.94);backdrop-filter:blur(6px);padding:.8rem 0;margin-bottom:1rem;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;}
+  .barre input[type=search]{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);color:var(--cream);border-radius:10px;padding:.55rem .8rem;font:inherit;font-size:.88rem;}
+  .btn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:.45rem .8rem;font:inherit;font-size:.78rem;cursor:pointer;white-space:nowrap;}
+  .btn:hover{border-color:var(--gold);color:var(--gold);}
+  .compte{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);}
+  .groupe{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:1rem;overflow:hidden;}
+  .gtete{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;padding:.8rem 1rem;border-bottom:1px solid var(--line);}
+  .gtete h2{flex:1;font-family:'DM Mono',monospace;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:400;}
+  .ligne{display:flex;align-items:center;gap:.8rem;padding:.55rem 1rem;border-bottom:1px solid rgba(245,242,232,.05);font-size:.88rem;}
+  .ligne:last-child{border-bottom:none;}
+  .ligne .nom{flex:1;min-width:0;}
+  .ligne .nom small{display:block;color:var(--muted);font-size:.7rem;font-family:'DM Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .vide{color:var(--muted);font-size:.72rem;font-family:'DM Mono',monospace;}
+  .sw{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-shrink:0;}
+  .sw button{background:none;border:none;color:var(--muted);font:inherit;font-size:.74rem;padding:.3rem .75rem;cursor:pointer;}
+  .sw button.on.ok{background:rgba(130,210,160,.15);color:var(--green);}
+  .sw button.on.av{background:rgba(230,130,110,.15);color:var(--coral);}
+  .sw button:disabled{opacity:.35;cursor:not-allowed;}
+  .msg{position:fixed;left:50%;bottom:1.4rem;transform:translateX(-50%);background:#1c1b15;border:1px solid var(--line);border-radius:10px;padding:.6rem 1rem;font-size:.84rem;display:none;}
+  .msg.on{display:block;} .msg.err{color:var(--coral);border-color:rgba(230,130,110,.4);}
+  iframe{position:absolute;width:0;height:0;border:0;visibility:hidden;}
+</style>
+<script src="auth.js" data-protect="admin"></script>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="admin.html">← Administration</a>
+  <h1>Boutons de la page Matières</h1>
+  <p class="sub">« Accessible » : tout le monde entre. « À venir » : les élèves voient « À venir » et n'ont plus accès à la page ; <strong>toi, administrateur, tu y entres toujours</strong> (le bouton s'affiche en rouge pour te le rappeler). Un bouton qui ne contient encore rien est toujours « à venir » et n'est pas modifiable ici.</p>
+  <div class="barre">
+    <input type="search" id="q" placeholder="Filtrer les boutons…">
+    <span class="compte" id="compte"></span>
+  </div>
+  <div id="liste"><p class="sub">Chargement…</p></div>
+</div>
+<div class="msg" id="msg"></div>
+<iframe id="src" src="matieres.html" title="catalogue"></iframe>
+<script>
+(function(){
+  const FERME = new Set();
+  let GROUPES = [];
+
+  function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function msg(t,err){const m=document.getElementById('msg');m.textContent=t;m.className='msg on'+(err?' err':'');clearTimeout(msg.t);msg.t=setTimeout(()=>m.className='msg',2600);}
+
+  /* les boutons d'un groupe : matières, et spécialités rangées dans des familles */
+  function boutons(g){
+    const out=[];
+    (g.matieres||[]).forEach(m=>out.push({nom:m.nom,href:m.href}));
+    (g.familles||[]).forEach(f=>{
+      if(f.href) out.push({nom:'Famille « '+f.titre+' »',href:f.href});
+      (f.bacs||[]).forEach(m=>out.push({nom:f.titre+' › '+m.nom,href:m.href}));
+    });
+    return out;
+  }
+
+  async function changer(cles, etat){
+    if(!cles.length) return;
+    try{
+      const r=await MB_AUTH.apiFetch('/admin/matieres/etat',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({cles,etat})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(d.error||'Échec');
+      FERME.clear(); (d.a_venir||[]).forEach(c=>FERME.add(c));
+      dessiner(); msg(d.modifies+' bouton(s) → '+(etat==='a_venir'?'à venir':'accessible'));
+    }catch(e){msg(e.message,true);}
+  }
+
+  function dessiner(){
+    const filtre=document.getElementById('q').value.trim().toLowerCase();
+    const hote=document.getElementById('liste'); hote.innerHTML='';
+    let total=0, fermes=0;
+    GROUPES.forEach(g=>{
+      const tous=boutons(g), avecContenu=tous.filter(b=>b.href);
+      const vus=tous.filter(b=>!filtre||(b.nom||'').toLowerCase().includes(filtre)||(g.titre||'').toLowerCase().includes(filtre));
+      avecContenu.forEach(b=>{total++; if(FERME.has(b.href)) fermes++;});
+      if(!vus.length) return;
+      const s=document.createElement('section'); s.className='groupe';
+      const cles=vus.filter(b=>b.href).map(b=>b.href);
+      s.innerHTML=`<div class="gtete"><h2>${esc(g.titre)}</h2>`+
+        (cles.length?`<button class="btn" data-e="accessible">Tout accessible</button><button class="btn" data-e="a_venir">Tout à venir</button>`:'<span class="vide">aucun contenu pour l\'instant</span>')+`</div>`;
+      s.querySelectorAll('.gtete .btn').forEach(b=>b.onclick=()=>changer(cles,b.dataset.e));
+      vus.forEach(b=>{
+        const l=document.createElement('div'); l.className='ligne';
+        if(b.href){
+          const f=FERME.has(b.href);
+          l.innerHTML=`<div class="nom">${esc(b.nom)}<small>${esc(b.href)}</small></div>
+            <div class="sw"><button class="ok${f?'':' on'}">Accessible</button><button class="av${f?' on':''}">À venir</button></div>`;
+          const [ok,av]=l.querySelectorAll('.sw button');
+          ok.onclick=()=>{ if(f) changer([b.href],'accessible'); };
+          av.onclick=()=>{ if(!f) changer([b.href],'a_venir'); };
+        }else{
+          l.innerHTML=`<div class="nom">${esc(b.nom)}</div><span class="vide">à venir · rien derrière</span>`;
+        }
+        s.appendChild(l);
+      });
+      hote.appendChild(s);
+    });
+    if(!hote.children.length) hote.innerHTML='<p class="sub">Aucun bouton ne correspond.</p>';
+    document.getElementById('compte').textContent=fermes+' à venir sur '+total+' boutons avec contenu';
+  }
+
+  async function init(){
+    /* le catalogue vient de la page Matières elle-même : une seule liste à tenir à jour */
+    const fr=document.getElementById('src');
+    const lire=()=>{ try{return fr.contentWindow.MB_CATALOGUE;}catch(e){return null;} };
+    for(let i=0;i<60 && !lire();i++) await new Promise(r=>setTimeout(r,150));
+    GROUPES=lire()||[];
+    if(!GROUPES.length){document.getElementById('liste').innerHTML='<p class="sub">Catalogue introuvable. Recharge la page.</p>';return;}
+    try{
+      const r=await MB_AUTH.apiFetch('/matieres/etat');
+      if(r.ok){(await r.json()).a_venir.forEach(c=>FERME.add(c));}
+      else msg('Serveur indisponible : les changements ne seront pas enregistrés.',true);
+    }catch(e){msg('Serveur indisponible (mode démo ?).',true);}
+    dessiner();
+  }
+  document.getElementById('q').oninput=dessiner;
+  window.addEventListener('load',init);
+})();
+</script>
+</body>
+</html>

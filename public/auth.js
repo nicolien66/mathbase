@@ -112,6 +112,13 @@
     location.href = "index.html?next=" + encodeURIComponent(next);
   }
 
+  /* tous les paramètres de la clé sont présents dans l'adresse courante */
+  function sameParams(cle, search) {
+    const a = new URLSearchParams(cle), b = new URLSearchParams(search);
+    for (const [k, v] of a) if (b.get(k) !== v) return false;
+    return true;
+  }
+
   /* ── garde d'accès ── */
   async function guard() {
     if (protect === null) { renderChip(); return; }   // page publique : pastille seulement
@@ -133,6 +140,25 @@
 
     if (protect === "admin" && u.role !== "admin") { location.href = "matieres.html"; return; }
     renderChip();
+
+    /* Boutons « à venir » : l'administrateur y garde l'accès, les élèves sont renvoyés
+       vers la page des matières. Une clé comme « medecine.html?matiere=anatomie » ferme
+       cette page-là précisément ; une clé sans « ? » ferme la page entière. */
+    if (backend && u.role !== "admin" && !u.demo && MB_AUTH.token()) {
+      const page = location.pathname.split("/").pop() || "index.html";
+      if (page !== "matieres.html" && page !== "index.html" && page !== "compte.html") {
+        try {
+          const r = await MB_AUTH.apiFetch("/matieres/etat");
+          const d = r.ok ? await r.json() : null;
+          const plein = page + location.search;
+          if (d && (d.a_venir || []).some(c => c === plein || c === page ||
+              (c.indexOf("?") > 0 && c.split("?")[0] === page && sameParams(c.split("?")[1], location.search)))) {
+            location.replace("matieres.html");
+            return;
+          }
+        } catch (e) { /* serveur injoignable : on ne bloque pas */ }
+      }
+    }
 
     // validation silencieuse du jeton côté serveur (hors démo)
     if (!u.demo && MB_AUTH.token()) {
